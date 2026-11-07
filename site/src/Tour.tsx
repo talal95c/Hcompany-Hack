@@ -6,7 +6,7 @@ const STEPS: { sel: string; text: string }[] = [
   { sel: ".nav-logo", text: "This is Rio's logo" },
   { sel: ".h-hero", text: "The title: what Rio does" },
   { sel: ".hero .btn", text: "Start a live lesson here" },
-  { sel: ".tv-screen", text: "Rio points, you click" },
+  { sel: ".tv-screen", text: "Scroll to dive in" },
   { sel: ".hero-logos", text: "Works on top of your apps" },
   { sel: ".toggle-row", text: "Switch monthly or annual billing" },
   { sel: ".plan-dark", text: "Team plan, for a whole team" },
