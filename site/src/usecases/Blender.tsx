@@ -1,43 +1,29 @@
 import { AbsoluteFill, useCurrentFrame } from 'remotion';
 import { Camera, AppWindow, GhostCursor, StepPill, ease } from './primitives';
+import { TutorialPlayer } from './TutorialPlayer';
 
 export const BLENDER_DURATION = 360;
 export const BLENDER_FINAL_FRAME = 330;
 
-function TutorialIntake({ frame }: { frame: number }) {
-  const url = 'youtube.com/watch?v=your-first-donut';
-  const typed = Math.floor(ease(frame, 8, 35) * url.length);
-  return <AppWindow name="Rio · New lesson">
-    <Camera frame={frame * .6} x={290} y={170} amount={.14}>
-      <div style={{ position: 'absolute', top: 61, left: 40, right: 40 }}>
-        <p style={{ fontSize: 23, letterSpacing: -.7, margin: '0 0 14px' }}>A tutorial. Your next skill.</p>
-        <div style={{ display: 'flex', alignItems: 'center', height: 39, padding: '0 12px', borderRadius: 9, background: '#f0f0f0', border: '1px solid #ddd', fontSize: 13, color: '#666' }}><span>{url.slice(0, typed)}<span style={{ color: '#e98548' }}>│</span></span><span style={{ marginLeft: 'auto', color: '#1a1a1a', fontSize: 12 }}>Start ↗</span></div>
-        <div style={{ display: 'flex', gap: 15, marginTop: 10, alignItems: 'center' }}>
-          <svg width="104" height="63" viewBox="0 0 104 63"><rect width="104" height="63" rx="8" fill="#e7e9e4" /><ellipse cx="52" cy="33" rx="26" ry="15" fill="none" stroke="#adb6a6" strokeWidth="12" /><rect x="37" y="20" width="30" height="23" rx="6" fill="#bd5149" /><path d="M49 26L58 31.5L49 37Z" fill="white" /></svg>
-          <div><p style={{ fontSize: 15, lineHeight: 1.4, maxWidth: 260, margin: 0 }}>Blender for beginners:<br />your first donut</p><p style={{ fontSize: 11, margin: '5px 0 0', color: '#888' }}>VIDEO TUTORIAL → YOUR LESSON</p></div>
-        </div>
-        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
-          {['Add a torus', 'Scale your object', 'Check the result'].map((step, i) => { const show = ease(frame, 45 + i * 11, 56 + i * 11); return <div key={step} style={{ opacity: show, transform: `translateY(${(1 - show) * 8}px)`, display: 'flex', gap: 10, alignItems: 'center', fontSize: 13 }}><span style={{ background: '#edf1e9', color: '#607250', borderRadius: 20, width: 21, height: 21, display: 'grid', placeItems: 'center', fontSize: 11 }}>{i + 1}</span>{step}</div>; })}
-        </div>
-      </div>
-    </Camera>
-  </AppWindow>;
-}
-
 export function Blender() {
   const frame = useCurrentFrame();
-  const f = Math.max(0, frame - 110);
-  const transition = ease(frame, 104, 120) * (1 - ease(frame, 342, 359));
-  return <AbsoluteFill>
-    <TutorialIntake frame={frame > 335 ? 0 : Math.min(frame, 100)} />
-    <AbsoluteFill style={{ opacity: transition, transform: `translateY(${(1 - transition) * 14}px)` }}><BlenderScene frame={f} /></AbsoluteFill>
+  const f = Math.max(0, (frame - 150) * 1.3);
+  const transfer = ease(frame, 139, 171);
+  const reset = ease(frame, 342, 359);
+  return <AbsoluteFill style={{ background: '#f0f0f0', fontFamily: 'Inter Variable, Inter, sans-serif', color: '#1a1a1a' }}>
+    <AbsoluteFill style={{ opacity: ease(frame, 120, 159) }}><BlenderScene frame={f} /></AbsoluteFill>
+    <TutorialPlayer frame={frame} />
+    {frame > 135 && frame < 180 && <svg width="640" height="400" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}><path d="M470 144Q460 198 373 246" fill="none" stroke="#e98548" strokeWidth="2" strokeDasharray="4 7" opacity={Math.sin(transfer * Math.PI) * .6} /><ellipse cx={470 - transfer * 97} cy={144 + transfer * 102} rx="28" ry="16" fill="none" stroke="#e98548" strokeWidth="8" opacity={Math.sin(transfer * Math.PI) * .7} /></svg>}
+    {frame < 65 && <div style={{ position: 'absolute', bottom: 25, left: 0, right: 0, textAlign: 'center', fontSize: 19, opacity: 1 - ease(frame, 50, 65) }}>Paste a tutorial</div>}
+    {frame >= 180 && frame < 285 && <div style={{ position: 'absolute', right: 51, top: 163, fontSize: 14, background: '#ffffffdd', backdropFilter: 'blur(12px)', padding: '7px 12px', borderRadius: 20, opacity: ease(frame, 180, 193) }}>Tutorial paused for you</div>}
+    <AbsoluteFill style={{ opacity: reset, pointerEvents: 'none', background: '#f0f0f0' }}><TutorialPlayer frame={0} /><div style={{ position: 'absolute', bottom: 25, width: '100%', textAlign: 'center', fontSize: 19 }}>Paste a tutorial</div></AbsoluteFill>
   </AbsoluteFill>;
 }
 
 function BlenderScene({ frame: f }: { frame: number }) {
   const added = ease(f, 115, 140);
   const scale = 1 + ease(f, 155, 180) * .18;
-  return <AppWindow name="Blender" dark>
+  return <AppWindow name="Your Blender" dark>
     <Camera frame={f} x={235} y={245}>
       <div style={{ position: 'absolute', top: 43, left: 0, right: 0, height: 31, background: '#3c3f41', color: '#ddd', fontSize: 13, padding: '8px 16px' }}>Object Mode　 View　 Select　 <span style={{ color: '#e98548' }}>Add</span>　 Object</div>
       <svg viewBox="0 0 584 300" style={{ position: 'absolute', top: 88, width: '100%', height: 300 }}>
@@ -52,9 +38,9 @@ function BlenderScene({ frame: f }: { frame: number }) {
           <ellipse rx="96" ry="61" fill="none" stroke="#e98548" strokeWidth="1" opacity=".8" />
         </g>
       </svg>
-      <div style={{ position: 'absolute', top: 82, left: 155, width: 140, padding: 12, borderRadius: 8, background: '#484b4e', color: '#eee', fontSize: 14, lineHeight: '29px', opacity: 1 - added, boxShadow: '0 8px 24px #0003' }}>Mesh　 ›<br /><span style={{ color: '#aaa' }}>Plane<br />Cube<br />Circle</span><br /><span style={{ display: 'block', background: '#65716b', borderRadius: 4, paddingLeft: 8 }}>Torus</span></div>
+      <div style={{ position: 'absolute', top: 82, left: 155, width: 140, padding: 12, borderRadius: 8, background: '#484b4e', color: '#eee', fontSize: 14, lineHeight: '29px', opacity: ease(f, 12, 27) * (1 - added), boxShadow: '0 8px 24px #0003' }}>Mesh　 ›<br /><span style={{ color: '#aaa' }}>Plane<br />Cube<br />Circle</span><br /><span style={{ display: 'block', background: '#65716b', borderRadius: 4, paddingLeft: 8 }}>Torus</span></div>
       <GhostCursor frame={f} to={[210, 218]} />
-      <div style={{ position: 'absolute', right: 15, top: 92, fontSize: 11, color: '#aaa' }}>SCENE<br /><br />{f > 130 ? '◇ Torus' : '◇ Collection'}</div>
+      {f >= 109 && f < 139 && <svg width="25" height="32" viewBox="0 0 31 38" style={{ position: 'absolute', left: 211, top: 219, opacity: 1 - ease(f, 124, 139) }}><path d="M3 3L27 22L16 24L10 34Z" fill="#1a1a1a" stroke="white" strokeWidth="2" strokeLinejoin="round" /></svg>}
     </Camera>
     <StepPill frame={f} task="Add a torus" />
   </AppWindow>;
