@@ -70,7 +70,7 @@ function Shell({ path, orgId }: { path: string; orgId: string }) {
           ) : path.startsWith("/community") ? (
             <CommunityPage />
           ) : path.startsWith("/knowledge") ? (
-            <KnowledgePage />
+            <KnowledgePage canManage={canManage} />
           ) : path.startsWith("/members") ? (
             <MembersPage canManage={canManage} />
           ) : path.startsWith("/settings") ? (

@@ -70,14 +70,17 @@ async function searchAll(c: C, q: string, o: { app?: string | null; version?: st
   const own = tutorialsAsKb(await readyTutorials(c.env, c.get("org")));
   let semanticOk = false;
   let topCos = 0;
+  let unknownApp: string[] | null = null; // the `app` asked for is none of the apps this organization sees: their names
+
   const run = async (alt: string) => {
     // With English keywords for a foreign question, the keywords lead (the question's own words would mismatch).
     const foreign = !!alt && looksForeign(q);
     const [team, global] = await Promise.all([
       Promise.resolve(search(own, foreign ? [alt] : alt ? [q, alt] : [q], { app: o.app, version: o.version, limit: 3 }).filter((r) => r.score >= 2)),
-      kn<{ results: GlobalHit[]; semantic?: boolean; top_cos?: number | null }>(c, "/search", { q: foreign ? alt : q, alt: foreign ? "" : alt, app: o.app, version: o.version, limit: String(o.limit) }),
+      kn<{ results: GlobalHit[]; semantic?: boolean; top_cos?: number | null; unknown_app?: string; apps?: string[] }>(c, "/search", { q: foreign ? alt : q, alt: foreign ? "" : alt, app: o.app, version: o.version, limit: String(o.limit) }),
     ]);
     if (global?.semantic) semanticOk = true;
+    if (global?.unknown_app) unknownApp = global.apps ?? [];
     if (global?.top_cos != null) topCos = Math.max(topCos, global.top_cos);
     return [...team.slice(0, 2), ...(global?.results ?? [])].slice(0, o.limit);
   };
@@ -93,7 +96,7 @@ async function searchAll(c: C, q: string, o: { app?: string | null; version?: st
       const more = await run(keywords);
       // keep both: the keywords' answers first, then what the question itself found
       const seen = new Set(more.map((r) => r.id));
-      return { results: [...more, ...results.filter((r) => !seen.has(r.id))].slice(0, o.limit), keywords };
+      return { results: [...more, ...results.filter((r) => !seen.has(r.id))].slice(0, o.limit), keywords, unknownApp };
     }
   }
   let keywords = "";
@@ -104,7 +107,7 @@ async function searchAll(c: C, q: string, o: { app?: string | null; version?: st
       if (more.length > results.length) results = more;
     }
   }
-  return { results, keywords };
+  return { results, keywords, unknownApp };
 }
 
 type GlobalTutorial = { id: string; title: string; app: string; bundle_id: string | null; skills: number; recorded_on: string | null; source_url: string | null; kind: string | null; author: string | null };
@@ -211,9 +214,20 @@ async function englishKeywords(env: Env, q: string): Promise<string> {
 app.get("/v1/search", async (c) => {
   const q = (c.req.query("q") ?? "").trim();
   if (!q) return c.json({ error: "missing q" }, 400);
-  const { results, keywords } = await searchAll(c, q, { app: c.req.query("app"), version: c.req.query("version"), limit: Math.min(Number(c.req.query("limit")) || 5, 10) });
-  logUsage(c, { kind: "search", query: q, app: c.req.query("app"), results: results.length });
+  const app = c.req.query("app");
+  const { results, keywords, unknownApp } = await searchAll(c, q, { app, version: c.req.query("version"), limit: Math.min(Number(c.req.query("limit")) || 5, 10) });
+  logUsage(c, { kind: "search", query: q, app, results: results.length });
+  if (unknownApp && !results.length) return c.json({ error: `unknown app: ${app}`, apps: unknownApp }, 404);
   return c.json({ query: q, keywords: keywords || null, results });
+});
+
+/** The apps this organization can search (`/v1/search?app=<name or id>`): the shared ones and its own tools. */
+app.get("/v1/apps", async (c) => {
+  const r = await kn<{ apps: KnowledgeApp[] }>(c, "/apps");
+  if (!r) return c.json({ error: "The knowledge base is unreachable" }, 502);
+  return c.json({
+    apps: r.apps.map((a) => ({ id: a.id, name: a.name, shared: !a.internal, current_version: a.current_version, versions: a.versions.map((v) => v.id), skills: a.skills })),
+  });
 });
 
 app.get("/v1/tutorials", async (c) => {
@@ -468,7 +482,7 @@ app.get("/api/app/community", async (c) => {
 });
 
 // Knowledge: the global base (ReStep, versioned, in the knowledge Worker) and what the team created
-type KnowledgeApp = { id: string; name: string; internal?: boolean; bundle_id: string | null; current_version: string; versions: { id: string; label: string | null }[]; skills: number; sources: number; proven: number; atoms: number; tutorials: number };
+type KnowledgeApp = { id: string; name: string; internal?: boolean; mine?: boolean; bundle_id: string | null; current_version: string; versions: { id: string; label: string | null }[]; skills: number; sources: number; proven: number; atoms: number; tutorials: number };
 
 app.get("/api/app/knowledge", async (c) => {
   const [overview, tuts, own] = await Promise.all([
@@ -480,6 +494,7 @@ app.get("/api/app/knowledge", async (c) => {
     available: !!overview,
     global: (overview?.apps ?? []).map((a) => ({
       internal: !!a.internal,
+      mine: !!a.mine,
       app: { id: a.id, name: a.name, versions: a.versions, current_version: a.current_version },
       skills: a.skills,
       sources: a.sources,
@@ -520,6 +535,15 @@ app.delete("/api/app/knowledge/docs/:id", async (c) => {
   if (!canManage(c)) return forbidden(c);
   const r = await kn<{ ok?: boolean; error?: string }>(c, `/sources/${encodeURIComponent(c.req.param("id"))}`, {}, { method: "DELETE" });
   return r?.ok ? c.json({ ok: true }) : c.json({ error: r?.error ?? "Could not remove it" }, 404);
+});
+
+/** Shares one of the team's own tools with every organization, like Blender, or makes it private again (owners and admins). */
+app.post("/api/app/knowledge/apps/:id/share", async (c) => {
+  if (!canManage(c)) return forbidden(c);
+  const { shared } = await c.req.json<{ shared?: boolean }>().catch(() => ({ shared: undefined }));
+  const r = await kn<{ id?: string; shared?: boolean; error?: string }>(c, `/apps/${encodeURIComponent(c.req.param("id"))}/share`, { private: shared === false ? "1" : null }, { method: "POST" });
+  if (!r) return c.json({ error: "The knowledge base is unreachable" }, 502);
+  return r.error ? c.json({ error: r.error }, 409) : c.json(r);
 });
 
 /** ReStep's graph view for one app: sources -> skills -> UI atoms. */

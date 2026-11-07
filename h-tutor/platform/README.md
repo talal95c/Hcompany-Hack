@@ -19,7 +19,8 @@ token is stored, and the token itself is shown once.
 
 | Route | Returns |
 |---|---|
-| `GET /v1/search?q=&app=&version=` | The best skills for a goal, with steps for the learner's version, proof status and sources. Searches ReStep knowledge and the organization's own tutorials |
+| `GET /v1/apps` | The apps the organization can search: the shared ones (Blender, DaVinci Resolve, tools other teams shared) and its own tools |
+| `GET /v1/search?q=&app=&version=` | The best skills for a goal, with steps for the learner's version, proof status and sources. Searches ReStep knowledge and the organization's own tutorials. `app` takes an app's name (any case, `Blender 5.2` works) or id from `/v1/apps`; an app the organization cannot see returns 404 with the list of those it can |
 | `GET /v1/tutorials` | The organization's tutorials and the shared library, as Rio palette entries |
 | `GET /v1/tutorials/<id>?version=` | One tutorial in Rio's milestone format |
 | `POST /v1/events` | `tutorial_started`, `milestone_done`, `milestone_skipped`, `tutorial_finished` and `tutorial_abandoned` events, for the usage page |
@@ -67,6 +68,6 @@ An invitation is for one email: the Google account must use that email to accept
 
 ## Security
 - Each organization reads only its own data: every query is filtered by the organization of the session or the token.
-- Members can read. Owners and admins manage tutorials, members and tokens.
+- Members can read. Owners and admins manage tutorials, members and tokens, and share the team's own tools with every organization (any organization's admin can do it: there is no platform-wide review yet).
 - API keys are Worker secrets: they are never in D1, responses or the console.
 - There is no email service yet, so invitations are links shown in the console.

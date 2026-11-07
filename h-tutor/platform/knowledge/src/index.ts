@@ -8,11 +8,13 @@
 //   GET /tutorials?app=                    sources read as whole tutorials
 //   GET /tutorials/:id?version=&format=rio a tutorial re-targeted, optionally in Rio's milestone format
 //   GET /locate?app=&q=&version=           where a UI element is now, under any name it has had
+//   POST /ingest                           an organization's Markdown doc, read into skills (a new tool if needed)
+//   POST /apps/:id/share?workspace=        share an organization's own tool with everyone (?private=1: undo)
 // No public route (workers_dev = false): the platform calls it through a service binding.
 
 import { norm } from "./core/inventory.ts";
 import type { Successor, Where } from "./core/inventory.ts";
-import { type IngestBody, ingest, listSources, removeSource } from "./ingest.ts";
+import { type IngestBody, ingest, listSources, removeSource, share } from "./ingest.ts";
 import { semantic, syncVectors } from "./vectors.ts";
 import { type Claim, type Grounding, type Lookup, type PathStep, type Skill, path, resolve } from "./core/retarget.ts";
 
@@ -34,6 +36,8 @@ interface AppRow {
   vendor: string | null;
   current_version: string;
   grounding: string;
+  workspace?: string | null;
+  owner?: string | null;
 }
 interface VersionRow {
   version: string;
@@ -225,7 +229,7 @@ async function search(env: Env, apps: Apps, url: URL) {
   // fts: ReStep's words search · vec: Qwen3 embeddings · hybrid (default): both, fused by rank
   const mode = (p("mode") ?? (env.AI ? "hybrid" : "fts")) as "fts" | "vec" | "hybrid";
   const targets = await apps.match(p("app"));
-  if (!targets.length) return { results: [] };
+  if (!targets.length) return { results: [], unknown_app: p("app"), apps: (await apps.all()).apps.map((a) => a.name) };
   const { versions } = await apps.all();
   const limit = Math.min(Number(p("limit")) || 5, 10);
   const all = [...new Set(sets.flat())];
@@ -497,7 +501,9 @@ async function overview(env: Env, apps: Apps) {
     apps: all.map((a) => ({
       id: a.id,
       name: a.name,
-      internal: !!(a as AppRow & { workspace?: string | null }).workspace,
+      internal: !!a.workspace,
+      // Created from this organization's docs (private, or shared with everyone by it): it can share it or take it back.
+      mine: !!apps.ws && a.owner === apps.ws,
       vendor: a.vendor,
       bundle_id: BUNDLES[a.id] ?? null,
       current_version: a.current_version,
@@ -562,7 +568,7 @@ export default {
       if (!body.workspace || !body.app?.trim() || !body.text) return json({ error: "workspace, app and text are required" }, 400);
       try {
         const r = await ingest(env, body);
-        await syncVectors(env, { workspace: body.workspace }).catch(() => {}); // the new skills become searchable by meaning
+        await syncVectors(env, { app: r.app.id }).catch(() => {}); // the new skills become searchable by meaning
         return json(r);
       } catch (e) {
         return json({ error: e instanceof Error ? e.message : String(e) }, 422);
@@ -572,8 +578,14 @@ export default {
     if (req.method === "DELETE" && del) {
       if (!apps.ws) return json({ error: "workspace required" }, 400);
       const ok = await removeSource(env.DB, apps.ws, decodeURIComponent(del[1]));
-      if (ok) await syncVectors(env, { workspace: apps.ws }).catch(() => {});
+      if (ok) await syncVectors(env, { app: ok }).catch(() => {});
       return ok ? json({ ok: true }) : json({ error: "unknown source" }, 404);
+    }
+    const sh = url.pathname.match(/^\/apps\/([^/]+)\/share$/);
+    if (req.method === "POST" && sh) {
+      if (!apps.ws) return json({ error: "workspace required" }, 400);
+      const r = await share(env.DB, apps.ws, decodeURIComponent(sh[1]), url.searchParams.get("private") !== "1");
+      return r.ok ? json(r.app) : json({ error: r.error }, r.status);
     }
     // Embeds what changed (after an import: `curl -X POST .../vectors/sync`).
     if (req.method === "POST" && url.pathname === "/vectors/sync") return json(await syncVectors(env, { app: url.searchParams.get("app") ?? undefined }));

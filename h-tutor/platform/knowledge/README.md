@@ -36,6 +36,20 @@ Everything an organization adds stays private. That covers its internal tools, i
 teaches, and its rows in the search index. Other organizations still see the shared skill as before. `DELETE /sources/:id`
 removes a document, and the skills only it taught go with it. Re-ingesting the same document replaces it.
 
+The console sends several Markdown files one after the other: each is its own source, and all of them build the same
+tool's inventory and graph. Holo's answer has no `version` field: with nothing to write, constrained decoding padded it with
+spaces until `max_tokens`, so the JSON never closed. The version comes from the person adding the docs. An answer cut off
+anyway is asked again once, then reported as such.
+
+### Sharing a tool with every organization
+`POST /apps/:id/share?workspace=` shares a tool an organization created from its docs, like the apps imported from ReStep.
+Add `private=1` to make it private again. `app.owner` (`migrations/0004_app_owner.sql`) keeps the organization that created it:
+- Everything its owner taught moves to the shared scope (`workspace` NULL, `''` for vectors): sources, skills, tutorials and
+  search rows. Docs the owner adds later go there too, and it can still remove them.
+- Other organizations see the tool, search it, and can add their own docs to it. Those docs stay private to them, as on Blender.
+- Making it private again is refused while another organization has docs on it. Sharing is refused if a shared tool already
+  has that name.
+
 ## Search: words and meaning
 `/search` fuses two rankings with reciprocal rank fusion:
 - **Words**: FTS5 with BM25, plus ReStep's rule that at least half of the question's words must match. This side is the
@@ -81,6 +95,7 @@ On top of these layers:
 | `GET /graph?app=` | ReStep's graph view: sources → skills → UI atoms, each atom labelled as it is now |
 | `GET /apps` | Apps, versions and sizes |
 | `POST /ingest` · `GET /sources` · `DELETE /sources/:id` | An organization's documents (always with `workspace`) |
+| `POST /apps/:id/share` | Share an organization's own tool with everyone, or `?private=1` to take it back |
 
 ## Load ReStep's data
 ```sh

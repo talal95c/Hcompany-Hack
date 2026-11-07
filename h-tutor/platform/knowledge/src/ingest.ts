@@ -39,12 +39,12 @@ async function structure(env: IngestEnv, app: string, text: string, title?: stri
   if (!env.HAI_API_KEY) throw new Error("HAI_API_KEY is not set on the knowledge Worker");
   const out = { title: title ?? "", version: "", paths: [] as StructPath[] };
   for (const chunk of chunkMarkdown(text)) {
-    // The H API sometimes stalls a request: give each attempt a deadline, and try twice.
-    let r: Response | null = null;
+    // The H API sometimes stalls a request or cuts an answer off: give each attempt a deadline, and try twice.
+    let d: Awaited<ReturnType<typeof parsed>> = null;
     let last = "";
-    for (let attempt = 0; attempt < 2 && !r?.ok; attempt++) {
+    for (let attempt = 0; attempt < 2 && !d; attempt++) {
       try {
-        r = await fetch("https://api.hcompany.ai/v1/chat/completions", {
+        const r = await fetch("https://api.hcompany.ai/v1/chat/completions", {
           method: "POST",
           signal: AbortSignal.timeout(60_000),
           headers: { authorization: `Bearer ${env.HAI_API_KEY}`, "content-type": "application/json" },
@@ -57,20 +57,30 @@ async function structure(env: IngestEnv, app: string, text: string, title?: stri
             structured_outputs: { json: STRUCT_SCHEMA },
           }),
         });
-        if (!r.ok) last = `${r.status}: ${(await r.clone().text()).slice(0, 200)}`;
+        if (!r.ok) last = `${r.status}: ${(await r.text()).slice(0, 200)}`;
+        else if (!(d = await parsed(r))) last = "its answer was cut off: split this document into smaller ones";
       } catch (e) {
         last = e instanceof Error ? e.message : String(e);
-        r = null;
       }
     }
-    if (!r?.ok) throw new Error(`Holo could not read the document (${last})`);
-    const v = (await r.json()) as { choices?: { message?: { content?: string } }[] };
-    const d = JSON.parse(v.choices?.[0]?.message?.content ?? "{}") as { title?: string; version?: string; paths?: StructPath[] };
+    if (!d) throw new Error(`Holo could not read the document (${last})`);
     out.title ||= d.title ?? "";
     out.version ||= d.version ?? "";
     out.paths.push(...(d.paths ?? []).filter((p) => p.steps?.length).map(clean));
   }
   return out;
+}
+
+/** Holo's structured answer, or null when it is cut off (max_tokens) or not JSON. */
+async function parsed(r: Response): Promise<{ title?: string; version?: string; paths?: StructPath[] } | null> {
+  try {
+    const v = (await r.json()) as { choices?: { finish_reason?: string; message?: { content?: string } }[] };
+    const c = v.choices?.[0];
+    if (!c?.message?.content || c.finish_reason === "length") return null;
+    return JSON.parse(c.message.content);
+  } catch {
+    return null;
+  }
 }
 
 /** What models write for "nothing" ("none", "n/a"), UI chains in one string ("Orders › All orders"),
@@ -121,19 +131,23 @@ export async function ingest(env: IngestEnv, body: IngestBody) {
   const { results: apps } = await db
     .prepare(`select * from app where workspace is null or workspace = ?`)
     .bind(ws)
-    .all<{ id: string; name: string; current_version: string; grounding: string; workspace: string | null }>();
-  let app = apps.find((a) => norm(a.name) === norm(body.app) || a.id === body.app);
-  const internal = !app || app.workspace === ws;
+    .all<{ id: string; name: string; current_version: string; grounding: string; workspace: string | null; owner: string | null }>();
+  // This organization's own tool first, so a shared app with the same name does not take its docs.
+  let app = apps.find((a) => a.workspace === ws && (norm(a.name) === norm(body.app) || a.id === body.app)) ?? apps.find((a) => norm(a.name) === norm(body.app) || a.id === body.app);
+  // Its own tool (private, or shared by it): the docs also build the tool's inventory.
+  const internal = !app || app.owner === ws;
   if (!app) {
     const id = `w${await sha(ws, 6)}-${slug(body.app)}`;
     const version = blank(body.version) ?? "current";
     await db.batch([
-      db.prepare(`insert into app (id, name, vendor, current_version, grounding, imported_at, workspace) values (?,?,?,?,?,?,?)`).bind(id, body.app.trim(), null, version, "{}", Date.now(), ws),
+      db.prepare(`insert into app (id, name, vendor, current_version, grounding, imported_at, workspace, owner) values (?,?,?,?,?,?,?,?)`).bind(id, body.app.trim(), null, version, "{}", Date.now(), ws, ws),
       db.prepare(`insert into app_version (app, version, label, covers_from, year) values (?,?,?,?,?)`).bind(id, version, `${body.app.trim()} ${version}`, "0", null),
     ]);
-    app = { id, name: body.app.trim(), current_version: version, grounding: "{}", workspace: ws };
+    app = { id, name: body.app.trim(), current_version: version, grounding: "{}", workspace: ws, owner: ws };
   }
-  const version = app.workspace === ws ? app.current_version : app.current_version; // shared apps: the current interface
+  const version = app.current_version; // shared apps: the current interface
+  // Where the doc's knowledge goes: shared when the organization shared its own tool, otherwise private to it.
+  const scope = writeScope(app, ws);
   const g: Grounding = { nav_ops: [], routine_ops: [], menu_openers: [], confirm_ops: [], ...JSON.parse(app.grounding) };
 
   // 2. Structure.
@@ -184,7 +198,7 @@ export async function ingest(env: IngestEnv, body: IngestBody) {
 
   const stmts: D1PreparedStatement[] = [
     db.prepare(`insert into source (id, workspace, app, url, kind, title, author, language, stated_version, version, added_at) values (?,?,?,?,?,?,?,?,?,?,?)`)
-      .bind(sid, ws, app.id, blank(body.url), "doc", struct.title || title, null, null, blank(struct.version), version, Date.now() / 1000),
+      .bind(sid, scope, app.id, blank(body.url), "doc", struct.title || title, null, null, blank(struct.version), version, Date.now() / 1000),
   ];
   const touched = new Set<string>();
   const tutorialSkills: string[] = [];
@@ -221,7 +235,7 @@ export async function ingest(env: IngestEnv, body: IngestBody) {
       created++;
       stmts.push(
         db.prepare(`insert into skill (id, app, name, effect_atom, ops_json, steps_json, workspace) values (?,?,?,?,?,?,?)`)
-          .bind(skillId, app.id, p.intent, effectOp(ops, g), JSON.stringify(ops), JSON.stringify(claimIds), ws),
+          .bind(skillId, app.id, p.intent, effectOp(ops, g), JSON.stringify(ops), JSON.stringify(claimIds), scope),
       );
       skillRows.push({ id: skillId, name: p.intent, effect_atom: effectOp(ops, g), ops_json: JSON.stringify(ops) });
     }
@@ -234,15 +248,15 @@ export async function ingest(env: IngestEnv, body: IngestBody) {
   }
   stmts.push(
     db.prepare(`insert or replace into tutorial (id, app, source_id, title, version, skills_json, workspace) values (?,?,?,?,?,?,?)`)
-      .bind(`t_${sid}`, app.id, sid, struct.title || title, version, JSON.stringify([...new Set(tutorialSkills)]), ws),
+      .bind(`t_${sid}`, app.id, sid, struct.title || title, version, JSON.stringify([...new Set(tutorialSkills)]), scope),
   );
   for (let i = 0; i < stmts.length; i += 80) await db.batch(stmts.slice(i, i + 80));
-  await reindex(db, ws, app.id, [...touched], v);
+  await reindex(db, scope, app.id, [...touched], v);
 
   return {
     source: sid,
     title: struct.title || title,
-    app: { id: app.id, name: app.name, internal: app.workspace === ws },
+    app: { id: app.id, name: app.name, internal: app.workspace === ws, shared: app.workspace === null, mine: app.owner === ws },
     version,
     skills: struct.paths.length,
     new_skills: created,
@@ -262,25 +276,25 @@ async function placements(db: D1Database, app: string, version: string): Promise
 }
 
 /**
- * This organization's search rows for some skills: the skill's name, what its sources (shared and this organization's)
- * say, its UI labels and notes. Shared rows (workspace NULL) are left as the import made them.
+ * The search rows of one scope for some skills: the skill's name, what that scope's sources say, its UI labels and notes.
+ * The scope is an organization, or NULL for a tool its owner shared (`is ?` matches both).
  */
-async function reindex(db: D1Database, ws: string, app: string, skills: string[], v: ReturnType<typeof view>) {
+async function reindex(db: D1Database, ws: string | null, app: string, skills: string[], v: ReturnType<typeof view>) {
   for (const id of skills) {
     const skill = await db.prepare(`select name, ops_json, workspace from skill where id = ?`).bind(id).first<{ name: string; ops_json: string; workspace: string | null }>();
-    await db.prepare(`delete from skill_search where skill_id = ? and workspace = ?`).bind(id, ws).run();
+    await db.prepare(`delete from skill_search where skill_id = ? and workspace is ?`).bind(id, ws).run();
     if (!skill) continue;
     const { results: said } = await db
       .prepare(
         `select c.say, seg.intent from teaches t join segment seg on seg.id = t.segment_id join source s on s.id = seg.source_id
          join claim c on c.source_id = s.id and instr(seg.steps_json, '"' || c.id || '"') > 0
-         where t.skill_id = ? and s.workspace = ?`,
+         where t.skill_id = ? and s.workspace is ?`,
       )
       .bind(id, ws)
       .all<{ say: string | null; intent: string | null }>();
     if (!said.length && skill.workspace !== ws) continue; // nothing of this organization's left on a shared skill
     const { results: notes } = await db
-      .prepare(`select n.text from note n join source s on s.id = n.source_id where n.skill_id = ? and s.workspace = ?`)
+      .prepare(`select n.text from note n join source s on s.id = n.source_id where n.skill_id = ? and s.workspace is ?`)
       .bind(id, ws)
       .all<{ text: string }>();
     const labels = (JSON.parse(skill.ops_json) as string[]).map((o) => v.ops.get(o)?.label ?? "");
@@ -289,10 +303,14 @@ async function reindex(db: D1Database, ws: string, app: string, skills: string[]
   }
 }
 
-/** Removes one of this organization's sources, and what only it taught. */
-export async function removeSource(db: D1Database, ws: string, sid: string) {
-  const src = await db.prepare(`select id, app, workspace from source where id = ?`).bind(sid).first<{ id: string; app: string; workspace: string | null }>();
-  if (!src || src.workspace !== ws) return false;
+/** Removes one of this organization's sources (private, or in a tool it shared), and what only it taught. Returns its app. */
+export async function removeSource(db: D1Database, ws: string, sid: string): Promise<string | false> {
+  const src = await db
+    .prepare(`select s.id, s.app, s.workspace, a.owner from source s join app a on a.id = s.app where s.id = ?`)
+    .bind(sid)
+    .first<{ id: string; app: string; workspace: string | null; owner: string | null }>();
+  if (!src || !(src.workspace === ws || (src.workspace === null && src.owner === ws))) return false;
+  const scope = src.workspace;
   const { results } = await db
     .prepare(`select distinct t.skill_id from teaches t join segment s on s.id = t.segment_id where s.source_id = ?`)
     .bind(sid)
@@ -303,25 +321,57 @@ export async function removeSource(db: D1Database, ws: string, sid: string) {
     if (!left?.n) {
       await db.batch([
         db.prepare(`delete from skill_search where skill_id = ?`).bind(skill_id),
-        db.prepare(`delete from skill where id = ? and workspace = ?`).bind(skill_id, ws),
+        db.prepare(`delete from skill where id = ? and workspace is ?`).bind(skill_id, scope),
       ]);
     } else {
-      await reindex(db, ws, src.app, [skill_id], view(await placements(db, src.app, (await db.prepare(`select current_version as v from app where id = ?`).bind(src.app).first<{ v: string }>())!.v)));
+      await reindex(db, scope, src.app, [skill_id], view(await placements(db, src.app, (await db.prepare(`select current_version as v from app where id = ?`).bind(src.app).first<{ v: string }>())!.v)));
     }
   }
-  return true;
+  return src.app;
 }
 
 /** This organization's documents. */
 export async function listSources(db: D1Database, ws: string) {
   const { results } = await db
     .prepare(
-      `select s.id, s.title, s.url, s.added_at, a.id as app_id, a.name as app_name, a.workspace as app_workspace,
+      `select s.id, s.title, s.url, s.added_at, a.id as app_id, a.name as app_name, a.workspace as app_workspace, a.owner as app_owner,
         (select count(distinct t.skill_id) from teaches t join segment g on g.id = t.segment_id where g.source_id = s.id) as skills,
         (select count(*) from claim c where c.source_id = s.id) as steps
-       from source s join app a on a.id = s.app where s.workspace = ? order by s.added_at desc`,
+       from source s join app a on a.id = s.app
+       where s.workspace = ? or (s.workspace is null and a.owner = ?) order by s.added_at desc`,
     )
-    .bind(ws)
+    .bind(ws, ws)
     .all();
-  return results.map((r) => ({ ...r, internal: r.app_workspace === ws }));
+  return results.map(({ app_owner, ...r }) => ({ ...r, internal: app_owner === ws, shared: r.app_workspace === null }));
+}
+
+/** Where an organization's doc about an app goes: shared if the organization shared its own tool, otherwise private. */
+export const writeScope = (app: { workspace: string | null; owner: string | null }, ws: string): string | null =>
+  app.workspace === null && app.owner === ws ? null : ws;
+
+type ShareResult = { ok: true; app: { id: string; name: string; shared: boolean } } | { ok: false; status: number; error: string };
+
+/**
+ * Shares an organization's own tool with every organization, like the apps imported from ReStep, or makes it private
+ * again. Everything its owner taught moves with it: sources, skills, tutorials, search rows and their vectors.
+ * Making it private again is refused once another organization has added its own docs to it.
+ */
+export async function share(db: D1Database, ws: string, appId: string, shared: boolean): Promise<ShareResult> {
+  const app = await db.prepare(`select id, name, workspace, owner from app where id = ?`).bind(appId).first<{ id: string; name: string; workspace: string | null; owner: string | null }>();
+  if (!app || app.owner !== ws) return { ok: false, status: 404, error: "Only the team that created this tool can share it" };
+  if (shared === (app.workspace === null)) return { ok: true, app: { id: app.id, name: app.name, shared } };
+  const [from, to, vFrom, vTo] = shared ? [ws, null, ws, ""] : [null, ws, "", ws];
+  if (shared) {
+    const { results } = await db.prepare(`select name from app where workspace is null`).all<{ name: string }>();
+    if (results.some((r) => norm(r.name) === norm(app.name))) return { ok: false, status: 409, error: `A shared tool is already called ${app.name}: rename yours first` };
+  } else {
+    const other = await db.prepare(`select count(*) as n from source where app = ? and workspace is not null and workspace != ?`).bind(app.id, ws).first<{ n: number }>();
+    if (other?.n) return { ok: false, status: 409, error: `${other.n === 1 ? "A document" : `${other.n} documents`} from other teams ${other.n === 1 ? "uses" : "use"} ${app.name}: it stays shared` };
+  }
+  await db.batch([
+    db.prepare(`update app set workspace = ? where id = ?`).bind(to, app.id),
+    ...["source", "skill", "tutorial", "skill_search"].map((t) => db.prepare(`update ${t} set workspace = ? where app = ? and workspace is ?`).bind(to, app.id, from)),
+    db.prepare(`update skill_vector set workspace = ? where app = ? and workspace = ?`).bind(vTo, app.id, vFrom),
+  ]);
+  return { ok: true, app: { id: app.id, name: app.name, shared } };
 }
