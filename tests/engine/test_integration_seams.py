@@ -1,6 +1,9 @@
+import asyncio
 import hashlib
 import json
+import os
 import shutil
+import threading
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
@@ -11,6 +14,7 @@ from engine.checks import SceneState, evaluate
 from engine.checks.lesson_steps import evaluate_verification
 from engine.config import EngineConfig
 from engine.interfaces import HoloClient, JevClient, SearchClient, SttClient
+from engine.learner import LearnerMemory
 from engine.lesson import Session, load_lesson, load_verification
 from engine.lesson.runtime import EngineRuntime
 from engine.services.adapters import (
@@ -20,6 +24,9 @@ from engine.services.adapters import (
     SttAdapter,
     build_clients,
 )
+
+from .test_e2e import FIXTURES, replay
+from .test_servers import event
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -125,3 +132,38 @@ def test_blender_edit_mesh_mode_matches_lesson_edit_precondition():
     assert not session.observe("OBJECT")
     assert session.observe("EDIT_MESH")
     assert session.status == "OBSERVING"
+
+
+async def test_feedback_precedes_learner_disk_flush(tmp_path, monkeypatch):
+    entered, release = threading.Event(), threading.Event()
+    original_fsync = os.fsync
+
+    def blocked_fsync(fd):
+        entered.set()
+        if not release.wait(3):
+            raise TimeoutError("Test disk flush was not released")
+        return original_fsync(fd)
+
+    lesson = load_lesson(FIXTURES / "extended_lesson.json")
+    async with replay(tmp_path, lesson=lesson) as harness:
+        await harness.row(event(), ("request_snapshot",))
+        await harness.row(event("snapshot", 2, 0, mode="OBJECT", active=None, objects=[]))
+        monkeypatch.setattr("engine.learner.os.fsync", blocked_fsync)
+        modified = {"id": "torus", "type": "MESH", "primitive_provenance": "torus",
+                    "mesh": {"verts": 576, "edges": 1152, "polys": 576},
+                    "modifiers": [{"type": "SUBSURF", "levels": 2}]}
+        row = asyncio.create_task(harness.row(
+            event("snapshot", 3, 1, mode="OBJECT", active="torus", objects=[modified]),
+            ("success",)))
+        try:
+            assert await asyncio.to_thread(entered.wait, 2)
+            await harness.wait_for(lambda: any(c["type"] == "success"
+                                              for c, _ in harness.commands))
+            assert harness.runtime.session.status == "PASSED"
+            assert harness.runtime.session.step_id == lesson["steps"][0]["id"]
+            assert not harness.runtime.learner.path.exists()
+            assert not row.done()
+        finally:
+            release.set()
+            await row
+        assert LearnerMemory(harness.runtime.learner.path).skills == harness.runtime.learner.skills

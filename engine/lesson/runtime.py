@@ -296,8 +296,14 @@ class EngineRuntime:
                             - event["ts_monotonic_ms"])
         if result.status == "pass" and decision and decision.kind == "success":
             session.transition("PASSED")
-            self.learner.review(session.step["skill_id"], passed=True, help_level=self.max_help,
-                                challenge=session.step.get("challenge", False))
+            save = asyncio.create_task(asyncio.to_thread(
+                self.learner.review, session.step["skill_id"], passed=True,
+                help_level=self.max_help, challenge=session.step.get("challenge", False)))
+            try:
+                await asyncio.shield(save)
+            except asyncio.CancelledError:
+                await save
+                raise
             session.advance(session.generation)
             self.invalidate_native()
             await self.preloader.cancel()

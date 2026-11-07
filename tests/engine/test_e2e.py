@@ -156,8 +156,9 @@ class Replay:
         actual = [c["type"] for c, _ in self.commands[command_count:]]
         assert actual == list(expected_commands), (message["seq"], actual)
         if fresh:
-            sent = [t for m, t in self.messages[message_count:] if m["type"] != "pong"]
-            sent += [t for _, t in self.commands[command_count:]]
+            sent = [t for _, t in self.commands[command_count:]]
+            if not sent:
+                sent = [t for m, t in self.messages[message_count:] if m["type"] != "pong"]
             assert sent
             self.latencies.append((max(sent) - start) * 1000)
         return fresh
