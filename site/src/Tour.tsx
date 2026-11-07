@@ -11,6 +11,7 @@ const STEPS: { sel: string; text: string }[] = [
   { sel: ".toggle-row", text: "Switch monthly or annual billing" },
   { sel: ".plan-dark", text: "Team plan, for a whole team" },
   { sel: ".plan", text: "Free plan to get started" },
+  { sel: ".rf", text: "What Rio does for you" },
   { sel: ".footer form, .footer input", text: "Get Rio news by email" },
   { sel: ".footer-cols", text: "All the links live here" },
 ];

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Footer, Hero, Nav, Pricing } from "./sections";
+import { Features, Footer, Hero, Nav, Pricing } from "./sections";
 import { GhostCursor } from "./cursor";
 import { Intro } from "./Intro";
 import { Tour } from "./Tour";
@@ -16,9 +16,15 @@ export default function App() {
           <main className="page">
             <Hero />
             <Pricing />
+            <Features />
           </main>
           <Footer />
           {phase === "done" && <Tour />}
+          <div className="vhs-in" aria-hidden>
+            <span className="vhs-band" />
+            <span className="vhs-band vhs-band--2" />
+            <span className="vhs-osd">PLAY ►<em>SP 0:00:01</em></span>
+          </div>
         </div>
       )}
     </>

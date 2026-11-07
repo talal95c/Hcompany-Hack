@@ -30,7 +30,7 @@ export function Intro({ onEnter, onGone }: { onEnter: () => void; onGone: () => 
   const finish = () => {
     setLeaving(true);
     onEnter();
-    window.setTimeout(onGone, 1200);
+    window.setTimeout(onGone, 600);
   };
 
   function enter(e: React.MouseEvent<HTMLButtonElement>) {

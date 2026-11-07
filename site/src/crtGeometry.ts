@@ -1,4 +1,4 @@
-export const ZOOM_DURATION = 1150;
+export const ZOOM_DURATION = 650;
 export const COLUMNS = 19;
 export const ROWS = 3;
 export const GRID_X = 12;

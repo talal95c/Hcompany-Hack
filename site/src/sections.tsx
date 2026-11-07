@@ -16,6 +16,7 @@ import {
   Ticker,
 } from "./ui";
 import { APP_ICONS } from "./appIcons";
+import { RioArrow } from "./cursor";
 
 
 /* ---------------- Nav ---------------- */
@@ -756,6 +757,45 @@ export function FaqInsights() {
           </div>
         </div>
 
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- Features ---------------- */
+
+const FEATURES = [
+  { k: "Ghost cursor", t: "See where to click", d: "An orange cursor points to the exact button, menu or field you need next." },
+  { k: "Verified steps", t: "Checked on screen", d: "After every action Rio looks at your screen and only moves on when the step is done." },
+  { k: "Voice", t: "Ask out loud", d: "Speak your question mid-task. Gladia transcribes it live, Rio answers in context." },
+  { k: "Local speech", t: "Answers in your language", d: "Gradium voice runs on your Mac and speaks the language you learn in." },
+  { k: "Menu bar", t: "One shortcut away", d: "Press ⌥⇧Space from any app. Rio opens on top of what you are doing." },
+  { k: "Journal", t: "Every lesson saved", d: "Sessions are journaled as milestone tutorials you can replay or share." },
+];
+
+export function Features() {
+  return (
+    <section className="rfeatures" id="features">
+      <div className="rfeatures-head">
+        <Label text="FEATURES" />
+        <Reveal as="h2" className="h2-54">A tutor that sees your screen.</Reveal>
+      </div>
+      <div className="rf-grid">
+        {FEATURES.map((f, i) => (
+          <motion.article
+            key={f.k}
+            className="rf"
+            initial={{ opacity: 0, y: 40, filter: "blur(8px)" }}
+            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            viewport={{ once: true, margin: "-10% 0px" }}
+            transition={{ duration: 0.8, ease: EASE, delay: (i % 3) * 0.08 }}
+          >
+            <span className="rf-k">{String(i + 1).padStart(2, "0")} / {f.k}</span>
+            <h3 className="rf-t">{f.t}</h3>
+            <p className="p-16 rf-d">{f.d}</p>
+            <span className="rf-arrow"><RioArrow size={22} /></span>
+          </motion.article>
+        ))}
       </div>
     </section>
   );
