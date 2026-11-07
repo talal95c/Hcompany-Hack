@@ -486,3 +486,9 @@ ul { list-style: none; }
 .footer-wordmark { font-size: 44px; line-height: 44px; font-weight: 700; letter-spacing: -1.5px; }
 .footer-word { position: absolute; left: -10px; bottom: -150px; font-size: 520px; line-height: 1; font-weight: 800; letter-spacing: -30px; color: #fff; white-space: nowrap; pointer-events: none; }
 @media (max-width: 700px) { .footer-word { font-size: 220px; bottom: -60px; letter-spacing: -10px; } }
+@media (max-width: 700px) {
+  .hero-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 62%; z-index: 0; background: linear-gradient(180deg, rgba(240, 240, 240, 0.95) 0%, rgba(240, 240, 240, 0.85) 65%, rgba(240, 240, 240, 0) 100%); pointer-events: none; }
+  .hero-content { z-index: 1; }
+  .footer::before { content: ""; position: absolute; inset: 0; z-index: 0; background: rgba(10, 18, 10, 0.55); pointer-events: none; }
+  .footer-inner { z-index: 1; }
+}
