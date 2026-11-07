@@ -1,20 +1,24 @@
-/* Shape rule: surfaces 16, cards 12, controls 8, buttons pill. Neutral black and white, one orange accent (as the cursor), no glow. */
+/* Shape rule: surfaces 20px, cards 14px, controls 8px, buttons pill. */
 :root {
-  --bar: #0b0b0b;
-  --line: rgba(255, 255, 255, 0.08);
-  --hover: rgba(255, 255, 255, 0.07);
+  --bar: rgba(16, 16, 20, 0.82);
+  --line: rgba(255, 255, 255, 0.14);
+  --hover: rgba(255, 255, 255, 0.04);
   --chip: rgba(255, 255, 255, 0.14);
   --text: #ffffff;
   --dim: rgba(255, 255, 255, 0.62);
-  --faint: rgba(255, 255, 255, 0.36);
+  --faint: rgba(255, 255, 255, 0.38);
   --ink: #0b0b0b;
-  --accent: #ff9a4d;
-  --grad: linear-gradient(90deg, #ffc078, #ff7a1a);
-  --ok: #b4c7a6;
+  --accent: #ff7a1a;
+  --grad: linear-gradient(145deg, #ffc078, #ff7a1a 55%, #d9420b);
+  --ok: var(--text);
+  --mono: "Geist Mono Variable", monospace;
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
   --display: "Geist Variable", -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-  --danger: #ff6961;
+  --danger: var(--text);
   color-scheme: dark;
 }
+
+html[data-material="native"] { --bar: rgba(18, 18, 22, 0.55); }
 
 * { box-sizing: border-box; }
 
@@ -32,27 +36,27 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 p { margin: 0; }
 
 /* The native window is exactly the shell: the bar, plus the palette above it. */
-.shell { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.shell { display: flex; flex-direction: column; align-items: center; gap: 0; }
 
 .bar {
   width: 560px;
   max-width: 100%;
-  border-radius: 16px;
-  padding: 6px;
-  animation: rise 420ms cubic-bezier(0.23, 1, 0.32, 1);
+  border-radius: 20px;
+  padding: 16px;
+  animation: rise 240ms var(--ease);
 }
-@keyframes rise { from { opacity: 0; transform: translateY(10px) scale(0.98); filter: blur(8px); } }
+@keyframes rise { from { opacity: 0; transform: translateY(6px) scale(0.95); filter: blur(6px); } }
 
 /* Black glass: a grey-to-black gradient, an even dot grid, one hairline border. */
 .bar, .palette {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background: linear-gradient(rgba(28, 28, 28, 0.94) 0%, rgba(10, 10, 10, 0.96) 55%, rgba(0, 0, 0, 0.97) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: var(--bar);
+  border: 1px solid var(--line);
   -webkit-backdrop-filter: blur(24px);
   backdrop-filter: blur(24px);
-  box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 16px 40px -16px rgba(0,0,0,0.45);
 }
 .bar::before, .palette::before {
   content: "";
@@ -60,9 +64,8 @@ p { margin: 0; }
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.11) 0.9px, transparent 1.4px);
-  background-size: 16px 16px;
-  background-position: 8px 8px;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='white' filter='url(%23n)' d='M0 0h180v180H0z'/%3E%3C/svg%3E");
 }
 
 .row { display: flex; align-items: center; gap: 10px; }
