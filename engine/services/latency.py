@@ -99,16 +99,19 @@ class LatencyRecorder:
         out: dict[str, dict[str, Any]] = {}
         for key, recs in sorted(groups.items()):
             ok = [r.duration_ms for r in recs if r.status == "ok"]
+            durations = [r.duration_ms for r in recs]
             out[key] = {
                 "n": len(recs),
                 "n_ok": len(ok),
+                "n_timeout": sum(r.status == "timeout" for r in recs),
+                "n_error": sum(r.status not in ("ok", "timeout") for r in recs),
                 "failures": {
                     s: sum(1 for r in recs if r.status == s)
                     for s in {r.status for r in recs}
                     if s != "ok"
                 },
-                "p50_ms": round(percentile(ok, 50), 1) if ok else None,
-                "p95_ms": round(percentile(ok, 95), 1) if ok else None,
+                "p50_ms": round(percentile(durations, 50), 1),
+                "p95_ms": round(percentile(durations, 95), 1),
                 "min_ms": round(min(ok), 1) if ok else None,
                 "max_ms": round(max(ok), 1) if ok else None,
             }

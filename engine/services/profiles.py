@@ -85,3 +85,13 @@ def profile_for_lesson_app(app: Mapping[str, Any]) -> AppProfile:
 def list_profiles() -> list[AppProfile]:
     root = _apps_dir().resolve()
     return [load_profile(path.parent.name) for path in sorted(root.glob("*/profile.json"))]
+
+
+def profile_for_lesson(lesson: Mapping[str, Any]) -> AppProfile:
+    if isinstance(lesson.get("app"), Mapping):
+        return profile_for_lesson_app(lesson["app"])
+    registry = json.loads((_apps_dir() / "legacy.json").read_text(encoding="utf-8"))
+    for field, app_id in registry.items():
+        if field in lesson:
+            return load_profile(app_id)
+    return load_profile(None)

@@ -22,6 +22,8 @@ from engine.services.protocols import SearchResult, SearchSource
 
 SERVICE = "linkup"
 DEFAULT_BASE_URL = "https://api.linkup.so/v1"
+
+
 class LinkupSearchClient:
     """SearchClient réel : `outputType=structured` + `includeSources`."""
 

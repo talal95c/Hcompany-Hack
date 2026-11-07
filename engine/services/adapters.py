@@ -2,6 +2,7 @@
 
 import asyncio
 import io
+import json
 import math
 import os
 import time
@@ -9,7 +10,7 @@ import wave
 
 from engine.config import EngineConfig
 from engine.interfaces import JevDecision, LocalizeResult, SearchHit, Transcript
-from engine.services.profiles import AppProfile, load_profile
+from engine.services.profiles import AppProfile, load_profile, profile_for_lesson
 
 
 class HoloAdapter:
@@ -20,15 +21,24 @@ class HoloAdapter:
         start = time.perf_counter()
         if not hasattr(self.client, "locate_detailed"):
             x, y, confidence = await asyncio.wait_for(
-                self.client.locate(image_png, description), timeout_s)
-            return LocalizeResult(round(x), round(y),
-                                  confidence if math.isfinite(confidence) else None,
-                                  (time.perf_counter() - start) * 1000)
+                self.client.locate(image_png, description), timeout_s
+            )
+            return LocalizeResult(
+                round(x),
+                round(y),
+                confidence if math.isfinite(confidence) else None,
+                (time.perf_counter() - start) * 1000,
+            )
         point = await asyncio.wait_for(
-            self.client.locate_detailed(image_png, description), timeout_s)
-        return LocalizeResult(round(point.x), round(point.y),
-                              point.confidence if math.isfinite(point.confidence) else None,
-                              (time.perf_counter() - start) * 1000, point.target_visible)
+            self.client.locate_detailed(image_png, description), timeout_s
+        )
+        return LocalizeResult(
+            round(point.x),
+            round(point.y),
+            point.confidence if math.isfinite(point.confidence) else None,
+            (time.perf_counter() - start) * 1000,
+            point.target_visible,
+        )
 
     async def aclose(self):
         await self.client.aclose()
@@ -44,18 +54,36 @@ class JevAdapter:
 
         start = time.perf_counter()
         if "utterance" in context:
-            result = await asyncio.wait_for(self.client.classify_intent(
-                context["utterance"], context=context.get("instruction", ""),
-                profile=self.profile), timeout_s)
+            result = await asyncio.wait_for(
+                self.client.classify_intent(
+                    context["utterance"],
+                    context=context.get("instruction", ""),
+                    profile=self.profile,
+                ),
+                timeout_s,
+            )
         else:
-            criteria = {"intervene": "The learner needs help now",
-                        "wait": "Recent progress; let the learner think"}
-            criteria.update({"error_code:" + code: code
-                             for code in context.get("known_errors", [])})
-            result = (await self.client.decide(context, {"action": JevQuestion(
-                "choice", f"Choose whether to help the {self.profile.name} learner. "
-                f"{self.profile.jev_context}", criteria)},
-                timeout_s=timeout_s))["action"]
+            criteria = {
+                "intervene": "The learner needs help now",
+                "wait": "Recent progress; let the learner think",
+            }
+            criteria.update(
+                {"error_code:" + code: code for code in context.get("known_errors", [])}
+            )
+            result = (
+                await self.client.decide(
+                    context,
+                    {
+                        "action": JevQuestion(
+                            "choice",
+                            f"Choose whether to help the {self.profile.name} learner. "
+                            f"{self.profile.jev_context}",
+                            criteria,
+                        )
+                    },
+                    timeout_s=timeout_s,
+                )
+            )["action"]
         return JevDecision(result.choice, None, (time.perf_counter() - start) * 1000)
 
     async def aclose(self):
@@ -83,9 +111,9 @@ class SttAdapter:
             audio = buffer.getvalue()
         elif encoding != "wav":
             raise ValueError("Encodage STT non pris en charge")
-        result = await self.client.transcribe_file(audio, filename="utterance.wav",
-                                                   language=language,
-                                                   vocabulary=self.profile.vocabulary)
+        result = await self.client.transcribe_file(
+            audio, filename="utterance.wav", language=language, vocabulary=self.profile.vocabulary
+        )
         return Transcript(result.text, (time.perf_counter() - start) * 1000)
 
     async def aclose(self):
@@ -105,8 +133,10 @@ class SearchAdapter:
         await self.client.aclose()
 
 
-def build_clients(config: EngineConfig) -> dict:
-    profile = load_profile(getattr(config, "app_id", None) or os.getenv("HCOMPANY_APP"))
+def build_clients(config: EngineConfig, lesson: dict | None = None) -> dict:
+    if lesson is None and config.lesson is not None:
+        lesson = json.loads(config.lesson.read_text(encoding="utf-8"))
+    profile = profile_for_lesson(lesson or {})
     clients = {}
     if os.getenv("HAI_API_KEY"):
         from engine.services.holo import HoloCloudClient

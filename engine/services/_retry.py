@@ -13,6 +13,29 @@ T = TypeVar("T")
 RETRYABLE: tuple[type[Exception], ...] = (ServiceUnavailable, QuotaExceeded, ServiceTimeout)
 
 
+async def hedged(call: Callable[[], Awaitable[T]], threshold: float) -> T:
+    tasks = {asyncio.create_task(call())}
+    try:
+        done, _ = await asyncio.wait(tasks, timeout=threshold)
+        if done:
+            return await next(iter(done))
+        tasks.add(asyncio.create_task(call()))
+        while tasks:
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                try:
+                    return task.result()
+                except RETRYABLE:
+                    if not pending:
+                        raise
+            tasks = pending
+        raise AssertionError("unreachable")
+    finally:
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+
 async def with_retry(
     call: Callable[[], Awaitable[T]],
     *,
@@ -24,11 +47,13 @@ async def with_retry(
     for attempt in range(1, attempts + 1):
         try:
             return await call()
-        except retry_on:
+        except retry_on as exc:
             if attempt == attempts:
                 raise
             delay = min(max_delay, base_delay * 2 ** (attempt - 1))
-            await asyncio.sleep(delay * (0.5 + random.random()))
+            await asyncio.sleep(
+                max(min(max_delay, getattr(exc, "retry_after", 0)), delay * (0.5 + random.random()))
+            )
     raise AssertionError("unreachable")
 
 

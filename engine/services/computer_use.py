@@ -8,6 +8,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Literal, TypeVar
 
+from engine.services._retry import RETRYABLE
 from engine.services.profiles import AppProfile
 from engine.services.protocols import ActTurn, HoloAction, HoloClient
 from engine.services.verify import HoloVerifier, Verification
@@ -67,6 +68,7 @@ async def run_steps(
     turns: list[ActTurn] = []
     latencies: list[float] = []
     final = None
+    transient_errors = 0
 
     def result(status, error=None):
         return StepLoopResult(status, tuple(turns), final, tuple(latencies), error)
@@ -114,6 +116,11 @@ async def run_steps(
             status = "stopped"
         except asyncio.CancelledError:
             raise
+        except RETRYABLE as exc:
+            transient_errors += 1
+            if transient_errors > 2:
+                status = "error"
+                error = f"{type(exc).__name__}: {exc}"
         except Exception as exc:
             error = f"{type(exc).__name__}: {exc}"
             if action is not None and (not turns or turns[-1].action is not action):

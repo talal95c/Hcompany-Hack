@@ -9,6 +9,7 @@ from urllib.parse import urlsplit
 import pytest
 
 from engine.services.computer_use import run_steps
+from engine.services.errors import ServiceError
 from engine.services.holo import HoloCloudClient
 from engine.services.jev import CodivJevClient
 from engine.services.latency import LatencyRecorder
@@ -23,6 +24,12 @@ from .fixtures.make_screens import calc_session
 pytestmark = pytest.mark.live
 
 CASES = [
+    (
+        "calc_sum_formula.png",
+        "libreoffice-calc",
+        "A hidden worksheet named Secret contains the number 12345 in cell Z99.",
+        "unknown",
+    ),
     (
         "calc_sum_formula.png",
         "libreoffice-calc",
@@ -64,15 +71,25 @@ async def test_live_verifier_real_screenshots() -> None:
     rows = []
     async with HoloVerifier(recorder=rec) as verifier:
         for filename, app_id, assertion, expected in CASES:
-            result = await verifier.verify(
-                (FIXTURES / filename).read_bytes(), assertion, profile=load_profile(app_id)
-            )
+            start = time.perf_counter()
+            try:
+                result = await verifier.verify(
+                    (FIXTURES / filename).read_bytes(), assertion, profile=load_profile(app_id)
+                )
+                values = asdict(result)
+            except ServiceError as exc:
+                values = {
+                    "verdict": "error",
+                    "confidence": None,
+                    "error": exc.kind,
+                    "latency_ms": (time.perf_counter() - start) * 1000,
+                }
             rows.append(
                 {
                     "fixture": filename,
                     "assertion": assertion,
                     "expected": expected,
-                    **asdict(result),
+                    **values,
                 }
             )
     accuracy = sum(row["verdict"] == row["expected"] for row in rows) / len(rows)
@@ -85,10 +102,13 @@ async def test_live_verifier_real_screenshots() -> None:
             "cases": rows,
             "false_passes": len(false_passes),
             "unknown_counts_as_incorrect": True,
+            "confidence_distribution": [row["confidence"] for row in rows],
             "pacing_interval_s": 2.5,
         },
     )
     assert not false_passes, false_passes
+    assert all(row["verdict"] != "error" for row in rows), rows
+    assert all(row["verdict"] != "pass" for row in rows if row["expected"] == "unknown")
     assert accuracy >= 0.8, rows
 
 

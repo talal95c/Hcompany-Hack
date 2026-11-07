@@ -7,6 +7,7 @@ import base64
 import json
 import math
 import os
+import time
 from collections.abc import Sequence
 from typing import Any
 
@@ -17,7 +18,7 @@ from openai import (
     AsyncOpenAI,
 )
 
-from engine.services._retry import with_retry
+from engine.services._retry import hedged, with_retry
 from engine.services.errors import (
     InvalidResponse,
     ServiceError,
@@ -36,7 +37,8 @@ from engine.services.protocols import (
 
 SERVICE = "holo"
 DEFAULT_BASE_URL = "https://api.hcompany.ai/v1"
-DEFAULT_MODEL = "holo4-35b-a3b"
+DEFAULT_MODEL = "holo4-27b"
+_NEXT_REQUEST = 0.0
 
 # Préfixes système stables : ne pas les formater par requête, le cache de prompt en dépend.
 LOCATE_SYSTEM_PROMPT = (
@@ -168,8 +170,8 @@ class HoloCloudClient:
         api_key: str | None = None,
         base_url: str = DEFAULT_BASE_URL,
         model: str = DEFAULT_MODEL,
-        locate_timeout_s: float = 5.0,
-        act_timeout_s: float = 10.0,
+        locate_timeout_s: float = 20.0,
+        act_timeout_s: float = 28.0,
         recorder: LatencyRecorder | None = None,
         client: AsyncOpenAI | None = None,
     ) -> None:
@@ -181,6 +183,7 @@ class HoloCloudClient:
         self.act_timeout_s = act_timeout_s
         self.recorder = recorder or LatencyRecorder()
         self._client = client or AsyncOpenAI(api_key=key, base_url=base_url, max_retries=0)
+        self._pace_requests = client is None
 
     async def aclose(self) -> None:
         await self._client.close()
@@ -192,6 +195,29 @@ class HoloCloudClient:
         await self.aclose()
 
     async def _complete(self, operation: str, timeout_s: float, **kwargs: Any) -> Any:
+        async def attempt():
+            global _NEXT_REQUEST
+            if self._pace_requests:
+                now = time.monotonic()
+                slot = max(now, _NEXT_REQUEST)
+                _NEXT_REQUEST = slot + 2.5
+                await asyncio.sleep(slot - now)
+            return await self._complete_attempt(operation, min(timeout_s, 8.0), **kwargs)
+
+        if timeout_s <= 0.1:
+            return await attempt()
+        try:
+            async with asyncio.timeout(timeout_s):
+                return await with_retry(
+                    lambda: hedged(attempt, min(4.0, timeout_s / 2)),
+                    attempts=3,
+                    base_delay=1.0,
+                    max_delay=8.0,
+                )
+        except TimeoutError as exc:
+            raise ServiceTimeout(SERVICE, f"{operation} budget exhausted") from exc
+
+    async def _complete_attempt(self, operation: str, timeout_s: float, **kwargs: Any) -> Any:
         with self.recorder.measure(SERVICE, operation) as ctx:
             try:
                 resp = await asyncio.wait_for(
@@ -208,7 +234,14 @@ class HoloCloudClient:
                 raise ServiceTimeout(SERVICE, f"{operation} > {timeout_s}s") from exc
             except APIStatusError as exc:
                 rid = exc.response.headers.get("x-request-id") if exc.response else None
-                raise error_for_status(SERVICE, exc.status_code, str(exc), request_id=rid) from exc
+                error = error_for_status(SERVICE, exc.status_code, str(exc), request_id=rid)
+                try:
+                    error.retry_after = max(
+                        0, min(8, float(exc.response.headers.get("retry-after", 0)))
+                    )
+                except (ValueError, TypeError):
+                    pass
+                raise error from exc
             except APIConnectionError as exc:
                 raise ServiceUnavailable(SERVICE, f"connexion: {exc}") from exc
             ctx.request_id = resp.id
@@ -264,8 +297,13 @@ class HoloCloudClient:
             x, y = _check_point(point.get("x"), point.get("y"), resp.id)
             if region is not None:
                 x, y = region.to_full(x, y)
-            return Location(x=x, y=y, confidence=_confidence(choice), request_id=resp.id,
-                            target_visible=point.get("visible"))
+            return Location(
+                x=x,
+                y=y,
+                confidence=_confidence(choice),
+                request_id=resp.id,
+                target_visible=point.get("visible"),
+            )
 
         return await with_retry(call, attempts=2)
 
@@ -342,8 +380,7 @@ def parse_tool_action(message: Any, request_id: str | None = None) -> HoloAction
         if not isinstance(keys, list) or not keys:
             raise InvalidResponse(SERVICE, "touches absentes", request_id=request_id)
         norm = tuple(
-            {"return": "enter"}.get(str(k).strip().lower(), str(k).strip().lower())
-            for k in keys
+            {"return": "enter"}.get(str(k).strip().lower(), str(k).strip().lower()) for k in keys
         )
         bad = [k for k in norm if k not in ALLOWED_KEYS]
         if bad:

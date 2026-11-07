@@ -23,7 +23,19 @@ Clients IA cloud asynchrones : Holo (H Company), Jev (Codiv System One), Gladia 
 Les clients Jev, Gladia et Linkup acceptent `profile=` ; le repli est générique.
 Les builders Jev et les appels Jev/Linkup permettent une surcharge par appel.
 Gladia utilise le vocabulaire du profil si aucun vocabulaire explicite n'est fourni.
-`build_clients` choisit `config.app_id` ou `HCOMPANY_APP`.
+`build_clients` résout `app.id` depuis la leçon fournie ou `config.lesson`.
+Les anciens champs de leçon sont associés aux profils dans `apps/legacy.json`.
+Un identifiant inconnu utilise le profil générique.
+
+Les appels Holo partagent un cadenceur de 24 requêtes/minute dans le processus.
+Chaque tentative dure au plus 8 s (est.), avec une requête parallèle après 4 s
+(est.), annulation des perdantes, backoff et `Retry-After` plafonné à 8 s (est.).
+Le budget de vérification est de 28 s (est.). La confiance combine une auto-évaluation
+avec grille explicite et, si disponibles, les probabilités des jetons du verdict.
+Ce score n'est pas une probabilité d'exactitude calibrée.
+Les percentiles des benches comprennent les appels échoués ; les comptes de
+timeouts et autres erreurs sont explicites. Les tests live écrivent hors git sauf
+avec `HCOMPANY_WRITE_RESULTS=1`, réservé à la génération explicite du snapshot.
 
 ## Vérification et boucle d'actions
 `HoloVerifier.verify(image_png, assertion_text, region=None, profile=None)` juge une

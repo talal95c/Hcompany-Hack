@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import tempfile
 from pathlib import Path
 from runpy import run_path
 from typing import Any
@@ -13,7 +14,11 @@ from referencing import Registry, Resource
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
-RESULTS = Path(__file__).resolve().parent / "results"
+RESULTS = (
+    Path(__file__).resolve().parent / "results"
+    if os.getenv("HCOMPANY_WRITE_RESULTS") == "1"
+    else Path(tempfile.mkdtemp(prefix="hcompany-services-"))
+)
 _SCHEMAS = {
     p.stem.removesuffix(".schema"): json.loads(p.read_text())
     for p in (ROOT / "contracts").glob("*.schema.json")
@@ -29,7 +34,8 @@ SERVICE_DEPS = ("httpx", "h2", "websockets", "openai")
 MISSING_DEPS = [m for m in SERVICE_DEPS if importlib.util.find_spec(m) is None]
 collect_ignore = (
     ["test_services_unit.py", "test_services_live.py", "test_verify_live.py"]
-    if MISSING_DEPS else []
+    if MISSING_DEPS
+    else []
 )
 
 

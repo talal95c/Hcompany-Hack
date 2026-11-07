@@ -48,9 +48,12 @@ __all__ = [
 
 def __getattr__(name: str):
     modules = {
-        "HoloVerifier": "verify", "Verification": "verify",
-        "StepLoopResult": "computer_use", "run_steps": "computer_use",
-        "XdotoolExecutor": "x11", "capture_x11": "x11",
+        "HoloVerifier": "verify",
+        "Verification": "verify",
+        "StepLoopResult": "computer_use",
+        "run_steps": "computer_use",
+        "XdotoolExecutor": "x11",
+        "capture_x11": "x11",
     }
     if name not in modules:
         raise AttributeError(name)
