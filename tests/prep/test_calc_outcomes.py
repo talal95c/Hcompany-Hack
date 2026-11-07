@@ -3,14 +3,17 @@
 import io
 import json
 import zipfile
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+import jsonschema
 import pytest
 
 from engine.services.protocols import HoloAction
 from prep.apps import get_profile
 from prep.apps.calc import NS, CalcAdapter, evaluate_document
+from prep.compile.compiler import SCHEMA
 from prep.compile.generic import GenericCompiler, _system_prompt
 from prep.prover import generic
 from prep.sandbox.desktop import DesktopSandbox
@@ -77,8 +80,26 @@ def test_each_header_cell_must_be_bold(bold_a, bold_b):
     assert evaluate_document(CHECKS[1], ods(bold_a=bold_a, bold_b=bold_b))["result"] == "fail"
 
 
+def test_subset_bold_error_cannot_discriminate_success():
+    subset = {"name": "calc.range_bold", "params": {"sheet": "ventes", "range": "A1:A1"}}
+    with pytest.raises(ValueError, match="impliqué"):
+        CalcAdapter.validate_error(CHECKS[1], subset)
+    CalcAdapter.validate_error(CHECKS[1], {**subset, "params": {**subset["params"], "bold": False}})
+
+
 def test_chart_must_not_include_total_row():
     assert evaluate_document(CHECKS[2], ods(range_end="B6"))["result"] == "fail"
+
+
+def test_calc_contract_fixtures():
+    schema = json.loads(SCHEMA.read_text())
+    fixtures = Path(SCHEMA).parent / "examples/lesson"
+    for name in CalcAdapter.checks:
+        valid = json.loads((fixtures / "valid" / f"{name}.json").read_text())
+        jsonschema.validate(valid, schema)
+        invalid = json.loads((fixtures / "invalid" / f"{name}.json").read_text())
+        with pytest.raises(jsonschema.ValidationError):
+            jsonschema.validate(invalid, schema)
 
 
 def test_formula_and_value_are_both_required():
@@ -121,6 +142,8 @@ async def test_calc_compiler_preserves_exact_outcomes():
     )
     assert not compiler.rejections
     assert [step["check"] for step in lesson["steps"]] == CHECKS[:2]
+    assert lesson["steps"][0]["runtime_check"]["name"] == "element_value"
+    assert lesson["steps"][1]["runtime_check"]["name"] == "visual_assert"
 
 
 def test_compiler_uses_real_sheet_names_and_rejects_invented_sheet():
@@ -166,6 +189,29 @@ async def test_prepare_step_injects_no_input(check, selection):
     for mock in (sandbox.snapshot, sandbox.focus_text, sandbox.type_text, sandbox.key):
         mock.assert_not_awaited()
     assert f"ventes.{selection}" in context and "yourself" in context
+    assert "Name Box" in context and f"type {selection}" in context
+
+
+@pytest.mark.parametrize("check", CHECKS)
+def test_runtime_checks_are_generic_and_schema_valid(check):
+    runtime = CalcAdapter.runtime_check(check)
+    schema = json.loads(SCHEMA.read_text())
+    jsonschema.validate(runtime, {"$ref": "#/$defs/check", "$defs": schema["$defs"]})
+    assert runtime["name"] in {"element_value", "visual_assert"}
+
+
+@pytest.mark.parametrize("result", ["fail", "unknown"])
+async def test_runtime_pair_must_pass(result, monkeypatch):
+    evaluate = AsyncMock(side_effect=[{"result": "pass"}, {"result": result}])
+    monkeypatch.setattr(generic, "evaluate_check", evaluate)
+    verdict = await generic.completion_check(
+        {"check": CHECKS[0], "runtime_check": CalcAdapter.runtime_check(CHECKS[0])},
+        None,
+        None,
+        None,
+    )
+    assert verdict["result"] == result
+    assert verdict["runtime_check"]["result"] == result
 
 
 async def test_document_read_discards_uncommitted_edit_before_saving(tmp_path, monkeypatch):
@@ -228,3 +274,29 @@ async def test_document_outcome_is_read_only_after_done(tmp_path, monkeypatch):
     assert operator.calls == 2
     assert "check_after_action" not in result["turns"][0]
     assert result["turns"][1]["check_after_done"] == "pass"
+
+
+async def test_refusal_does_not_disclose_oracle(tmp_path, monkeypatch):
+    class InspectOperator:
+        async def act(self, image, goal, *, lesson_context, history):
+            if history:
+                feedback = history[-1].outcome
+                assert "not yet done" in feedback
+                assert "bold_cells" not in feedback and "False" not in feedback
+            return HoloAction("done")
+
+    monkeypatch.setattr(
+        generic,
+        "evaluate_check",
+        AsyncMock(
+            return_value={"result": "fail", "sensor": "document", "bold_cells": [False, True]}
+        ),
+    )
+    result = await generic.drive_step(
+        FakeDesktop(tmp_path),
+        InspectOperator(),
+        {"instruction": "Bold the header", "target": {"description": "Header"}, "check": CHECKS[1]},
+        context="",
+        max_turns=2,
+    )
+    assert result["check"]["result"] == "fail"

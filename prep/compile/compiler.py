@@ -25,7 +25,7 @@ class HoloCompiler:
         self,
         *,
         client: Any = None,
-        model: str = "holo4-35b-a3b",
+        model: str = "holo4-27b",
         fallback_model: str | None = "holo4-27b",
         timeout: float = 60,
         response_format: str | None = "json_object",
@@ -128,6 +128,9 @@ class HoloCompiler:
                     "Tous les textes pédagogiques doivent être français ; "
                     "identifiants techniques anglais. "
                     "Aucun code ni coordonnées. procedure_ref doit être un identifiant autorisé. "
+                    "Utilise la CLÉ de la bibliothèque comme procedure_ref (ex. "
+                    "add_primitive/cube), jamais la valeur operator_id "
+                    "(mesh.primitive_cube_add est un opérateur, pas une procédure). "
                     "preconditions.mode doit être OBJECT. "
                     "check doit identifier la primitive créée. "
                     "Format : {title: string, steps: [{id: identifiant ASCII unique avec _ ou -, "
