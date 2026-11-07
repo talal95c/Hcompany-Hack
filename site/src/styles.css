@@ -496,3 +496,22 @@ ul { list-style: none; }
   .hero-bg { top: auto; bottom: 0; height: 48%; object-position: 40% bottom; }
   .footer-bg { opacity: 0.3; }
 }
+
+/* ---------- less content + TV cursor ---------- */
+.plans { grid-template-columns: repeat(3, 1fr); }
+.process { padding-bottom: 180px; }
+.engineering { padding-bottom: 160px; }
+.tv-screen { position: absolute; left: 47.2%; top: 42.5%; width: 6.6%; height: 9.5%; overflow: hidden; pointer-events: none; z-index: 1; }
+.tv-cursor { position: absolute; left: 0; top: 0; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35)); animation: tv-wander 7s cubic-bezier(0.45, 0, 0.25, 1) infinite; }
+@keyframes tv-wander {
+  0% { transform: translate(10%, 20%); }
+  14% { transform: translate(380%, 60%); }
+  28% { transform: translate(150%, 220%); }
+  42% { transform: translate(420%, 250%) scale(0.85); }
+  50% { transform: translate(420%, 250%) scale(1); }
+  64% { transform: translate(40%, 140%); }
+  78% { transform: translate(260%, 10%); }
+  90% { transform: translate(300%, 180%) scale(0.85); }
+  100% { transform: translate(10%, 20%); }
+}
+@media (max-width: 700px) { .tv-screen { display: none; } }

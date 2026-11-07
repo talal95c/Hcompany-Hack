@@ -1,4 +1,4 @@
-import { About, Capabilities, Experiences, FaqInsights, Footer, Hero, Nav, Pricing, Process, Video, Vision, Works } from "./sections";
+import { About, Capabilities, FaqInsights, Footer, Hero, Nav, Pricing, Process, Video, Vision, Works } from "./sections";
 
 export default function App() {
   return (
@@ -12,7 +12,6 @@ export default function App() {
           <Capabilities />
           <Vision />
         </div>
-        <Experiences />
         <div className="dark-zone">
           <Video />
           <Process />
