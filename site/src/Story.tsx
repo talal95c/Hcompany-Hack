@@ -141,9 +141,16 @@ export function Story() {
       if (performance.now() < busyUntil) return e.preventDefault();
       if (step(dir)) e.preventDefault();
     };
+    // A new step needs a fresh gesture: trackpad inertia keeps firing wheel
+    // events, so wait for a quiet gap before re-arming.
+    let lastWheel = 0;
+    let armed = true;
     const onWheel = (e: WheelEvent) => {
       if (!inside() || e.ctrlKey) return;
-      if (performance.now() < busyUntil) {
+      const now = performance.now();
+      if (now - lastWheel > 220) armed = true;
+      lastWheel = now;
+      if (!armed || now < busyUntil) {
         acc = 0;
         return e.preventDefault();
       }
@@ -151,6 +158,7 @@ export function Story() {
       if (Math.abs(acc) < 24) return e.preventDefault();
       const dir = acc > 0 ? 1 : -1;
       acc = 0;
+      armed = false;
       tryStep(dir, e);
     };
     const onTouchStart = (e: TouchEvent) => {
