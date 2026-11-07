@@ -492,6 +492,23 @@ p { margin: 0; }
 .dicta-inline { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 12px; }
 .dicta-inline__text { position: relative; margin: 0; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; font-size: 19px; font-weight: 400; letter-spacing: -0.01em; }
 
+.tool, .pill, .key { transition: transform 140ms ease, background 140ms ease, color 140ms ease, opacity 140ms ease; }
+.tool:active:not(:disabled), .pill:active:not(:disabled), .key:active:not(:disabled) { transform: scale(0.96); }
+.feedback { display: inline-block; flex: none; vertical-align: -3px; margin-right: 6px; color: #b4c7a6; }
+.feedback--error { color: var(--danger); }
+.seg--done { background: #b4c7a6; animation: segment-fill 320ms ease-out; }
+.note--error, .status--error { animation: feedback-shake 360ms ease-out; }
+.row--done { animation: done-glow 700ms ease-out; }
+.tool--rec { position: relative; }
+.tool--rec::after { content: ""; position: absolute; inset: -3px; border: 1px solid var(--text); border-radius: inherit; opacity: 0.35; transform: scale(var(--mic-ring, 1)); transition: transform 100ms ease-out; pointer-events: none; }
+@keyframes segment-fill { 0% { transform: scaleX(0.6); opacity: 0.4; } 65% { transform: scaleX(1.12); } 100% { transform: scaleX(1); opacity: 1; } }
+@keyframes feedback-shake { 0%, 100% { transform: translateX(0); } 15%, 45% { transform: translateX(-4px); } 30%, 60% { transform: translateX(4px); } 75% { transform: translateX(-2px); } 90% { transform: translateX(2px); } }
+@keyframes done-glow { 0%, 100% { box-shadow: inset 0 0 0 1px transparent; } 35% { box-shadow: inset 0 0 18px rgba(180, 199, 166, 0.12); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .tool:active, .pill:active, .key:active, .tool--rec::after { transform: none !important; }
+}
+
 .composer { height: auto; padding: 0; flex-wrap: wrap; gap: 18px; }
 .composer > input, .composer > .dicta-inline { flex-basis: 100%; height: 36px; font-size: 19px; font-weight: 400; }
 .composer > .lead { display: none; }

@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import Palette from "./Palette";
+import { sfx, useSoundEnabled, setSoundEnabled } from "../sound";
+import { Feedback } from "../feedback";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Transcript, Wave, tail } from "./Dictaphone";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -15,6 +17,8 @@ import {
   IconSkip,
   IconVolume,
   IconVolumeOff,
+  IconSound,
+  IconSoundOff,
 } from "./icons";
 
 type Phase = "home" | "planning" | "importing" | "imported" | "running" | "done";
@@ -29,6 +33,7 @@ const BAR_WIDTH = 560;
 const PALETTE_WIDTH = 760;
 
 export default function App() {
+  const sound = useSoundEnabled();
   const [status, setStatus] = useState<Status | null>(null);
   const [phase, setPhase] = useState<Phase>("home");
   const [goal, setGoal] = useState("");
@@ -67,6 +72,24 @@ export default function App() {
   liveRef.current = { phase, stepState, step, explain };
   const barRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const previous = useRef({ phase, paletteOpen, listening, homeError, error: "" });
+  const visibleError = qa?.error || explain?.error || (stepState === "error" ? message : "");
+  useEffect(() => {
+    const prev = previous.current;
+    if (phase === "done" && prev.phase !== phase) sfx.success();
+    if (paletteOpen && !prev.paletteOpen) sfx.open();
+    if (listening !== prev.listening) (listening ? sfx.micOn : sfx.micOff)();
+    if ((homeError && homeError !== prev.homeError) || (visibleError && visibleError !== prev.error)) sfx.error();
+    previous.current = { phase, paletteOpen, listening, homeError, error: visibleError };
+  }, [phase, paletteOpen, listening, homeError, visibleError]);
+  useEffect(() => {
+    const tap = (event: MouseEvent) => {
+      const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button.tool, button.pill, button.key") : null;
+      if (button && !button.disabled) sfx.tap();
+    };
+    document.addEventListener("click", tap);
+    return () => document.removeEventListener("click", tap);
+  }, []);
 
   useEffect(() => {
     api.status().then(setStatus).catch(() => setStatus(null));
@@ -138,6 +161,7 @@ export default function App() {
     }
     setStep(s);
     setThinking("");
+    if (liveRef.current.step) (s.completed.length ? sfx.success : sfx.step)();
     // A milestone just closed: say so briefly.
     const closed = s.completed.length ? liveRef.current.step?.milestone?.goal : null;
     setMessage(closed ? `✓ ${closed}` : "");
@@ -483,6 +507,7 @@ export default function App() {
             className="row row--input composer"
             onSubmit={(e) => {
               e.preventDefault();
+              if (goal.trim()) sfx.confirm();
               startTutorial();
             }}
           >
@@ -531,6 +556,7 @@ export default function App() {
                 <button
                   type="button"
                   className={`tool ${listening ? "tool--rec" : ""}`}
+                  style={{ "--mic-ring": 1 + level * 0.25 } as CSSProperties}
                   onClick={toggleMic}
                   title={listening ? "Arrêter l'écoute" : "Parler"}
                 >
@@ -585,6 +611,7 @@ export default function App() {
             <div className="tools">
               <button
                 className={`tool ${listening ? "tool--rec" : ""}`}
+                style={{ "--mic-ring": 1 + level * 0.25 } as CSSProperties}
                 onClick={toggleMic}
                 title={listening ? "Arrêter l'écoute" : "Poser une question à voix haute"}
               >
@@ -613,6 +640,9 @@ export default function App() {
               </button>
               <button className="tool" onClick={toggleVoice} title={voice ? "Couper la voix" : "Réactiver la voix"}>
                 {voice ? <IconVolume /> : <IconVolumeOff />}
+              </button>
+              <button className="tool" aria-pressed={sound} onClick={() => setSoundEnabled(!sound)} title={sound ? "Couper les sons" : "Réactiver les sons"}>
+                {sound ? <IconSound /> : <IconSoundOff />}
               </button>
               <button className="tool" onClick={quit} title="Arrêter">
                 <IconClose />
@@ -691,8 +721,8 @@ export default function App() {
             )
           ) : stepState === "error" ? (
             <div className="status status--error">{message}</div>
-          ) : stepState === "success" ? (
-            <div className="status status--ok">{message}</div>
+          ) : stepState === "success" || message.startsWith("✓ ") ? (
+            <div className="status status--ok"><Feedback />{message.replace(/^✓ /, "")}</div>
           ) : (
             <div className="status">
               {message ||
@@ -762,7 +792,7 @@ export default function App() {
       {phase === "done" && (
         <div className="row row--done">
           <span className="lead lead--ok">
-            <IconCheck />
+            <Feedback />
           </span>
           <span className="done-text">
             {saved ? "Ajouté à ta bibliothèque" : "Terminé"} <span className="dim">· {saved ?? title}</span>

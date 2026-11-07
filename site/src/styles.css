@@ -18,8 +18,8 @@
 .usecase-video { aspect-ratio: 16 / 10; overflow: hidden; border-radius: 18px; background: var(--mist); pointer-events: none; }
 .usecase-copy { padding: 25px 16px 18px; }
 .usecase-app { color: #777; text-transform: uppercase; margin-bottom: 16px; }
-.usecase-copy h3 { font-size: 25px; font-weight: 500; line-height: 1.2; letter-spacing: -.8px; max-width: 290px; min-height: 60px; }
-.usecase-copy > .p-14l { color: #666; margin-top: 14px; min-height: 63px; max-width: 320px; }
+.usecase-copy h3 { font-size: 25px; font-weight: 500; line-height: 1.2; letter-spacing: -.8px; max-width: 290px; }
+.usecase-copy > .p-14l { color: #666; margin-top: 12px; max-width: 320px; }
 .usecase-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 24px; }
 .usecase-chips .tag { font-size: 9px; padding: 0 9px; height: 28px; }
 .usecases-note { margin: 28px var(--pad) 0; color: #888; font-size: 10px; }
@@ -153,6 +153,11 @@ ul { list-style: none; }
 .hero-l1, .hero-l2 { display: block; }
 .hero-l1 { color: rgba(26, 26, 26, 0.4); }
 .hero-sub { max-width: 390px; margin: 14px 0 26px; }
+.hero-link-demo { display: flex; align-items: center; gap: 12px; width: min(440px, 100%); padding: 8px 8px 8px 18px; margin-bottom: 20px; background: #ffffff9c; border: 1px solid #ffffffa8; border-radius: 14px; backdrop-filter: blur(18px); box-shadow: 0 5px 25px #1a1a1a08; }
+.hero-demo-url { display: block; min-width: 0; overflow: hidden; white-space: nowrap; font-family: var(--mono); font-size: 11px; animation: tutorial-type 7s steps(38, end) infinite; }
+.hero-demo-start { flex-shrink: 0; margin-left: auto; padding: 10px 14px; border-radius: 9px; background: var(--ink); color: #fff; font-size: 12px; }
+@keyframes tutorial-type { 0%, 8% { clip-path: inset(0 100% 0 0); } 42%, 100% { clip-path: inset(0); } }
+@media (prefers-reduced-motion: reduce) { .hero-demo-url { animation: none; } }
 .hero-bottom { position: absolute; left: 0; right: 0; bottom: 40px; }
 .hero-trust { color: #fff; width: 300px; margin: 0 0 10px var(--pad); }
 .hero-logos .marquee-group { gap: 10px; padding-right: 10px; }
@@ -519,6 +524,10 @@ ul { list-style: none; }
 }
 @media (max-width: 700px) {
   .hero-bg { top: auto; bottom: 0; height: 48%; object-position: 40% bottom; }
+  .hero { min-height: 900px; }
+  .hero-content { padding-top: 140px; }
+  .hero .h-hero { font-size: 42px; line-height: 46px; }
+  .hero-demo-url { font-size: 9px; }
   .footer-bg { opacity: 0.3; }
 }
 
@@ -534,3 +543,4 @@ ul { list-style: none; }
 .gr-copy { flex: none; padding: 4px 10px; border: 0; border-radius: 999px; background: #fff; color: var(--ink); cursor: pointer; font-weight: 400; }
 @media (max-width: 1100px) { .getrio .faq-left > div:last-child { margin-top: 32px; } }
 @media (max-width: 700px) { .getrio .faq-card { padding-top: 120px; padding-bottom: 80px; } }
+.gr-video { display: block; width: 100%; max-width: 560px; aspect-ratio: 4 / 3; margin: 40px 0; border-radius: 20px; background: #e6e6e6; object-fit: cover; cursor: pointer; }
