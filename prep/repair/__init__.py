@@ -13,7 +13,8 @@ def write_repair_request(
     reason: str,
     fixture: str,
     expected_result: dict,
-    blender_version: str,
+    blender_version: str | None = None,
+    app: dict | None = None,
 ) -> Path:
     root = out / "repair"
     root.mkdir(parents=True, exist_ok=True)
@@ -30,7 +31,8 @@ def write_repair_request(
                 ),
                 "fixture": fixture,
                 "expected_result": expected_result,
-                "blender_version": blender_version,
+                **({"blender_version": blender_version} if blender_version else {}),
+                **({"app": app} if app else {}),
             },
             indent=2,
         )
