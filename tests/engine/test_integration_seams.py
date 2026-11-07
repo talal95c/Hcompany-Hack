@@ -9,6 +9,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+from jsonschema import ValidationError
 
 from engine.checks import SceneState, evaluate
 from engine.checks.lesson_steps import evaluate_verification
@@ -31,7 +32,7 @@ from .test_servers import event
 ROOT = Path(__file__).resolve().parents[2]
 
 
-@pytest.mark.parametrize("name", ["donut", "mini-cube"])
+@pytest.mark.parametrize("name", ["donut", "mini-cube", "tableur-somme", "texte-titre"])
 def test_proven_authored_lessons(name, tmp_path):
     path = ROOT / "lessons" / name / "lesson.json"
     lesson = load_lesson(path)
@@ -46,6 +47,22 @@ def test_proven_authored_lessons(name, tmp_path):
     (copy / "steps.json").write_text("{}")
     with pytest.raises(ValueError, match="Preuve incompatible"):
         load_verification(copy / "lesson.json", lesson)
+
+
+@pytest.mark.parametrize("companion", [{}, {"saisir_entete": {}}])
+def test_generic_companion_validates_schema_after_digest(tmp_path, companion):
+    directory = tmp_path / "tableur-somme"
+    shutil.copytree(ROOT / "lessons/tableur-somme", directory)
+    path = directory / "lesson.json"
+    lesson = load_lesson(path)
+    sidecar = directory / "steps.json"
+    sidecar.write_text(json.dumps(companion))
+    manifest_path = directory / lesson["proof"]["evidence_ref"]
+    manifest = json.loads(manifest_path.read_text())
+    manifest["sha256"]["steps.json"] = hashlib.sha256(sidecar.read_bytes()).hexdigest()
+    manifest_path.write_text(json.dumps(manifest))
+    with pytest.raises(ValidationError):
+        load_verification(path, lesson)
 
 
 def test_cloud_factory_without_keys(monkeypatch):

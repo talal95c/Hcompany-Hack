@@ -305,7 +305,12 @@ fn matches(nodes: &[Node], q: &Query) -> Vec<Node> {
                 let mut index = 0;
                 for a in ancestors {
                     if let Some(part) = path.get(index) {
-                        if a.name.eq_ignore_ascii_case(part) || a.role == normalize_role(part) {
+                        if a.name.eq_ignore_ascii_case(part)
+                            || a.role == normalize_role(part)
+                            || part.split_once(':').is_some_and(|(role, name)| {
+                                a.role == normalize_role(role) && a.name.eq_ignore_ascii_case(name)
+                            })
+                        {
                             index += 1;
                         }
                     }

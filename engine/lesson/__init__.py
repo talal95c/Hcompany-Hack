@@ -91,7 +91,9 @@ def load_verification(path: Path, lesson: dict) -> dict:
         if hashlib.sha256(_artifact(root, reference).read_bytes()).hexdigest() != digest:
             raise ValueError(f"Preuve incompatible : {reference}")
     companion = json.loads(_artifact(root, "steps.json").read_text())
-    schema = Path(__file__).resolve().parents[2] / "lessons/steps.schema.json"
+    schema_name = ("steps.schema.json" if lesson_app(lesson)["id"] == "blender"
+                   else "generic-steps.schema.json")
+    schema = Path(__file__).resolve().parents[2] / "lessons" / schema_name
     Draft202012Validator(json.loads(schema.read_text())).validate(companion)
     if set(companion) != {step["id"] for step in lesson["steps"]}:
         raise ValueError("Compagnon incompatible avec la leçon")

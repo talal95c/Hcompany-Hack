@@ -1,6 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod a11y;
+#[cfg(target_os = "linux")]
+mod app_metadata;
 mod audio;
 mod bridge;
 mod commands;
