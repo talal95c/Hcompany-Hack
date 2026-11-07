@@ -43,7 +43,7 @@ Create an account, then an organization and a token. Put the token in Rio's `.en
 ```sh
 npx wrangler login
 npx wrangler d1 create rio                  # put the id in wrangler.toml
-# deploy knowledge/ first (see knowledge/README.md): the platform binds to it
+(cd knowledge && npm run deploy)      # first: the platform binds to it
 npm run db:migrate
 for k in BETTER_AUTH_SECRET HAI_API_KEY GLADIA_API_KEY LINKUP_API_KEY; do npx wrangler secret put $k; done
 npx wrangler secret put BETTER_AUTH_URL     # https://rio.vignemale.com (the route in wrangler.toml)
