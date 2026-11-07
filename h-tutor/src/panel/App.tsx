@@ -414,7 +414,7 @@ export default function App() {
   const busy = stepState === "thinking";
 
   return (
-    <div className="shell" ref={barRef}>
+    <div className={`shell ${paletteOpen && phase === "home" ? "shell--library" : ""}`} ref={barRef}>
       {paletteOpen && phase === "home" && (
         <Palette
           tutorials={library}
@@ -493,7 +493,7 @@ export default function App() {
       {(phase === "home" || phase === "planning" || phase === "importing") && (
         <>
           <form
-            className="row row--input"
+            className="row row--input composer"
             onSubmit={(e) => {
               e.preventDefault();
               startTutorial();
@@ -525,6 +525,8 @@ export default function App() {
                 spellCheck={false}
               />
             )}
+            <div className="composer__foot">
+            <span className="agent-label">Agent · Holo</span>
             {phase === "importing" ? (
               <span className="hint shimmer">{importStage}</span>
             ) : phase === "planning" ? (
@@ -548,11 +550,18 @@ export default function App() {
                   <IconMic />
                 </button>
                 <button className="key" type="submit" disabled={!goal.trim()} title="Lancer">
-                  <IconEnter />
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5m-6 6 6-6 6 6" /></svg>
                 </button>
               </>
             )}
+            </div>
           </form>
+          {(phase === "importing" || phase === "planning") && (
+            <div className="job-card">
+              <div><p>{phase === "importing" ? "Import du tutoriel" : "Création du plan"}</p><span className="job-card__detail">{phase === "importing" ? importStage : planning ? "Holo prépare les étapes…" : "Démarrage…"}</span></div>
+              <span className="job-card__tag">{phase === "importing" ? "youtube" : "plan"}</span>
+            </div>
+          )}
           {homeError && <div className="note note--error">{homeError}</div>}
           {status && !status.has_key && !homeError && (
             <div className="note note--error">HAI_API_KEY manque dans .env</div>

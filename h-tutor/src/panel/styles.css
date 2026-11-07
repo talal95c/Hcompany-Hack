@@ -137,7 +137,7 @@ p { margin: 0; }
   transition: background 200ms, width 300ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 .seg--done { background: var(--text); }
-.seg--now { width: 26px; background: var(--grad); }
+.seg--now { width: 26px; background: var(--accent); }
 
 .count { font-size: 11.5px; color: var(--dim); font-variant-numeric: tabular-nums; }
 
@@ -197,24 +197,19 @@ p { margin: 0; }
   height: 14px;
   border-radius: 50%;
   border: 1.5px solid rgba(255, 255, 255, 0.15);
-  border-top-color: var(--accent);
+  border-top-color: var(--text);
   animation: spin 700ms linear infinite;
 }
 .spinner--sm { width: 12px; height: 12px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .shimmer {
-  background: linear-gradient(90deg, var(--dim) 0%, var(--dim) 30%, #ffd2a8 50%, var(--dim) 70%, var(--dim) 100%);
-  background-size: 250% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: shimmer 1.8s linear infinite;
+  color: var(--dim);
 }
 @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -150% 0; } }
 
 /* ---------- Voice ---------- */
-.tool--rec, .tool--rec:hover:not(:disabled) { color: var(--ink); background: var(--grad); }
+.tool--rec, .tool--rec:hover:not(:disabled) { color: var(--ink); background: var(--text); }
 .tool--rec svg { animation: rec 1.2s ease-in-out infinite; }
 @keyframes rec { 50% { opacity: 0.45; } }
 
@@ -242,8 +237,8 @@ p { margin: 0; }
 .explain {
   margin: 4px 0 10px;
   padding: 12px 12px 10px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #1a1a1a 0%, #050505 100%);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
@@ -257,7 +252,7 @@ p { margin: 0; }
   color: var(--text);
   user-select: text;
 }
-.explain__list li::marker { color: var(--accent); }
+.explain__list li::marker { color: var(--dim); }
 .explain__actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
 
 .ask { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
@@ -473,3 +468,31 @@ p { margin: 0; }
 .dicta__text .t-hint { font-size: 12px; font-weight: 400; letter-spacing: 0; line-height: 23px; }
 .dicta-inline { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 12px; }
 .dicta-inline__text { position: relative; margin: 0; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; font-size: 15px; letter-spacing: -0.01em; }
+
+.composer { height: auto; padding: 0; flex-wrap: wrap; gap: 18px; }
+.composer > input, .composer > .dicta-inline { flex-basis: 100%; height: 36px; font-size: 17px; }
+.composer > .lead { display: none; }
+.composer__foot { display: flex; align-items: center; gap: 8px; width: 100%; }
+.agent-label { margin-right: auto; color: var(--dim); font: 11px var(--mono); letter-spacing: .06em; }
+.composer .hint { display: none; }
+.key { width: 38px; height: 38px; background: var(--grad); color: #21130b; }
+.key:disabled { opacity: .4; }
+.key:hover:not(:disabled) { filter: brightness(1.08); }
+.job-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.04); }
+.job-card p { font-size: 15px; }
+.job-card__detail { display: block; margin-top: 4px; font: 10px var(--mono); letter-spacing: .06em; color: var(--dim); }
+.job-card__tag { border-radius: 999px; padding: 5px 10px; background: var(--chip); font: 10px var(--mono); }
+.instruction { font-size: 23px; line-height: 1.25; margin: 14px 0 10px; }
+.run { padding: 0; }
+.count, .hint, .status, .chip code, .chip kbd, .qa__searched { font-family: var(--mono); letter-spacing: .06em; }
+.lead { color: var(--text); }
+.pill { height: 34px; }
+button { transition: background 120ms var(--ease), transform 120ms var(--ease), opacity 120ms var(--ease); }
+button:active:not(:disabled) { transform: scale(.97); }
+button:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+.note { margin: 12px 0 0; }
+.row--done { height: auto; min-height: 44px; padding: 0; animation-duration: 240ms; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: opacity 120ms linear !important; }
+  button:active:not(:disabled) { transform: none; }
+}
