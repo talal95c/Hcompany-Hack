@@ -650,6 +650,13 @@ fn on_user_click(app: &AppHandle, click: clicks::Click) {
 }
 
 fn setup_windows(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    let capture_visible = std::env::var("RIO_CAPTURE_VISIBLE").is_ok_and(|value| value == "1");
+    if capture_visible {
+        eprintln!("[Rio] AVERTISSEMENT : RIO_CAPTURE_VISIBLE=1 désactive la protection des fenêtres Rio ; elles sont visibles dans les enregistrements d'écran. Le masquage des captures autopilot reste actif.");
+        if let Some(bar) = app.get_webview_window("main") {
+            bar.set_content_protected(false)?;
+        }
+    }
     let monitor = app.primary_monitor()?.ok_or("Aucun écran principal")?;
     let scale = monitor.scale_factor();
     let pos = monitor.position().to_logical::<f64>(scale);
@@ -668,7 +675,7 @@ fn setup_windows(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .focusable(false)
         .visible(false)
         .visible_on_all_workspaces(true)
-        .content_protected(true)
+        .content_protected(!capture_visible)
         .position(pos.x, pos.y)
         .inner_size(size.width, size.height)
         .build()?;
@@ -686,7 +693,7 @@ fn setup_windows(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .focused(false)
         .visible(false)
         .visible_on_all_workspaces(true)
-        .content_protected(true)
+        .content_protected(!capture_visible)
         .position(pos.x + (size.width - 520.0) / 2.0, pos.y)
         .inner_size(520.0, 240.0)
         .build()?;

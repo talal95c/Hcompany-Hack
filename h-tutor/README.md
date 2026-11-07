@@ -167,6 +167,8 @@ user clicks ───────────▶   clicks.rs: real click near ta
 
 Both windows are excluded from screen captures, so Holo never sees the app itself.
 
+Diagnostic : `RIO_CAPTURE_VISIBLE=1` rend les fenêtres Rio visibles dans les enregistrements d'écran ; le masquage pendant les captures autopilot reste actif.
+
 ## Next
 
 - Import a tutorial from a URL with the Agents SDK (`h/web-surfer-pro` + `answerSchema`).
