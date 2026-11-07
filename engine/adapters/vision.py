@@ -8,6 +8,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from engine.adapters.base import Command, DemoAction, Rect, TargetHint
+from engine.adapters.holo import shared_requests
 from engine.adapters.profiles import AppProfile
 from engine.checks import AppState
 from engine.checks.generic import assertion_key
@@ -45,7 +46,7 @@ class HoloAssertVerifier:
     """HoloVerifier réel : une question fermée sur une capture, confiance par logprobs."""
 
     def __init__(self, client: Any, *, app_context: str = ""):
-        self.client = client
+        self.client = shared_requests(client)
         self.app_context = app_context
 
     async def verify(self, image_png: bytes, assertion: str, *, timeout_s: float,

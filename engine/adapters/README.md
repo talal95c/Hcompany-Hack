@@ -20,6 +20,12 @@ préconditions (`facts`), zone (`zone`), dévoilement (`reveal`/`reveal_target`)
 - `services.py` : les clients génériques transmettent les domaines et un schéma de
   documentation neutre à Linkup, ainsi que le profil complet à Jev (intentions et aide).
   Les clients du plugin conservent leurs paramètres et prompts existants.
+- `holo.py` : vérification et localisation génériques partagent un verrou par client
+  cloud et un intervalle minimal de 2 s (30 requêtes/minute). Trois essais maximum,
+  timeout par essai plafonné à 20 s, backoff exponentiel et `Retry-After` (secondes
+  ou date HTTP). Le budget total inclut l'attente du verrou et du pacing ; l'aide
+  et le préchargement ne coupent pas ce budget au premier timeout. Les échecs restent
+  unknown après épuisement, jamais pass.
 - Leçons v1 : `engine.lesson.lesson_app` projette `blender_version` en
   `{id: blender, version, sensor: addon}` sans réécrire la leçon ni sa preuve.
 - Aide générique : zone = commandes de l'adaptateur (`highlight` add-on ou `highlight.rect`

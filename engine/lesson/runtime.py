@@ -21,6 +21,7 @@ from engine.adapters import (
     VisionAdapter,
     load_profile,
 )
+from engine.adapters.holo import PacedHoloAdapter, localization_budget
 from engine.adapters.profiles import version_matches
 from engine.adapters.services import ProfileJevAdapter, ProfileSearchAdapter
 from engine.adapters.vision import visual_checks
@@ -47,7 +48,7 @@ from engine.learner import LearnerMemory
 from engine.lesson import Session, lesson_app, load_lesson, load_verification
 from engine.lesson.live_audio import LiveUtterance
 from engine.policy import HelpContext, HelpPolicy
-from engine.services.adapters import JevAdapter, SearchAdapter
+from engine.services.adapters import HoloAdapter, JevAdapter, SearchAdapter
 
 
 def decode_capture(payload: dict) -> bytes:
@@ -106,6 +107,8 @@ class EngineRuntime:
         self.app = lesson_app(lesson) if lesson else dict(DEFAULT_PLUGIN_APP)
         self.profile = load_profile(self.app)
         if self.app["id"] not in PLUGINS:
+            if isinstance(holo, HoloAdapter) and callable(getattr(holo.client, "_complete", None)):
+                holo = PacedHoloAdapter(holo.client)
             if isinstance(search, SearchAdapter):
                 self.search = ProfileSearchAdapter(search.client, self.profile)
             if isinstance(jev, JevAdapter):
@@ -942,12 +945,14 @@ class EngineRuntime:
                     return await self.fallback.call(
                         "holo", lambda: self.policy.holo.localize(
                             image, next_target.target, timeout_s=self.config.holo_timeout_s,
-                        ), self.config.holo_timeout_s, lambda: None,
+                        ), localization_budget(self.policy.holo, self.config.holo_timeout_s),
+                        lambda: None,
                     )
 
                 await self.preloader.start(generation, next_target, payload["capture_id"],
                                            localize, self.targets,
-                                           timeout_s=self.config.holo_timeout_s)
+                                           timeout_s=localization_budget(
+                                               self.policy.holo, self.config.holo_timeout_s))
 
     def target_hint(self, frame: Rect) -> dict:
         """Zone attendue et point exact (a11y) exprimés en millièmes de la capture."""

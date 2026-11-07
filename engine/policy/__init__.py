@@ -8,6 +8,7 @@ from typing import Any
 from uuid import uuid4
 
 from engine.adapters.base import Command
+from engine.adapters.holo import localization_budget
 from engine.bus import EventBus, Topic
 from engine.bus.validation import validate
 from engine.cache import AudioCache, TargetCache, TargetContext, TargetEntry
@@ -335,7 +336,8 @@ class HelpPolicy:
                     return result
 
                 task = asyncio.create_task(self.fallback.call(
-                    "holo", localize, self.config.holo_timeout_s, lambda: None,
+                    "holo", localize, localization_budget(self.holo, self.config.holo_timeout_s),
+                    lambda: None,
                 ))
                 self.localization = task
                 try:

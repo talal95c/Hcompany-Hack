@@ -5,6 +5,7 @@ import asyncio
 import base64
 import json
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -66,7 +67,7 @@ class Calc:
         self.tmp = tmp
         self.env = {**os.environ, "DISPLAY": DISPLAY, "GTK_MODULES": "gail:atk-bridge",
                     "SAL_USE_VCLPLUGIN": "gtk3", "GNOME_ACCESSIBILITY": "1",
-                    "NO_AT_BRIDGE": "0"}
+                    "NO_AT_BRIDGE": "0", "PATH": "/usr/bin:" + os.environ["PATH"]}
         self.lock = asyncio.Lock()
         self.counter = 0
         self.timings: dict[str, list[float]] = {"atspi.find": [], "capture": []}
@@ -89,6 +90,11 @@ class Calc:
             while "error" in (frame := await self.call({"op": "frame"})):
                 await asyncio.sleep(1)
         self.frame = frame
+        process = await asyncio.create_subprocess_exec(
+            "/usr/bin/xdotool", "search", "--onlyvisible", "--name",
+            "^" + re.escape(frame["title"]) + "$", "windowfocus", "--sync", env=self.env,
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+        assert await process.wait() == 0
         await asyncio.sleep(2)
 
     async def call(self, request: dict) -> dict:
@@ -128,7 +134,11 @@ class Calc:
     async def close(self) -> None:
         if getattr(self, "bridge", None):
             self.bridge.stdin.close()
-            await self.bridge.wait()
+            try:
+                await asyncio.wait_for(self.bridge.wait(), 5)
+            except TimeoutError:
+                self.bridge.kill()
+                await self.bridge.wait()
         os.killpg(self.session.pid, signal.SIGTERM)
         await asyncio.to_thread(self.session.wait, 10)
 
@@ -177,6 +187,8 @@ class Shim:
     async def answer_a11y(self, payload: dict) -> None:
         result = await self.calc.call({k: v for k, v in payload.items()
                                        if k not in {"request_id", "app"}})
+        if payload["op"] == "action":
+            print("LIVE a11y action:", result, flush=True)
         await send_ws(self.ws, "a11y.result", {"request_id": payload["request_id"], **result})
 
     async def answer_input(self, command: dict) -> None:
@@ -287,7 +299,8 @@ async def test_live_calc_end_to_end(tmp_path):
         _, received = await shim.wait_for("success", count)
         formula_to_success = (received - typed) * 1000
         async with asyncio.timeout(5):
-            while runtime.session.step_id != "consented_demo":
+            while (runtime.session.step_id != "consented_demo"
+                   or runtime.session.status != "OBSERVING"):
                 await asyncio.sleep(0.05)
         runtime.policy.level = 3
         await send_ws(shim.ws, "user.intent", {"text": "aide", "source": "clavier"})
@@ -341,7 +354,7 @@ async def test_live_calc_end_to_end(tmp_path):
         b1 = Rect.from_dict((await calc.cell("B1"))["bounds"])
         bus = EventBus()
         debug: list[dict] = []
-        policy = HelpPolicy(replace(config, holo_timeout_s=20), bus, holo=clients["holo"],
+        policy = HelpPolicy(replace(config, holo_timeout_s=20), bus, holo=runtime.policy.holo,
                             debug=debug.append)
         commands = bus.subscribe(Topic.COMMAND)
         policy.set_step(runtime.session.lesson["steps"][0], 9)
@@ -369,7 +382,7 @@ async def test_live_calc_end_to_end(tmp_path):
 
         # Jev réel avec le contexte du profil.
         start = time.perf_counter()
-        decision = await clients["jev"].decide(
+        decision = await runtime.policy.jev.decide(
             {"check_status": "fail", "reason": "no_progress", "known_errors": [],
              "app": profile.service_context()}, timeout_s=15)
         jev_ms = (time.perf_counter() - start) * 1000
