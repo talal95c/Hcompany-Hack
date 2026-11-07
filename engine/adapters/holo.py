@@ -58,8 +58,14 @@ class HoloRequests:
                     limit = min(timeout_s, 20, deadline - self.clock())
                     self.next_request = self.clock() + self.interval_s
                     try:
+                        single_attempt = getattr(self.client, "_complete_attempt", None)
+                        request = (
+                            single_attempt(operation, limit, _start=time.perf_counter(),
+                                           _path=f"desktop_{attempt + 1}", **kwargs)
+                            if single_attempt else self.client._complete(operation, limit, **kwargs)
+                        )
                         return await asyncio.wait_for(
-                            self.client._complete(operation, limit, **kwargs), limit)
+                            request, limit)
                     except (ServiceTimeout, ServiceUnavailable, QuotaExceeded,
                             TimeoutError) as error:
                         delay = max(retry_after(error), min(8, 2 ** (attempt + 1)))

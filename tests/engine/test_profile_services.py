@@ -8,7 +8,8 @@ from engine.lesson.runtime import EngineRuntime
 from engine.services.adapters import JevAdapter, SearchAdapter
 from engine.services.errors import AuthenticationError
 from engine.services.jev import CodivJevClient
-from engine.services.linkup import BLENDER_ANSWER_SCHEMA, LinkupSearchClient
+from engine.services.linkup import LinkupSearchClient
+from engine.services.profiles import load_profile
 from tests.engine.test_generic import calc_lesson
 
 
@@ -21,7 +22,8 @@ async def test_runtime_search_real_request(tmp_path, generic, status):
         seen.append(json.loads(request.content))
         return httpx.Response(status, json={"data": {"answer": "Aide"}, "sources": []})
 
-    client = LinkupSearchClient(api_key="test", transport=httpx.MockTransport(transport))
+    client = LinkupSearchClient(api_key="test", profile=load_profile("blender"),
+                                transport=httpx.MockTransport(transport))
     runtime = EngineRuntime(EngineConfig(learner_path=tmp_path / "l.json"),
                             lesson=calc_lesson() if generic else None,
                             search=SearchAdapter(client))
@@ -39,7 +41,8 @@ async def test_runtime_search_real_request(tmp_path, generic, status):
             assert "app_version" in json.loads(body["structuredOutputSchema"])["properties"]
         else:
             assert type(runtime.search) is SearchAdapter
-            assert json.loads(body["structuredOutputSchema"]) == BLENDER_ANSWER_SCHEMA
+            assert (json.loads(body["structuredOutputSchema"])
+                    == load_profile("blender").answer_schema())
             assert body["q"] == "formule somme site:docs.blender.org"
     finally:
         await client.aclose()
@@ -59,7 +62,8 @@ async def test_runtime_jev_real_request(tmp_path, generic, utterance):
         return httpx.Response(200, json={"answers": {
             key: {"choice": choice, "probabilities": {choice: 1.0}}}})
 
-    client = CodivJevClient(api_key="test", transport=httpx.MockTransport(transport))
+    client = CodivJevClient(api_key="test", profile=load_profile("blender"),
+                           transport=httpx.MockTransport(transport))
     adapter = JevAdapter(client)
     runtime = EngineRuntime(EngineConfig(learner_path=tmp_path / "l.json"),
                             lesson=calc_lesson() if generic else None, jev=adapter)
