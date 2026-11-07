@@ -60,6 +60,19 @@ export function GetRio() {
               <Reveal as="p" className="p-16 faq-sub">
                 A one-click installer is on the way. Until then, Rio runs from source in a few minutes.
               </Reveal>
+              <Reveal delay={0.1}>
+                <video
+                  className="gr-video"
+                  src={`${import.meta.env.BASE_URL}get-rio.mp4`}
+                  poster={`${import.meta.env.BASE_URL}get-rio-poster.jpg`}
+                  aria-label="How to install Rio, step by step"
+                  autoPlay={!matchMedia("(prefers-reduced-motion: reduce)").matches}
+                  controls={matchMedia("(prefers-reduced-motion: reduce)").matches}
+                  muted
+                  loop
+                  playsInline
+                />
+              </Reveal>
             </div>
             <div>
               <Reveal as="h2" className="h2-54 faq-title">
