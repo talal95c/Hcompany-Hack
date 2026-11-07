@@ -43,14 +43,13 @@ p { margin: 0; }
 }
 @keyframes rise { from { opacity: 0; transform: translateY(10px) scale(0.98); filter: blur(8px); } }
 
-/* Warm glass: dark gradient, faint dot grid fading down, an orange hairline on top. */
+/* Dark glass: grey-to-black gradient, an even dot grid, an orange hairline on top. */
 .bar, .palette {
   position: relative;
   isolation: isolate;
   overflow: hidden;
   background:
-    radial-gradient(80% 120% at 50% 0%, rgba(255, 154, 77, 0.07), transparent 60%),
-    linear-gradient(rgba(28, 25, 22, 0.88), rgba(19, 17, 15, 0.94));
+    linear-gradient(rgba(40, 38, 36, 0.92) 0%, rgba(10, 10, 10, 0.96) 55%, rgba(0, 0, 0, 0.97) 100%);
   border: 1px solid rgba(244, 233, 214, 0.1);
   -webkit-backdrop-filter: blur(24px) saturate(170%);
   backdrop-filter: blur(24px) saturate(170%);
@@ -62,10 +61,9 @@ p { margin: 0; }
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image: radial-gradient(rgba(244, 233, 214, 0.07) 1px, transparent 1.3px);
-  background-size: 14px 14px;
-  -webkit-mask-image: linear-gradient(to bottom, #000, transparent 90%);
-  mask-image: linear-gradient(to bottom, #000, transparent 90%);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.13) 0.9px, transparent 1.4px);
+  background-size: 16px 16px;
+  background-position: 8px 8px;
 }
 .bar::after, .palette::after {
   content: "";
