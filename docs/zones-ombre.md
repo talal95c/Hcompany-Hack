@@ -26,6 +26,8 @@ Les propriétaires A/B/C sont définis dans [équipe](equipe-et-workflow.md). Ri
 | Windows capture et DPI | tests natifs Graphics Capture, exclusions et moniteurs ; hors packaging démo | C | après M6 |
 | Nom du produit | choisir nom public, vérifier disponibilité ; Hcompany-Hack reste nom de travail | A/B/C | M0 |
 | Répétition espacée | calibrer intervalles sur usages, mesurer réussite sans aide ; pas d'algorithme déclaré optimal | B | M5 |
+| Arbre d'accessibilité Excel / Photoshop sur Mac | snapshot, lecture de valeur, action sémantique et re-snapshot sur Excel, Finder, Photoshop ; noter ce qui est absent (canevas) ; mesures dans bench | C | après M6 |
+| Permission Accessibilité du sidecar agent-desktop | lancer le binaire depuis l'app Tauri signée, refuser puis accorder, vérifier quel processus macOS demande l'accès | C | après M6 |
 | Distribution macOSPrivateApi | vérifier signature/notarisation et canal de distribution accepté | C | M6 |
 | Budget préparation | mesurer upload, compilation, preuves, cache ; durée vidéo variable | A | M2/M6 |
 ## Règle d'escalade
