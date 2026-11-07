@@ -37,3 +37,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libasound2-dev
       - run: cargo check --locked
+
+  h-tutor-web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: h-tutor
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: h-tutor/package-lock.json
+      - run: npm ci
+      - run: npm run build
