@@ -335,7 +335,11 @@ const publicRow = (r: RichRow, c?: C) => ({
   visibility: r.visibility,
   publishedAt: r.publishedAt,
   remixOf: r.remixOf,
-  thumbnail: r.kind === "youtube" ? (youtubeThumbnail(r.input) ?? null) : null,
+  // A video's thumbnail, else the og:image of the first source page that has one.
+  thumbnail:
+    r.kind === "youtube"
+      ? (youtubeThumbnail(r.input) ?? null)
+      : ((r.sources ? (JSON.parse(r.sources) as { image?: string }[]) : []).find((s) => s.image)?.image ?? null),
   // While H's web agent reads the docs: its live view.
   agentViewUrl: r.status === "browsing" && r.job ? ((JSON.parse(r.job) as { agentViewUrl?: string }).agentViewUrl ?? null) : null,
   sources: r.sources ? JSON.parse(r.sources) : [],

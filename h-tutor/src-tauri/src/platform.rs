@@ -6,6 +6,8 @@
 //!   `search` tool and before planning a tutorial.
 //! - `tutorials()` / `tutorial(id)`: the organization's tutorials, shown in
 //!   the ⌘K palette next to the local ones (ids start with `rio:`).
+//! - `apps()`: the apps the organization's knowledge covers (shared ones like
+//!   Blender, and its own tools), named to Holo in the `search` tool.
 //!
 //! Configured with `RIO_API_URL` and `RIO_API_TOKEN`; without them Rio works
 //! as before, from its local library and its other search backends.
@@ -60,13 +62,76 @@ async fn get(path: &str, query: &[(&str, &str)]) -> Result<Value, String> {
     Ok(v)
 }
 
+static APPS: Mutex<Option<(Instant, Vec<String>)>> = Mutex::new(None);
+const APPS_TTL: Duration = Duration::from_secs(300);
+
+/// The apps the organization's knowledge covers: the shared ones and the tools
+/// its teams added from their docs (cached five minutes; the last list if offline).
+pub async fn apps() -> Vec<String> {
+    if !enabled() {
+        return Vec::new();
+    }
+    if let Some((at, list)) = APPS.lock().unwrap().as_ref()
+        && at.elapsed() < APPS_TTL
+    {
+        return list.clone();
+    }
+    match get("/v1/apps", &[]).await {
+        Ok(v) => {
+            let list: Vec<String> =
+                v["apps"].as_array().into_iter().flatten().filter_map(|a| a["name"].as_str().map(String::from)).collect();
+            *APPS.lock().unwrap() = Some((Instant::now(), list.clone()));
+            list
+        }
+        Err(e) => {
+            eprintln!("[platform] {e}");
+            known_apps()
+        }
+    }
+}
+
+/// The last list `apps()` fetched, without waiting (for the search tool's description).
+pub fn known_apps() -> Vec<String> {
+    APPS.lock().unwrap().as_ref().map(|(_, l)| l.clone()).unwrap_or_default()
+}
+
+/// Web browsers: an internal tool often runs in one, so the browser's name says nothing about the tool.
+const BROWSERS: [&str; 8] = ["chrome", "chromium", "safari", "firefox", "arc", "edge", "brave", "opera"];
+
+/// The `app` filter for a search, given what Holo or the tutorial named:
+/// - one of the organization's apps (any case, with a version): itself;
+/// - nothing, or a web browser: "" (every app the organization sees);
+/// - another app: `None`, the knowledge base has nothing on it (Blender's answers must not come back for Figma).
+fn scope(app_name: &str, apps: &[String]) -> Option<String> {
+    let a = app_name.trim().to_lowercase();
+    if a.is_empty() {
+        return Some(String::new());
+    }
+    let known = apps.iter().map(|n| n.to_lowercase()).any(|n| a.contains(&n) || (a.len() > 2 && n.contains(&a)));
+    if known || apps.is_empty() {
+        // Unknown list (offline, or not fetched yet): the platform decides.
+        return Some(app_name.trim().to_string());
+    }
+    if a.split(|c: char| !c.is_alphanumeric()).any(|w| BROWSERS.contains(&w)) {
+        return Some(String::new());
+    }
+    None
+}
+
 /// The organization's knowledge for a goal, as text for Holo. `Ok(None)`
 /// when the platform is not configured or has nothing on it.
 pub async fn search(app_name: &str, query: &str) -> Result<Option<SearchResult>, String> {
     if !enabled() {
         return Ok(None);
     }
-    let v = get("/v1/search", &[("q", query), ("app", app_name), ("limit", "3")]).await?;
+    let Some(app) = scope(app_name, &apps().await) else {
+        return Ok(None);
+    };
+    let v = match get("/v1/search", &[("q", query), ("app", &app), ("limit", "3")]).await {
+        // An app the organization cannot see (the list changed since it was fetched): nothing on it.
+        Err(e) if e.ends_with("(404 Not Found)") => return Ok(None),
+        r => r?,
+    };
     let results = v["results"].as_array().cloned().unwrap_or_default();
     // The platform already keeps only real matches (words with enough coverage, or close meaning).
     let results: Vec<&Value> = results.iter().collect();
@@ -218,6 +283,23 @@ pub fn installed_version(bundle_id: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     #[test]
+    fn scopes_a_search_to_the_organizations_apps() {
+        let apps = ["Blender".to_string(), "DaVinci Resolve".to_string(), "Facturo".to_string()];
+        let scope = |a: &str| super::scope(a, &apps);
+        assert_eq!(scope("Blender 4.2"), Some("Blender 4.2".into()));
+        assert_eq!(scope("facturo"), Some("facturo".into()));
+        assert_eq!(scope("davinci"), Some("davinci".into()));
+        // An internal tool in a browser: every app the organization sees.
+        assert_eq!(scope("Google Chrome"), Some(String::new()));
+        assert_eq!(scope("Safari"), Some(String::new()));
+        assert_eq!(scope(""), Some(String::new()));
+        // Not in the knowledge base: Blender's answers must not come back for Figma.
+        assert_eq!(scope("Figma"), None);
+        // The list is not known yet: the platform decides.
+        assert_eq!(super::scope("Figma", &[]), Some("Figma".into()));
+    }
+
+    #[test]
     fn reads_an_installed_version() {
         // Finder is always installed.
         let v = super::installed_version("com.apple.finder");
@@ -240,6 +322,27 @@ mod tests {
             let t = super::tutorial(&list[0].id).await.unwrap();
             println!("{}: {} milestones, first hints {:?}", t.title, t.milestones.len(), t.milestones[0].hints);
             assert!(!t.milestones.is_empty());
+        });
+    }
+
+    /// An internal tool in a browser (needs a running platform where the organization has a tool "Facturo"):
+    /// `cargo test --lib platform::tests::finds_a_web_tool -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn finds_a_web_tool() {
+        tauri::async_runtime::block_on(async {
+            let apps = super::apps().await;
+            println!("apps: {apps:?}");
+            assert!(apps.iter().any(|a| a == "Facturo"));
+            let tool = crate::search::tool();
+            println!("search tool: {}", tool["function"]["description"]);
+            assert!(tool["function"]["description"].as_str().unwrap().contains("Facturo"));
+            for app in ["Facturo", "Google Chrome"] {
+                let r = super::search(app, "rembourser une commande").await.unwrap().expect("Facturo's docs answer");
+                println!("--- {app}\n{}", r.text);
+                assert!(r.text.contains("Facturo"));
+            }
+            assert!(super::search("Figma", "rembourser une commande").await.unwrap().is_none());
         });
     }
 

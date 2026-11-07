@@ -173,15 +173,26 @@ async fn simulated(holo: &Holo, app_name: &str, query: &str) -> Result<SearchRes
 
 /// The tool, as declared to Holo.
 pub fn tool() -> Value {
+    // The tools the organization's knowledge covers, its own internal ones included: Holo cannot guess their names.
+    let apps = crate::platform::known_apps();
+    let covered = if apps.is_empty() {
+        String::new()
+    } else {
+        format!(
+            " The organization's knowledge base covers: {}. When the screen shows one of these tools, even inside a \
+             web browser, use that name as app_name.",
+            apps.join(", ")
+        )
+    };
     json!({ "type": "function", "function": {
         "name": "search",
-        "description": "Search the organization's knowledge base and up-to-date documentation and tutorials about a piece of software: where a feature \
+        "description": format!("Search the organization's knowledge base and up-to-date documentation and tutorials about a piece of software: where a feature \
             lives in the current version, menu paths, shortcuts, changes between versions. Use it when you are \
             unsure how to do the task in this app or version, or when the known path did not work. The learner \
-            does nothing during a search.",
+            does nothing during a search.{covered}"),
         "parameters": { "type": "object",
             "properties": {
-                "app_name": { "type": "string", "description": "The software, with its version if visible (e.g. \"Blender 4.2\")" },
+                "app_name": { "type": "string", "description": "The software, with its version if visible (e.g. \"Blender 4.2\"); for a web tool, the tool's name, not the browser's" },
                 "query": { "type": "string", "description": "What to find, in English, e.g. \"add a subdivision surface modifier\"" }
             },
             "required": ["app_name", "query"] }

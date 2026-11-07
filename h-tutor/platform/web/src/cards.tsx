@@ -37,7 +37,7 @@ export function TutorialCard({ t, showOrg }: { t: TutorialRow; showOrg?: boolean
       <div className={`card__cover ${t.thumbnail ? "card__cover--video" : ""}`} style={coverStyle(t.app)}>
         {t.thumbnail ? (
           <>
-            <img className="card__thumb" src={t.thumbnail} alt="" loading="lazy" />
+            <img className="card__thumb" src={t.thumbnail} alt="" loading="lazy" referrerPolicy="no-referrer" />
             <span className="card__app"><AppIcon name={t.app} /></span>
           </>
         ) : (
