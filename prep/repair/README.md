@@ -13,4 +13,4 @@ PR à relire et retester, jamais publication directe.
 Contrats v1, interfaces documentées et composants amont ; aucune dépendance de modèle local. Les appels bpy restent dans addon et les accès natifs dans desktop. Voir [conception détaillée](../../docs/architecture/preparation.md) et [guide des agents](../../AGENTS.md).
 
 ## État et validation
-Pas encore de code. Les modules décrits sont une cible, pas une implémentation disponible. Ajouter tests nominal/vide/erreur et timeout avant intégration ; ne pas remplacer un check par une déclaration de modèle.
+`write_repair_request` écrit sous out/repair les demandes JSON (contrat, fixture, attendu, version), sans réseau. Tests de contenu et confinement du nom de fichier dans tests/prep. Revue et réparation restent humaines/asynchrones.

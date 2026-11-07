@@ -6,8 +6,9 @@ import shutil
 from pathlib import Path
 
 import pytest
-from conftest import AGENT_EXTRA_INSTALLED, AGENT_EXTRA_REASON, FIXTURES, call, connect
 from jsonschema import Draft202012Validator
+
+from .conftest import AGENT_EXTRA_INSTALLED, AGENT_EXTRA_REASON, FIXTURES, call, connect
 
 if AGENT_EXTRA_INSTALLED:
     import httpx

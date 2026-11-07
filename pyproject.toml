@@ -15,8 +15,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+prep = ["httpx>=0.27,<1", "openai>=1.60,<3"]
 agent = ["mcp>=1.26,<2", "httpx>=0.27,<1", "uvicorn>=0.30,<1"]
 bench = ["jsonschema>=4.22,<5", "pillow>=11,<13", "httpx>=0.27,<1", "websockets>=14,<17", "piper-tts>=1.2,<2"]
+engine = ["websockets>=14,<17", "httpx>=0.27,<1"]
 holo = ["openai>=1.60,<3"]
 jev = ["httpx>=0.27,<1", "h2>=4,<5"]
 gladia = ["httpx>=0.27,<1", "websockets>=14,<17"]
@@ -29,7 +31,8 @@ where = ["."]
 include = ["engine*", "prep*", "agent*", "addon*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "bench/tests", "desktop/tests", "engine/platform"]
+addopts = "--import-mode=importlib -m 'not live'"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 

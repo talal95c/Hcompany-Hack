@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0", "session_id": "session", "message_id": "request-1",
+  "reply_to": null, "type": "capture.request", "payload": {
+    "request_id": "capture-1", "ui_revision": 1, "generation": 1,
+    "crop": {"x": 10, "y": 20, "width": 800, "height": 600}
+  }
+}

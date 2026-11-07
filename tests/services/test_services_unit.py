@@ -11,7 +11,6 @@ from typing import Any
 import httpx
 import pytest
 import websockets
-from conftest import FIXTURES, contract_example, validate_contract
 
 from engine.services import errors
 from engine.services.gladia import (
@@ -34,6 +33,8 @@ from engine.services.protocols import (
     SearchClient,
     SttClient,
 )
+
+from .conftest import FIXTURES, contract_example, validate_contract
 
 PNG = (FIXTURES / "blender_4.5.9_layout_1600x900.png").read_bytes()
 

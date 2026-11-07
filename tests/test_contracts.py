@@ -51,6 +51,15 @@ def test_fixture_inventory() -> None:
             assert types == set(schema["properties"]["type"]["enum"])
 
 
+def test_check_fixture_inventory() -> None:
+    checks = SCHEMAS["lesson"]["$defs"]["check"]["oneOf"]
+    names = {check["properties"]["name"]["const"] for check in checks} - {"object_exists"}
+    assert len(names) == 7
+    for name in names:
+        for expectation in ("valid", "invalid"):
+            assert (CONTRACTS / "examples/lesson" / expectation / f"{name}.json").is_file()
+
+
 @pytest.mark.parametrize(
     ("document", "schema_name"),
     [

@@ -45,6 +45,9 @@
         "method": "bpy",
         "evidence_ref": "proof/add_cube.json",
         "ui_path_verified": false
+      },
+      "help": {
+        "menu_id": "VIEW3D_MT_mesh_add"
       }
     },
     {
@@ -76,6 +79,9 @@
         "method": "bpy",
         "evidence_ref": "proof/add_bevel.json",
         "ui_path_verified": false
+      },
+      "help": {
+        "menu_id": "OBJECT_MT_modifier_add_generate"
       }
     },
     {
@@ -107,6 +113,9 @@
         "method": "bpy",
         "evidence_ref": "proof/shade_smooth.json",
         "ui_path_verified": false
+      },
+      "help": {
+        "menu_id": "VIEW3D_MT_object_shading"
       }
     }
   ],

@@ -1,0 +1,4 @@
+{
+  "schema_version": "1.0", "session_id": "session", "message_id": "request-1",
+  "type": "capture.request", "payload": {}
+}

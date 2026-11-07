@@ -6,7 +6,8 @@ import os
 from uuid import uuid4
 
 import pytest
-from conftest import AGENT_EXTRA_INSTALLED, AGENT_EXTRA_REASON, FIXTURES
+
+from .conftest import AGENT_EXTRA_INSTALLED, AGENT_EXTRA_REASON, FIXTURES
 
 if AGENT_EXTRA_INSTALLED:
     import httpx
