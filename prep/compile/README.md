@@ -13,4 +13,15 @@ texte, carte et bibliothèque checks.
 Contrats v1, interfaces documentées et composants amont ; aucune dépendance de modèle local. Les appels bpy restent dans addon et les accès natifs dans desktop. Voir [conception détaillée](../../docs/architecture/preparation.md) et [guide des agents](../../AGENTS.md).
 
 ## État et validation
-Pas encore de code. Les modules décrits sont une cible, pas une implémentation disponible. Ajouter tests nominal/vide/erreur et timeout avant intégration ; ne pas remplacer un check par une déclaration de modèle.
+`HoloCompiler.compile(transcript, ui_map, lesson_id=..., blender_version=...)` appelle
+Holo4 via AsyncOpenAI (HAI_API_KEY), température 0, JSON object et réflexion désactivée.
+Modèle par défaut holo4-35b-a3b ; alternative holo4-27b configurable sur HTTP 404/429.
+Leçon validée par
+JSON Schema avant preuve, avec un nouvel essai si JSON invalide ; tokens et latences
+mesurés. `reselect(step, docs)` fournit le callback de sélection autorisée.
+
+Les procédures/checks inconnus ne sont pas corrigés : originaux conservés dans
+compile_report.json/rejections, étape marquée handoff. Pour rester conforme au schéma,
+un check inconnu est représenté par object_exists avec type/primitive unresolved,
+jamais exécuté : le prover écrit une réparation avec l'original. Tests unitaires et
+live couvrent compilation, rejets, JSON invalide et timeout.
