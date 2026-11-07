@@ -36,6 +36,7 @@ On top of these layers:
 | `GET /skills?app=&q=` · `GET /skills/:id?version=&source=` | Browse skills, or get one re-targeted to a version |
 | `GET /tutorials?app=` · `GET /tutorials/:id?version=&format=rio` | Sources read as whole tutorials, optionally in Rio's milestone format |
 | `GET /locate?app=&q=&version=` | Where a UI element is now, under any name it has had |
+| `GET /graph?app=` | ReStep's graph view: sources → skills → UI atoms, each atom labelled as it is now |
 | `GET /apps` | Apps, versions and sizes |
 
 ## Load ReStep's data

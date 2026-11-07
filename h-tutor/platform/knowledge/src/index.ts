@@ -448,6 +448,46 @@ async function overview(env: Env, apps: Apps) {
   };
 }
 
+/** A name for an atom no scan labelled: tool:builtin.move -> "Move tool", resolve:menu/edit/undo -> "Undo". */
+function readable(op: string): string {
+  const tool = op.match(/^tool:builtin\.(.+)$/);
+  const words = (tool ? tool[1] : op.split(/[/.:]/).pop() ?? op).replace(/[_.]/g, " ");
+  const name = words.charAt(0).toUpperCase() + words.slice(1);
+  return tool ? `${name} tool` : name;
+}
+
+/** ReStep's graph view: sources -> skills -> UI atoms, each atom as the learner meets it now. */
+async function graph(env: Env, apps: Apps, url: URL) {
+  const [app] = await apps.match(url.searchParams.get("app"));
+  if (!app) return { app: null, sources: [], skills: [], atoms: [] };
+  const [sk, te, pr, so] = await env.DB.batch([
+    env.DB.prepare(`select id, name, ops_json from skill where app = ?`).bind(app.id),
+    env.DB.prepare(`select t.skill_id, s.source_id from teaches t join segment s on s.id = t.segment_id join skill k on k.id = t.skill_id where k.app = ?`).bind(app.id),
+    env.DB.prepare(`select p.skill_id from proof p join skill k on k.id = p.skill_id where k.app = ? and p.status = 'PASS'`).bind(app.id),
+    env.DB.prepare(`select id, title, kind, url from source where app = ? and workspace is null`).bind(app.id),
+  ]);
+  const taught = new Map<string, Set<string>>();
+  for (const r of te.results as { skill_id: string; source_id: string }[]) (taught.get(r.skill_id) ?? taught.set(r.skill_id, new Set()).get(r.skill_id)!).add(r.source_id);
+  const proven = new Set((pr.results as { skill_id: string }[]).map((r) => r.skill_id));
+  const skills = (sk.results as { id: string; name: string; ops_json: string }[])
+    .map((r) => ({ id: r.id, name: r.name, ops: [...new Set(JSON.parse(r.ops_json) as string[])], sources: [...(taught.get(r.id) ?? [])], proven: proven.has(r.id) }))
+    .filter((r) => r.ops.length);
+  const ops = [...new Set(skills.flatMap((s) => s.ops))];
+  const placements = await rows(env.DB, `select atom_id, label from placement where app = ? and version = '${app.current_version.replace(/'/g, "")}' and atom_id in (__)`, app.id, ops);
+  const label = new Map(placements.map((p) => [p.atom_id as string, p.label as string]));
+  // An atom the current version dropped shows under the name it had.
+  // Toolbar tools are not in the scans (ReStep reads them from Blender's sources): not missing, just unnamed.
+  const missing = ops.filter((o) => !label.has(o) && !o.startsWith("tool:"));
+  const older = await rows(env.DB, `select atom_id, label, version from placement where app = ? and atom_id in (__)`, app.id, missing);
+  for (const o of older) if (!label.has(o.atom_id as string)) label.set(o.atom_id as string, `${o.label} (${o.version})`);
+  return {
+    app: { id: app.id, name: app.name, current_version: app.current_version },
+    sources: (so.results as { id: string; title: string; kind: string; url: string }[]).filter((s) => skills.some((k) => k.sources.includes(s.id))),
+    skills,
+    atoms: ops.map((o) => ({ id: o, label: label.get(o) ?? readable(o), current: !missing.includes(o) })),
+  };
+}
+
 // ---------------------------------------------------------------- routing
 
 export default {
@@ -458,6 +498,7 @@ export default {
     try {
       if (url.pathname === "/health") return json({ ok: true });
       if (url.pathname === "/apps") return json(await overview(env, apps));
+      if (url.pathname === "/graph") return json(await graph(env, apps, url));
       if (url.pathname === "/search") return json(await search(env, apps, url));
       if (url.pathname === "/skills") return json(await listSkills(env, apps, url));
       if (url.pathname === "/locate") return json(await locate(env, apps, url));

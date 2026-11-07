@@ -461,6 +461,12 @@ app.get("/api/app/knowledge/skills", async (c) => {
   return c.json(r ?? { app: null, skills: [] });
 });
 
+/** ReStep's graph view for one app: sources -> skills -> UI atoms. */
+app.get("/api/app/knowledge/graph", async (c) => {
+  const r = await kn(c.env, "/graph", { app: c.req.query("app") });
+  return c.json(r ?? { app: null, sources: [], skills: [], atoms: [] });
+});
+
 /** Where a UI element is now, under any name it has had ("Remove Doubles" -> Merge by Distance). */
 app.get("/api/app/knowledge/locate", async (c) => {
   const r = await kn(c.env, "/locate", { app: c.req.query("app"), q: c.req.query("q"), version: c.req.query("version") });

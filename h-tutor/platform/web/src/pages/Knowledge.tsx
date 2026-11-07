@@ -114,6 +114,7 @@ function Global({ data }: { data: Overview }) {
   const skills = useApi<{ app: AppInfo; skills: Skill[] }>(appId ? `/knowledge/skills?app=${appId}&q=${encodeURIComponent(filter)}` : null);
   const [version, setVersion] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  const [view, setView] = useState<"list" | "graph">(new URLSearchParams(window.location.search).get("view") === "graph" ? "graph" : "list");
 
   if (!g) return <div className="empty"><b>No global knowledge yet</b>The shared base comes from ReStep: tutorials, docs and threads, re-targeted to each version.</div>;
   const v = version ?? g.app.current_version;
@@ -151,7 +152,11 @@ function Global({ data }: { data: Overview }) {
         <div className="section__title">
           <h2>Skills</h2>
           <span>One effect each, taught by one or more sources</span>
-          <div className="seg" style={{ marginLeft: "auto" }} role="group" aria-label="Version">
+          <div className="seg" style={{ marginLeft: "auto" }} role="group" aria-label="View">
+            <button className={view === "list" ? "is-on" : ""} onClick={() => setView("list")}>List</button>
+            <button className={view === "graph" ? "is-on" : ""} onClick={() => setView("graph")}>Graph</button>
+          </div>
+          <div className="seg" style={{ display: view === "graph" ? "none" : undefined }} role="group" aria-label="Version">
             {g.app.versions.map((x) => (
               <button key={x.id} className={x.id === v ? "is-on" : ""} onClick={() => setVersion(x.id)}>
                 {x.id}
@@ -159,6 +164,10 @@ function Global({ data }: { data: Overview }) {
             ))}
           </div>
         </div>
+        {view === "graph" ? (
+          <GraphView appId={g.app.id} />
+        ) : (
+        <>
         <div className="ask" style={{ marginBottom: 12 }}>
           <I.Search />
           <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={`Filter ${g.app.name} skills`} aria-label="Filter skills" />
@@ -214,6 +223,8 @@ function Global({ data }: { data: Overview }) {
               );
             })}
           </div>
+        )}
+        </>
         )}
       </div>
 
@@ -324,6 +335,143 @@ function Atlas({ app }: { app: AppInfo }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+type GraphData = {
+  app: { id: string; name: string; current_version: string } | null;
+  sources: { id: string; title: string | null; kind: string | null; url: string | null }[];
+  skills: { id: string; name: string; ops: string[]; sources: string[]; proven: boolean }[];
+  atoms: { id: string; label: string; current: boolean }[];
+};
+
+const GRAPH_FILTERS = [
+  { id: "all", label: "All skills" },
+  { id: "multi", label: "Taught by several sources" },
+  { id: "proven", label: "Proven" },
+] as const;
+
+/**
+ * ReStep's graph: sources on the left, the skills they teach in the middle, the UI elements each skill uses on the
+ * right (named as they are in the current version). Hover anything to follow its links.
+ */
+function GraphView({ appId }: { appId: string }) {
+  const { data } = useApi<GraphData>(`/knowledge/graph?app=${appId}`);
+  const [mode, setMode] = useState<(typeof GRAPH_FILTERS)[number]["id"]>("multi");
+  const [focus, setFocus] = useState<string | null>(null);
+  if (!data) return <Loading />;
+
+  const skills = data.skills
+    .filter((s) => (mode === "multi" ? s.sources.length > 1 : mode === "proven" ? s.proven : true))
+    .sort((a, b) => b.sources.length - a.sources.length || a.name.localeCompare(b.name));
+  const srcIds = [...new Set(skills.flatMap((s) => s.sources))];
+  const sources = data.sources.filter((s) => srcIds.includes(s.id)).sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""));
+  const atomIds = new Set(skills.flatMap((s) => s.ops));
+  const atoms = data.atoms.filter((a) => atomIds.has(a.id)).sort((a, b) => a.label.localeCompare(b.label));
+
+  const W = 980, RH = 30, TOP = 8, NW = 270, X = [0, 355, 710];
+  const y = (i: number) => TOP + i * RH;
+  const ys = new Map(sources.map((s, i) => [`s:${s.id}`, y(i)]));
+  const yk = new Map(skills.map((s, i) => [`k:${s.id}`, y(i)]));
+  const ya = new Map(atoms.map((a, i) => [`a:${a.id}`, y(i)]));
+  const H = TOP * 2 + Math.max(sources.length, skills.length, atoms.length) * RH;
+
+  // What the focused node is linked to (both directions, through skills).
+  const lit = new Set<string>();
+  if (focus) {
+    lit.add(focus);
+    const [kind, id] = [focus.slice(0, 1), focus.slice(2)];
+    const via = skills.filter((s) => (kind === "k" ? s.id === id : kind === "s" ? s.sources.includes(id) : s.ops.includes(id)));
+    for (const s of via) {
+      lit.add(`k:${s.id}`);
+      s.sources.forEach((x) => lit.add(`s:${x}`));
+      s.ops.forEach((x) => lit.add(`a:${x}`));
+    }
+  }
+  const on = (id: string) => !focus || lit.has(id);
+  const edge = (x1: number, y1: number, x2: number, y2: number) => `M${x1},${y1 + 11} C${x1 + 50},${y1 + 11} ${x2 - 50},${y2 + 11} ${x2},${y2 + 11}`;
+  const cut = (s: string, n = 38) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+
+  const node = (id: string, x: number, yy: number, label: string, extra?: React.ReactNode, dim?: boolean) => (
+    <g
+      key={id}
+      className={`gnode ${on(id) ? "" : "is-dim"} ${focus === id ? "is-focus" : ""}`}
+      transform={`translate(${x},${yy})`}
+      onMouseEnter={() => setFocus(id)}
+      onMouseLeave={() => setFocus(null)}
+    >
+      <rect width={NW} height={22} rx={7} />
+      <text x={10} y={15} className={dim ? "is-old" : ""}>
+        {cut(label)}
+      </text>
+      {extra}
+    </g>
+  );
+
+  return (
+    <div className="graph">
+      <div className="graph__bar">
+        <div className="chips">
+          {GRAPH_FILTERS.map((f) => (
+            <button key={f.id} className={`chip ${mode === f.id ? "is-on" : ""}`} onClick={() => setMode(f.id)}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <span className="note">
+          {sources.length} sources · {skills.length} skills · {atoms.length} UI elements ({data.app?.current_version})
+        </span>
+      </div>
+      <div className="graph__cols">
+        <span>Sources</span>
+        <span>Skills</span>
+        <span>UI elements, as they are now</span>
+      </div>
+      <div className="graph__scroll">
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={`${data.app?.name} knowledge graph: ${sources.length} sources, ${skills.length} skills, ${atoms.length} UI elements`}>
+          <g className="gedges">
+            {skills.map((s) => {
+              const k = `k:${s.id}`;
+              const yy = yk.get(k)!;
+              return (
+                <g key={k}>
+                  {s.sources.map((x) => {
+                    const y1 = ys.get(`s:${x}`);
+                    return y1 == null ? null : <path key={x} className={on(`s:${x}`) && on(k) && (!focus || lit.has(k)) ? "is-lit" : ""} d={edge(X[0] + NW, y1, X[1], yy)} />;
+                  })}
+                  {s.ops.map((o) => {
+                    const y2 = ya.get(`a:${o}`);
+                    return y2 == null ? null : <path key={o} className={on(k) && on(`a:${o}`) && (!focus || lit.has(k)) ? "is-lit" : ""} d={edge(X[1] + NW, yy, X[2], y2)} />;
+                  })}
+                </g>
+              );
+            })}
+          </g>
+          {sources.map((s) => node(`s:${s.id}`, X[0], ys.get(`s:${s.id}`)!, `${s.kind === "video" ? "▶ " : ""}${s.title ?? s.id}`))}
+          {skills.map((s) =>
+            node(
+              `k:${s.id}`,
+              X[1],
+              yk.get(`k:${s.id}`)!,
+              s.name,
+              <>
+                {s.sources.length > 1 && (
+                  <text x={NW - 10} y={15} textAnchor="end" className="gcount">
+                    {s.sources.length}
+                  </text>
+                )}
+                {s.proven && <circle cx={NW - (s.sources.length > 1 ? 26 : 12)} cy={11} r={3.5} className="gproof" />}
+              </>,
+            ),
+          )}
+          {atoms.map((a) => node(`a:${a.id}`, X[2], ya.get(`a:${a.id}`)!, a.label, undefined, !a.current))}
+        </svg>
+      </div>
+      <p className="note" style={{ marginTop: 10 }}>
+        The number on a skill counts the sources teaching it; a dot means ReStep proved it in a sandbox. Greyed elements no longer exist in{" "}
+        {data.app?.current_version}.
+      </p>
     </div>
   );
 }
