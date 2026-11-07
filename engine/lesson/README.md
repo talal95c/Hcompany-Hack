@@ -13,4 +13,6 @@ leçon et checks.
 Contrats v1, interfaces documentées et composants amont ; aucune dépendance de modèle local. Les appels bpy restent dans addon et les accès natifs dans desktop. Voir [conception détaillée](../../docs/architecture/engine.md) et [guide des agents](../../AGENTS.md).
 
 ## État et validation
-Pas encore de code. Les modules décrits sont une cible, pas une implémentation disponible. Ajouter tests nominal/vide/erreur et timeout avant intégration ; ne pas remplacer un check par une déclaration de modèle.
+Chargement strict des leçons prouvées, table des transitions, garde de précondition de mode,
+génération et avancement dédupliqué disponibles. Orchestration live restant à intégrer.
+Tests : `pytest -q tests/engine/test_foundation.py`.
