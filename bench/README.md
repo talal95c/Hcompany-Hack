@@ -14,10 +14,80 @@ ruff check .
 ```
 
 `live` est ignoré par défaut ; `-m live` ou `BENCH_LIVE=1` l'active.
-Les quatre suites sont disponibles ; `all` les exécute successivement avec leurs clés.
+Les cinq suites sont disponibles ; `all` les exécute successivement avec leurs clés.
 Options addon : `--blender /opt/blender/blender`, `--timeout 60`, `--operations 50`.
 Installation Blender 4.5.9 LTS : voir `docs/environnement-dev.md`.
 Exécuter depuis la racine (bench n'est pas inclus dans les packages distribués du socle).
+
+## Accessibilité Calc / AT-SPI
+
+```sh
+python -m bench a11y
+python -m bench a11y --iterations 30 --max-nodes 1200 --max-depth 12 --timeout 15
+pytest -q bench/tests -m live -k a11y
+```
+
+Dépendances Ubuntu : `libreoffice-calc`, **`libreoffice-gtk3`**, `at-spi2-core`,
+`python3-pyatspi`, `xvfb`, `dbus-x11`, `xdotool`. Aucun secret cloud nécessaire.
+La sonde utilise `/usr/bin/python3` (pyatspi système, Python 3.10 sur cette VM),
+pas les bindings du venv Python 3.11. Elle émet des lignes JSON validées par
+`a11y_session.parse_response`.
+
+`A11ySession` expose une session réutilisable : contexte async, `launch_calc()`,
+`find_element(name)` → rôle/nom/rectangle `[x,y,largeur,hauteur]` en pixels écran
+et états. `request()` expose également snapshot, découverte des boutons,
+écriture de la seule valeur de test et lecture d'A1. Aucun accès au bureau existant.
+Chaque session lance `dbus-run-session`, un Xvfb sur display alloué par `-displayfd`
+(1600 × 1000), un runtime privé 0700, le lanceur de bus AT-SPI et le registre,
+puis `localc --norestore --nologo` avec un profil neuf. Environnement :
+`GTK_MODULES=gail:atk-bridge`, `SAL_USE_VCLPLUGIN=gtk3`, `NO_AT_BRIDGE=0`,
+`GNOME_ACCESSIBILITY=1`. Le display est propagé à l'activation D-Bus.
+
+Le lancement poll jusqu'à 60 s : apparition sur le bus puis fenêtre exposée.
+Un nouveau client système relit desktop/application à chaque poll et requête ;
+aucun objet AT-SPI de l'application vide au démarrage n'est conservé. Les mesures
+séparent le parcours/recherche/lecture AT-SPI de `ipc_ms` (processus Python,
+connexion bus et transport JSON inclus). Les percentiles nearest-rank viennent
+de `bench.common.statistics`, avec minimum ajouté localement.
+
+Le snapshot parcourt en largeur sous limites de profondeur/nœuds ; la feuille
+virtuelle ne peut pas être énumérée exhaustivement. Les comptes par rôle,
+profondeur et troncature sont conservés à chaque itération. La recherche exacte
+des boutons évite menus et cellules ; les noms réellement découverts, bounds et
+états sont dans le rapport JSON. `Select Function`, si choisi à défaut de Sum,
+désigne le choix de fonction, pas une validation de la commande AutoSum.
+Chaque itération saisit uniquement `424242` via xdotool puis lit A1 via AT-SPI ;
+seul le booléen de comparaison est enregistré, pas d'autres valeurs de cellules.
+Aucune capture d'écran.
+
+Sorties remplacées : `bench/results/a11y.json` et `a11y.md`. Échecs et raisons
+sont conservés, sans les compter parmi les succès. RPC AT-SPI bornés à 1,5 s
+(3 s au démarrage RPC), requêtes subprocess et parent également bornées.
+Après crash/hang : nouvelle session et nouveau profil pour les itérations
+suivantes ; trois échecs de lancement interrompent la suite. Option de diagnostic
+`--restart-each-iteration`, et `--vcl-plugin gen` pour comparaison explicite
+(le plugin gen ne garantit pas de pont AT-SPI). Tous les processus de la session
+sont arrêtés à la sortie ou à l'annulation.
+
+### Relevé conservé et limites de robustesse
+
+Sur LibreOffice 7.3.7.2 / Ubuntu 22.04, le relevé par défaut a terminé **30/30**
+itérations dans une seule instance Calc : zéro échec, 30 lectures A1 correctes,
+210 recherches réussies. Noms exposés : `Bold`, `Italic`, `Underline`,
+`Align Center`, `Sort Ascending`, `Select Function`, `Chart`.
+Snapshot p50/p95 : 332,588 / 437,167 ms ; recherche : 53,828 / 82,076 ms ;
+lecture A1 avec localisation de la table : 360,676 / 502,835 ms.
+Les 30 arbres atteignent la limite de 1 200 nœuds (profondeur observée 9) :
+il s'agit d'une taille tronquée, jamais d'une taille exhaustive.
+
+La première tentative sans `libreoffice-gtk3` ne trouvait pas Calc sur le bus.
+Avec gtk3 mais objets réutilisés au démarrage, l'application était visible avec
+zéro enfant et l'attente de fenêtre expirait. La configuration fonctionnelle
+ci-dessus combine `GNOME_ACCESSIBILITY=1`, attente jusqu'à 60 s et clients courts
+qui rechargent desktop/application. Ce relevé ne permet pas d'attribuer le gain
+à une variable isolée. Aucun abort après snapshot n'a été observé sur ces 30
+itérations ; les redémarrages automatiques n'ont donc pas été nécessaires.
+`gen` et la désactivation Java ne sont pas mesurés ni revendiqués comme correctifs.
 
 ## Méthode
 

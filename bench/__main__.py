@@ -4,7 +4,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from bench import addon, gladia, holo, jev
+from bench import a11y, addon, gladia, holo, jev
 from bench.common import write_report
 
 
@@ -17,6 +17,7 @@ SUITES: dict[str, Callable] = {
     "holo": holo.run,
     "jev": jev.run,
     "gladia": gladia.run,
+    "a11y": a11y.run,
 }
 
 
@@ -30,6 +31,11 @@ def main() -> None:
     parser.add_argument("--models", nargs="+", choices=holo.MODELS, default=holo.MODELS)
     parser.add_argument("--concurrency", type=int, choices=[1], default=1)
     parser.add_argument("--batches-only", action="store_true", help="Jev : conserver les singles")
+    parser.add_argument("--iterations", type=int, default=30)
+    parser.add_argument("--max-nodes", type=int, default=1200)
+    parser.add_argument("--max-depth", type=int, default=12)
+    parser.add_argument("--restart-each-iteration", action="store_true")
+    parser.add_argument("--vcl-plugin", choices=["gtk3", "gen"], default="gtk3")
     args = parser.parse_args()
     names = list(SUITES) if args.suite == "all" else [args.suite]
     if any(SUITES[name] is unavailable for name in names):
@@ -50,12 +56,23 @@ def main() -> None:
                 }
             elif name == "gladia":
                 options = {"out": args.out, "timeout": args.timeout or 30}
+            elif name == "a11y":
+                options = {
+                    "iterations": args.iterations,
+                    "timeout": args.timeout or 15,
+                    "max_nodes": args.max_nodes,
+                    "max_depth": args.max_depth,
+                    "restart_each_iteration": args.restart_each_iteration,
+                    "plugin": args.vcl_plugin,
+                }
             else:
                 options.update(operations=args.operations)
             report = asyncio.run(SUITES[name](**options))
         except (OSError, ValueError, RuntimeError, TimeoutError) as exc:
             parser.exit(1, f"Erreur benchmark : {exc}\n")
         print(write_report(name, report, args.out))
+        if name == "a11y" and report["summary"]["failures"]:
+            parser.exit(1, "Échecs AT-SPI conservés dans le rapport.\n")
 
 
 if __name__ == "__main__":
