@@ -14,6 +14,8 @@
   --ease: cubic-bezier(0.23, 1, 0.32, 1);
   --display: "Geist Variable", -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
   --danger: var(--text);
+  --relief: inset 0 1px 0 rgba(255,255,255,.09), -1px -1px 3px rgba(255,255,255,.025), 2px 3px 6px rgba(0,0,0,.16);
+  --pressed: inset 1px 2px 4px rgba(0,0,0,.22), inset -1px -1px 2px rgba(255,255,255,.07);
   color-scheme: dark;
 }
 
@@ -513,6 +515,18 @@ p { margin: 0; }
 .count, .hint, .status, .chip code, .chip kbd, .qa__searched { font-family: var(--mono); letter-spacing: .06em; }
 .lead { color: var(--text); }
 .pill { height: 34px; font: 10px var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.key, .tool, .pill, .nav-item, .card { box-shadow: var(--relief); }
+.card[data-selected="true"] { box-shadow: var(--relief), inset 0 0 0 1px rgba(255,255,255,.22); }
+.composer > input, .ask input, .palette__head input {
+  border-radius: 8px;
+  padding: 0 10px;
+  background: rgba(0,0,0,.025);
+  box-shadow: var(--pressed);
+}
+.segments { padding: 4px 6px; border-radius: 999px; background: rgba(0,0,0,.025); box-shadow: var(--pressed); }
+.seg { box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 1px 2px rgba(0,0,0,.16); }
+.key:active:not(:disabled), .tool:active:not(:disabled), .pill:active:not(:disabled), .nav-item:active:not(:disabled), .card:active:not(:disabled) { box-shadow: var(--pressed); }
+.key:disabled, .tool:disabled { box-shadow: none; }
 button { transition: background 120ms var(--ease), transform 120ms var(--ease), opacity 120ms var(--ease); }
 button:active:not(:disabled) { transform: scale(.97); }
 button:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
