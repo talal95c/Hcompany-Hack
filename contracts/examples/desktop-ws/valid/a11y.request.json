@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "message_id": "m1",
+  "reply_to": null,
+  "type": "a11y.request",
+  "payload": {
+    "request_id": "a1",
+    "op": "find",
+    "app": "gnome-calculator",
+    "query": {
+      "role": "button",
+      "name": "=",
+      "path": [
+        "frame:Calculatrice"
+      ]
+    }
+  }
+}

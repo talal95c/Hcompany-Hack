@@ -29,4 +29,6 @@ Les propriétaires A/B/C sont définis dans [équipe](equipe-et-workflow.md). Ri
 | Distribution macOSPrivateApi | vérifier signature/notarisation et canal de distribution accepté | C | M6 |
 | Budget préparation | mesurer upload, compilation, preuves, cache ; durée vidéo variable | A | M2/M6 |
 ## Règle d'escalade
+Points multi-app à lever avec C après M6 : couverture de l'arbre Excel / Finder / Photoshop sur Mac (valeurs, actions, canevas absents), permissions AX de l'application Tauri signée (refus puis accord), et permissions d'un backend optionnel en sidecar si retenu. Mesures dans bench ; voir [accessibilité native](architecture/accessibilite-native.md) et [ADR 0011](decisions/0011-multi-app.md).
+
 Une inconnue bloquant une garantie laisse la fonctionnalité pending ou dégradée, pas « terminée ». Résolution : ajouter résultat reproductible dans bench, mettre à jour ADR et critère de recette, puis clore le risque.

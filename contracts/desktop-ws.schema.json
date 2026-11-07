@@ -36,7 +36,11 @@
         "ping",
         "pong",
         "error",
-        "capture.request"
+        "capture.request",
+        "a11y.request",
+        "a11y.result",
+        "app.focus",
+        "highlight.rect"
       ]
     },
     "payload": {
@@ -248,6 +252,10 @@
               "minLength": 1
             },
             "request_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "app": {
               "type": "string",
               "minLength": 1
             }
@@ -473,7 +481,10 @@
               "minLength": 1
             },
             "crop": {
-              "type": ["object", "null"],
+              "type": [
+                "object",
+                "null"
+              ],
               "properties": {
                 "x": {
                   "type": "number"
@@ -505,6 +516,18 @@
             "generation": {
               "type": "integer",
               "minimum": 0
+            },
+            "scope": {
+              "enum": [
+                "rect",
+                "window"
+              ],
+              "default": "rect",
+              "description": "window : fenêtre de `app` entière (crop null) ; rect : crop écran."
+            },
+            "app": {
+              "type": "string",
+              "minLength": 1
             }
           },
           "required": [
@@ -513,9 +536,440 @@
             "ui_revision",
             "generation"
           ],
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "scope": {
+                    "const": "window"
+                  }
+                },
+                "required": [
+                  "scope"
+                ]
+              },
+              "then": {
+                "required": [
+                  "app"
+                ],
+                "properties": {
+                  "crop": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "a11y.request"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "request_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "op": {
+              "enum": [
+                "snapshot",
+                "find",
+                "get",
+                "action"
+              ]
+            },
+            "app": {
+              "type": "string",
+              "minLength": 1
+            },
+            "root": {
+              "type": "string",
+              "minLength": 1
+            },
+            "query": {
+              "$ref": "#/$defs/a11y_query"
+            },
+            "ref": {
+              "type": "string",
+              "minLength": 1
+            },
+            "action": {
+              "enum": [
+                "press",
+                "focus",
+                "set_value",
+                "toggle",
+                "select",
+                "expand",
+                "collapse",
+                "scroll_into_view"
+              ]
+            },
+            "value": {
+              "type": "string"
+            },
+            "max_depth": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64
+            },
+            "consent_token": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "request_id",
+            "op",
+            "app"
+          ],
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "op": {
+                    "const": "find"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "query"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "op": {
+                    "const": "get"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "ref"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "op": {
+                    "const": "action"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "ref",
+                  "action",
+                  "consent_token"
+                ]
+              },
+              "else": {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "action"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "consent_token"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "action": {
+                    "const": "set_value"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "then": {
+                "required": [
+                  "value"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "a11y.result"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "request_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "snapshot_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "complete": {
+              "type": "boolean"
+            },
+            "nodes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/a11y_node"
+              }
+            },
+            "error": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "enum": [
+                    "STALE_REF",
+                    "AMBIGUOUS_TARGET",
+                    "APP_NOT_FOUND",
+                    "PERMISSION_DENIED",
+                    "TIMEOUT"
+                  ]
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "code",
+                "message"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "request_id",
+            "snapshot_id",
+            "complete",
+            "nodes"
+          ],
+          "additionalProperties": false,
+          "if": {
+            "required": [
+              "error"
+            ]
+          },
+          "then": {
+            "properties": {
+              "complete": {
+                "const": false
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "snapshot_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "app.focus"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "app_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "window_title": {
+              "type": "string"
+            },
+            "window_bounds": {
+              "$ref": "#/$defs/rect_px"
+            },
+            "scale": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "accessibility": {
+              "enum": [
+                "available",
+                "unavailable",
+                "unknown"
+              ]
+            }
+          },
+          "required": [
+            "app_id",
+            "name",
+            "window_title",
+            "window_bounds",
+            "scale"
+          ],
           "additionalProperties": false
         }
       }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "highlight.rect"
+        },
+        "payload": {
+          "$ref": "commands.schema.json#/$defs/highlight_rect_payload"
+        }
+      }
     }
-  ]
+  ],
+  "$defs": {
+    "rect_px": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "h": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "additionalProperties": false
+    },
+    "a11y_query": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "value": {
+          "type": "string"
+        },
+        "states": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "focused",
+              "selected",
+              "checked",
+              "enabled",
+              "expanded",
+              "visible",
+              "editable",
+              "pressed",
+              "busy"
+            ]
+          },
+          "uniqueItems": true
+        }
+      },
+      "minProperties": 1,
+      "additionalProperties": false
+    },
+    "a11y_node": {
+      "type": "object",
+      "properties": {
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "states": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "focused",
+              "selected",
+              "checked",
+              "enabled",
+              "expanded",
+              "visible",
+              "editable",
+              "pressed",
+              "busy"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "bounds": {
+          "$ref": "#/$defs/rect_px"
+        },
+        "parent_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "ref",
+        "role",
+        "name",
+        "states",
+        "bounds"
+      ],
+      "additionalProperties": false
+    }
+  }
 }

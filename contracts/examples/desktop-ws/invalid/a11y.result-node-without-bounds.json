@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "message_id": "m1",
+  "reply_to": null,
+  "type": "a11y.result",
+  "payload": {
+    "request_id": "a1",
+    "snapshot_id": "s7",
+    "complete": true,
+    "nodes": [
+      {
+        "ref": "@s7:e1",
+        "role": "button",
+        "name": "=",
+        "states": []
+      }
+    ]
+  }
+}

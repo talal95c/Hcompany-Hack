@@ -43,7 +43,8 @@
         "say",
         "success",
         "input.action",
-        "stop"
+        "stop",
+        "highlight.rect"
       ]
     },
     "deadline_ms": {
@@ -257,6 +258,18 @@
               "type": "number",
               "minimum": 0,
               "maximum": 1000
+            },
+            "app": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ref": {
+              "type": "string",
+              "minLength": 1
+            },
+            "snapshot_id": {
+              "type": "string",
+              "minLength": 1
             }
           },
           "required": [
@@ -382,6 +395,19 @@
           "additionalProperties": false
         }
       }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "highlight.rect"
+        },
+        "recipient": {
+          "const": "desktop"
+        },
+        "payload": {
+          "$ref": "#/$defs/highlight_rect_payload"
+        }
+      }
     }
   ],
   "$defs": {
@@ -422,6 +448,71 @@
         "status",
         "detail",
         "scene_revision"
+      ],
+      "additionalProperties": false
+    },
+    "rect_px": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "h": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "additionalProperties": false
+    },
+    "highlight_rect_payload": {
+      "type": "object",
+      "description": "Zone dessinée par l'overlay desktop sur n'importe quelle app ; rect en pixels physiques écran.",
+      "properties": {
+        "app": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rect": {
+          "$ref": "#/$defs/rect_px"
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "snapshot_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "color": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "duration_ms": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "rect",
+        "color",
+        "duration_ms"
       ],
       "additionalProperties": false
     }

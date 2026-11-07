@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "command_id": "c1",
+  "step_id": "press_equals",
+  "generation": 2,
+  "recipient": "desktop",
+  "type": "highlight.rect",
+  "deadline_ms": 1000,
+  "expected_scene_revision": null,
+  "payload": {
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "w": -4,
+      "h": 2
+    },
+    "color": "#fff",
+    "duration_ms": 1
+  }
+}
