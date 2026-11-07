@@ -1,72 +1,19 @@
-.....F..                                                                 [100%]
-=================================== FAILURES ===================================
-_________________________ test_live_calc_computer_use __________________________
+============================= test session starts ==============================
+platform linux -- Python 3.11.18, pytest-9.2.0, pluggy-1.7.0 -- /home/ubuntu/.venvs/hcompany-hack/bin/python
+cachedir: .pytest_cache
+rootdir: /home/ubuntu/repos/Hcompany-Hack
+configfile: pyproject.toml
+plugins: anyio-4.16.0, asyncio-1.4.1.post1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collected 81 items / 73 deselected / 8 selected
 
-monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x74bc418916d0>
+tests/services/test_services_live.py::test_holo_locates_blender_elements_and_acts PASSED [ 12%]
+tests/services/test_services_live.py::test_jev_classifies_twenty_french_sentences PASSED [ 25%]
+tests/services/test_services_live.py::test_gladia_file_and_live_transcription PASSED [ 37%]
+tests/services/test_services_live.py::test_linkup_returns_blender_docs PASSED [ 50%]
+tests/services/test_verify_live.py::test_live_verifier_real_screenshots PASSED [ 62%]
+tests/services/test_verify_live.py::test_live_calc_computer_use PASSED   [ 75%]
+tests/services/test_verify_live.py::test_live_jev_excel_intents PASSED   [ 87%]
+tests/services/test_verify_live.py::test_live_linkup_excel_official_sources PASSED [100%]
 
-    async def test_live_calc_computer_use(monkeypatch) -> None:
-        require_env("HAI_API_KEY")
-        rec = LatencyRecorder()
-        profile = load_profile("libreoffice-calc")
-        output = RESULTS / "computer_use"
-        output.mkdir(exist_ok=True)
-        captures = []
-        start = time.perf_counter()
-        with calc_session(80) as env:
-            monkeypatch.setenv("DISPLAY", env["DISPLAY"])
-            monkeypatch.setenv("XDG_RUNTIME_DIR", env["XDG_RUNTIME_DIR"])
-    
-            async def capture() -> bytes:
-                image = await capture_x11()
-                path = output / f"capture_{len(captures):02d}.png"
-                path.write_bytes(image)
-                captures.append(str(path.relative_to(RESULTS)))
-                return image
-    
-            async with HoloCloudClient(model="holo4-27b", recorder=rec) as holo:
-                async with HoloVerifier(recorder=rec) as verifier:
-                    result = await run_steps(
-                        holo,
-                        "In this spreadsheet, enter =SUM(A1:A3) in cell A4 and confirm with Enter. "
-                        "Then select cell A4 again so its SUM formula is visible in the formula bar. "
-                        "Do not change the numbers 10, 20, 30 in A1:A3.",
-                        capture=capture,
-                        execute=XdotoolExecutor(),
-                        verifier=verifier,
-                        success_assertion=(
-                            "Cell A4 is selected, displays 60, and the formula bar shows =SUM(A1:A3)."
-                        ),
-                        profile=profile,
-                        max_steps=8,
-                    )
-            (output / "final.png").write_bytes(await capture_x11())
-        rec.write_bench(
-            RESULTS / "computer_use.json",
-            extra={
-                **asdict(result),
-                "captures": captures,
-                "total_latency_ms": (time.perf_counter() - start) * 1000,
-                "pacing_interval_s": 2.5,
-                "display": ":80",
-                "consent": "explicit user request; isolated synthetic test window",
-            },
-        )
->       assert result.status == "success", asdict(result)
-E       AssertionError: {'status': 'error', 'turns': ({'action': {'type': 'type', 'x': None, 'y': None, 'text': '=SUM(A1:A3)', ...}, 'outcome': 'executed'},), 'final': None, 'latencies_ms': (1812.3132329999407, 1235.972572000037), ...}
-E       assert 'error' == 'success'
-E         
-E         - success
-E         + error
-
-tests/services/test_verify_live.py:142: AssertionError
-==================================== PASSES ====================================
-=========================== short test summary info ============================
-PASSED tests/services/test_services_live.py::test_holo_locates_blender_elements_and_acts
-PASSED tests/services/test_services_live.py::test_jev_classifies_twenty_french_sentences
-PASSED tests/services/test_services_live.py::test_gladia_file_and_live_transcription
-PASSED tests/services/test_services_live.py::test_linkup_returns_blender_docs
-PASSED tests/services/test_verify_live.py::test_live_verifier_real_screenshots
-PASSED tests/services/test_verify_live.py::test_live_jev_excel_intents
-PASSED tests/services/test_verify_live.py::test_live_linkup_excel_official_sources
-FAILED tests/services/test_verify_live.py::test_live_calc_computer_use - Asse...
-1 failed, 7 passed, 66 deselected in 131.49s (0:02:11)
+================= 8 passed, 73 deselected in 181.91s (0:03:01) =================

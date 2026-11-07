@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import os
 import platform
 import time
 from collections.abc import Iterator
@@ -27,6 +28,10 @@ class CallRecord:
     input_tokens: int | None = None
     cached_tokens: int | None = None
     output_tokens: int | None = None
+    start_offset_ms: float | None = None
+    path: str | None = None
+    retry_after: float | None = None
+    winner: bool = False
 
 
 @dataclass(slots=True)
@@ -36,6 +41,9 @@ class CallContext:
     cached_tokens: int | None = None
     output_tokens: int | None = None
     status: str = "ok"
+    start_offset_ms: float | None = None
+    path: str | None = None
+    retry_after: float | None = None
 
 
 def percentile(values: list[float], q: float) -> float:
@@ -73,6 +81,9 @@ class LatencyRecorder:
                 input_tokens=ctx.input_tokens,
                 cached_tokens=ctx.cached_tokens,
                 output_tokens=ctx.output_tokens,
+                start_offset_ms=ctx.start_offset_ms,
+                path=ctx.path,
+                retry_after=ctx.retry_after,
             )
             self.records.append(record)
             logger.info(
@@ -90,6 +101,15 @@ class LatencyRecorder:
 
     def add(self, record: CallRecord) -> None:
         self.records.append(record)
+
+    def trace(self, records: list[CallRecord]) -> None:
+        path = os.getenv("HCOMPANY_ATTEMPT_LOG")
+        if path:
+            target = Path(path)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with target.open("a", encoding="utf-8") as output:
+                for record in records:
+                    output.write(json.dumps(asdict(record)) + "\n")
 
     def summary(self, service: str | None = None) -> dict[str, dict[str, Any]]:
         groups: dict[str, list[CallRecord]] = {}

@@ -56,6 +56,7 @@ def _verdict_confidence(choice: Any, content: str, verdict: str) -> float | None
     tokens = getattr(getattr(choice, "logprobs", None), "content", None)
     if match is None or not tokens:
         return None
+    tokens = [token for token in tokens if token.token not in ("<|im_end|>", "<|endoftext|>")]
     if "".join(t.token for t in tokens) != content:
         return None
     start, end = match.span(1)
@@ -79,7 +80,7 @@ class HoloVerifier(HoloCloudClient):
         api_key: str | None = None,
         base_url: str = DEFAULT_BASE_URL,
         model: str | None = None,
-        timeout_s: float = 28.0,
+        timeout_s: float = 30.0,
         min_confidence: float = 0.6,
         recorder: LatencyRecorder | None = None,
         client: AsyncOpenAI | None = None,
@@ -149,6 +150,7 @@ class HoloVerifier(HoloCloudClient):
                 self.timeout_s,
                 messages=messages,
                 logprobs=True,
+                top_logprobs=2,
                 max_tokens=256,
                 response_format={
                     "type": "json_schema",

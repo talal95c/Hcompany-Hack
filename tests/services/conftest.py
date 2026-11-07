@@ -5,7 +5,6 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from runpy import run_path
 from typing import Any
 
 import pytest
@@ -43,18 +42,7 @@ collect_ignore = (
 def pace_live_holo(request, monkeypatch):
     if request.node.get_closest_marker("live") is None or MISSING_DEPS:
         return
-    from engine.services.holo import HoloCloudClient
-
-    if not hasattr(pace_live_holo, "pacer"):
-        Pacer = run_path(str(ROOT / "bench/holo_pacing.py"))["Pacer"]
-        pace_live_holo.pacer = Pacer(interval=2.5)
-    complete = HoloCloudClient._complete
-
-    async def paced(self, *args, **kwargs):
-        await pace_live_holo.pacer.acquire()
-        return await complete(self, *args, **kwargs)
-
-    monkeypatch.setattr(HoloCloudClient, "_complete", paced)
+    monkeypatch.setenv("HCOMPANY_ATTEMPT_LOG", str(RESULTS / "attempts.jsonl"))
 
 
 def pytest_report_header(config: pytest.Config) -> str | None:

@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-07T15:49:18+00:00",
+  "date": "2026-11-07T16:52:02+00:00",
   "host": {
     "os": "Linux-6.8.0-1060-aws-x86_64-with-glibc2.35",
     "python": "3.11.18"
@@ -7,74 +7,159 @@
   "measured": true,
   "summary": {
     "holo.act": {
-      "n": 4,
+      "n": 5,
       "n_ok": 4,
-      "failures": {},
-      "p50_ms": 697.8,
-      "p95_ms": 974.4,
-      "min_ms": 440.6,
-      "max_ms": 994.1
+      "n_timeout": 0,
+      "n_error": 1,
+      "failures": {
+        "CancelledError": 1
+      },
+      "p50_ms": 552.1,
+      "p95_ms": 2575.1,
+      "min_ms": 348.4,
+      "max_ms": 583.2
     },
     "holo.verify": {
-      "n": 1,
+      "n": 4,
       "n_ok": 1,
-      "failures": {},
-      "p50_ms": 336.0,
-      "p95_ms": 336.0,
-      "min_ms": 336.0,
-      "max_ms": 336.0
+      "n_timeout": 2,
+      "n_error": 1,
+      "failures": {
+        "CancelledError": 1,
+        "timeout": 2
+      },
+      "p50_ms": 5183.2,
+      "p95_ms": 6017.6,
+      "min_ms": 332.3,
+      "max_ms": 332.3
     }
   },
   "calls": [
     {
       "service": "holo",
       "operation": "act",
-      "duration_ms": 862.74,
+      "duration_ms": 348.36,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b6b3-0737-7822-90c2-0fc4237d147e",
+      "request_id": "01a1b6ec-334c-7303-9cef-6b4f4e1a08c7",
       "input_tokens": 2155,
-      "cached_tokens": 0,
-      "output_tokens": 60
+      "cached_tokens": 800,
+      "output_tokens": 59,
+      "start_offset_ms": 0.11,
+      "path": "attempt_1.primary",
+      "retry_after": null,
+      "winner": true
     },
     {
       "service": "holo",
       "operation": "act",
-      "duration_ms": 440.55,
+      "duration_ms": 583.17,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b6b3-10f4-7302-94b1-59307c01dca7",
+      "request_id": "01a1b6ec-3d14-7fc1-9216-4215e6e115a5",
       "input_tokens": 2175,
-      "cached_tokens": 0,
-      "output_tokens": 46
+      "cached_tokens": 800,
+      "output_tokens": 46,
+      "start_offset_ms": 1044.46,
+      "path": "attempt_1.primary",
+      "retry_after": null,
+      "winner": true
     },
     {
       "service": "holo",
       "operation": "act",
-      "duration_ms": 532.78,
+      "duration_ms": 552.09,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b6b3-1ac2-71c0-aee0-de73899e1730",
+      "request_id": "01a1b6ec-50b5-7e91-a020-56c4f797d0b3",
       "input_tokens": 2192,
       "cached_tokens": 0,
-      "output_tokens": 67
+      "output_tokens": 67,
+      "start_offset_ms": 4013.55,
+      "path": "attempt_2.hedge",
+      "retry_after": null,
+      "winner": true
     },
     {
       "service": "holo",
       "operation": "act",
-      "duration_ms": 994.09,
+      "duration_ms": 3073.13,
+      "status": "CancelledError",
+      "request_id": null,
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null,
+      "start_offset_ms": 1492.71,
+      "path": "attempt_1.primary",
+      "retry_after": null,
+      "winner": false
+    },
+    {
+      "service": "holo",
+      "operation": "act",
+      "duration_ms": 466.57,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b6b3-248f-7b23-b8fe-d1578f3071e5",
+      "request_id": "01a1b6ec-5a81-7e52-af66-ad4b0a55e296",
       "input_tokens": 2228,
       "cached_tokens": 0,
-      "output_tokens": 72
+      "output_tokens": 72,
+      "start_offset_ms": 1460.64,
+      "path": "attempt_1.primary",
+      "retry_after": null,
+      "winner": true
     },
     {
       "service": "holo",
       "operation": "verify",
-      "duration_ms": 336.04,
+      "duration_ms": 6018.37,
+      "status": "timeout",
+      "request_id": null,
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null,
+      "start_offset_ms": 1937.91,
+      "path": "attempt_1.primary",
+      "retry_after": null,
+      "winner": false
+    },
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 6013.12,
+      "status": "timeout",
+      "request_id": null,
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null,
+      "start_offset_ms": 4431.11,
+      "path": "attempt_2.hedge",
+      "retry_after": null,
+      "winner": false
+    },
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 332.32,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b6b3-2e62-7950-9593-500e0c492e9e",
-      "input_tokens": 1530,
+      "request_id": "01a1b6ec-9aed-7020-a382-ad9c9c827d01",
+      "input_tokens": 1591,
       "cached_tokens": 0,
-      "output_tokens": 39
+      "output_tokens": 40,
+      "start_offset_ms": 15927.63,
+      "path": "attempt_4.hedge",
+      "retry_after": null,
+      "winner": true
+    },
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 4353.32,
+      "status": "CancelledError",
+      "request_id": null,
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null,
+      "start_offset_ms": 11906.84,
+      "path": "attempt_3.primary",
+      "retry_after": null,
+      "winner": false
     }
   ],
   "status": "success",
@@ -87,8 +172,8 @@
         "text": "=SUM(A1:A3)",
         "keys": [],
         "button": "left",
-        "reason": "Cell A4 is already selected; typing the SUM formula to add A1:A3.",
-        "request_id": "chatcmpl-01a1b6b3-0737-7822-90c2-0fc4237d147e"
+        "reason": "Cell A4 is selected; typing the SUM formula to add A1:A3.",
+        "request_id": "chatcmpl-01a1b6ec-334c-7303-9cef-6b4f4e1a08c7"
       },
       "outcome": "executed"
     },
@@ -103,7 +188,7 @@
         ],
         "button": "left",
         "reason": "Confirm the SUM formula in A4.",
-        "request_id": "chatcmpl-01a1b6b3-10f4-7302-94b1-59307c01dca7"
+        "request_id": "chatcmpl-01a1b6ec-3d14-7fc1-9216-4215e6e115a5"
       },
       "outcome": "executed"
     },
@@ -111,12 +196,12 @@
       "action": {
         "type": "click",
         "x": 51.0,
-        "y": 197.0,
+        "y": 198.0,
         "text": null,
         "keys": [],
         "button": "left",
         "reason": "Click cell A4 to select it and show the SUM formula in the formula bar.",
-        "request_id": "chatcmpl-01a1b6b3-1ac2-71c0-aee0-de73899e1730"
+        "request_id": "chatcmpl-01a1b6ec-50b5-7e91-a020-56c4f797d0b3"
       },
       "outcome": "executed"
     },
@@ -129,23 +214,23 @@
         "keys": [],
         "button": "left",
         "reason": "The SUM formula was entered in A4, confirmed with Enter (showing 60), and A4 is now selected with =SUM(A1:A3) visible in the formula bar. All conditions of the goal are met.",
-        "request_id": "chatcmpl-01a1b6b3-248f-7b23-b8fe-d1578f3071e5"
+        "request_id": "chatcmpl-01a1b6ec-5a81-7e52-af66-ad4b0a55e296"
       },
       "outcome": "done verified"
     }
   ],
   "final": {
     "verdict": "pass",
-    "confidence": 1.0,
-    "reason": "Cell A4 is selected, displays 60, and the formula bar shows =SUM(A1:A3).",
-    "latency_ms": 1767.5013980000358,
-    "request_id": "chatcmpl-01a1b6b3-2e62-7950-9593-500e0c492e9e"
+    "confidence": 0.95,
+    "reason": "Cell A4 is highlighted, displays 60, and the formula bar shows =SUM(A1:A3).",
+    "latency_ms": 16260.48833599998,
+    "request_id": "chatcmpl-01a1b6ec-9aed-7020-a382-ad9c9c827d01"
   },
   "latencies_ms": [
-    1962.2595209999645,
-    1383.8365870000189,
-    2697.3116980000214,
-    4405.8487879999575
+    1484.5180659999642,
+    2063.3772159999353,
+    5064.253845000167,
+    18365.88728400011
   ],
   "error": null,
   "captures": [
@@ -155,7 +240,7 @@
     "computer_use/capture_03.png",
     "computer_use/capture_04.png"
   ],
-  "total_latency_ms": 14258.068448000016,
+  "total_latency_ms": 30769.454657000097,
   "pacing_interval_s": 2.5,
   "display": ":80",
   "consent": "explicit user request; isolated synthetic test window"

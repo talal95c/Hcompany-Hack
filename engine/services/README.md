@@ -28,9 +28,18 @@ Les anciens champs de leçon sont associés aux profils dans `apps/legacy.json`.
 Un identifiant inconnu utilise le profil générique.
 
 Les appels Holo partagent un cadenceur de 24 requêtes/minute dans le processus.
-Chaque tentative dure au plus 8 s (est.), avec une requête parallèle après 4 s
+Chaque tentative dure au plus 6 s (est.), avec une requête parallèle après 4 s
 (est.), annulation des perdantes, backoff et `Retry-After` plafonné à 8 s (est.).
-Le budget de vérification est de 28 s (est.). La confiance combine une auto-évaluation
+Les budgets de vérification, localisation et action sont de 30 s (est.). Les hedges
+passent par le même cadenceur ; une réponse 429 déclenche le backoff, pas un hedge.
+Les requêtes Holo ferment leur connexion HTTP après chaque tentative pour éviter
+de réutiliser une connexion bloquée. Le budget reste prioritaire même si les trois
+tours de retry ne tiennent pas tous dans ce délai. `HCOMPANY_ATTEMPT_LOG` active une
+trace JSONL sans contenu utilisateur : décalage de départ, durée, statut,
+`Retry-After`, identifiant de requête et chemin gagnant (primaire ou hedge).
+Jev peut dupliquer une décision après 375 ms (est.), dans le même budget de 800 ms
+(est.) ; chaque duplication consomme aussi un jeton de quota.
+La confiance combine une auto-évaluation
 avec grille explicite et, si disponibles, les probabilités des jetons du verdict.
 Ce score n'est pas une probabilité d'exactitude calibrée.
 Les percentiles des benches comprennent les appels échoués ; les comptes de

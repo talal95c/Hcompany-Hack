@@ -99,3 +99,30 @@ async def test_loop_survives_transient():
 
     result = await run_steps(Holo(), "goal", capture=capture, execute=execute)
     assert result.status == "success"
+
+
+async def test_jev_hedge_rescues_hung_primary():
+    import httpx
+
+    from engine.services.jev import CodivJevClient
+
+    calls = 0
+
+    async def respond(request):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            await asyncio.Event().wait()
+        return httpx.Response(
+            200,
+            json={
+                "answers": {"intent": {"choice": "question", "probabilities": {"question": 1.0}}}
+            },
+        )
+
+    async with CodivJevClient(api_key="test", transport=httpx.MockTransport(respond)) as client:
+        start = asyncio.get_running_loop().time()
+        result = await client.classify_intent("Comment faire ?")
+        assert result.choice == "question"
+        assert calls == 2
+        assert asyncio.get_running_loop().time() - start < 0.8

@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-07T15:46:38+00:00",
+  "date": "2026-11-07T16:50:03+00:00",
   "host": {
     "os": "Linux-6.8.0-1060-aws-x86_64-with-glibc2.35",
     "python": "3.11.18"
@@ -9,243 +9,337 @@
     "jev.decide": {
       "n": 23,
       "n_ok": 23,
+      "n_timeout": 0,
+      "n_error": 0,
       "failures": {},
-      "p50_ms": 161.6,
-      "p95_ms": 220.0,
-      "min_ms": 140.8,
-      "max_ms": 234.2
+      "p50_ms": 203.7,
+      "p95_ms": 281.9,
+      "min_ms": 164.3,
+      "max_ms": 287.2
     }
   },
   "calls": [
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 234.21,
+      "duration_ms": 170.88,
       "status": "ok",
-      "request_id": "req_d714692ef98c8b073916aac3d58b0f25",
+      "request_id": "req_cafc49d67affc04ea1bfb5f55bedbd82",
       "input_tokens": 243,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 184.23,
+      "duration_ms": 164.32,
       "status": "ok",
-      "request_id": "req_0fb02086908fdef48fcb69c88be7a9a3",
+      "request_id": "req_d87041867aac0eab8ae368156991ff1a",
       "input_tokens": 249,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 160.44,
+      "duration_ms": 209.95,
       "status": "ok",
-      "request_id": "req_aa9d300eb622732f165710a7cf669325",
+      "request_id": "req_3e843e7876b07cc002b5f97703df177e",
       "input_tokens": 244,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 161.63,
+      "duration_ms": 202.09,
       "status": "ok",
-      "request_id": "req_79c9d11322944bbdee9dc0b75562e004",
+      "request_id": "req_2a557a18e7e76f93265fd50a155bea88",
       "input_tokens": 244,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 152.64,
+      "duration_ms": 196.62,
       "status": "ok",
-      "request_id": "req_ccff78e21d50953de3e1c2aa52b0498b",
+      "request_id": "req_86b04fe543e36f529cb280ed84ab7efa",
       "input_tokens": 247,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 168.33,
+      "duration_ms": 199.26,
       "status": "ok",
-      "request_id": "req_cd4976f262ef71b59bfdca8feb0ab8ff",
+      "request_id": "req_5504bfa56aaa97994a7095d114258291",
       "input_tokens": 244,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 155.93,
+      "duration_ms": 287.19,
       "status": "ok",
-      "request_id": "req_f0857104695a06e968872065b8c1ad22",
+      "request_id": "req_b9b93566faa82d3373e5f9b181a8a6d1",
       "input_tokens": 251,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 191.14,
+      "duration_ms": 200.62,
       "status": "ok",
-      "request_id": "req_1507a244e104f20d5820037436dd72cf",
+      "request_id": "req_f575bf66c86c9e736d9f697b995c840a",
       "input_tokens": 250,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 159.3,
+      "duration_ms": 247.97,
       "status": "ok",
-      "request_id": "req_bd5840fcf0d74e32955d7f810d65e455",
+      "request_id": "req_d7c06cc91a4224b28ee3409dc524a7c0",
       "input_tokens": 243,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 169.34,
+      "duration_ms": 209.55,
       "status": "ok",
-      "request_id": "req_9729fb94bd3d2d09be6715076becffe7",
+      "request_id": "req_743433bf00c36c960ac92355b1d64413",
       "input_tokens": 247,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 148.27,
+      "duration_ms": 238.54,
       "status": "ok",
-      "request_id": "req_2926ea416e63d32cb1139257546bf3a4",
+      "request_id": "req_40a127d88b58fe32730742943d202096",
       "input_tokens": 251,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 177.51,
+      "duration_ms": 229.42,
       "status": "ok",
-      "request_id": "req_5f84ccb63e52dc1d3c77a4f5f9e8441e",
+      "request_id": "req_f32d0a62d0f7ab3bd16a0b993f886297",
       "input_tokens": 245,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 145.39,
+      "duration_ms": 203.31,
       "status": "ok",
-      "request_id": "req_77d17b759549d3ecf572727acc243ab6",
+      "request_id": "req_5c623f19d7929fbebd91993f987a4d83",
       "input_tokens": 245,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 140.79,
+      "duration_ms": 282.87,
       "status": "ok",
-      "request_id": "req_1cc205cf443e03e844463bb00cc7db44",
+      "request_id": "req_0f3beb68fa1bd47d1e80f272aa5f23bf",
       "input_tokens": 246,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 144.16,
+      "duration_ms": 203.68,
       "status": "ok",
-      "request_id": "req_e42db77f70d002e2d317c0a281f87579",
+      "request_id": "req_61f0424b44e5bf6d856cfc1197b1a3e0",
       "input_tokens": 243,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 164.63,
+      "duration_ms": 187.2,
       "status": "ok",
-      "request_id": "req_f59446f7329f9cea5290cd9c5957d5cd",
+      "request_id": "req_99fe8f8ecd63a8df340eeae3fd517e0d",
       "input_tokens": 243,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 152.76,
+      "duration_ms": 217.18,
       "status": "ok",
-      "request_id": "req_50c031401ccec07bc83e72b4d33522bd",
+      "request_id": "req_1e04d72e60d96752b16d9497a4a277eb",
       "input_tokens": 242,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 207.55,
+      "duration_ms": 192.5,
       "status": "ok",
-      "request_id": "req_7e76a6ea4bdb3dae6863167497055606",
+      "request_id": "req_0eb5a5d861493ca3e4743b32455118be",
       "input_tokens": 243,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 170.09,
+      "duration_ms": 194.91,
       "status": "ok",
-      "request_id": "req_0528402775ca65c66fba6c3b591b5bf9",
+      "request_id": "req_bc40e9dc97aaf24880cd95b0c071dd5c",
       "input_tokens": 242,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 168.77,
+      "duration_ms": 209.18,
       "status": "ok",
-      "request_id": "req_637012aba896e5586bf2d947533b5a80",
+      "request_id": "req_62bd7356921a952c9624a9c14a7e6a97",
       "input_tokens": 246,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 221.41,
+      "duration_ms": 273.3,
       "status": "ok",
-      "request_id": "req_680af477121b6a85c5b5157e2d095ff6",
+      "request_id": "req_f51a85ccb66295ddc7369f228f9d1a1d",
       "input_tokens": 299,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 147.29,
+      "duration_ms": 188.08,
       "status": "ok",
-      "request_id": "req_9d52a6bf253a89b5c086b90ae2ddeacb",
+      "request_id": "req_ee5b9c783ac8a626b568b1b19f67dad9",
       "input_tokens": 290,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     },
     {
       "service": "jev",
       "operation": "decide",
-      "duration_ms": 157.71,
+      "duration_ms": 207.53,
       "status": "ok",
-      "request_id": "req_ed91937883a9a255ac05d5f2d9f3bc90",
+      "request_id": "req_5505cfc51617d29b39430ef322dd0ba7",
       "input_tokens": 289,
       "cached_tokens": null,
-      "output_tokens": null
+      "output_tokens": null,
+      "start_offset_ms": null,
+      "path": null,
+      "retry_after": null,
+      "winner": false
     }
   ],
   "model": "openjev-latest",
@@ -263,49 +357,49 @@
       "text": "C'est quoi la différence entre un mesh et un objet ?",
       "expected": "question",
       "choice": "question",
-      "probability": 0.9996
+      "probability": 0.9992
     },
     {
       "text": "Comment je fais pour tourner la vue ?",
       "expected": "question",
       "choice": "question",
-      "probability": 0.9982
+      "probability": 0.9994
     },
     {
       "text": "À quoi sert le modificateur subdivision ?",
       "expected": "question",
       "choice": "question",
-      "probability": 0.999
+      "probability": 0.9996
     },
     {
       "text": "Vas-y, fais-le toi-même.",
       "expected": "fais_le",
       "choice": "fais_le",
-      "probability": 0.9996
+      "probability": 0.9937
     },
     {
       "text": "Tu peux le faire à ma place ?",
       "expected": "fais_le",
       "choice": "fais_le",
-      "probability": 0.9983
+      "probability": 0.998
     },
     {
       "text": "Montre-moi en le faisant, je n'y arrive pas.",
       "expected": "fais_le",
       "choice": "fais_le",
-      "probability": 0.9994
+      "probability": 0.9997
     },
     {
       "text": "Fais l'extrusion pour moi s'il te plaît.",
       "expected": "fais_le",
       "choice": "fais_le",
-      "probability": 0.9998
+      "probability": 0.9993
     },
     {
       "text": "Putain, ça marche pas !",
       "expected": "frustration",
       "choice": "frustration",
-      "probability": 0.9999
+      "probability": 0.9998
     },
     {
       "text": "J'en ai marre, rien ne fonctionne.",
@@ -317,7 +411,7 @@
       "text": "C'est super frustrant, j'ai encore tout cassé.",
       "expected": "frustration",
       "choice": "frustration",
-      "probability": 0.9999
+      "probability": 0.9997
     },
     {
       "text": "Franchement ce logiciel me rend fou.",
@@ -329,80 +423,80 @@
       "text": "Chut, laisse-moi réfléchir.",
       "expected": "chut",
       "choice": "chut",
-      "probability": 0.9998
+      "probability": 0.9999
     },
     {
       "text": "Tais-toi s'il te plaît.",
       "expected": "chut",
       "choice": "chut",
-      "probability": 0.9998
+      "probability": 0.9999
     },
     {
       "text": "Arrête de parler deux minutes.",
       "expected": "chut",
       "choice": "chut",
-      "probability": 0.9998
+      "probability": 0.9999
     },
     {
       "text": "Silence, je me concentre.",
       "expected": "chut",
       "choice": "chut",
-      "probability": 0.9985
+      "probability": 0.999
     },
     {
       "text": "Je vais prendre un café.",
       "expected": "other",
       "choice": "other",
-      "probability": 0.9998
+      "probability": 0.9999
     },
     {
       "text": "Il fait beau aujourd'hui.",
       "expected": "other",
       "choice": "other",
-      "probability": 0.9996
+      "probability": 0.9989
     },
     {
       "text": "Hmm, voyons voir...",
       "expected": "other",
       "choice": "other",
-      "probability": 0.9999
+      "probability": 0.9995
     },
     {
       "text": "Mon chat vient de sauter sur le clavier.",
       "expected": "other",
       "choice": "other",
-      "probability": 0.9999
+      "probability": 1.0
     }
   ],
   "batched_assessments": [
     {
       "stuck_or_thinking": {
         "choice": "stuck",
-        "probability": 0.9996
+        "probability": 0.9995
       },
       "deviation": {
         "choice": "major",
-        "probability": 0.9891
+        "probability": 0.9947
       }
     },
     {
       "stuck_or_thinking": {
         "choice": "thinking",
-        "probability": 0.9997
-      },
-      "deviation": {
-        "choice": "none",
-        "probability": 0.9797
-      }
-    },
-    {
-      "stuck_or_thinking": {
-        "choice": "thinking",
-        "probability": 0.9952
+        "probability": 0.9994
       },
       "deviation": {
         "choice": "minor",
-        "probability": 0.5837
+        "probability": 0.5888
+      }
+    },
+    {
+      "stuck_or_thinking": {
+        "choice": "thinking",
+        "probability": 0.9466
+      },
+      "deviation": {
+        "choice": "minor",
+        "probability": 0.6777
       }
     }
   ]

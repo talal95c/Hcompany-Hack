@@ -9,7 +9,7 @@ from typing import Any
 
 import httpx
 
-from engine.services._retry import TokenBucket
+from engine.services._retry import TokenBucket, hedged
 from engine.services.errors import (
     InvalidResponse,
     QuotaExceeded,
@@ -117,6 +117,7 @@ class CodivJevClient:
         self.recorder = recorder or LatencyRecorder()
         self.bucket = TokenBucket(rate_per_minute)
         self.speculative_reserve = speculative_reserve
+        self._custom_transport = transport is not None
         self._http = httpx.AsyncClient(
             base_url=base_url,
             http2=transport is None,
@@ -167,10 +168,25 @@ class CodivJevClient:
         }
         op = "decide_speculative" if speculative else "decide"
         with self.recorder.measure(SERVICE, op) as ctx:
+            attempt_number = 0
+
+            async def post():
+                nonlocal attempt_number
+                attempt_number += 1
+                if attempt_number > 1 and not self.bucket.try_acquire():
+                    raise QuotaExceeded(SERVICE, "budget de duplication épuisé")
+                if attempt_number > 1 and not self._custom_transport:
+                    async with httpx.AsyncClient(
+                        base_url=self._http.base_url,
+                        headers=self._http.headers,
+                        http2=True,
+                        timeout=limit,
+                    ) as fresh:
+                        return await fresh.post("/v1/systemone", json=body)
+                return await self._http.post("/v1/systemone", json=body, timeout=limit)
+
             try:
-                resp = await asyncio.wait_for(
-                    self._http.post("/v1/systemone", json=body, timeout=limit), timeout=limit
-                )
+                resp = await asyncio.wait_for(hedged(post, min(0.375, limit / 2)), timeout=limit)
             except (TimeoutError, httpx.TimeoutException) as exc:
                 raise ServiceTimeout(SERVICE, f"décision > {limit * 1000:.0f} ms") from exc
             except httpx.TransportError as exc:

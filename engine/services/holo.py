@@ -170,8 +170,8 @@ class HoloCloudClient:
         api_key: str | None = None,
         base_url: str = DEFAULT_BASE_URL,
         model: str = DEFAULT_MODEL,
-        locate_timeout_s: float = 20.0,
-        act_timeout_s: float = 28.0,
+        locate_timeout_s: float = 30.0,
+        act_timeout_s: float = 30.0,
         recorder: LatencyRecorder | None = None,
         client: AsyncOpenAI | None = None,
     ) -> None:
@@ -195,30 +195,57 @@ class HoloCloudClient:
         await self.aclose()
 
     async def _complete(self, operation: str, timeout_s: float, **kwargs: Any) -> Any:
+        start = time.perf_counter()
+        record_start = len(self.recorder.records)
+        attempt_number = 0
+        winner = None
+        completed_paths = {}
+
         async def attempt():
+            nonlocal attempt_number
+            attempt_number += 1
+            task = asyncio.current_task()
+            path = f"attempt_{attempt_number}.{task.get_name() if task else 'primary'}"
             global _NEXT_REQUEST
             if self._pace_requests:
                 now = time.monotonic()
                 slot = max(now, _NEXT_REQUEST)
                 _NEXT_REQUEST = slot + 2.5
                 await asyncio.sleep(slot - now)
-            return await self._complete_attempt(operation, min(timeout_s, 8.0), **kwargs)
+            response = await self._complete_attempt(
+                operation, min(timeout_s, 6.0), _start=start, _path=path, **kwargs
+            )
+            completed_paths[response.id] = path
+            return response
 
         if timeout_s <= 0.1:
             return await attempt()
         try:
             async with asyncio.timeout(timeout_s):
-                return await with_retry(
+                response = await with_retry(
                     lambda: hedged(attempt, min(4.0, timeout_s / 2)),
                     attempts=3,
                     base_delay=1.0,
                     max_delay=8.0,
                 )
+                winner = response.id
+                return response
         except TimeoutError as exc:
             raise ServiceTimeout(SERVICE, f"{operation} budget exhausted") from exc
+        finally:
+            records = self.recorder.records[record_start:]
+            for record in records:
+                record.winner = record.status == "ok" and record.path == completed_paths.get(winner)
+            self.recorder.trace(records)
 
-    async def _complete_attempt(self, operation: str, timeout_s: float, **kwargs: Any) -> Any:
+    async def _complete_attempt(
+        self, operation: str, timeout_s: float, *, _start: float, _path: str, **kwargs: Any
+    ) -> Any:
         with self.recorder.measure(SERVICE, operation) as ctx:
+            ctx.start_offset_ms = round((time.perf_counter() - _start) * 1000, 2)
+            ctx.path = _path
+            if self._pace_requests:
+                kwargs["extra_headers"] = {"Connection": "close"}
             try:
                 resp = await asyncio.wait_for(
                     self._client.chat.completions.create(
@@ -234,6 +261,7 @@ class HoloCloudClient:
                 raise ServiceTimeout(SERVICE, f"{operation} > {timeout_s}s") from exc
             except APIStatusError as exc:
                 rid = exc.response.headers.get("x-request-id") if exc.response else None
+                ctx.request_id = rid
                 error = error_for_status(SERVICE, exc.status_code, str(exc), request_id=rid)
                 try:
                     error.retry_after = max(
@@ -241,10 +269,11 @@ class HoloCloudClient:
                     )
                 except (ValueError, TypeError):
                     pass
+                ctx.retry_after = error.retry_after
                 raise error from exc
             except APIConnectionError as exc:
                 raise ServiceUnavailable(SERVICE, f"connexion: {exc}") from exc
-            ctx.request_id = resp.id
+            ctx.request_id = getattr(resp, "_request_id", None) or resp.id
             usage = resp.usage
             if usage is not None:
                 ctx.input_tokens = usage.prompt_tokens

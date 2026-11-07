@@ -14,12 +14,12 @@ RETRYABLE: tuple[type[Exception], ...] = (ServiceUnavailable, QuotaExceeded, Ser
 
 
 async def hedged(call: Callable[[], Awaitable[T]], threshold: float) -> T:
-    tasks = {asyncio.create_task(call())}
+    tasks = {asyncio.create_task(call(), name="primary")}
     try:
         done, _ = await asyncio.wait(tasks, timeout=threshold)
         if done:
             return await next(iter(done))
-        tasks.add(asyncio.create_task(call()))
+        tasks.add(asyncio.create_task(call(), name="hedge"))
         while tasks:
             done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
             for task in done:
