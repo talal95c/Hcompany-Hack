@@ -46,6 +46,8 @@ function Copy({ text }: { text: string }) {
   );
 }
 
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 export function GetRio() {
   useEffect(() => {
     scrollTo(0, 0);
@@ -66,9 +68,9 @@ export function GetRio() {
                   src={`${import.meta.env.BASE_URL}get-rio.mp4`}
                   poster={`${import.meta.env.BASE_URL}get-rio-poster.jpg`}
                   aria-label="How to install Rio, step by step"
-                  autoPlay={!matchMedia("(prefers-reduced-motion: reduce)").matches}
-                  controls={matchMedia("(prefers-reduced-motion: reduce)").matches}
-                  onClick={(e) => (e.currentTarget.paused ? e.currentTarget.play() : e.currentTarget.pause())}
+                  autoPlay={!REDUCED}
+                  controls={REDUCED}
+                  onClick={REDUCED ? undefined : (e) => (e.currentTarget.paused ? e.currentTarget.play() : e.currentTarget.pause())}
                   muted
                   loop
                   playsInline
