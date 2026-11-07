@@ -82,6 +82,21 @@ impl Rect {
 }
 
 impl Monitor {
+    #[cfg(any(test, target_os = "macos"))]
+    pub fn ax_rect(&self, logical: Rect) -> Option<Rect> {
+        let relative = Rect {
+            x: logical.x - self.logical_x,
+            y: logical.y - self.logical_y,
+            ..logical
+        }
+        .logical_to_physical(self.scale)?;
+        let physical = Rect {
+            x: self.physical.x + relative.x,
+            y: self.physical.y + relative.y,
+            ..relative
+        };
+        physical.valid().then_some(physical)
+    }
     pub fn overlay_rect(&self, rect: Rect) -> Result<Rect, String> {
         if !self.contains(rect) {
             return Err("Zone hors moniteur".into());
@@ -126,9 +141,96 @@ impl Monitor {
     }
 }
 
+#[cfg(any(test, target_os = "macos"))]
+pub fn ax_rect(monitors: &[Monitor], logical: Rect) -> Option<Rect> {
+    if !logical.valid() {
+        return None;
+    }
+    let screens = monitors
+        .iter()
+        .filter(|m| m.scale.is_finite() && m.scale > 0. && m.physical.valid());
+    let screen = screens
+        .clone()
+        .find(|m| {
+            logical.x >= m.logical_x
+                && logical.y >= m.logical_y
+                && logical.x < m.logical_x + m.physical.width / m.scale
+                && logical.y < m.logical_y + m.physical.height / m.scale
+        })
+        .or_else(|| {
+            screens.clone().find(|m| {
+                logical.x + logical.width > m.logical_x
+                    && logical.y + logical.height > m.logical_y
+                    && logical.x < m.logical_x + m.physical.width / m.scale
+                    && logical.y < m.logical_y + m.physical.height / m.scale
+            })
+        })?;
+    screen.ax_rect(logical)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn ax_monitor_selection_prefers_origin_on_mixed_scale_screens() {
+        let main = Monitor {
+            id: "main".into(),
+            physical: Rect {
+                x: 0.,
+                y: 0.,
+                width: 2880.,
+                height: 1800.,
+            },
+            logical_x: 0.,
+            logical_y: 0.,
+            scale: 2.,
+        };
+        let other = Monitor {
+            id: "left".into(),
+            physical: Rect {
+                x: -1920.,
+                y: 0.,
+                width: 1920.,
+                height: 1080.,
+            },
+            logical_x: -1920.,
+            logical_y: 0.,
+            scale: 1.,
+        };
+        let monitors = [main, other];
+        let crossing = Rect {
+            x: -100.,
+            y: 10.,
+            width: 200.,
+            height: 100.,
+        };
+        assert_eq!(ax_rect(&monitors, crossing), Some(crossing));
+        assert_eq!(
+            ax_rect(
+                &monitors,
+                Rect {
+                    x: 100.,
+                    y: -20.,
+                    ..crossing
+                }
+            ),
+            Some(Rect {
+                x: 200.,
+                y: -40.,
+                width: 400.,
+                height: 200.
+            })
+        );
+        assert!(ax_rect(&[], crossing).is_none());
+        assert!(ax_rect(
+            &monitors,
+            Rect {
+                x: 5000.,
+                ..crossing
+            }
+        )
+        .is_none());
+    }
     #[test]
     fn accessibility_coordinates() {
         assert!(Rect::atspi_screen(i32::MIN, 0, 10, 10).is_none());
@@ -161,6 +263,21 @@ mod tests {
             width: 400.,
             height: 200.,
         };
+        assert_eq!(
+            m.ax_rect(Rect {
+                x: -1340.,
+                y: 100.,
+                width: 200.,
+                height: 100.
+            }),
+            Some(crop)
+        );
+        assert!(Monitor {
+            scale: 0.,
+            ..m.clone()
+        }
+        .ax_rect(crop)
+        .is_none());
         assert_eq!(m.point(crop, 500., 500.).unwrap(), (-1240., 150.));
         assert_eq!(m.point(crop, 1000., 1000.).unwrap(), (-1140.5, 199.5));
         assert!(m.point(crop, f64::NAN, 0.).is_err());

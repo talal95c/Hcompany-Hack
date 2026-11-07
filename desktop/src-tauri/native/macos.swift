@@ -27,6 +27,14 @@ struct Native {
                 case "microphone": _ = await AVCaptureDevice.requestAccess(for: .audio)
                 default: throw Failure.invalid
                 }
+            case "apps":
+                let front = NSWorkspace.shared.frontmostApplication?.processIdentifier
+                try json(NSWorkspace.shared.runningApplications.compactMap { app -> [String: Any]? in
+                    guard let exe = app.executableURL?.lastPathComponent else { return nil }
+                    return ["app_id": app.bundleIdentifier ?? exe, "executable": exe,
+                            "name": app.localizedName ?? exe, "pid": app.processIdentifier,
+                            "focused": app.processIdentifier == front]
+                })
             case "focus":
                 guard let app = NSWorkspace.shared.frontmostApplication else { throw Failure.invalid }
                 let id = app.bundleIdentifier ?? app.executableURL?.lastPathComponent ?? String(app.processIdentifier)

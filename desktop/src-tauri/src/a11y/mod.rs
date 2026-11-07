@@ -16,9 +16,19 @@ mod tests;
 mod linux;
 #[cfg(target_os = "linux")]
 use linux::Sensor;
-#[cfg(not(target_os = "linux"))]
+#[cfg(target_os = "macos")]
+mod macos;
+#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+mod platform;
+#[cfg(target_os = "macos")]
+use macos::Sensor;
+#[cfg(target_os = "windows")]
+mod windows;
+#[cfg(target_os = "windows")]
+use windows::Sensor;
+#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
 mod unsupported;
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
 use unsupported::Sensor;
 
 type Task<'a, T> = Pin<Box<dyn Future<Output = Result<T, Error>> + Send + 'a>>;
@@ -145,6 +155,7 @@ impl Tree {
     }
 }
 pub struct App {
+    pub app_id: String,
     pub handle: Handle,
     pub name: String,
     pub executable: String,
@@ -425,7 +436,8 @@ impl Service {
                 if requested.eq_ignore_ascii_case("focused") {
                     a.focused && a.pid != std::process::id()
                 } else {
-                    a.name.eq_ignore_ascii_case(requested)
+                    a.app_id.eq_ignore_ascii_case(requested)
+                        || a.name.eq_ignore_ascii_case(requested)
                         || a.executable.eq_ignore_ascii_case(requested)
                         || a.pid.to_string() == requested
                 }

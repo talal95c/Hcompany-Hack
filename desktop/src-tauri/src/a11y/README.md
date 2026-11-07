@@ -1,9 +1,45 @@
 # Capteur d'accessibilité
 
 Le trait `AccessibilitySensor` garde les opérations natives hors du WebView. Linux utilise
-une connexion AT-SPI paresseuse ; les autres plateformes renvoient `PERMISSION_DENIED`.
+une connexion AT-SPI paresseuse ; macOS utilise AX et Windows UI Automation.
+Les autres plateformes renvoient `PERMISSION_DENIED`.
 Le backend Linux est destiné à X11 : les extents écran AT-SPI sont des pixels physiques.
-`Rect::logical_to_physical` prépare la conversion à facteur explicite des autres plateformes.
+`Monitor::ax_rect` convertit les points AX avec les origines et le facteur du moniteur.
+
+## Backends AX et UI Automation
+
+La résolution commune accepte l'identifiant d'application, le nom localisé, le nom
+d'exécutable, le PID et `focused`. Sur macOS, l'identifiant est le bundle ID (ou
+l'exécutable sans bundle). AX exige `AXIsProcessTrusted` ; les refus sont typés, sans
+reprendre les diagnostics du système. Les appels s'exécutent sur un worker bloquant,
+avec un timeout AX par appel plafonné à 150 ms et le budget global de requête.
+Au-delà de 512 enfants, seuls `AXVisibleRows` ou `AXVisibleChildren` sont utilisés ;
+leur absence marque `LargeContainerSkipped`. Les valeurs AX sont uniquement des
+chaînes ou nombres finis. `AXSecureTextField` ne renvoie pas de valeur et ne permet
+pas `set_value`. Les actions utilisent AXPress, AXValue, AXFocused, AXSelected,
+AXExpanded et les actions natives d'expansion, menu ou défilement disponibles.
+
+Windows utilise `uiautomation` avec ses features par défaut, nécessaires à ses
+imports internes. Un worker dédié initialise COM en MTA et garde les éléments COM
+sur ce même thread jusqu'à leur destruction. Le parcours ControlView utilise des
+propriétés mises en cache pour chaque lecture fraîche. La valeur est demandée dans
+un second cache uniquement après le contrôle IsPassword, puis ce contrôle est relu
+avant restitution. Les timeouts UIA de connexion et transaction sont plafonnés à
+200 ms, avec vérification du budget entre lectures. Les actions utilisent Invoke,
+Toggle, Value, SetFocus, SelectionItem, ExpandCollapse et ScrollItem.
+
+Les deux workers ont une file bornée à 16 travaux et un registre natif borné à
+10 000 handles, avec une durée logique de 35 s ; le store commun reste limité à
+quatre snapshots et 30 s. Les requêtes annulées ne peuvent pas déclencher ensuite
+une nouvelle action : l'autorisation est revérifiée au point d'appel natif et le
+verrou exclusif reste détenu jusqu'à la fin du travail natif, même après annulation.
+Toutes ces durées sont des limites configurées, pas des mesures.
+
+Les tables de rôles AX/UIA et les règles de confidentialité sont dans `platform.rs`
+et sont testées sur Linux : AXButton/UIA Button deviennent `button`, les boutons
+à bascule `toggle_button`, AXCell/UIA DataItem `table_cell`, AXWindow/UIA Window
+`frame`. Les types inconnus restent `unknown`. Les conversions, refs, recherches,
+consentements et contrôles après action restent communs.
 
 ## Identifiants et limites
 
@@ -21,7 +57,7 @@ Les nœuds non affichés sont exclus ; les conteneurs sans géométrie propre h�
 rectangle du parent. Une racine application sans composant est omise, ses fenêtres
 deviennent les racines du résultat.
 
-Au-delà de 4 096 enfants déclarés, un conteneur n'est jamais énuméré linéairement.
+Sous Linux, au-delà de 4 096 enfants déclarés, un conteneur n'est jamais énuméré linéairement.
 Une table est parcourue par son interface Table, entre les cellules obtenues par
 hit-test des deux coins intérieurs de son rectangle visible. `complete=true` décrit
 donc la couverture de la zone visible, pas celle des cellules virtuelles hors écran.
@@ -71,8 +107,10 @@ Depuis `desktop/src-tauri` : `cargo check --locked`,
 Le test ignoré `a11y::tests::live_accessibility` nécessite une session X11 et un bus
 AT-SPI avec une feuille de données factices ouverte. `HCOMPANY_A11Y_APP` choisit l'app
 (défaut `soffice`). Il observe cinq fois, mesure les latences, résout A1 et le bouton
-Bold, relit la cellule et contrôle leurs rectangles dans la fenêtre. Il ne déclenche
-aucune action. Il affiche les raisons internes, les cinq latences, leur médiane et le
+Bold, relit la cellule et contrôle leurs rectangles dans la fenêtre. Il capture aussi
+la fenêtre et actionne Bold sous consentement, vérifie le changement d'état puis
+restaure l'état initial ; l'absence de consentement et l'arrêt sont testés. Il affiche
+les raisons internes, les cinq latences, leur médiane et le
 p95 (rang supérieur, donc maximum sur cinq mesures). La profondeur par défaut de 32
 permet d'observer les conteneurs imbriqués du panneau latéral de l'application de recette.
 

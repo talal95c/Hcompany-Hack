@@ -119,35 +119,41 @@ pub fn perform(state: &State, payload: &Value) -> Result<(), String> {
 }
 
 pub struct ActionGuard<'a> {
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    authorization: Option<Authorization>,
     consent: &'a std::sync::Mutex<Option<Consent>>,
     stopped: &'a std::sync::atomic::AtomicBool,
     connected: &'a std::sync::atomic::AtomicBool,
     token: &'a str,
     focus_check: fn(&crate::discovery::Target) -> bool,
-    _lock: tokio::sync::MutexGuard<'a, ()>,
+    _lock: ActionLock<'a>,
+}
+
+enum ActionLock<'a> {
+    Borrowed {
+        _guard: tokio::sync::MutexGuard<'a, ()>,
+    },
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    Owned {
+        _guard: std::sync::Arc<tokio::sync::OwnedMutexGuard<()>>,
+    },
 }
 
 impl ActionGuard<'_> {
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    pub fn authorization(&self) -> Result<Authorization, String> {
+        self.check()?;
+        self.authorization
+            .clone()
+            .ok_or_else(|| "consent missing".into())
+    }
     pub fn check(&self) -> Result<(), String> {
-        let consent = self.consent.lock().unwrap();
-        check_consent(
-            consent.as_ref(),
+        check_target(
+            self.consent,
+            self.stopped,
+            self.connected,
             self.token,
-            self.stopped.load(Ordering::SeqCst),
-            self.connected.load(Ordering::SeqCst),
-            Instant::now(),
-        )?;
-        let target = consent.as_ref().ok_or("consent missing")?.target.clone();
-        drop(consent);
-        if !(self.focus_check)(&target) {
-            return Err("focus lost".into());
-        }
-        check_consent(
-            self.consent.lock().unwrap().as_ref(),
-            self.token,
-            self.stopped.load(Ordering::SeqCst),
-            self.connected.load(Ordering::SeqCst),
-            Instant::now(),
+            self.focus_check,
         )
     }
     pub fn require_pid(&self, pid: u32) -> Result<(), String> {
@@ -166,6 +172,50 @@ impl ActionGuard<'_> {
     }
 }
 
+fn check_target(
+    consent: &std::sync::Mutex<Option<Consent>>,
+    stopped: &std::sync::atomic::AtomicBool,
+    connected: &std::sync::atomic::AtomicBool,
+    token: &str,
+    focus_check: fn(&crate::discovery::Target) -> bool,
+) -> Result<(), String> {
+    let current = consent.lock().unwrap();
+    check_consent(
+        current.as_ref(),
+        token,
+        stopped.load(Ordering::SeqCst),
+        connected.load(Ordering::SeqCst),
+        Instant::now(),
+    )?;
+    let target = current.as_ref().ok_or("consent missing")?.target.clone();
+    drop(current);
+    if !focus_check(&target) {
+        return Err("focus lost".into());
+    }
+    check_consent(
+        consent.lock().unwrap().as_ref(),
+        token,
+        stopped.load(Ordering::SeqCst),
+        connected.load(Ordering::SeqCst),
+        Instant::now(),
+    )
+}
+
+#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+fn owned_authorization(
+    consent: std::sync::Arc<std::sync::Mutex<Option<Consent>>>,
+    stopped: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    connected: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    token: String,
+    lock: std::sync::Arc<tokio::sync::OwnedMutexGuard<()>>,
+    focus_check: fn(&crate::discovery::Target) -> bool,
+) -> Authorization {
+    std::sync::Arc::new(move || {
+        let _keep_lock = &lock;
+        check_target(&consent, &stopped, &connected, &token, focus_check)
+    })
+}
+
 fn check_consent(
     consent: Option<&Consent>,
     token: &str,
@@ -181,15 +231,59 @@ fn check_consent(
 }
 
 pub fn guard<'a>(state: &'a State, token: &'a str) -> Result<ActionGuard<'a>, String> {
-    guard_parts(
-        &state.consent,
-        &state.stopped,
-        &state.connected,
-        &state.input_lock,
-        token,
-        crate::discovery::target_focused,
-    )
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        let guard = guard_parts(
+            &state.consent,
+            &state.stopped,
+            &state.connected,
+            &state.input_lock,
+            token,
+            crate::discovery::target_focused,
+        )?;
+        Ok(guard)
+    }
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    {
+        let lock = std::sync::Arc::new(
+            state
+                .input_lock
+                .clone()
+                .try_lock_owned()
+                .map_err(|_| "desktop busy")?,
+        );
+        let mut guard = ActionGuard {
+            consent: &state.consent,
+            stopped: &state.stopped,
+            connected: &state.connected,
+            token,
+            focus_check: crate::discovery::target_focused,
+            _lock: ActionLock::Owned {
+                _guard: lock.clone(),
+            },
+            authorization: None,
+        };
+        let (consent, stopped, connected, token) = (
+            state.consent.clone(),
+            state.stopped.clone(),
+            state.connected.clone(),
+            token.to_owned(),
+        );
+        guard.authorization = Some(owned_authorization(
+            consent,
+            stopped,
+            connected,
+            token,
+            lock,
+            crate::discovery::target_focused,
+        ));
+        guard.check()?;
+        Ok(guard)
+    }
 }
+
+#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+pub type Authorization = std::sync::Arc<dyn Fn() -> Result<(), String> + Send + Sync>;
 
 pub fn guard_parts<'a>(
     consent: &'a std::sync::Mutex<Option<Consent>>,
@@ -200,12 +294,16 @@ pub fn guard_parts<'a>(
     focus_check: fn(&crate::discovery::Target) -> bool,
 ) -> Result<ActionGuard<'a>, String> {
     let guard = ActionGuard {
+        #[cfg(any(target_os = "macos", target_os = "windows"))]
+        authorization: None,
         consent,
         stopped,
         connected,
         token,
         focus_check,
-        _lock: lock.try_lock().map_err(|_| "desktop busy")?,
+        _lock: ActionLock::Borrowed {
+            _guard: lock.try_lock().map_err(|_| "desktop busy")?,
+        },
     };
     guard.check()?;
     Ok(guard)
@@ -231,6 +329,42 @@ fn allowed_key(key: &str) -> Result<Key, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[tokio::test]
+    async fn owned_authorization_retains_lock_and_checks_revocation() {
+        use std::sync::{atomic::AtomicBool, Arc, Mutex};
+        let lock = Arc::new(tokio::sync::Mutex::new(()));
+        let consent = Arc::new(Mutex::new(Some(Consent {
+            token: "token".into(),
+            until: Instant::now() + Duration::from_secs(60),
+            target: crate::discovery::Target {
+                app_id: "editor".into(),
+                name: "Editor".into(),
+                pid: 42,
+            },
+        })));
+        let stopped = Arc::new(AtomicBool::new(false));
+        let connected = Arc::new(AtomicBool::new(true));
+        let permit = owned_authorization(
+            consent.clone(),
+            stopped.clone(),
+            connected.clone(),
+            "token".into(),
+            Arc::new(lock.clone().try_lock_owned().unwrap()),
+            |_| true,
+        );
+        assert!(lock.try_lock().is_err());
+        assert!(permit().is_ok());
+        stopped.store(true, Ordering::SeqCst);
+        assert!(permit().is_err());
+        stopped.store(false, Ordering::SeqCst);
+        connected.store(false, Ordering::SeqCst);
+        assert!(permit().is_err());
+        connected.store(true, Ordering::SeqCst);
+        *consent.lock().unwrap() = None;
+        assert!(permit().is_err());
+        drop(permit);
+        assert!(lock.try_lock().is_ok());
+    }
     #[test]
     fn focus_loss_and_different_target_refuse_guarded_actions() {
         let consent = std::sync::Mutex::new(Some(Consent {

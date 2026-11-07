@@ -419,6 +419,7 @@ impl AccessibilitySensor for Sensor {
                         .contains(NativeState::Active);
                 }
                 apps.push(App {
+                    app_id: executable.clone(),
                     name: a.name().await.map_err(|_| Error::StaleRef)?,
                     handle: h,
                     executable,

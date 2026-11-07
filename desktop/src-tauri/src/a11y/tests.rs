@@ -33,6 +33,7 @@ impl AccessibilitySensor for Mock {
     fn apps(&self) -> Task<'_, Vec<App>> {
         Box::pin(async {
             Ok(vec![App {
+                app_id: "org.example.editor".into(),
                 handle: app(),
                 name: "Editor".into(),
                 executable: "editor-bin".into(),
@@ -366,6 +367,24 @@ async fn highlight_refs_are_fresh_snapshot_scoped_and_expire() {
         (fallback.x, fallback.y, fallback.width, fallback.height),
         (99., 88., 77., 66.)
     );
+}
+
+#[tokio::test]
+async fn app_matching_shares_bundle_name_executable_pid_and_focus_aliases() {
+    let (service, _) = service(Scenario::Normal);
+    for requested in [
+        "ORG.EXAMPLE.EDITOR",
+        "Editor",
+        "EDITOR-BIN",
+        "42",
+        "focused",
+    ] {
+        assert_eq!(service.resolve(requested).await.unwrap().path, app().path);
+    }
+    assert!(matches!(
+        service.resolve("missing").await,
+        Err(Error::AppNotFound)
+    ));
 }
 
 #[tokio::test]
