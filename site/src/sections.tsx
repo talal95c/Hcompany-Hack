@@ -81,19 +81,6 @@ export function Hero() {
             <Btn label="Try Rio" href="#contact" />
           </motion.div>
         </div>
-        <motion.a href="#services" className="brain-card" {...up(0.7)}>
-          <img className="brain-glow" src={asset("i8M81i0PeB8FDxgPt1GPDik2kA.jpg")} alt="" />
-          <div className="brain-img">
-            <video src={asset("digital-brain.mp4")} poster={asset("i8M81i0PeB8FDxgPt1GPDik2kA.jpg")} autoPlay muted loop playsInline />
-          </div>
-          <div className="brain-meta">
-            <div>
-              <p className="brain-title">Holo vision</p>
-              <p className="p-12 brain-sub">// Powered by H Company</p>
-            </div>
-            <Icon name="arrowRightLight" size={26} className="brain-arrow" />
-          </div>
-        </motion.a>
         <motion.div className="hero-bottom" {...up(0.85)}>
           <p className="p-14 hero-trust">
             Works on top of the apps you already use, from 3D to spreadsheets.
