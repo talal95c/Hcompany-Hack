@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-07T14:31:30+00:00",
+  "date": "2026-11-07T14:50:25+00:00",
   "host": {
     "os": "Linux-6.8.0-1061-aws-x86_64-with-glibc2.35",
     "python": "3.11.17"
@@ -10,17 +10,17 @@
       "n": 3,
       "n_ok": 3,
       "failures": {},
-      "p50_ms": 2623.8,
-      "p95_ms": 3400.5,
-      "min_ms": 1967.5,
-      "max_ms": 3486.8
+      "p50_ms": 2645.4,
+      "p95_ms": 3726.5,
+      "min_ms": 2027.2,
+      "max_ms": 3846.7
     }
   },
   "calls": [
     {
       "service": "linkup",
       "operation": "search",
-      "duration_ms": 2623.85,
+      "duration_ms": 2645.36,
       "status": "ok",
       "request_id": null,
       "input_tokens": null,
@@ -30,7 +30,7 @@
     {
       "service": "linkup",
       "operation": "search",
-      "duration_ms": 1967.49,
+      "duration_ms": 2027.15,
       "status": "ok",
       "request_id": null,
       "input_tokens": null,
@@ -40,7 +40,7 @@
     {
       "service": "linkup",
       "operation": "search",
-      "duration_ms": 3486.85,
+      "duration_ms": 3846.65,
       "status": "ok",
       "request_id": null,
       "input_tokens": null,
@@ -52,12 +52,12 @@
   "results": [
     {
       "query": "How do I add a torus mesh in Blender 4.5?",
-      "answer": "In the 3D Viewport, press Shift+A, choose Mesh > Torus. It appears at the 3D Cursor. Adjust its dimensions and segment counts in the operator settings immediately after adding it.",
+      "answer": "In the 3D Viewport, press Shift+A, choose Mesh > Torus. It appears at the 3D Cursor. Adjust its segment counts and radius settings in the operator panel immediately after adding it.",
       "data": {
-        "answer": "In the 3D Viewport, press Shift+A, choose Mesh > Torus. It appears at the 3D Cursor. Adjust its dimensions and segment counts in the operator settings immediately after adding it.",
+        "answer": "In the 3D Viewport, press Shift+A, choose Mesh > Torus. It appears at the 3D Cursor. Adjust its segment counts and radius settings in the operator panel immediately after adding it.",
         "menu_path": "3D Viewport > Add > Mesh > Torus",
-        "shortcut": "Shift+A, then choose Mesh > Torus",
-        "blender_version": "Blender 4.5"
+        "shortcut": "Shift+A, then choose Torus",
+        "blender_version": "The supplied torus instructions are from Blender 5.1/5.2 documentation, not Blender 4.5; the exact 4.5 menu details are not confirmed by the available information."
       },
       "sources": [
         "https://docs.blender.org/manual/en/2.81/_sources/modeling/meshes/primitives.rst.txt",
@@ -69,12 +69,12 @@
     },
     {
       "query": "Blender 4.5 extrude faces shortcut in Edit Mode",
-      "answer": "In Edit Mode, select the face(s) and press **E** to extrude them. Confirm with a click or Enter.",
+      "answer": "In Edit Mode, select the face(s) and press **E** to extrude. Blender extrudes faces along their averaged normal by default; move the mouse, then click or press Enter to confirm.",
       "data": {
-        "answer": "In Edit Mode, select the face(s) and press **E** to extrude them. Confirm with a click or Enter.",
+        "answer": "In Edit Mode, select the face(s) and press **E** to extrude. Blender extrudes faces along their averaged normal by default; move the mouse, then click or press Enter to confirm.",
         "menu_path": "3D Viewport > Mesh > Extrude > Extrude Faces",
         "shortcut": "E",
-        "blender_version": "Blender 4.5 LTS"
+        "blender_version": "4.5 LTS"
       },
       "sources": [
         "https://docs.blender.org/manual/en/4.5/modeling/meshes/tools/extrude_region.html",
@@ -86,12 +86,12 @@
     },
     {
       "query": "Blender 4.5 Subdivision Surface modifier levels viewport",
-      "answer": "The Subdivision Surface modifier’s Viewport Levels control how many subdivision steps are shown in the 3D Viewport. In Blender 4.5, the API documents a range of 0–11, with a default of 1. Set it in the modifier’s Levels/Viewport control, or select the object and press Ctrl+1, Ctrl+2, and so on; these shortcuts also set the modifier level if one already exists. Render Levels are a separate setting.",
+      "answer": "The Subdivision Surface modifier’s Viewport Levels control how many subdivision steps are displayed in the 3D Viewport. The Blender API documents a range of 0–11 (default 1); Render Levels are separate. With the object selected, use Ctrl+1, Ctrl+2, and so on to add the modifier at that viewport level—or change the level if it already has one. The shortcut does not change Render Levels.",
       "data": {
-        "answer": "The Subdivision Surface modifier’s Viewport Levels control how many subdivision steps are shown in the 3D Viewport. In Blender 4.5, the API documents a range of 0–11, with a default of 1. Set it in the modifier’s Levels/Viewport control, or select the object and press Ctrl+1, Ctrl+2, and so on; these shortcuts also set the modifier level if one already exists. Render Levels are a separate setting.",
+        "answer": "The Subdivision Surface modifier’s Viewport Levels control how many subdivision steps are displayed in the 3D Viewport. The Blender API documents a range of 0–11 (default 1); Render Levels are separate. With the object selected, use Ctrl+1, Ctrl+2, and so on to add the modifier at that viewport level—or change the level if it already has one. The shortcut does not change Render Levels.",
         "menu_path": "Properties Editor > Modifiers > Subdivision Surface > Levels Viewport",
-        "shortcut": "Ctrl+1 through Ctrl+9 sets the viewport level (and adds the modifier if needed).",
-        "blender_version": "4.5 LTS"
+        "shortcut": "Ctrl+1 through Ctrl+9 (sets/adds the corresponding viewport subdivision level)",
+        "blender_version": "The API range is from the current Blender API; the supplied manual shortcut reference is Blender 4.0. Blender 4.5-specific modifier-level details were not provided."
       },
       "sources": [
         "https://docs.blender.org/api/current/bpy.types.SubsurfModifier.html",
