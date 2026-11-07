@@ -12,9 +12,9 @@
 
 use crate::holo::{self, Holo};
 use crate::tutorial::{self, App, Milestone, Tutorial};
-use base64::{engine::general_purpose::STANDARD, Engine};
+use base64::{Engine, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tauri::{AppHandle, Emitter};
@@ -142,9 +142,11 @@ fn download(url: &str, dir: &Path) -> Result<(PathBuf, PathBuf), String> {
     let audio = dir.join("audio.mp3");
     if !audio.exists() {
         run(
-            Command::new(tool("ffmpeg")).args(["-loglevel", "error", "-y", "-i"]).arg(&video).args([
-                "-vn", "-ac", "1", "-ar", "16000", "-c:a", "libmp3lame", "-b:a", "32k",
-            ]).arg(&audio),
+            Command::new(tool("ffmpeg"))
+                .args(["-loglevel", "error", "-y", "-i"])
+                .arg(&video)
+                .args(["-vn", "-ac", "1", "-ar", "16000", "-c:a", "libmp3lame", "-b:a", "32k"])
+                .arg(&audio),
             "ffmpeg audio",
         )?;
     }
@@ -186,7 +188,10 @@ async fn transcribe(audio: &Path) -> Result<(Vec<Utterance>, Option<String>), St
     let bytes = tokio::fs::read(audio).await.map_err(|e| e.to_string())?;
     let form = reqwest::multipart::Form::new().part(
         "audio",
-        reqwest::multipart::Part::bytes(bytes).file_name("audio.mp3").mime_str("audio/mpeg").map_err(|e| e.to_string())?,
+        reqwest::multipart::Part::bytes(bytes)
+            .file_name("audio.mp3")
+            .mime_str("audio/mpeg")
+            .map_err(|e| e.to_string())?,
     );
     let up: Value = http
         .post("https://api.gladia.io/v2/upload")
@@ -416,9 +421,8 @@ pub async fn run_import(
 
     report("video", format!("Downloading “{}”…", video.title));
     let (u, d) = (video.url.clone(), dir.clone());
-    let (video_file, audio) = tauri::async_runtime::spawn_blocking(move || download(&u, &d))
-        .await
-        .map_err(|e| e.to_string())??;
+    let (video_file, audio) =
+        tauri::async_runtime::spawn_blocking(move || download(&u, &d)).await.map_err(|e| e.to_string())??;
 
     report("transcript", "Transcribing with Gladia…".into());
     let segments = video.segments.clone();
@@ -466,7 +470,11 @@ pub async fn run_import(
 
 /// Imports a YouTube video, reporting each stage to the bar.
 #[tauri::command]
-pub async fn import_youtube(url: String, app: AppHandle, state: tauri::State<'_, crate::AppState>) -> Result<Imported, String> {
+pub async fn import_youtube(
+    url: String,
+    app: AppHandle,
+    state: tauri::State<'_, crate::AppState>,
+) -> Result<Imported, String> {
     let (t, language) = run_import(&state.holo, &url, |stage, detail| progress(&app, stage, detail)).await?;
     Ok(Imported { id: t.id, title: t.title, app: t.app.name, milestones: t.milestones.len(), language })
 }

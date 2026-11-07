@@ -6,13 +6,13 @@
 //! Portuguese: each language gets its own synthesizer (text normalization is
 //! per language) and a native voice from Gradium's voice catalog.
 
-use ptts::checkpoint::{Checkpoint, ResolveOptions, DEFAULT_MODEL};
+use ptts::checkpoint::{Checkpoint, DEFAULT_MODEL, ResolveOptions};
 use ptts::preprocess::Lang;
 use ptts::synth::{DeviceKind, Quant, SpeechOptions, Synth};
-use ptts::voice_catalog::{VoiceCatalog, DEFAULT_VOICE_CATALOG};
+use ptts::voice_catalog::{DEFAULT_VOICE_CATALOG, VoiceCatalog};
 use std::collections::HashMap;
-use std::sync::mpsc;
 use std::sync::Mutex;
+use std::sync::mpsc;
 
 /// Gated on Hugging Face: needs HF_TOKEN and the model's terms accepted.
 /// Falls back to the public English model (Phonon 31m) when unavailable.
@@ -119,12 +119,7 @@ impl Engine {
         let code = if self.multilingual { code } else { "en" };
         if !self.synths.contains_key(code) {
             let (lang, voice) = lang_info(code).unwrap_or((Lang::En, None));
-            let mut synth = self
-                .checkpoint
-                .builder(lang)
-                .device(DeviceKind::Cpu)
-                .build()
-                .map_err(|e| e.to_string())?;
+            let mut synth = self.checkpoint.builder(lang).device(DeviceKind::Cpu).build().map_err(|e| e.to_string())?;
             self.checkpoint.register_voices(&mut synth);
             // Fetch the native voice for this language from the catalog.
             let voice = voice.and_then(|name| {
@@ -143,9 +138,7 @@ impl Engine {
         let text = &speakable(text);
         // The text's own language first: a French sentence read by the
         // English voice (or the reverse) is the worst outcome.
-        let code = detect(text)
-            .or(lang.filter(|l| lang_info(l).is_some()))
-            .unwrap_or("en");
+        let code = detect(text).or(lang.filter(|l| lang_info(l).is_some())).unwrap_or("en");
         let (synth, voice) = self.synth(code)?;
         let mut options = SpeechOptions::default();
         if let Some(v) = voice {
@@ -185,11 +178,7 @@ impl Tts {
     /// Blocking: waits for the model (and its first load) to finish.
     pub fn say(&self, text: String, lang: Option<String>) -> Result<(Vec<f32>, u32), String> {
         let (reply, rx) = mpsc::channel();
-        self.tx
-            .lock()
-            .unwrap()
-            .send(Job { text, lang, reply })
-            .map_err(|_| "TTS thread stopped")?;
+        self.tx.lock().unwrap().send(Job { text, lang, reply }).map_err(|_| "TTS thread stopped")?;
         rx.recv().map_err(|_| "TTS thread stopped".to_string())?
     }
 }
@@ -208,7 +197,12 @@ mod tests {
         ] {
             let t = std::time::Instant::now();
             let r = tts.say(text.to_string(), lang.map(String::from));
-            println!("{text:?} -> {:?} in {:?} (detected {:?})", r.as_ref().map(|(p, sr)| (p.len(), *sr)), t.elapsed(), super::detect(text));
+            println!(
+                "{text:?} -> {:?} in {:?} (detected {:?})",
+                r.as_ref().map(|(p, sr)| (p.len(), *sr)),
+                t.elapsed(),
+                super::detect(text)
+            );
             assert!(r.is_ok(), "{r:?}");
         }
         println!("state: {}", super::STATE.lock().unwrap());

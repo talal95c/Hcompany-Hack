@@ -19,7 +19,7 @@ pub struct App {
     pub min_version: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct Milestone {
     pub id: String,
     /// Imperative sub-goal, e.g. "Add a torus".
@@ -72,6 +72,17 @@ fn authored() -> String {
     "authored".into()
 }
 
+/// What the scheduler can do next.
+#[derive(Debug, PartialEq)]
+pub enum Next<'a> {
+    Ready(&'a Milestone),
+    /// Every required milestone is finished.
+    Complete,
+    /// Required milestones remain but none of them can start (cycle, or a
+    /// dependency that can never be reached).
+    Blocked(Vec<String>),
+}
+
 #[derive(Serialize, Clone, Copy, PartialEq, Eq, Debug)]
 #[serde(rename_all = "lowercase")]
 pub enum Status {
@@ -98,12 +109,25 @@ impl Tutorial {
                 }
             }
         }
-        if let Some(s) = &self.start {
-            if !ids.contains(s.as_str()) {
-                return Err(format!("{}: unknown start {s}", self.id));
+        if let Some(s) = &self.start
+            && !ids.contains(s.as_str())
+        {
+            return Err(format!("{}: unknown start {s}", self.id));
+        }
+        // Run the scheduler itself on the graph: every required milestone
+        // must be reachable, otherwise a session would stall on it.
+        let mut finished = HashSet::new();
+        loop {
+            match self.next(&finished) {
+                Next::Ready(m) => {
+                    finished.insert(m.id.clone());
+                }
+                Next::Complete => return Ok(()),
+                Next::Blocked(ids) => {
+                    return Err(format!("{}: unreachable milestones {}", self.id, ids.join(", ")));
+                }
             }
         }
-        Ok(())
     }
 
     pub fn milestone(&self, id: &str) -> Option<&Milestone> {
@@ -114,8 +138,18 @@ impl Tutorial {
     /// skipped). A milestone is available when its `requires` are finished
     /// and either it is the start, or one milestone pointing to it with
     /// `next` is finished, or nothing points to it and the start is finished.
-    /// File order breaks ties.
-    pub fn next_milestone(&self, finished: &HashSet<String>) -> Option<&Milestone> {
+    /// File order breaks ties. When nothing is available, tells a finished
+    /// tutorial (only optional milestones left) from a blocked one.
+    pub fn next(&self, finished: &HashSet<String>) -> Next<'_> {
+        if let Some(m) = self.ready_milestone(finished) {
+            return Next::Ready(m);
+        }
+        let blocked: Vec<String> =
+            self.milestones.iter().filter(|m| !m.optional && !finished.contains(&m.id)).map(|m| m.id.clone()).collect();
+        if blocked.is_empty() { Next::Complete } else { Next::Blocked(blocked) }
+    }
+
+    fn ready_milestone(&self, finished: &HashSet<String>) -> Option<&Milestone> {
         let start = self.start.as_deref();
         let start_done = start.is_none_or(|s| finished.contains(s));
         self.milestones.iter().find(|m| {
@@ -126,11 +160,7 @@ impl Tutorial {
                 return true;
             }
             let mut preds = self.milestones.iter().filter(|p| p.next.contains(&m.id)).peekable();
-            if preds.peek().is_none() {
-                start_done
-            } else {
-                preds.any(|p| finished.contains(&p.id))
-            }
+            if preds.peek().is_none() { start_done } else { preds.any(|p| finished.contains(&p.id)) }
         })
     }
 }
@@ -237,15 +267,53 @@ mod tests {
         };
         t.validate().unwrap();
         let mut done = HashSet::new();
-        assert_eq!(t.next_milestone(&done).unwrap().id, "a");
+        assert_eq!(t.ready_milestone(&done).unwrap().id, "a");
         done.insert("a".to_string());
-        assert_eq!(t.next_milestone(&done).unwrap().id, "b");
+        assert_eq!(t.ready_milestone(&done).unwrap().id, "b");
         done.insert("b".to_string());
-        assert_eq!(t.next_milestone(&done).unwrap().id, "c");
+        assert_eq!(t.ready_milestone(&done).unwrap().id, "c");
         done.insert("c".to_string());
-        assert_eq!(t.next_milestone(&done).unwrap().id, "d");
+        assert_eq!(t.ready_milestone(&done).unwrap().id, "d");
         done.insert("d".to_string());
-        assert!(t.next_milestone(&done).is_none());
+        assert_eq!(t.next(&done), Next::Complete);
+    }
+
+    #[test]
+    fn mutual_requires_is_blocked_and_rejected() {
+        let t = Tutorial {
+            id: "t".into(),
+            title: "t".into(),
+            goal: "g".into(),
+            start: Some("a".into()),
+            milestones: vec![m("a", &[], &["b"], false), m("b", &[], &["a"], false)],
+            ..Default::default()
+        };
+        assert_eq!(t.next(&HashSet::new()), Next::Blocked(vec!["a".into(), "b".into()]));
+        assert!(t.validate().unwrap_err().contains("unreachable"));
+    }
+
+    #[test]
+    fn only_optional_left_is_complete() {
+        let t = Tutorial {
+            id: "t".into(),
+            title: "t".into(),
+            goal: "g".into(),
+            milestones: vec![m("a", &[], &[], false), m("b", &[], &["c"], true), m("c", &[], &["b"], true)],
+            ..Default::default()
+        };
+        t.validate().unwrap();
+        let done = HashSet::from(["a".to_string()]);
+        assert_eq!(t.next(&done), Next::Complete);
+    }
+
+    #[test]
+    fn shipped_tutorials_are_schedulable() {
+        for e in std::fs::read_dir(dir()).unwrap().flatten() {
+            if e.path().extension().is_some_and(|x| x == "json") {
+                let t: Tutorial = serde_json::from_slice(&std::fs::read(e.path()).unwrap()).unwrap();
+                t.validate().unwrap_or_else(|err| panic!("{}: {err}", e.path().display()));
+            }
+        }
     }
 
     #[test]
@@ -258,8 +326,8 @@ mod tests {
             ..Default::default()
         };
         let mut done = HashSet::new();
-        assert_eq!(t.next_milestone(&done).unwrap().id, "a");
+        assert_eq!(t.ready_milestone(&done).unwrap().id, "a");
         done.insert("a".to_string());
-        assert_eq!(t.next_milestone(&done).unwrap().id, "b");
+        assert_eq!(t.ready_milestone(&done).unwrap().id, "b");
     }
 }

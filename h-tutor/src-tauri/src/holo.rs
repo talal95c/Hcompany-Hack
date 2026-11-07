@@ -1,7 +1,7 @@
 //! Thin client for H Company's Models API (OpenAI-compatible, Holo models).
 
 use serde::de::DeserializeOwned;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 pub struct Holo {
     http: reqwest::Client,
@@ -9,6 +9,15 @@ pub struct Holo {
     /// connection with the request they back up.
     fresh: reqwest::Client,
 }
+
+/// Shown in the bar while Holo is retried or hedged, so a slow answer is
+/// never silent.
+const SLOW: &str = "Holo is slow to answer, trying again…";
+/// A stream with no data at all for this long is abandoned (est.).
+const STALL_FIRST: std::time::Duration = std::time::Duration::from_secs(20);
+/// Once tokens flow they come every fraction of a second; a gap this long
+/// means the stream is stuck (est.).
+const STALL_GAP: std::time::Duration = std::time::Duration::from_secs(12);
 
 fn env_or(key: &str, default: &str) -> String {
     std::env::var(key).ok().filter(|v| !v.trim().is_empty()).unwrap_or_else(|| default.to_string())
@@ -61,7 +70,9 @@ impl Holo {
                 Err(e) => (Err(e), None),
             };
             match result {
-                Ok((status, text)) if !(status.as_u16() == 408 || status.as_u16() == 429 || status.is_server_error()) => {
+                Ok((status, text))
+                    if !(status.as_u16() == 408 || status.as_u16() == 429 || status.is_server_error()) =>
+                {
                     return Ok((status, text, started.elapsed().as_millis()));
                 }
                 Ok((status, text)) => {
@@ -95,7 +106,7 @@ impl Holo {
         key: &str,
         body: &Value,
     ) -> Result<(reqwest::StatusCode, String, Option<u64>), String> {
-        use futures_util::future::{select, Either};
+        use futures_util::future::{Either, select};
         use futures_util::stream::{FuturesUnordered, StreamExt};
         const LAUNCH_AT_S: [u64; 3] = [0, 10, 20];
         let start = tokio::time::Instant::now();
@@ -107,8 +118,15 @@ impl Holo {
                 && (start.elapsed().as_secs() >= LAUNCH_AT_S[launched] || pending.is_empty());
             if due {
                 if launched > 0 {
-                    eprintln!("[holo] no answer after {:.0}s, sending a copy on a fresh connection", start.elapsed().as_secs_f32());
-                    crate::journal::event("holo_hedge", json!({ "after_s": start.elapsed().as_secs(), "copy": launched }));
+                    eprintln!(
+                        "[holo] no answer after {:.0}s, sending a copy on a fresh connection",
+                        start.elapsed().as_secs_f32()
+                    );
+                    crate::emit_status(SLOW);
+                    crate::journal::event(
+                        "holo_hedge",
+                        json!({ "after_s": start.elapsed().as_secs(), "copy": launched }),
+                    );
                 }
                 let client = if launched == 0 { &self.http } else { &self.fresh };
                 pending.push(self.send_once(client, url, key, body));
@@ -146,14 +164,8 @@ impl Holo {
         body: &Value,
     ) -> Result<(reqwest::StatusCode, String, Option<u64>), String> {
         const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(40);
-        let res = client
-            .post(url)
-            .bearer_auth(key)
-            .json(body)
-            .timeout(TIMEOUT)
-            .send()
-            .await
-            .map_err(|e| describe(&e))?;
+        let res =
+            client.post(url).bearer_auth(key).json(body).timeout(TIMEOUT).send().await.map_err(|e| describe(&e))?;
         let status = res.status();
         let retry_after = res
             .headers()
@@ -174,8 +186,9 @@ impl Holo {
     /// receives the thinking trace as it grows, so the UI can show what Holo
     /// is looking at. Returns the same message, latency and usage as
     /// `chat_usage`. The request is hedged like the others on its time to
-    /// first byte, a stream silent for 20 s is abandoned, and a failure
-    /// before any answer is retried once.
+    /// first byte; a stream that goes silent is abandoned (`STALL_FIRST`
+    /// before any data, `STALL_GAP` once data flows) and retried once on a
+    /// fresh connection, since the pooled one may be the one that stalled.
     pub async fn chat_stream(
         &self,
         body: &Value,
@@ -190,7 +203,10 @@ impl Holo {
         let started = std::time::Instant::now();
         let mut last = String::new();
         for attempt in 1..=2 {
-            match self.stream_once(&url, &key, &body, on_reasoning).await {
+            if attempt > 1 {
+                crate::emit_status(SLOW);
+            }
+            match self.stream_once(&url, &key, &body, on_reasoning, attempt > 1).await {
                 Ok((message, usage)) => return Ok((message, started.elapsed().as_millis(), usage)),
                 Err(e) => {
                     eprintln!("[holo] stream attempt {attempt}/2 failed: {e}");
@@ -208,9 +224,10 @@ impl Holo {
         key: &str,
         body: &Value,
         on_reasoning: &(dyn Fn(&str) + Sync),
+        fresh: bool,
     ) -> Result<(Value, Value), String> {
         use futures_util::StreamExt;
-        let res = self.hedged_response(url, key, body).await?;
+        let res = self.hedged_response(url, key, body, fresh).await?;
         let status = res.status();
         if !status.is_success() {
             let text = res.text().await.unwrap_or_default();
@@ -218,76 +235,34 @@ impl Holo {
             return Err(format!("Holo {status}: {detail}"));
         }
         let mut stream = res.bytes_stream();
-        let mut buf = String::new();
-        let (mut reasoning, mut content) = (String::new(), String::new());
-        let mut calls: Vec<(String, String, String)> = Vec::new(); // id, name, arguments
-        let (mut finish, mut usage) = (Value::Null, Value::Null);
+        let mut sse = Sse::default();
+        let mut flowing = false;
         loop {
-            let chunk = match tokio::time::timeout(std::time::Duration::from_secs(20), stream.next()).await {
-                Err(_) => return Err("stream stalled (no data for 20 s)".into()),
+            let limit = if flowing { STALL_GAP } else { STALL_FIRST };
+            let chunk = match tokio::time::timeout(limit, stream.next()).await {
+                Err(_) => return Err(format!("stream stalled (no data for {} s)", limit.as_secs())),
                 Ok(None) => break,
                 Ok(Some(Err(e))) => return Err(describe(&e)),
                 Ok(Some(Ok(bytes))) => bytes,
             };
-            buf.push_str(&String::from_utf8_lossy(&chunk));
-            while let Some(nl) = buf.find('\n') {
-                let line: String = buf.drain(..=nl).collect();
-                let Some(data) = line.trim().strip_prefix("data:").map(str::trim) else { continue };
-                if data == "[DONE]" {
-                    continue;
-                }
-                let Ok(v) = serde_json::from_str::<Value>(data) else { continue };
-                if v["usage"].is_object() {
-                    usage = v["usage"].clone();
-                }
-                let Some(choice) = v["choices"].get(0) else { continue };
-                let delta = &choice["delta"];
-                if let Some(r) = delta["reasoning"].as_str().or(delta["reasoning_content"].as_str()) {
-                    reasoning.push_str(r);
-                    on_reasoning(&reasoning);
-                }
-                if let Some(c) = delta["content"].as_str() {
-                    content.push_str(c);
-                }
-                for tc in delta["tool_calls"].as_array().into_iter().flatten() {
-                    let i = tc["index"].as_u64().unwrap_or(0) as usize;
-                    while calls.len() <= i {
-                        calls.push(Default::default());
-                    }
-                    if let Some(id) = tc["id"].as_str() {
-                        calls[i].0 = id.to_string();
-                    }
-                    if let Some(n) = tc["function"]["name"].as_str() {
-                        calls[i].1.push_str(n);
-                    }
-                    if let Some(a) = tc["function"]["arguments"].as_str() {
-                        calls[i].2.push_str(a);
-                    }
-                }
-                if !choice["finish_reason"].is_null() {
-                    finish = choice["finish_reason"].clone();
-                }
+            flowing = true;
+            if sse.push(&chunk, on_reasoning) {
+                break;
             }
         }
-        let tool_calls: Vec<Value> = calls
-            .into_iter()
-            .filter(|(_, name, _)| !name.is_empty())
-            .map(|(id, name, args)| json!({ "id": id, "type": "function", "function": { "name": name, "arguments": args } }))
-            .collect();
-        let message = json!({
-            "role": "assistant",
-            "content": if content.is_empty() { Value::Null } else { json!(content) },
-            "reasoning": reasoning,
-            "tool_calls": if tool_calls.is_empty() { Value::Null } else { json!(tool_calls) },
-            "finish_reason": finish,
-        });
-        Ok((message, usage))
+        sse.finish()
     }
 
     /// Like `hedged`, but returns the response as soon as its headers
     /// arrive (for streaming): copies on fresh connections at 10 s and 20 s.
-    async fn hedged_response(&self, url: &str, key: &str, body: &Value) -> Result<reqwest::Response, String> {
-        use futures_util::future::{select, Either};
+    async fn hedged_response(
+        &self,
+        url: &str,
+        key: &str,
+        body: &Value,
+        fresh: bool,
+    ) -> Result<reqwest::Response, String> {
+        use futures_util::future::{Either, select};
         use futures_util::stream::{FuturesUnordered, StreamExt};
         const LAUNCH_AT_S: [u64; 3] = [0, 10, 20];
         let start = tokio::time::Instant::now();
@@ -299,10 +274,17 @@ impl Holo {
                 && (start.elapsed().as_secs() >= LAUNCH_AT_S[launched] || pending.is_empty());
             if due {
                 if launched > 0 {
-                    eprintln!("[holo] no answer after {:.0}s, sending a copy on a fresh connection", start.elapsed().as_secs_f32());
-                    crate::journal::event("holo_hedge", json!({ "after_s": start.elapsed().as_secs(), "copy": launched, "stream": true }));
+                    eprintln!(
+                        "[holo] no answer after {:.0}s, sending a copy on a fresh connection",
+                        start.elapsed().as_secs_f32()
+                    );
+                    crate::emit_status(SLOW);
+                    crate::journal::event(
+                        "holo_hedge",
+                        json!({ "after_s": start.elapsed().as_secs(), "copy": launched, "stream": true }),
+                    );
                 }
-                let client = if launched == 0 { &self.http } else { &self.fresh };
+                let client = if launched == 0 && !fresh { &self.http } else { &self.fresh };
                 pending.push(client.post(url).bearer_auth(key).json(body).send());
                 launched += 1;
                 continue;
@@ -365,10 +347,8 @@ impl Holo {
         prompt: &str,
         schema: Value,
     ) -> Result<(T, Option<String>), String> {
-        let mut content: Vec<Value> = images
-            .iter()
-            .map(|url| json!({ "type": "image_url", "image_url": { "url": url } }))
-            .collect();
+        let mut content: Vec<Value> =
+            images.iter().map(|url| json!({ "type": "image_url", "image_url": { "url": url } })).collect();
         content.push(json!({ "type": "text", "text": prompt }));
 
         let body = json!({
@@ -394,19 +374,10 @@ impl Holo {
         }
 
         let v: Value = serde_json::from_str(&text).map_err(|e| format!("Unreadable response: {e}"))?;
-        let raw = v["choices"][0]["message"]["content"]
-            .as_str()
-            .ok_or("Empty response from the model")?;
+        let raw = v["choices"][0]["message"]["content"].as_str().ok_or("Empty response from the model")?;
         let id = crate::debug::record(tag, model, images, prompt, raw, ms);
-        let cleaned = raw
-            .trim()
-            .trim_start_matches("```json")
-            .trim_start_matches("```")
-            .trim_end_matches("```")
-            .trim();
-        serde_json::from_str(cleaned)
-            .map(|v| (v, id))
-            .map_err(|e| format!("Unexpected JSON ({e}): {raw}"))
+        let cleaned = raw.trim().trim_start_matches("```json").trim_start_matches("```").trim_end_matches("```").trim();
+        serde_json::from_str(cleaned).map(|v| (v, id)).map_err(|e| format!("Unexpected JSON ({e}): {raw}"))
     }
 }
 
@@ -429,14 +400,129 @@ fn describe(e: &reqwest::Error) -> String {
     msg
 }
 
+/// Assembles a streamed chat completion. Bytes are buffered until a full
+/// line is in, so a multibyte character split across network chunks is
+/// decoded intact.
+#[derive(Default)]
+struct Sse {
+    buf: Vec<u8>,
+    reasoning: String,
+    content: String,
+    /// id, name, arguments
+    calls: Vec<(String, String, String)>,
+    finish: Value,
+    usage: Value,
+    done: bool,
+}
+
+impl Sse {
+    /// Feeds one network chunk. Returns true once the `[DONE]` marker is in.
+    fn push(&mut self, chunk: &[u8], on_reasoning: &(dyn Fn(&str) + Sync)) -> bool {
+        self.buf.extend_from_slice(chunk);
+        while let Some(nl) = self.buf.iter().position(|&b| b == b'\n') {
+            let raw: Vec<u8> = self.buf.drain(..=nl).collect();
+            let line = String::from_utf8_lossy(&raw);
+            let Some(data) = line.trim().strip_prefix("data:").map(str::trim) else { continue };
+            if data == "[DONE]" {
+                self.done = true;
+                return true;
+            }
+            let Ok(v) = serde_json::from_str::<Value>(data) else { continue };
+            if v["usage"].is_object() {
+                self.usage = v["usage"].clone();
+            }
+            let Some(choice) = v["choices"].get(0) else { continue };
+            let delta = &choice["delta"];
+            if let Some(r) = delta["reasoning"].as_str().or(delta["reasoning_content"].as_str()) {
+                self.reasoning.push_str(r);
+                on_reasoning(&self.reasoning);
+            }
+            if let Some(c) = delta["content"].as_str() {
+                self.content.push_str(c);
+            }
+            for tc in delta["tool_calls"].as_array().into_iter().flatten() {
+                let i = tc["index"].as_u64().unwrap_or(0) as usize;
+                while self.calls.len() <= i {
+                    self.calls.push(Default::default());
+                }
+                if let Some(id) = tc["id"].as_str() {
+                    self.calls[i].0 = id.to_string();
+                }
+                if let Some(n) = tc["function"]["name"].as_str() {
+                    self.calls[i].1.push_str(n);
+                }
+                if let Some(a) = tc["function"]["arguments"].as_str() {
+                    self.calls[i].2.push_str(a);
+                }
+            }
+            if !choice["finish_reason"].is_null() {
+                self.finish = choice["finish_reason"].clone();
+            }
+        }
+        false
+    }
+
+    /// The assembled message. A stream that ended before `[DONE]` and
+    /// without a finish reason was cut: it is an error (retried), never a
+    /// partial answer.
+    fn finish(self) -> Result<(Value, Value), String> {
+        if !self.done && self.finish.is_null() {
+            return Err("stream ended before the response was complete".into());
+        }
+        let tool_calls: Vec<Value> = self
+            .calls
+            .into_iter()
+            .filter(|(_, name, _)| !name.is_empty())
+            .map(|(id, name, args)| json!({ "id": id, "type": "function", "function": { "name": name, "arguments": args } }))
+            .collect();
+        let message = json!({
+            "role": "assistant",
+            "content": if self.content.is_empty() { Value::Null } else { json!(self.content) },
+            "reasoning": self.reasoning,
+            "tool_calls": if tool_calls.is_empty() { Value::Null } else { json!(tool_calls) },
+            "finish_reason": self.finish,
+        });
+        Ok((message, self.usage))
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn sse_keeps_a_character_split_across_chunks() {
+        let line = "data: {\"choices\":[{\"delta\":{\"content\":\"café\"},\"finish_reason\":\"stop\"}]}\n".as_bytes();
+        let cut = line.iter().position(|&b| b == 0xC3).unwrap() + 1; // inside "é"
+        let mut sse = super::Sse::default();
+        assert!(!sse.push(&line[..cut], &|_| {}));
+        assert!(!sse.push(&line[cut..], &|_| {}));
+        let (msg, _) = sse.finish().unwrap();
+        assert_eq!(msg["content"], "café");
+    }
+
+    #[test]
+    fn sse_stops_on_done_marker() {
+        let mut sse = super::Sse::default();
+        let body = "data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"c1\",\"function\":{\"name\":\"answer\",\"arguments\":\"{}\"}}]},\"finish_reason\":\"tool_calls\"}]}\n\ndata: [DONE]\n\n";
+        assert!(sse.push(body.as_bytes(), &|_| {}));
+        let (msg, _) = sse.finish().unwrap();
+        assert_eq!(msg["tool_calls"][0]["function"]["name"], "answer");
+    }
+
+    #[test]
+    fn sse_cut_before_the_end_is_an_error() {
+        let mut sse = super::Sse::default();
+        sse.push(
+            b"data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"c1\",\"function\":{\"name\":\"answer\",\"arguments\":\"{\\\"content\\\":\\\"The object is\"}}]}}]}\n",
+            &|_| {},
+        );
+        assert!(sse.finish().is_err());
+    }
     /// A real streamed agent step: live reasoning, then a parsed tool call.
     /// `cargo test --lib streams_a_step -- --ignored --nocapture`
     #[test]
     #[ignore]
     fn streams_a_step() {
-        use base64::{engine::general_purpose::STANDARD, Engine};
+        use base64::{Engine, engine::general_purpose::STANDARD};
         let _ = dotenvy::from_path(concat!(env!("CARGO_MANIFEST_DIR"), "/../.env"));
         let shot = std::fs::read(concat!(
             env!("CARGO_MANIFEST_DIR"),

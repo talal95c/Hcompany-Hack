@@ -33,7 +33,7 @@ export type TutorialSummary = {
 
 /** One action for the learner, decided by Holo from the live screen. */
 export type Step = {
-  kind: "click" | "write" | "scroll" | "press_key" | "done";
+  kind: "click" | "write" | "scroll" | "press_key" | "done" | "pending";
   instruction: string;
   element: string;
   point: [number, number] | null;

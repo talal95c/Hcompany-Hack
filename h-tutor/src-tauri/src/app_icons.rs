@@ -20,19 +20,16 @@ static CACHE: Mutex<Option<HashMap<String, Option<AppIcon>>>> = Mutex::new(None)
 
 fn mdfind(query: &str) -> Option<PathBuf> {
     let out = Command::new("mdfind").arg(query).output().ok()?;
-    String::from_utf8_lossy(&out.stdout)
-        .lines()
-        .find(|l| l.ends_with(".app"))
-        .map(PathBuf::from)
+    String::from_utf8_lossy(&out.stdout).lines().find(|l| l.ends_with(".app")).map(PathBuf::from)
 }
 
 /// Finds an installed app by bundle id, then by name ("Docker Desktop" also
 /// tries "Docker").
 fn find_app(name: &str, bundle_id: Option<&str>) -> Option<PathBuf> {
-    if let Some(id) = bundle_id.filter(|id| !id.contains('\'')) {
-        if let Some(p) = mdfind(&format!("kMDItemCFBundleIdentifier == '{id}'")) {
-            return Some(p);
-        }
+    if let Some(id) = bundle_id.filter(|id| !id.contains('\''))
+        && let Some(p) = mdfind(&format!("kMDItemCFBundleIdentifier == '{id}'"))
+    {
+        return Some(p);
     }
     let mut names = vec![name.trim().to_string()];
     if let Some(first) = name.split_whitespace().next().filter(|f| *f != name.trim()) {
@@ -57,9 +54,7 @@ fn find_app(name: &str, bundle_id: Option<&str>) -> Option<PathBuf> {
         }
     }
     names.iter().filter(|n| !n.contains('\'')).find_map(|n| {
-        mdfind(&format!(
-            "kMDItemContentType == 'com.apple.application-bundle' && kMDItemDisplayName == '{n}'cd"
-        ))
+        mdfind(&format!("kMDItemContentType == 'com.apple.application-bundle' && kMDItemDisplayName == '{n}'cd"))
     })
 }
 
@@ -69,7 +64,7 @@ fn icon_png(path: &Path) -> Option<Vec<u8>> {
     use objc2::rc::autoreleasepool;
     use objc2::runtime::AnyObject;
     use objc2::{class, msg_send};
-    use std::ffi::{c_void, CString};
+    use std::ffi::{CString, c_void};
 
     let cpath = CString::new(path.to_str()?).ok()?;
     autoreleasepool(|_| unsafe {
@@ -144,7 +139,7 @@ fn dominant(img: &image::RgbaImage) -> String {
 }
 
 fn load(name: &str, bundle_id: Option<&str>) -> Option<AppIcon> {
-    use base64::{engine::general_purpose::STANDARD, Engine};
+    use base64::{Engine, engine::general_purpose::STANDARD};
     let path = find_app(name, bundle_id)?;
     let png = icon_png(&path)?;
     let img = image::load_from_memory(&png).ok()?;
@@ -187,7 +182,7 @@ mod tests {
     #[test]
     #[ignore]
     fn export_icons() {
-        use base64::{engine::general_purpose::STANDARD, Engine};
+        use base64::{Engine, engine::general_purpose::STANDARD};
         let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../src/assets/apps");
         std::fs::create_dir_all(&dir).unwrap();
         let apps = [

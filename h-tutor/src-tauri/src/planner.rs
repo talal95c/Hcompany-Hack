@@ -74,9 +74,7 @@ pub async fn plan(holo: &Holo, request: &str, shot: &Shot, knowledge: Option<&st
         ),
         None => prompt,
     };
-    let p: Plan = holo
-        .structured("plan", &holo::smart_model(), &[&shot.data_uri], &prompt, schema)
-        .await?;
+    let p: Plan = holo.structured("plan", &holo::smart_model(), &[&shot.data_uri], &prompt, schema).await?;
 
     let milestones: Vec<Milestone> = p
         .milestones

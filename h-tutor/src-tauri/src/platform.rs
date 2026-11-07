@@ -29,9 +29,7 @@ static HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
 /// A setting from `.env`, read fresh each time (a new token works without
 /// restarting Rio), else from the environment.
 fn setting(key: &str) -> Option<String> {
-    let from_file = dotenvy::dotenv_iter()
-        .ok()
-        .and_then(|it| it.flatten().find(|(k, _)| k == key).map(|(_, v)| v));
+    let from_file = dotenvy::dotenv_iter().ok().and_then(|it| it.flatten().find(|(k, _)| k == key).map(|(_, v)| v));
     from_file.or_else(|| std::env::var(key).ok()).filter(|v| !v.trim().is_empty())
 }
 
@@ -107,10 +105,10 @@ pub async fn search(app_name: &str, query: &str) -> Result<Option<SearchResult>,
                     text += &format!(" (shortcut {k})");
                 }
             }
-            if st["changed"].as_bool().unwrap_or(false) {
-                if let (Some(l), Some(v)) = (st["was"]["label"].as_str(), st["was"]["version"].as_str()) {
-                    text += &format!(" (changed: it was \"{l}\" in {v})");
-                }
+            if st["changed"].as_bool().unwrap_or(false)
+                && let (Some(l), Some(v)) = (st["was"]["label"].as_str(), st["was"]["version"].as_str())
+            {
+                text += &format!(" (changed: it was \"{l}\" in {v})");
             }
             text.push('\n');
         }
@@ -127,6 +125,10 @@ pub async fn search(app_name: &str, query: &str) -> Result<Option<SearchResult>,
 /// Reports a tutorial event to the organization's usage page (fire and
 /// forget; nothing when the platform is not configured).
 pub fn event(kind: &'static str, tutorial: &Tutorial, milestone: Option<&str>) {
+    // Unit tests drive sessions through milestones: never report them.
+    if cfg!(test) {
+        return;
+    }
     let Some((base, token)) = config() else { return };
     let body = serde_json::json!({
         "kind": kind,
@@ -154,14 +156,15 @@ pub async fn tutorials() -> Vec<Summary> {
     if !enabled() {
         return Vec::new();
     }
-    if let Some((at, list)) = TUTORIALS.lock().unwrap().as_ref() {
-        if at.elapsed() < Duration::from_secs(60) {
-            return list.clone();
-        }
+    if let Some((at, list)) = TUTORIALS.lock().unwrap().as_ref()
+        && at.elapsed() < Duration::from_secs(60)
+    {
+        return list.clone();
     }
-    match get("/v1/tutorials", &[]).await.and_then(|v| {
-        serde_json::from_value::<Vec<Summary>>(v["tutorials"].clone()).map_err(|e| e.to_string())
-    }) {
+    match get("/v1/tutorials", &[])
+        .await
+        .and_then(|v| serde_json::from_value::<Vec<Summary>>(v["tutorials"].clone()).map_err(|e| e.to_string()))
+    {
         Ok(list) => {
             *TUTORIALS.lock().unwrap() = Some((Instant::now(), list.clone()));
             list
@@ -246,7 +249,9 @@ mod tests {
     #[ignore]
     fn finds_internal_docs() {
         tauri::async_runtime::block_on(async {
-            for (app, q) in [("Comptoir", "how do I refund an order"), ("", "comment marquer une commande comme expédiée")] {
+            for (app, q) in
+                [("Comptoir", "how do I refund an order"), ("", "comment marquer une commande comme expédiée")]
+            {
                 let r = super::search(app, q).await.unwrap().expect("the organization's docs answer");
                 println!("--- {app:?} {q:?}\n{}", r.text);
                 assert!(r.text.contains("Comptoir"));
