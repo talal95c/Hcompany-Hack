@@ -1,9 +1,14 @@
 # Leçons prouvées sur Blender 4.5.9
 
 Deux leçons originales en français : [donut](donut/README.md) (9 étapes) et
-mini-cube (ajout, biseau, lissage). `lesson.json` respecte le contrat v1 figé ;
+mini-cube (ajout, biseau, lissage). `lesson.json` respecte le contrat v2 ;
 `steps.json` porte objectifs, quatre paliers d'aide et procédures ordonnées.
 Son schéma strict est `steps.schema.json` (draft 2020-12).
+La migration explicite porte les deux leçons à la révision 2, avec
+`app={id: blender, name: Blender, version: 4.5.9, sensor: addon}` et conserve
+`blender_version`. Chaque révision est à nouveau prouvée sur cette version.
+Les noms de checks historiques sont conservés : le registre actuel du moteur
+(`engine/checks/__init__.py`) ne reconnaît pas encore les alias `blender.*`.
 
 ## Reproduction depuis la racine
 
@@ -68,9 +73,10 @@ la reconstruction des checkpoints, pas uniquement le geste réussi.
 
 ## Limites
 
-Le contrat n'autorise que `object_exists` : les checks riches restent dans le
-compagnon en attendant un contrat v1.1. Ce vérificateur est local aux tests,
-pas encore intégré au moteur ou à l'add-on. Aucune preuve UI :
+Les leçons utilisent `object_exists` dans le contrat et conservent leurs checks
+géométriques riches dans le compagnon. Le moteur charge ce compagnon pour les
+vérifications prises en charge ; la preuve complète est rejouée par le lanceur
+Blender local aux tests. Aucune preuve UI :
 `ui_path_verified=false`, menus français descriptifs, pas de recette macOS.
 La sélection géométrique déterministe remplace la sélection manuelle dans le viewport.
 `redo` supprime la sortie du dernier opérateur créateur puis le réexécute avec les

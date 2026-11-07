@@ -30,6 +30,14 @@ def test_contracts_and_evidence(lesson_id: str) -> None:
     assert len(set(ids)) == len(ids)
     assert set(ids) == set(companion)
     assert lesson["language"] == "fr-FR"
+    assert lesson["schema_version"] == "2.0"
+    assert lesson["revision"] == 2
+    assert lesson["app"] == {
+        "id": "blender",
+        "name": "Blender",
+        "version": "4.5.9",
+        "sensor": "addon",
+    }
     assert lesson["blender_version"] == "4.5.9"
     assert lesson["status"] == "proven"
     assert len({step["why"] for step in lesson["steps"]}) == len(lesson["steps"])
@@ -62,6 +70,19 @@ def test_contracts_and_evidence(lesson_id: str) -> None:
         assert len(set(companion[step["id"]]["help_ladder"].values())) == 4
         assert step["proof"]["ui_path_verified"] is False
     assert manifest["blender_wall_seconds"] > 0
+
+
+@pytest.mark.parametrize("lesson_id", IDS)
+@pytest.mark.parametrize("app", [None, {}, {"id": "blender", "name": "Blender",
+                                         "version": "4.5.9", "sensor": "invalid"}])
+def test_v2_rejects_missing_empty_or_invalid_app(lesson_id: str, app: dict | None) -> None:
+    lesson = load(LESSONS / lesson_id / "lesson.json")
+    if app is None:
+        del lesson["app"]
+    else:
+        lesson["app"] = app
+    with pytest.raises(ValidationError):
+        Draft202012Validator(load(ROOT / "contracts" / "lesson.schema.json")).validate(lesson)
 
 
 def test_strict_sidecar_rejects_empty_unknown_and_extra() -> None:
