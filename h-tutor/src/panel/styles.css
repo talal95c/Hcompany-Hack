@@ -1,7 +1,8 @@
-/* Shape rule: surfaces 20px, cards 14px, controls 8px, buttons pill. */
+/* Shape rule: surfaces 20px, cards 14px, controls 8px, buttons pill.
+   Indicator strokes use 2px; circles and joined edges are geometric exceptions. */
 :root {
   --bar: rgba(16, 16, 20, 0.82);
-  --line: rgba(255, 255, 255, 0.14);
+  --line: rgba(255, 255, 255, 0.09);
   --hover: rgba(255, 255, 255, 0.04);
   --chip: rgba(255, 255, 255, 0.14);
   --text: #ffffff;
@@ -42,12 +43,12 @@ p { margin: 0; }
   width: 560px;
   max-width: 100%;
   border-radius: 20px;
-  padding: 16px;
+  padding: 24px;
   animation: rise 240ms var(--ease);
 }
 @keyframes rise { from { opacity: 0; transform: translateY(6px) scale(0.95); filter: blur(6px); } }
 
-/* Black glass: a grey-to-black gradient, an even dot grid, one hairline border. */
+/* One frosted layer; inner cards use fills, never another backdrop filter. */
 .bar, .palette {
   position: relative;
   isolation: isolate;
@@ -79,7 +80,7 @@ p { margin: 0; }
   place-items: center;
   width: 22px;
   height: 22px;
-  color: var(--accent);
+  color: var(--text);
 }
 .lead--ok { color: var(--ok); }
 
@@ -228,7 +229,7 @@ p { margin: 0; }
   color: var(--text);
   background: var(--hover);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 2px 7px;
   user-select: text;
 }
@@ -254,6 +255,12 @@ p { margin: 0; }
 }
 .explain__list li::marker { color: var(--dim); }
 .explain__actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
+
+.explain { display: flex; flex-direction: column; min-height: 180px; padding: 24px; }
+.explain__actions { margin-top: auto; padding-top: 24px; }
+.explain__a { font-size: 20px; line-height: 1.2; font-weight: 400; }
+.explain__list { color: var(--dim); }
+.palette__mark { width: 24px; height: 24px; flex: none; }
 
 .ask { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
 .ask input {
@@ -343,7 +350,7 @@ p { margin: 0; }
 .app-icon--fallback {
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--p-chip-hover);
   color: var(--text);
   font-weight: 600;
@@ -363,15 +370,15 @@ p { margin: 0; }
   transition: background 120ms ease-out, box-shadow 120ms ease-out;
 }
 .card[data-selected="true"] {
-  background: rgba(255, 154, 77, 0.06);
-  box-shadow: inset 0 0 0 1px rgba(255, 170, 110, 0.55);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
 }
 
-.shell--library { border-radius: 20px; overflow: hidden; background: var(--bar); border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 16px 40px -16px rgba(0,0,0,.45); backdrop-filter: blur(24px); }
+.shell--library { border-radius: 20px; overflow: hidden; background: var(--bar); border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 16px 40px -16px rgba(0,0,0,.45); backdrop-filter: blur(36px) saturate(125%); }
 .shell--library > .palette, .shell--library > .bar { border: 0; border-radius: 0; box-shadow: none; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
-.shell--library > .bar { border-top: 1px solid var(--line); }
+.shell--library > .bar { width: 100%; border-top: 1px solid var(--line); }
 .nav-item, .group-title, .nav-count, .card__meta, .palette__foot, .palette__foot kbd { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; }
-.nav-item, .group-title { text-transform: uppercase; }
+.nav-item, .group-title, .card__meta, .palette__foot { text-transform: uppercase; }
 .cards { gap: 8px; }
 .card { padding: 14px; background: rgba(255,255,255,.04); gap: 8px; }
 .card:hover { background: rgba(255,255,255,.08); }
@@ -386,7 +393,7 @@ p { margin: 0; }
   text-overflow: ellipsis;
 }
 .card__meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dim); }
-.card__meta .app-icon--fallback { font-size: 9px; border-radius: 4px; }
+.card__meta .app-icon--fallback { font-size: 9px; border-radius: 8px; }
 
 .palette__empty { font-size: 13px; color: var(--dim); padding: 4px 2px; max-width: 380px; line-height: 1.5; }
 
@@ -400,10 +407,10 @@ p { margin: 0; }
   color: var(--dim);
 }
 .palette__foot kbd {
-  font: 500 10.5px ui-monospace, "SF Mono", Menlo, monospace;
+  font: 500 10.5px var(--mono);
   color: var(--text);
   background: var(--chip);
-  border-radius: 5px;
+  border-radius: 8px;
   padding: 1px 5px;
   margin-right: 4px;
 }
@@ -414,7 +421,7 @@ p { margin: 0; }
   font-size: 12px;
   color: var(--dim);
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--hover);
 }
 .video-link:hover { color: var(--text); background: rgba(255, 255, 255, 0.12); }
@@ -486,14 +493,14 @@ p { margin: 0; }
 .composer__foot { display: flex; align-items: center; gap: 8px; width: 100%; }
 .agent-label { margin-right: auto; color: var(--dim); font-size: 15px; font-weight: 400; }
 .composer .hint { display: none; }
-.key { width: 38px; height: 38px; background: var(--grad); color: #21130b; }
+.key { width: 38px; height: 38px; background: var(--grad); color: var(--ink); }
 .key:disabled { opacity: .4; }
 .key:hover:not(:disabled) { filter: brightness(1.08); }
 .job-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.04); }
 .job-card p { font-size: 15px; }
 .job-card__detail { display: block; margin-top: 4px; font: 10px var(--mono); letter-spacing: .06em; color: var(--dim); }
 .job-card__tag { border-radius: 999px; padding: 5px 10px; background: var(--chip); font: 10px var(--mono); }
-.instruction { font-size: 23px; line-height: 1.25; margin: 14px 0 10px; }
+.instruction { font-size: 23px; font-weight: 400; line-height: 1.25; margin: 14px 0 10px; }
 .run { padding: 0; }
 .count, .hint, .status, .chip code, .chip kbd, .qa__searched { font-family: var(--mono); letter-spacing: .06em; }
 .lead { color: var(--text); }
@@ -505,5 +512,7 @@ button:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
 .row--done { height: auto; min-height: 44px; padding: 0; animation-duration: 240ms; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: opacity 120ms linear !important; }
+  .bar *, .palette { filter: none !important; }
+  .dicta, .ask { height: auto !important; }
   button:active:not(:disabled) { transform: none; }
 }

@@ -8,7 +8,6 @@ import { api, errorText, speak, stopSpeaking, type Imported, type QaAnswer, type
 import {
   IconCheck,
   IconClose,
-  IconEnter,
   IconGrid,
   IconKeyboard,
   IconMic,
@@ -429,7 +428,7 @@ export default function App() {
         />
       )}
     <div className="bar">
-      {phase === "home" && qa && (
+      {phase === "home" && qa && (qa.result || qa.error) && (
         <div className="explain qa">
           <div className="explain__q">
             “{qa.question}”
@@ -509,7 +508,7 @@ export default function App() {
                 className="dicta-inline"
                 initial={{ opacity: 0, filter: "blur(6px)" }}
                 animate={{ opacity: 1, filter: "blur(0px)" }}
-                transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+                transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
               >
                 <Wave level={level} done={voiceText.final} size="sm" />
                 <Transcript text={tail(voiceText.text, 44)} placeholder="Je t'écoute…" className="dicta-inline__text" />
@@ -556,6 +555,12 @@ export default function App() {
             )}
             </div>
           </form>
+          {phase === "home" && qa && !qa.result && !qa.error && (
+            <div className="job-card">
+              <div><p className="thinking-line"><span className="pulse" />Holo réfléchit…</p><span className="job-card__detail">{thinking || "Holo lit ta demande…"}</span></div>
+              <span className="job-card__tag">holo</span>
+            </div>
+          )}
           {(phase === "importing" || phase === "planning") && (
             <div className="job-card">
               <div><p>{phase === "importing" ? "Import du tutoriel" : "Création du plan"}</p><span className="job-card__detail">{phase === "importing" ? importStage : planning ? "Holo prépare les étapes…" : "Démarrage…"}</span></div>
@@ -574,7 +579,7 @@ export default function App() {
           className="run"
           initial={{ opacity: 0, y: 8, filter: "blur(6px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+          transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
         >
           <div className="row row--meta">
             <div className="segments" aria-label="Étapes">
@@ -664,14 +669,14 @@ export default function App() {
             className={`instruction ${busy || explain ? "instruction--dim" : ""}`}
             initial={{ opacity: 0, y: 6, filter: "blur(6px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+            transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
           >
             {step.instruction}
           </motion.p>
           {step.teach && !busy && !explain && <div className="teach">{step.teach}</div>}
           {step.milestone?.video_url && !explain && (
             <button className="video-link" onClick={() => openUrl(step.milestone!.video_url!)} title="Ouvrir la vidéo à ce moment">
-              ▶ Voir ce passage dans la vidéo
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true"><path d="m2 1 7 4-7 4Z" /></svg> Voir ce passage dans la vidéo
             </button>
           )}
           {step.kind === "write" && step.text && !busy && (
