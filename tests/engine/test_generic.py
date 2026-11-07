@@ -164,10 +164,14 @@ def test_router_order_fallback_and_recovery():
 
 
 def test_lesson_loader_v1_mapping_and_v2_app():
-    donut = load_lesson(ROOT / "lessons/donut/lesson.json")
+    donut = load_lesson(FIXTURES / "donut_lesson.json")
+    assert donut["schema_version"] == "1.0"
     assert lesson_app(donut) == {"id": "blender", "name": "Blender", "version": "4.5.9",
                                  "sensor": "addon"}
     assert "app" not in donut
+    current = load_lesson(ROOT / "lessons/donut/lesson.json")
+    assert current["schema_version"] == "2.0"
+    assert lesson_app(current) == lesson_app(donut)
     v2 = json.loads((ROOT / "contracts/examples/lesson/valid/blender-v2-namespaced.json")
                     .read_text())
     assert lesson_app(v2)["id"] == "blender"
