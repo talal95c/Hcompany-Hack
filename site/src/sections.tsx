@@ -22,8 +22,8 @@ const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Fi
 /* ---------------- Nav ---------------- */
 
 export function Nav() {
-  const links = ["Use cases", "How it works", "Library", "Pricing", "About"];
-  const ids = ["works", "services", "insights", "pricing", "company"];
+  const links = ["Home", "Pricing", "Contact"];
+  const ids = ["top", "pricing", "contact"];
   return (
     <motion.header
       className="nav"

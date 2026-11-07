@@ -1,28 +1,26 @@
-import { About, Capabilities, FaqInsights, Footer, Hero, Nav, Pricing, Process, Video, Vision, Works } from "./sections";
-
+import { useState } from "react";
+import { Footer, Hero, Nav, Pricing } from "./sections";
 import { GhostCursor } from "./cursor";
+import { Intro } from "./Intro";
+import { Tour } from "./Tour";
 
 export default function App() {
+  const [phase, setPhase] = useState<"intro" | "enter" | "done">("intro");
   return (
     <>
       <GhostCursor />
-      <Nav />
-      <main className="page">
-        <Hero />
-        <About />
-        <Works />
-        <div className="dark-zone">
-          <Capabilities />
-          <Vision />
+      {phase !== "done" && <Intro onEnter={() => setPhase("enter")} onGone={() => setPhase("done")} />}
+      {phase !== "intro" && (
+        <div className="site site-enter">
+          <Nav />
+          <main className="page">
+            <Hero />
+            <Pricing />
+          </main>
+          <Footer />
+          {phase === "done" && <Tour />}
         </div>
-        <div className="dark-zone">
-          <Video />
-          <Process />
-        </div>
-        <Pricing />
-        <FaqInsights />
-      </main>
-      <Footer />
+      )}
     </>
   );
 }
