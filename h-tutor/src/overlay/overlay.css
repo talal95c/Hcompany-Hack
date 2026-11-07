@@ -1,4 +1,4 @@
-:root { --ghost: #5b54e8; --ghost-ok: #16a34a; }
+:root { --ghost: #6d66f0; --ghost-ok: #16a34a; }
 
 .ghost {
   position: fixed;
@@ -21,18 +21,18 @@
   position: absolute;
   left: -1px;
   top: -1px;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.25));
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.6)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
 }
 
 /* One soft, slow halo: noticeable without shouting. */
 .ghost__halo {
   position: absolute;
-  left: -14px;
-  top: -14px;
-  width: 28px;
-  height: 28px;
+  left: -18px;
+  top: -18px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(91, 84, 232, 0.28) 0%, rgba(91, 84, 232, 0) 70%);
+  background: radial-gradient(circle, rgba(124, 117, 255, 0.38) 0%, rgba(91, 84, 232, 0) 70%);
   animation: breathe 2.4s ease-in-out infinite;
 }
 .ghost--thinking .ghost__halo { animation: none; opacity: 0; }
@@ -54,8 +54,8 @@
 
 .ghost__label {
   position: absolute;
-  left: 16px;
-  top: 18px;
+  left: 20px;
+  top: 24px;
   max-width: 220px;
   width: max-content;
   padding: 5px 9px;
