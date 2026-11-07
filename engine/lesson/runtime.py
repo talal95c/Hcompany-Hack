@@ -3,6 +3,7 @@
 import asyncio
 import base64
 import binascii
+import hashlib
 import inspect
 import json
 import math
@@ -47,6 +48,8 @@ from engine.interfaces import (
 from engine.learner import LearnerMemory
 from engine.lesson import Session, lesson_app, load_lesson, load_verification
 from engine.lesson.live_audio import LiveUtterance
+from engine.platform.coordinates import Rect as CaptureRect
+from engine.platform.coordinates import blender_region
 from engine.policy import HelpContext, HelpPolicy
 from engine.services.adapters import HoloAdapter, JevAdapter, SearchAdapter
 from engine.services.holo_scheduler import StaleSpeculation, speculative_request
@@ -80,8 +83,15 @@ def decode_capture(payload: dict) -> bytes:
             ended = True
             break
     crop = payload["crop"]
-    if not ended or offset != len(data) or dimensions != (crop["width"], crop["height"]):
+    size = payload.get("image_size", {"width": crop["width"], "height": crop["height"]})
+    if not ended or offset != len(data) or dimensions != (size["width"], size["height"]):
         raise ValueError("Dimensions PNG incompatibles")
+    if "image_size" in payload:
+        if (dimensions[0] * dimensions[1] > 1_048_576
+                or dimensions[0] > crop["width"] or dimensions[1] > crop["height"]
+                or abs(dimensions[0] / crop["width"] - dimensions[1] / crop["height"])
+                > 1 / min(crop["width"], crop["height"])):
+            raise ValueError("Redimensionnement PNG incompatible")
     if max(dimensions) > 8192 or min(dimensions) < 1:
         raise ValueError("Capture trop grande")
     return data
@@ -142,6 +152,7 @@ class EngineRuntime:
         self.policy.on_stop = self.stop_actions
         self.policy.on_resume = self.resume_actions
         self.ui_revision = 0
+        self.preload_generation = None
         self.permissions = {"screen": False, "accessibility": False, "microphone": False}
         self.capture: dict | None = None
         self.capture_ids = Seen()
@@ -154,6 +165,7 @@ class EngineRuntime:
         self.closed = False
         self.last_desktop_state = None
         self.render_pending = {}
+        self.pointer_pending = {}
         self.pointer_request = None
         self.router = SensorRouter(self.app["sensor"])
         plugin = PLUGINS.get(self.app["id"])
@@ -355,6 +367,7 @@ class EngineRuntime:
         if event["type"] in {"operator.executed", "regions.changed", "scene.changed",
                              "snapshot", "mode.changed", "selection.changed", "undo"}:
             self.invalidate_capture()
+            self.preload_generation = None
         await self.buffer.put({**event, "received_at": time.perf_counter(),
                                "connection_epoch": self.connection_epoch})
 
@@ -491,6 +504,10 @@ class EngineRuntime:
             return
         session.transition("CHECKING")
         generation = session.generation
+        if (self.preload_generation != generation and self.permissions["screen"]
+                and self.desktop.clients and not self.pointer_request):
+            self.preload_generation = generation
+            self.spawn(self.capture_target(preload=True, reveal=False))
         focus_epoch = self.a11y.focus_epoch
         check = session.step["check"]
         result = evaluate(check["name"], self.state, check["params"])
@@ -569,6 +586,11 @@ class EngineRuntime:
                               demo=adapter.replay(step), demo_undo=adapter.undo_replay(step))
             if adapter is not self.plugin:
                 context = replace(context, request_demo=self.request_demo)
+            if self.capture and context.target:
+                fields = {"pointer": None, "pointer_ref": None, "expected_rect": None,
+                          "bounds_proven": False,
+                          **self.target_hint(Rect.from_dict(self.capture["crop"]))}
+                context = replace(context, **fields)
         return context
 
     async def request_demo(self) -> None:
@@ -610,6 +632,10 @@ class EngineRuntime:
                         await self.error("consent_required", "Utilisez le canal d'action sécurisé")
                         continue
                     await self.desktop.send("command", command)
+                    if command["type"] == "pointer":
+                        if len(self.pointer_pending) >= 512:
+                            self.pointer_pending.pop(next(iter(self.pointer_pending)))
+                        self.pointer_pending[command["command_id"]] = command["generation"]
                     if command["type"] in {"pointer", "success"}:
                         if len(self.render_pending) >= 512:
                             self.render_pending.pop(next(iter(self.render_pending)))
@@ -638,32 +664,66 @@ class EngineRuntime:
             await self.error("demo_failed", "Démonstration interrompue")
 
     async def reveal_target(self) -> None:
-        self.spawn(self.capture_target())
+        self.spawn(self.capture_target(preload=True))
 
-    async def capture_target(self) -> None:
+    async def capture_target(self, *, preload: bool = False, reveal: bool = True) -> None:
         if not self.session:
             return
         generation = self.session.generation
+        stage = "reveal"
         try:
             adapter = self.adapter or self.primary
-            reveal = adapter.reveal_target(self.session.step) if adapter else None
-            crop = await reveal() if reveal else None
+            if (self.capture and self.help_context.target
+                    and (adapter is not self.plugin or self.capture.get("revealed"))
+                    and self.help_context.capture_epoch == self.policy.capture_epoch
+                    and time.monotonic() - self.capture.get("at", 0) < 9
+                    and self.targets.get_target(self.help_context.target)):
+                self.debug.record({"kind": "pointer_cache_hit"})
+                if not preload:
+                    await self.policy.intent("aide", self.context())
+                return
+            if reveal and adapter is self.plugin:
+                self.invalidate_capture()
+            reveal_target = adapter.reveal_target(self.session.step) if adapter and reveal else None
+            crop = await reveal_target() if reveal_target else None
+            stage = "coordinate_mapping"
+            if preload and not reveal and adapter is self.plugin:
+                region = self.plugin.region(self.session.step)
+                if not region:
+                    self.preload_generation = None
+                    return
+                crop = region["screen_rect"]
+            if adapter is self.plugin and crop:
+                region = self.plugin.region(self.session.step)
+                focus = self.vision.focus
+                if (not region or not focus
+                        or not self.profile.matches(focus["app_id"], focus["name"])):
+                    raise ValueError("Géométrie de fenêtre Blender indisponible")
+                window = Rect.from_dict(focus["window_bounds"])
+                bounds = region["rect"]
+                crop = blender_region(bounds["x"], bounds["y"], bounds["width"], bounds["height"],
+                    CaptureRect(**window.crop()), focus["scale"]).__dict__
             if generation != self.session.generation:
                 return
-            if crop and crop["width"] * crop["height"] > 1_048_576:
-                raise ValueError("Région trop grande")
             request = {"request_id": str(uuid4()), "crop": crop,
                        "ui_revision": self.ui_revision, "generation": generation}
             if adapter is not None and adapter.window_scope:
                 request.update(crop=None, scope="window", app=self.app["id"])
             self.pointer_request = {**request, "at": time.monotonic(),
-                                    "epoch": self.policy.capture_epoch}
+                                    "epoch": self.policy.capture_epoch, "preload": preload,
+                                    "revealed": reveal}
             await self.send_state(force=True)
+            stage = "capture_request"
             await self.desktop.send("capture.request", request)
             self.debug.record({"kind": "pointer_capture_requested", **request})
-        except (TimeoutError, ConnectionError, ValueError, KeyError, StopIteration):
+        except (TimeoutError, ConnectionError, ValueError, KeyError, StopIteration) as error:
+            self.debug.record({"kind": "target_unavailable", "exception": type(error).__name__,
+                               "stage": stage})
             self.pointer_request = None
-            await self.error("target_unavailable", "Dévoilez la cible ; pointage indisponible")
+            if preload:
+                self.preload_generation = None
+            if not preload:
+                await self.error("target_unavailable", "Dévoilez la cible ; pointage indisponible")
 
     async def capture_window(self) -> tuple[dict, bytes] | None:
         """Capture fraîche de la fenêtre de l'application (preuve visuelle, jamais réutilisée)."""
@@ -744,10 +804,24 @@ class EngineRuntime:
         elif kind == "capture.result":
             await self.accept_capture(payload)
         elif kind == "input.result" and payload.get("detail") == "rendered":
+            self.pointer_pending.pop(payload["command_id"], None)
             started = self.render_pending.pop(payload["command_id"], None)
             if started is not None:
                 self.metric("send→render_ack", (time.perf_counter() - started) * 1000)
                 self.debug.record({"kind": "render_ack", "command_id": payload["command_id"]})
+        elif (kind == "input.result" and payload.get("status") == "rejected"
+              and payload.get("detail", "").startswith("pointer_")):
+            generation = self.pointer_pending.pop(payload["command_id"], None)
+            self.render_pending.pop(payload["command_id"], None)
+            if self.session and generation == self.session.generation:
+                self.debug.record({"kind": "point_rejected", "reason": "native_safety_check"})
+                self.invalidate_capture()
+                if not self.policy.muted and self.session.status != "COMPLETE":
+                    self.policy.level = min(self.policy.level, 2)
+                    await self.policy._command("say", {
+                        "text": "Je ne peux pas garantir ce pointage. Suivez la consigne affichée.",
+                        "audio_ref": None})
+                    await self.send_state(connection)
         elif kind in {"ptt.start", "audio.chunk", "ptt.stop"}:
             await self.audio_message(kind, payload, connection)
 
@@ -949,7 +1023,7 @@ class EngineRuntime:
                 raise ValueError("Capture non corrélée au menu acquitté")
         self.invalidate_capture()
         self.capture_ids.add(payload["capture_id"])
-        self.capture = {**payload, "image_png": image, "consumed": False}
+        self.capture = {**payload, "image_png": image, "consumed": False, "at": time.monotonic()}
         if self.session:
             crop = payload["crop"]
             target = TargetContext(
@@ -959,6 +1033,9 @@ class EngineRuntime:
                 payload["monitor_id"], self.session.lesson.get("language", "fr"),
                 self.ui_revision, True,
                 menu_context=payload.get("request_id", ""),
+                generation=self.session.generation,
+                capture_revision=(f"{self.policy.capture_epoch}:"
+                                  + hashlib.sha256(image).hexdigest()),
             )
             self.help_context = replace(self.context(), target=target,
                                         capture_id=payload["capture_id"], image_png=image,
@@ -966,41 +1043,59 @@ class EngineRuntime:
                                         require_visible=bool(self.pointer_request
                                             and self.pointer_request["crop"] is None),
                                         **self.target_hint(Rect.from_dict(crop)))
-            if (self.policy.level == 2 and self.session.status != "COMPLETE"
+            after_reveal = bool(self.pointer_request and self.pointer_request.get("revealed"))
+            self.capture["revealed"] = after_reveal
+            if self.pointer_request and self.pointer_request.get("preload"):
+                self.preload_generation = self.session.generation
+            if (self.policy.level == 2 and not (self.pointer_request or {}).get("preload")
+                    and self.session.status != "COMPLETE"
                     and not self.policy.muted):
                 await self.policy.intent("aide", self.context())
                 self.max_help = max(self.max_help, self.policy.level)
                 await self.send_state()
-            elif self.policy.holo and self.session.index + 1 < len(self.session.lesson["steps"]):
-                following = self.session.lesson["steps"][self.session.index + 1]
-                next_target = replace(target, target=following["target"]["description"])
+            elif ((self.policy.holo or self.help_context.pointer) and not self.policy.muted
+                    and self.session.status not in {"ACTING", "COMPLETE"}):
                 generation = self.session.generation
                 capture_epoch = self.policy.capture_epoch
+                context = self.help_context
+                if (not (self.pointer_request or {}).get("preload")
+                        and self.session.index + 1 < len(self.session.lesson["steps"])):
+                    following = self.session.lesson["steps"][self.session.index + 1]
+                    target = replace(target, target=following["target"]["description"])
+                    fields = {"pointer": None, "pointer_ref": None, "expected_rect": None,
+                              "bounds_proven": False,
+                              **self.target_hint(Rect.from_dict(crop), following)}
+                    context = replace(context, target=target, **fields)
 
                 async def localize():
                     with speculative_request(lambda: self.session is not None
                                              and generation == self.session.generation
                                              and capture_epoch == self.policy.capture_epoch):
-                        return await self.fallback.call(
-                            "holo", lambda: self.policy.holo.localize(
-                                image, next_target.target, timeout_s=self.config.holo_timeout_s,
-                            ), localization_budget(self.policy.holo, self.config.holo_timeout_s),
-                            lambda: None,
-                        )
+                        result = await self.policy.prelocalize(context)
+                        self.debug.record({"kind": "pointer_prelocalized",
+                                           "accepted": result is not None,
+                                           "after_reveal": after_reveal})
+                        return result
 
-                await self.preloader.start(generation, next_target, payload["capture_id"],
+                await self.preloader.start(generation, target, payload["capture_id"],
                                            localize, self.targets,
-                                           timeout_s=localization_budget(
-                                               self.policy.holo, self.config.holo_timeout_s))
+                                           timeout_s=2 * localization_budget(
+                                               self.policy.holo, self.config.holo_timeout_s),
+                                           verified=True)
+        self.pointer_request = None
 
-    def target_hint(self, frame: Rect) -> dict:
+    def target_hint(self, frame: Rect, step: dict | None = None) -> dict:
         """Zone attendue et point exact (a11y) exprimés en millièmes de la capture."""
         adapter = self.adapter
-        hint = adapter.expected_rect(self.session.step) if adapter and self.session else None
+        hint = (adapter.expected_rect(step or self.session.step)
+                if adapter and self.session else None)
         if not hint or not hint.rect or not frame.valid:
             return {}
-        fields: dict = {"expected_rect": tuple(round(v, 3) for v in (
+        fields: dict = {"bounds_proven": bool(hint.exact and hint.ref and hint.snapshot_id),
+                       "expected_rect": tuple(round(v, 3) for v in (
             *hint.rect.milli(frame).__dict__.values(),))}
+        if adapter is self.plugin:
+            fields["expected_rect"] = (0, 0, 1000, 1000)
         point = hint.rect.point_milli(frame) if hint.exact else None
         if point:
             fields["pointer"] = point

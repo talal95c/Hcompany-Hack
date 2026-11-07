@@ -207,12 +207,7 @@ pub async fn capture_requested(
         return Err("Capture périmée".into());
     }
     if !crop.valid()
-        || crop.width * crop.height
-            > if target.is_some() {
-                16_777_216.0
-            } else {
-                1_048_576.0
-            }
+        || crop.width * crop.height > 16_777_216.0
         || [crop.x, crop.y, crop.width, crop.height]
             .iter()
             .any(|v| v.fract() != 0.)
@@ -236,6 +231,10 @@ pub async fn capture_requested(
     #[cfg(not(target_os = "macos"))]
     guide::restore(app);
     let image = image.map_err(|e| e.to_string())??;
+    let (image, image_width, image_height, reference) =
+        tokio::task::spawn_blocking(move || bounded_image(&image))
+            .await
+            .map_err(|e| e.to_string())??;
     eprintln!(
         "desktop latency capture_ms={:.2}",
         started.elapsed().as_secs_f64() * 1000.
@@ -244,6 +243,7 @@ pub async fn capture_requested(
     let revision = state.revision.load(Ordering::SeqCst);
     let mut payload = json!({"capture_id":id, "ui_revision":revision, "crop":crop,
         "scale":monitor.scale, "monitor_id":monitor.id,
+        "image_size":{"width":image_width,"height":image_height},
         "image_ref":format!("data:image/png;base64,{}", base64::engine::general_purpose::STANDARD.encode(image))});
     if let Some((request_id, expected)) = request {
         if expected != revision {
@@ -264,6 +264,8 @@ pub async fn capture_requested(
     captures.insert(
         id,
         Capture {
+            reference,
+            encoded_size: (image_width, image_height),
             crop,
             monitor,
             ui_revision: revision,
@@ -277,6 +279,33 @@ pub async fn capture_requested(
     Ok(result)
 }
 
+fn bounded_image(bytes: &[u8]) -> Result<(Vec<u8>, u32, u32, image::RgbaImage), String> {
+    let mut image = image::load_from_memory(bytes).map_err(|_| "PNG invalide")?;
+    let reference = image.to_rgba8();
+    let factor = (1_048_576. / (image.width() as f64 * image.height() as f64))
+        .sqrt()
+        .min(8192. / image.width() as f64)
+        .min(8192. / image.height() as f64)
+        .min(1.);
+    if factor < 1. {
+        image = image.resize_exact(
+            (image.width() as f64 * factor).floor().max(1.) as u32,
+            (image.height() as f64 * factor).floor().max(1.) as u32,
+            image::imageops::FilterType::Lanczos3,
+        );
+    }
+    let mut output = std::io::Cursor::new(Vec::new());
+    image
+        .write_to(&mut output, image::ImageFormat::Png)
+        .map_err(|_| "Encodage PNG impossible")?;
+    Ok((
+        output.into_inner(),
+        image.width(),
+        image.height(),
+        reference,
+    ))
+}
+
 fn capture_fits(session: &str, payload: &Value) -> bool {
     crate::protocol::envelope(session, "capture.result", payload.clone(), None)
         .to_string()
@@ -287,6 +316,24 @@ fn capture_fits(session: &str, payload: &Value) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn capture_upload_has_bounded_pixels_without_upscaling() {
+        for (width, height) in [(1600, 1000), (3200, 2000), (200, 100), (16000, 32)] {
+            let image = image::DynamicImage::new_rgb8(width, height);
+            let mut png = std::io::Cursor::new(Vec::new());
+            image.write_to(&mut png, image::ImageFormat::Png).unwrap();
+            let (png, w, h, reference) = bounded_image(png.get_ref()).unwrap();
+            assert_eq!((reference.width(), reference.height()), (width, height));
+            assert!(w * h <= 1_048_576 && w <= width && h <= height);
+            assert!(w <= 8192 && h <= 8192);
+            assert!(image::load_from_memory(&png).is_ok());
+            assert!(
+                (w as f64 / width as f64 - h as f64 / height as f64).abs()
+                    <= 1. / height.min(width) as f64
+            );
+        }
+        assert!(bounded_image(b"invalid").is_err());
+    }
     #[test]
     fn oversized_window_capture_cannot_exceed_transport_limit() {
         assert!(capture_fits(

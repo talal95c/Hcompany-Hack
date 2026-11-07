@@ -300,7 +300,10 @@ async def test_capture_localization_and_audio(runtime):
     class Holo:
         async def localize(self, image_png, description, *, timeout_s):
             assert image_png == png()
-            return LocalizeResult(500, 500, None, 0)
+            return LocalizeResult(500, 500, None, 0, True)
+
+        async def verify_point(self, *args, **kwargs):
+            return True
 
     class Stt:
         async def transcribe(self, audio, **kwargs):
@@ -327,6 +330,21 @@ async def test_capture_localization_and_audio(runtime):
     finally:
         await ws.close()
         writer.close()
+
+
+async def test_native_pointer_rejection_falls_back_only_for_current_generation(runtime):
+    runtime.policy.level = 3
+    generation = runtime.session.generation
+    runtime.pointer_pending["old"] = generation - 1
+    payload = {"command_id": "old", "status": "rejected", "detail": "pointer_stale"}
+    await runtime.desktop_message({"type": "input.result", "payload": payload}, None)
+    assert runtime.policy.level == 3
+    runtime.pointer_pending["current"] = generation
+    payload = {**payload, "command_id": "current"}
+    await runtime.desktop_message({"type": "input.result", "payload": payload}, None)
+    assert runtime.policy.level == 2
+    assert runtime.capture is None
+    assert any(e.get("kind") == "point_rejected" for e in runtime.debug.events)
 
 
 async def test_debug_http_ws_metrics_and_redaction(runtime):
@@ -494,7 +512,10 @@ async def test_next_target_preload_off_critical_path(runtime):
             assert description == "Cible suivante"
             started.set()
             await release.wait()
-            return LocalizeResult(10, 20, None, 0)
+            return LocalizeResult(10, 20, None, 0, True)
+
+        async def verify_point(self, *args, **kwargs):
+            return True
 
     following = deepcopy(runtime.session.step)
     following["id"] = "second"

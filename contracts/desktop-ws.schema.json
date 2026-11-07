@@ -249,6 +249,15 @@
               "type": "string",
               "minLength": 1
             },
+            "image_size": {
+              "type": "object",
+              "properties": {
+                "width": {"type": "integer", "minimum": 1, "maximum": 8192},
+                "height": {"type": "integer", "minimum": 1, "maximum": 8192}
+              },
+              "required": ["width", "height"],
+              "additionalProperties": false
+            },
             "image_ref": {
               "type": "string",
               "minLength": 1
