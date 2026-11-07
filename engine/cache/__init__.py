@@ -33,7 +33,10 @@ class LRU(Generic[T]):
 
 @dataclass(frozen=True)
 class TargetContext:
-    blender_version: str
+    """Contexte d'une localisation ; la clé couvre app × version × région × échelle × cible."""
+
+    app_id: str
+    app_version: str
     region_size: tuple[int, int]
     ui_scale: float
     target: str
@@ -46,7 +49,7 @@ class TargetContext:
 
     @property
     def key(self) -> tuple:
-        return self.blender_version, self.region_size, self.ui_scale, self.target
+        return self.app_id, self.app_version, self.region_size, self.ui_scale, self.target
 
 
 @dataclass(frozen=True)

@@ -15,7 +15,7 @@ from engine.policy import HelpContext, HelpPolicy
 
 
 def context():
-    return TargetContext("4.5.9", (800, 600), 2, "Tore", (0, 0), "main", "fr", 1, True)
+    return TargetContext("blender", "4.5.9", (800, 600), 2, "Tore", (0, 0), "main", "fr", 1, True)
 
 
 def snapshot(objects=None):
@@ -59,9 +59,19 @@ async def process(policy, state, **kwargs):
     return await policy.process(state, evaluate(check["name"], state, check["params"]), **kwargs)
 
 
-def help_context(**kwargs):
-    return HelpContext(area_id="a1", region_id="r1", menu_id="VIEW3D_MT_mesh_add",
-                       target=context(), **kwargs)
+ZONE = (("addon", "highlight", {"area_id": "a1", "region_id": "r1", "color": "#ffcc00",
+                                 "duration_ms": 3000}),)
+REVEAL = (("addon", "open_menu", {"menu_id": "VIEW3D_MT_mesh_add", "area_id": "a1",
+                                  "region_id": "r1"}),)
+
+
+def help_context(*, safe_demo=False, **kwargs):
+    if safe_demo:
+        kwargs.update(demo=(("addon", "replay", {"procedure_ref": "donut/add_torus",
+                                                 "params": {}}),),
+                      demo_undo=(("addon", "undo_demo",
+                                  {"checkpoint_id": kwargs["checkpoint_id"]}),))
+    return HelpContext(zone=ZONE, reveal=REVEAL, target=context(), **kwargs)
 
 
 async def test_known_error_once_deferred_and_progress():

@@ -1,0 +1,9 @@
+{
+  "id": "libreoffice-calc",
+  "name": "LibreOffice Calc",
+  "vocabulary": ["LibreOffice", "Calc", "cellule", "feuille", "formule", "somme", "colonne", "ligne", "zone de nom", "barre de formule"],
+  "jev_context": "Tableur LibreOffice Calc : l'apprenant saisit des valeurs et des formules dans des cellules.",
+  "docs_domains": ["help.libreoffice.org", "wiki.documentfoundation.org"],
+  "shortcut_hint": "Ctrl+Maj+F2",
+  "process_names": ["soffice", "libreoffice", "libreoffice-calc"]
+}

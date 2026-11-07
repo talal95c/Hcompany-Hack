@@ -1,0 +1,114 @@
+{
+  "schema_version": "2.0",
+  "lesson_id": "calc_double",
+  "revision": 1,
+  "title": "Calc : saisir puis doubler une valeur",
+  "language": "fr-FR",
+  "status": "draft",
+  "source": {
+    "uri": "fixture://calc_double",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "skills": [
+    "enter_value",
+    "enter_formula"
+  ],
+  "steps": [
+    {
+      "id": "enter_value",
+      "skill_id": "enter_value",
+      "instruction": "Saisissez 42 dans la cellule A1.",
+      "preconditions": {
+        "window_title": "LibreOffice Calc"
+      },
+      "check": {
+        "name": "element_value",
+        "params": {
+          "target": {
+            "description": "Cellule A1",
+            "role": "table cell",
+            "name": "A1"
+          },
+          "value": 42,
+          "match": "equals"
+        }
+      },
+      "target": {
+        "description": "Cellule A1",
+        "role": "table cell",
+        "name": "A1"
+      },
+      "why": "A1 reçoit la valeur de départ.",
+      "audio_ref": null,
+      "known_errors": [
+        {
+          "code": "wrong_cell",
+          "check": {
+            "name": "element_value",
+            "params": {
+              "target": {
+                "description": "Cellule B1",
+                "role": "table cell",
+                "name": "B1"
+              },
+              "value": 42
+            }
+          },
+          "hint": "La valeur est dans B1 ; sélectionnez la cellule A1."
+        }
+      ],
+      "procedure_ref": "calc_double/enter_value",
+      "proof": {
+        "status": "proven",
+        "method": "accessibility",
+        "evidence_ref": "proof/enter_value.json",
+        "ui_path_verified": true
+      }
+    },
+    {
+      "id": "enter_formula",
+      "skill_id": "enter_formula",
+      "instruction": "Dans A2, tapez la formule =A1*2.",
+      "preconditions": {
+        "window_title": "LibreOffice Calc"
+      },
+      "check": {
+        "name": "element_value",
+        "params": {
+          "target": {
+            "description": "Cellule A2",
+            "role": "table cell",
+            "name": "A2"
+          },
+          "value": 84
+        }
+      },
+      "target": {
+        "description": "Cellule A2",
+        "role": "table cell",
+        "name": "A2"
+      },
+      "why": "La formule double la valeur de A1.",
+      "audio_ref": null,
+      "known_errors": [],
+      "procedure_ref": "calc_double/enter_formula",
+      "proof": {
+        "status": "proven",
+        "method": "accessibility",
+        "evidence_ref": "proof/enter_formula.json",
+        "ui_path_verified": true
+      }
+    }
+  ],
+  "proof": {
+    "method": "per_step",
+    "evidence_ref": "proof/manifest.json",
+    "ui_path_verified": false
+  },
+  "app": {
+    "id": "libreoffice-calc",
+    "name": "LibreOffice Calc",
+    "version": "7.3.7",
+    "sensor": "accessibility"
+  }
+}

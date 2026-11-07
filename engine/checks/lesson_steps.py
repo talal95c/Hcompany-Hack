@@ -4,7 +4,8 @@ import math
 import time
 from collections import Counter
 
-from engine.checks import CheckResult, SceneState, close, matches
+from engine.checks.base import CheckResult
+from engine.checks.blender import SceneState, close, matches
 
 
 def subjects(state: SceneState, role: str) -> list[dict]:
