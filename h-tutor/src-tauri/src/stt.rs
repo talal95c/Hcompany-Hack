@@ -86,6 +86,7 @@ pub async fn listen_start(app: AppHandle) -> Result<(), String> {
     app.emit_to("main", "stt:state", true).ok();
 
     let stop_up = stop.clone();
+    let app_up = app.clone();
     let uploader = tauri::async_runtime::spawn(async move {
         let mut audio_rx = audio_rx;
         loop {
@@ -94,6 +95,7 @@ pub async fn listen_start(app: AppHandle) -> Result<(), String> {
             }
             match tokio::time::timeout(std::time::Duration::from_millis(100), audio_rx.recv()).await {
                 Ok(Some(chunk)) => {
+                    app_up.emit_to("main", "stt:level", rms(&chunk)).ok();
                     if sink.send(Message::Binary(chunk.into())).await.is_err() {
                         break;
                     }
@@ -136,6 +138,22 @@ pub async fn listen_start(app: AppHandle) -> Result<(), String> {
         app_down.emit_to("main", "stt:state", false).ok();
     });
     Ok(())
+}
+
+/// Loudness of a PCM16 chunk (RMS, 0..1); drives the bar's waveform.
+fn rms(pcm: &[u8]) -> f32 {
+    let n = pcm.len() / 2;
+    if n == 0 {
+        return 0.0;
+    }
+    let sum: f64 = pcm
+        .chunks_exact(2)
+        .map(|b| {
+            let s = i16::from_le_bytes([b[0], b[1]]) as f64 / 32768.0;
+            s * s
+        })
+        .sum();
+    (sum / n as f64).sqrt() as f32
 }
 
 /// Captures the default input device until `stop` is set, sending 16 kHz

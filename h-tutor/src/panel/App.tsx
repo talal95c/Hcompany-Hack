@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Palette from "./Palette";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { Transcript, Wave, tail } from "./Dictaphone";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { listen } from "@tauri-apps/api/event";
 import { api, errorText, speak, stopSpeaking, type Imported, type MilestoneView, type Status, type Step, type TutorialSummary } from "./api";
@@ -9,6 +10,7 @@ import {
   IconClose,
   IconEnter,
   IconGrid,
+  IconKeyboard,
   IconMic,
   IconReplay,
   IconSkip,
@@ -47,7 +49,10 @@ export default function App() {
   const [message, setMessage] = useState("");
   const [voice, setVoice] = useState(true);
   const [listening, setListening] = useState(false);
-  const [heard, setHeard] = useState("");
+  /** What the learner is saying (live), kept briefly once final. */
+  const [voiceText, setVoiceText] = useState<{ text: string; final: boolean } | null>(null);
+  const [level, setLevel] = useState(0);
+  const [asking, setAsking] = useState(false);
   const [explain, setExplain] = useState<Explain | null>(null);
   const [question, setQuestion] = useState("");
 
@@ -270,6 +275,7 @@ export default function App() {
     stopSpeaking();
     api.hidePointer();
     setQuestion("");
+    setAsking(false);
     setExplain({ question: q, details: [], target: "" });
     try {
       const a = await api.ask(q, liveRef.current.step, langRef.current);
@@ -309,7 +315,6 @@ export default function App() {
       return;
     }
     stopSpeaking();
-    setHeard("");
     try {
       await api.listenStart();
     } catch (e) {
@@ -337,15 +342,19 @@ export default function App() {
     const offs = [
       listen<boolean>("stt:state", (e) => {
         setListening(e.payload);
-        if (!e.payload) setHeard("");
-      }),
-      listen<{ text: string; is_final: boolean; language: string | null }>("stt:transcript", (e) => {
-        if (e.payload.is_final) {
-          setHeard("");
-          onUtterance(e.payload.text, e.payload.language);
-        } else {
-          setHeard(e.payload.text);
+        if (e.payload) {
+          setVoiceText({ text: "", final: false });
+          return;
         }
+        setLevel(0);
+        // A sent sentence stays on screen a moment before the dictaphone folds.
+        setVoiceText((v) => (v?.final ? v : null));
+        setTimeout(() => setVoiceText((v) => (v?.final ? null : v)), 700);
+      }),
+      listen<number>("stt:level", (e) => setLevel(Math.min(1, Math.sqrt(e.payload) * 2.2))),
+      listen<{ text: string; is_final: boolean; language: string | null }>("stt:transcript", (e) => {
+        setVoiceText({ text: e.payload.text, final: e.payload.is_final });
+        if (e.payload.is_final) onUtterance(e.payload.text, e.payload.language);
       }),
     ];
     return () => offs.forEach((p) => p.then((off) => off()));
@@ -383,15 +392,31 @@ export default function App() {
                 <span className="spinner" />
               </span>
             )}
-            <input
-              ref={inputRef}
-              autoFocus
-              value={listening && heard ? heard : goal}
-              disabled={phase === "planning" || phase === "importing"}
-              onChange={(e) => setGoal(e.target.value)}
-              placeholder={listening ? "Je t'écoute…" : "Que veux-tu apprendre ? Ou colle un lien YouTube"}
-              spellCheck={false}
-            />
+            {voiceText ? (
+              <motion.div
+                className="dicta-inline"
+                initial={{ opacity: 0, filter: "blur(6px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
+                transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+              >
+                <Wave level={level} done={voiceText.final} size="sm" />
+                {voiceText.text ? (
+                  <Transcript text={tail(voiceText.text, 44)} className="dicta-inline__text" />
+                ) : (
+                  <p className="dicta-inline__text dicta-inline__text--hint shimmer">Je t'écoute…</p>
+                )}
+              </motion.div>
+            ) : (
+              <input
+                ref={inputRef}
+                autoFocus
+                value={goal}
+                disabled={phase === "planning" || phase === "importing"}
+                onChange={(e) => setGoal(e.target.value)}
+                placeholder="Que veux-tu apprendre ? Ou colle un lien YouTube"
+                spellCheck={false}
+              />
+            )}
             {phase === "importing" ? (
               <span className="hint shimmer">{importStage}</span>
             ) : phase === "planning" ? (
@@ -454,6 +479,13 @@ export default function App() {
                 title={listening ? "Arrêter l'écoute" : "Poser une question à voix haute"}
               >
                 <IconMic />
+              </button>
+              <button
+                className={`tool ${asking ? "tool--on" : ""}`}
+                onClick={() => setAsking((a) => !a)}
+                title="Écrire une question"
+              >
+                <IconKeyboard />
               </button>
               <button className="tool" onClick={() => api.tutorRepoint()} disabled={busy} title="Remontre-moi">
                 <IconReplay />
@@ -536,9 +568,7 @@ export default function App() {
             </div>
           )}
 
-          {listening ? (
-            <div className="status status--rec">{heard ? `“${heard}”` : "Je t'écoute…"}</div>
-          ) : explain ? (
+          {voiceText ? null : explain ? (
             <div className="status">En pause pendant qu'on parle.</div>
           ) : busy ? (
             <div className="status shimmer">Holo regarde ton écran…</div>
@@ -556,20 +586,49 @@ export default function App() {
                     : "Vas-y, je regarde ton écran.")}
             </div>
           )}
-          <form
-            className="ask"
-            onSubmit={(e) => {
-              e.preventDefault();
-              askQuestion(question);
-            }}
-          >
-            <input
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Pose une question à Holo…"
-              spellCheck={false}
-            />
-          </form>
+          <AnimatePresence initial={false}>
+            {voiceText ? (
+              <motion.div
+                key="dicta"
+                className="dicta"
+                initial={{ opacity: 0, height: 0, filter: "blur(6px)" }}
+                animate={{ opacity: 1, height: "auto", filter: "blur(0px)" }}
+                exit={{ opacity: 0, height: 0, filter: "blur(6px)" }}
+                transition={{ duration: 0.32, ease: [0.23, 1, 0.32, 1] }}
+              >
+                <Wave level={level} done={voiceText.final} size="lg" />
+                {voiceText.text ? (
+                  <Transcript text={tail(voiceText.text, 140)} className="dicta__text" />
+                ) : (
+                  <p className="dicta__text dicta__text--hint shimmer">Je t'écoute…</p>
+                )}
+              </motion.div>
+            ) : (
+              asking && (
+                <motion.form
+                  key="ask"
+                  className="ask"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    askQuestion(question);
+                  }}
+                >
+                  <input
+                    autoFocus
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    onKeyDown={(e) => e.key === "Escape" && setAsking(false)}
+                    placeholder="Pose une question à Holo…"
+                    spellCheck={false}
+                  />
+                </motion.form>
+              )
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
 
