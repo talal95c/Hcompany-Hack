@@ -1,5 +1,5 @@
 use crate::{
-    input,
+    guide, input,
     tts::{NoSpeech, Speech},
     State,
 };
@@ -29,7 +29,7 @@ pub async fn receive(app: &AppHandle, state: &Arc<State>, packet: Value) {
         }
         "lesson.state" => {
             state.captures.lock().unwrap().clear();
-            let _ = app.emit("guide:clear", ());
+            guide::clear(app);
             let _ = app.emit("lesson:state", payload);
         }
         "error" => {
@@ -48,7 +48,7 @@ pub async fn receive(app: &AppHandle, state: &Arc<State>, packet: Value) {
             let kind = payload["type"].as_str().unwrap();
             if kind == "stop" {
                 input::stop(state);
-                let _ = app.emit("guide:clear", ());
+                guide::clear(app);
                 return;
             }
             if generation < state.generation.load(Ordering::SeqCst)
@@ -57,14 +57,20 @@ pub async fn receive(app: &AppHandle, state: &Arc<State>, packet: Value) {
                 return;
             }
             if generation > state.generation.swap(generation, Ordering::SeqCst) {
-                let _ = app.emit("guide:clear", ());
+                guide::clear(app);
             }
             let p = &payload["payload"];
             match kind {
                 "pointer" => pointer(app, state, p, payload["deadline_ms"].as_f64().unwrap()),
                 "success" => {
                     if !payload["expected_scene_revision"].is_null() {
-                        let _ = app.emit_to("guide", "guide:success", json!({"text":p["text"],"duration_ms":payload["deadline_ms"].as_f64().unwrap().min(2500.)}));
+                        let duration_ms = payload["deadline_ms"].as_f64().unwrap().min(2500.);
+                        guide::show(
+                            app,
+                            "guide:success",
+                            json!({"text":p["text"],"duration_ms":duration_ms}),
+                            duration_ms,
+                        );
                     }
                 }
                 "say" => {
@@ -147,9 +153,10 @@ fn pointer(app: &AppHandle, state: &State, payload: &Value, budget: f64) {
     #[cfg(not(target_os = "macos"))]
     let (css_x, css_y) = ((x - pos.x as f64) / scale, (y - pos.y as f64) / scale);
     let zone = json!({"x":(c.crop.x-pos.x as f64)/scale,"y":(c.crop.y-pos.y as f64)/scale,"width":c.crop.width/scale,"height":c.crop.height/scale});
-    let _ = app.emit_to(
-        "guide",
+    guide::show(
+        app,
         "guide:pointer",
         json!({"x":css_x,"y":css_y,"zone":zone,"duration_ms":budget.min(5000.)}),
+        budget.min(5000.),
     );
 }

@@ -4,6 +4,7 @@ mod audio;
 mod bridge;
 mod commands;
 mod coordinates;
+mod guide;
 mod input;
 mod native;
 mod protocol;
@@ -21,7 +22,7 @@ use std::{
     },
     time::Duration,
 };
-use tauri::{Emitter, Manager};
+use tauri::Manager;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 use tokio::sync::{mpsc, watch};
 
@@ -49,6 +50,7 @@ fn main() {
                 .get_webview_window("guide")
                 .ok_or("fenêtre guide absente")?;
             guide.set_ignore_cursor_events(true)?;
+            guide.hide()?;
             if let Some(m) = guide.primary_monitor()? {
                 guide.set_position(*m.position())?;
                 guide.set_size(*m.size())?;
@@ -69,6 +71,7 @@ fn main() {
                 tx: tx.clone(),
                 lifecycle,
                 frontend,
+                guide: guide::Visibility::default(),
                 connected: AtomicBool::new(false),
                 stopped: AtomicBool::new(true),
                 shutdown_done: AtomicBool::new(false),
@@ -93,7 +96,7 @@ fn main() {
                             serde_json::json!({"text":"stop","source":"bouton"}),
                             None,
                         );
-                        let _ = app.emit("guide:clear", ());
+                        guide::clear(app);
                     }
                 })?;
             let shortcut =

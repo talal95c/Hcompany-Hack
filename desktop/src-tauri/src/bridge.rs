@@ -1,6 +1,6 @@
 use crate::{
     coordinates::Rect,
-    input, native,
+    guide, input, native,
     tts::{NoSpeech, Speech},
     Capture, Lifecycle, State,
 };
@@ -104,7 +104,7 @@ pub fn stop_actions(app: AppHandle, state: tauri::State<'_, Arc<State>>) {
         json!({"text":"stop", "source":"bouton"}),
         None,
     );
-    let _ = app.emit("guide:clear", ());
+    guide::clear(&app);
 }
 
 #[tauri::command]
@@ -196,11 +196,7 @@ pub async fn capture_region(
     let image =
         tokio::task::spawn_blocking(move || native::capture(crop, &monitor_for_capture)).await;
     #[cfg(not(target_os = "macos"))]
-    for label in ["guide", "pill"] {
-        if let Some(window) = app.get_webview_window(label) {
-            let _ = window.show();
-        }
-    }
+    guide::restore(&app);
     let image = image.map_err(|e| e.to_string())??;
     eprintln!(
         "desktop latency capture_ms={:.2}",

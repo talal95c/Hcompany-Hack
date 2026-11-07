@@ -24,6 +24,9 @@ Rust lance `python -u -m engine` avec `ENGINE_HOST=127.0.0.1`, un `ENGINE_PORT`
 éphémère, `ENGINE_SESSION_ID` et `ENGINE_SESSION_TOKEN`. Il attend au plus 10 s la ligne
 `ENGINE_READY {"ws_port":1234,"addon_port":1235}` avant la connexion WebSocket.
 Le client natif utilise `Authorization: Bearer …` et `Origin: tauri://localhost`.
+Le point d'entrée de production `engine/__main__.py` doit être fourni par engine-core :
+il est absent du socle `dev`, hors du périmètre de ce module. Sans lui, le lancement
+par défaut échoue explicitement ; la fixture de test ci-dessous n'est jamais un fallback.
 Le transport attend l'accusé `frontend_ready` des deux fenêtres, envoyé après
 l'installation de leurs listeners : la première instruction ne dépend pas de la
 vitesse de chargement des WebViews. Un échec de listener reste visible et ne lance
@@ -34,6 +37,9 @@ adresses distantes sont refusées. Aucun jeton de transport ni clé cloud dans l
 ## Interface et garde-fous
 - `guide` couvre le moniteur courant, transparent, always-on-top et toujours click-through.
   `pointer` affiche aussi la région capturée ; la cible expire au plus après 5 s.
+  Rust masque la surface native quand elle est vide, arrêtée ou expirée : le masquage
+  DOM seul laisse parfois des pixels sur X11 sans compositeur. Les expirations natives
+  sont versionnées pour ne jamais masquer une cible plus récente.
   Un ✓ exige un ordre `success` engine avec révision de scène non nulle ; le desktop
   ne décide jamais de la réussite pédagogique.
 - `pill` possède un suivi natif du curseur (cadence 25 ms, **paramètre**, non mesure de
@@ -66,7 +72,8 @@ Pas de capture complète implicite, d'enregistrement disque ni de conservation p
   n'empêche pas l'entrée texte. Les explications Microphone sont intégrées au helper.
 - Linux : X11, lecture native de la région ; nos deux surfaces sont masquées durant
   la capture puis réaffichées dans l'ordre guide, puis pill, pour garder les commandes
-  au-dessus du guide sans prendre le focus. Le délai compositor de 80 ms est une **temporisation
+  au-dessus du guide sans prendre le focus. La pill est aussi relevée nativement et
+  un guide expiré n'est pas réaffiché. Le délai compositor de 80 ms est une **temporisation
   configurée**, pas une mesure ni une garantie d'exclusion sur tous les compositeurs.
 - Windows : xcap, masquage des surfaces et protection du contenu en défense supplémentaire.
   Les tests Windows natifs et l'exclusion sous compositeur restent à réaliser.

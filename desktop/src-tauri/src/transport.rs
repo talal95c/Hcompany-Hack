@@ -249,7 +249,7 @@ pub async fn run(
             state.connected.store(false, Ordering::SeqCst);
             input::stop(&state);
             state.captures.lock().unwrap().clear();
-            let _ = app.emit("guide:clear", ());
+            crate::guide::clear(&app);
             let _ = app.emit("sidecar:status", "disconnected");
             if *control.borrow() != Lifecycle::Running {
                 break;

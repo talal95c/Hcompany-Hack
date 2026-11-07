@@ -7,7 +7,7 @@ button { background: #293343; color: #edf0f6; border: 1px solid #455063; border-
 button:hover { background: #3a475b; }
 button:disabled { opacity: .4; cursor: default; }
 button:focus-visible, input:focus-visible { outline: 2px solid #ffcd7c; outline-offset: 2px; }
-#pill { margin: 7px; padding: 12px; border: 1px solid #536077; border-radius: 16px; background: #151c28f5; color: #f5f6fa; box-shadow: 0 6px 16px #0005; }
+#pill { margin: 7px; min-height: calc(100vh - 14px); padding: 12px; border: 1px solid #536077; border-radius: 16px; background: #151c28; color: #f5f6fa; box-shadow: 0 6px 16px #0005; }
 header, nav, footer { display: flex; align-items: center; gap: 8px; }
 header strong { font-size: 13px; }
 #status { margin-left: auto; color: #b3bdcf; font-size: 11px; }

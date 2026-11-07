@@ -1,7 +1,7 @@
 use crate::{
     audio,
     coordinates::{Monitor, Rect},
-    input, protocol,
+    guide, input, protocol,
 };
 use serde_json::Value;
 use std::{
@@ -34,6 +34,7 @@ pub struct State {
     pub tx: mpsc::Sender<Value>,
     pub lifecycle: watch::Sender<Lifecycle>,
     pub frontend: watch::Sender<u8>,
+    pub guide: guide::Visibility,
     pub connected: AtomicBool,
     pub stopped: AtomicBool,
     pub shutdown_done: AtomicBool,

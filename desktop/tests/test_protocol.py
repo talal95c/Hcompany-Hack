@@ -27,6 +27,7 @@ def test_native_event_names_and_frontend_listeners():
     for path in (desktop / "src-tauri/src").glob("*.rs"):
         emitted.update(re.findall(r'\.emit\(\s*"([^"]+)"', path.read_text()))
         emitted.update(re.findall(r'\.emit_to\(\s*"guide",\s*"([^"]+)"', path.read_text()))
+        emitted.update(re.findall(r'guide::show\(\s*app,\s*"([^"]+)"', path.read_text()))
     listened = set(re.findall(r'listen\("([^"]+)"', (desktop / "web/app.js").read_text()))
     assert listened <= emitted
     assert "guide:pointer" in listened
