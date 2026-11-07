@@ -1,0 +1,32 @@
+{"id":"why1","text":"Euh pourquoi on applique la scale avant le bevel ?","label":"why"}
+{"id":"why2","text":"Pourquoi tu me fais passer en edit mode là ?","label":"why"}
+{"id":"why3","text":"Ça sert à quoi de faire extrude plutôt que déplacer la face ?","label":"why"}
+{"id":"why4","text":"Je comprends pas pourquoi il faut sélectionner les vertices avant Shift D.","label":"why"}
+{"id":"help1","text":"Euh je trouve plus le menu Shift A, tu peux me donner un indice ?","label":"help"}
+{"id":"help2","text":"Je suis bloqué dans le viewport, aide-moi sans le faire à ma place.","label":"help"}
+{"id":"help3","text":"Pfff ça marche jamais, je sais plus où cliquer pour extrude.","label":"help"}
+{"id":"help4","text":"Tu peux juste me montrer où est le modifier bevel ?","label":"help"}
+{"id":"delegate1","text":"Bon fais-le à ma place, ajoute le cube toi-même.","label":"delegate"}
+{"id":"delegate2","text":"Je veux pas apprendre ça maintenant, occupe-toi de l'extrude.","label":"delegate"}
+{"id":"delegate3","text":"Vas-y prends la main et applique la scale pour moi.","label":"delegate"}
+{"id":"delegate4","text":"Oui je confirme, tu peux exécuter le bevel à ma place.","label":"delegate"}
+{"id":"stop1","text":"Chut, laisse-moi chercher tout seul.","label":"stop"}
+{"id":"stop2","text":"Stop arrête de toucher à mon objet !","label":"stop"}
+{"id":"stop3","text":"Attends non, annule ton action, ne clique plus.","label":"stop"}
+{"id":"stop4","text":"Ne me donne plus d'indices pour le moment, silence.","label":"stop"}
+{"id":"repeat1","text":"Hein j'ai pas entendu, répète la consigne s'il te plaît.","label":"repeat"}
+{"id":"repeat2","text":"Tu peux reformuler plus simplement ce que tu viens de dire ?","label":"repeat"}
+{"id":"repeat3","text":"Redis le raccourci, c'était Shift A ou Shift D ?","label":"repeat"}
+{"id":"repeat4","text":"Euh attends reprends l'explication plus lentement.","label":"repeat"}
+{"id":"next1","text":"Ça y est le cube est ajouté, on passe à la suite ?","label":"next"}
+{"id":"next2","text":"OK c'est fait, donne-moi l'étape suivante.","label":"next"}
+{"id":"next3","text":"Oui j'ai compris la consigne, continue la leçon.","label":"next"}
+{"id":"next4","text":"Bon la scale est appliquée, ensuite je fais quoi ?","label":"next"}
+{"id":"question1","text":"Au fait Blender peut exporter un fichier STL pour mon imprimante ?","label":"question"}
+{"id":"question2","text":"Hors de cette étape, comment on anime une caméra ?","label":"question"}
+{"id":"question3","text":"Est-ce que le viewport peut afficher les textures sans lancer un rendu ?","label":"question"}
+{"id":"question4","text":"J'ai une autre question : quelle différence entre Eevee et Cycles ?","label":"question"}
+{"id":"other1","text":"Euh hum... pardon je tousse.","label":"other"}
+{"id":"other2","text":"Tu sais quel temps il fait demain à Lyon ?","label":"other"}
+{"id":"other3","text":"Le chat a encore renversé mon café.","label":"other"}
+{"id":"other4","text":"Un deux un deux, test du micro.","label":"other"}

@@ -1,4 +1,20 @@
 # Services IA cloud
+## Raccordement de production
+`python -m engine` construit les clients réels lorsque leurs clés sont présentes :
+`HAI_API_KEY`, `CODIV_API_KEY`, `GLADIA_API_KEY`, `LINKUP_API_KEY`. Les adaptateurs
+`engine/services/adapters.py` conservent les clients batch/fichier pour prep et bench,
+et exposent les Protocols du direct dans `engine/interfaces.py` (localize, decide,
+transcribe, search). Tous sont fermés à l'arrêt. Une clé absente désactive seulement
+le service concerné ; une dépendance manquante avec clé présente échoue explicitement.
+
+Le pointage utilise `holo4-27b` par défaut ; `ENGINE_HOLO_MODEL` le remplace.
+Le choix est distinct du modèle de compilation. Les intentions texte non triviales
+passent par Jev ; `question` lit le pourquoi préécrit de l'étape sans appel LLM supplémentaire.
+Le STT du raccordement actuel convertit PCM mono en WAV et utilise le traitement fichier
+Gladia : ce n'est pas encore le streaming avec endpointing décrit ci-dessous, et le délai
+du direct peut donc expirer et proposer le clavier. Linkup est injecté dans le moteur
+mais aucune recherche automatique n'est ajoutée sur le chemin critique.
+
 Tous les délais ci-dessous sont des politiques initiales (est.), pas des SLA mesurés. Les retries ont backoff et jitter, jamais de répétition aveugle d'action native. Propager timeout, unavailable, quota et invalid_response distinctement.
 | Service / secret | Rôle et appel exact prévu | Délai / secours | Prix et quota |
 |---|---|---|---|

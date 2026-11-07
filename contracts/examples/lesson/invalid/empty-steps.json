@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "lesson_id": "donut",
+  "revision": 1,
+  "title": "Créer un donut",
+  "language": "fr-FR",
+  "blender_version": "5.2.3",
+  "status": "proven",
+  "source": {
+    "uri": "fixture://donut",
+    "sha256": "EXEMPLE_NON_PUBLIE"
+  },
+  "skills": [
+    "add_primitive"
+  ],
+  "steps": [],
+  "proof": {
+    "method": "per_step",
+    "evidence_ref": "proof/manifest.json",
+    "ui_path_verified": false
+  }
+}

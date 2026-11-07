@@ -1,4 +1,16 @@
 # Engine — cerveau du direct
+## Leçons intégrées
+Le loader strict accepte les archives locales et `authored://lessons/<id>/SOURCE.md`
+uniquement pour le `SOURCE.md` de la même leçon, dont il recalcule le SHA256.
+Les preuves présentes sont utilisées, jamais remplacées par des succès synthétiques.
+Lorsqu'un manifeste contient le hash de `steps.json`, tous ses artefacts sont vérifiés
+et le compagnon est validé contre `lessons/steps.schema.json`. Le check générique de
+chaque étape est combiné aux checks détaillés du compagnon : la présence du tore seule
+ne valide ni subdivision, ni déformation, ni matériau. Les données géométriques sont
+émises par l'add-on (limite de 10 000 sommets pour les listes) ; absence de données = unknown.
+Le capteur ne prend pas la décision pédagogique. Les preuves headless ne prouvent pas
+les chemins de menus ni les permissions macOS.
+
 ## Processus et modules
 Un processus Python 3.11 asyncio, lancé comme sidecar par desktop. Aucun accès bpy hors de l'add-on ; aucune injection native hors de desktop. Les traitements bloquants doivent quitter la boucle asyncio.
 | Module | Entrée | Sortie / responsabilité |

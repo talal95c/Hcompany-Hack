@@ -1,6 +1,6 @@
 # Documentation de conception
 
-État : design, pas encore de code. Lire [AGENTS](../AGENTS.md), [PRD](../PRD.md), [synthèse architecture](../ARCHITECTURE.md). Les exemples sont des spécifications et non des résultats obtenus.
+État : design et socle technique étape 0. Lire [AGENTS](../AGENTS.md), [PRD](../PRD.md), [synthèse architecture](../ARCHITECTURE.md). Les exemples de leçons ne sont pas des preuves obtenues ; les schémas, fixtures et scaffold sont désormais testables, sans moteur pédagogique implémenté.
 
 ## architecture
 - [addon](architecture/addon.md)
@@ -41,6 +41,7 @@
 - [09-premier-lancement-permissions](workflows/09-premier-lancement-permissions.md)
 
 ## Transversal
+- [Environnement de développement et commandes d'installation](environnement-dev.md)
 - [optimisations-v3](optimisations-v3.md)
 - [zones-ombre](zones-ombre.md)
 - [tests-et-jalons](tests-et-jalons.md)

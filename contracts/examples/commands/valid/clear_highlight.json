@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "command_id": "c1",
+  "step_id": "add_torus",
+  "generation": 2,
+  "recipient": "addon",
+  "type": "clear_highlight",
+  "deadline_ms": 1000,
+  "expected_scene_revision": 4,
+  "payload": {}
+}

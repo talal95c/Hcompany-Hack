@@ -1,0 +1,397 @@
+{
+  "date": "2026-11-07T14:49:49+00:00",
+  "host": {
+    "os": "Linux-6.8.0-1061-aws-x86_64-with-glibc2.35",
+    "python": "3.11.17"
+  },
+  "measured": true,
+  "summary": {
+    "holo.act": {
+      "n": 3,
+      "n_ok": 3,
+      "failures": {},
+      "p50_ms": 421.7,
+      "p95_ms": 510.0,
+      "min_ms": 415.0,
+      "max_ms": 519.8
+    },
+    "holo.locate": {
+      "n": 18,
+      "n_ok": 18,
+      "failures": {},
+      "p50_ms": 260.9,
+      "p95_ms": 296.1,
+      "min_ms": 224.2,
+      "max_ms": 342.9
+    }
+  },
+  "calls": [
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 342.94,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-a280-7af3-83c7-f031075f55cb",
+      "input_tokens": 1493,
+      "cached_tokens": 1056,
+      "output_tokens": 12
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 260.56,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-a3cd-7700-afaf-55c82a86299c",
+      "input_tokens": 1490,
+      "cached_tokens": 1056,
+      "output_tokens": 13
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 226.9,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-a4d3-7fa3-b19c-8e4fc1f3535b",
+      "input_tokens": 1496,
+      "cached_tokens": 1056,
+      "output_tokens": 13
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 278.67,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-a5b5-7c00-9134-f1543646d70d",
+      "input_tokens": 1490,
+      "cached_tokens": 1056,
+      "output_tokens": 12
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 230.75,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-a6cd-7521-9eda-6209cca55479",
+      "input_tokens": 1493,
+      "cached_tokens": 1056,
+      "output_tokens": 14
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 275.51,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-a7b5-7363-bf20-fa8173034b86",
+      "input_tokens": 1493,
+      "cached_tokens": 1056,
+      "output_tokens": 13
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 261.3,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-a8c9-7473-a29a-adaa7aee53de",
+      "input_tokens": 1495,
+      "cached_tokens": 1056,
+      "output_tokens": 14
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 274.03,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-a9cc-72e1-a73c-d2db4e602a2a",
+      "input_tokens": 1494,
+      "cached_tokens": 1056,
+      "output_tokens": 14
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 287.84,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-aae7-7b50-b3ac-4453437d6084",
+      "input_tokens": 1493,
+      "cached_tokens": 1056,
+      "output_tokens": 14
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 224.17,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-ac03-7a42-ac66-67fb82b9f2fe",
+      "input_tokens": 1493,
+      "cached_tokens": 1056,
+      "output_tokens": 12
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 234.44,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-ace6-7373-956b-9229bfd7a1ca",
+      "input_tokens": 1490,
+      "cached_tokens": 1056,
+      "output_tokens": 13
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 229.34,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-add0-7023-a456-96635d5ac710",
+      "input_tokens": 1496,
+      "cached_tokens": 1056,
+      "output_tokens": 13
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 231.39,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-aeba-72d1-b960-e7bf49e8614b",
+      "input_tokens": 1490,
+      "cached_tokens": 1056,
+      "output_tokens": 12
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 276.76,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-afa1-7102-971b-29755d6c9e41",
+      "input_tokens": 1493,
+      "cached_tokens": 1056,
+      "output_tokens": 14
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 225.32,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-b0b3-7472-86dc-62a6933a094b",
+      "input_tokens": 1493,
+      "cached_tokens": 1056,
+      "output_tokens": 13
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 274.86,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-b196-7b52-884b-e1a2f6aecbc6",
+      "input_tokens": 1495,
+      "cached_tokens": 1056,
+      "output_tokens": 14
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 230.46,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-b2ab-7b31-b5f1-40139f396675",
+      "input_tokens": 1494,
+      "cached_tokens": 1056,
+      "output_tokens": 14
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 276.64,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-b392-7101-8754-2350a2e451e4",
+      "input_tokens": 1493,
+      "cached_tokens": 1056,
+      "output_tokens": 14
+    },
+    {
+      "service": "holo",
+      "operation": "act",
+      "duration_ms": 519.81,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-b4a8-7b63-899f-c4aed61613f0",
+      "input_tokens": 2097,
+      "cached_tokens": 0,
+      "output_tokens": 58
+    },
+    {
+      "service": "holo",
+      "operation": "act",
+      "duration_ms": 421.73,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-b6b2-7693-a269-18b6f6594487",
+      "input_tokens": 2097,
+      "cached_tokens": 1056,
+      "output_tokens": 58
+    },
+    {
+      "service": "holo",
+      "operation": "act",
+      "duration_ms": 415.02,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b67c-b85b-7610-832e-a9ea684c5494",
+      "input_tokens": 2097,
+      "cached_tokens": 1056,
+      "output_tokens": 58
+    }
+  ],
+  "model": "holo4-35b-a3b",
+  "fixture": "blender_4.5.9_layout_1600x900.png",
+  "locate_hit_rate": 1.0,
+  "locate_results": [
+    {
+      "target": "the File menu in the top bar",
+      "x": 27.0,
+      "y": 14.0,
+      "confidence": 0.3023,
+      "hit": true
+    },
+    {
+      "target": "the Layout workspace tab",
+      "x": 190.0,
+      "y": 14.0,
+      "confidence": 0.3261,
+      "hit": true
+    },
+    {
+      "target": "the Add menu in the 3D viewport header",
+      "x": 178.0,
+      "y": 45.0,
+      "confidence": 0.3798,
+      "hit": true
+    },
+    {
+      "target": "the Object Mode dropdown",
+      "x": 68.0,
+      "y": 42.0,
+      "confidence": 0.2115,
+      "hit": true
+    },
+    {
+      "target": "the Cube item in the outliner",
+      "x": 891.0,
+      "y": 143.0,
+      "confidence": 0.3629,
+      "hit": true
+    },
+    {
+      "target": "the Move tool in the left toolbar",
+      "x": 16.0,
+      "y": 201.0,
+      "confidence": 0.3243,
+      "hit": true
+    },
+    {
+      "target": "the cube object in the 3D viewport",
+      "x": 410.0,
+      "y": 450.0,
+      "confidence": 0.2518,
+      "hit": true
+    },
+    {
+      "target": "the Scale X field in the properties panel",
+      "x": 931.0,
+      "y": 677.0,
+      "confidence": 0.3557,
+      "hit": true
+    },
+    {
+      "target": "the play animation button in the timeline",
+      "x": 428.0,
+      "y": 917.0,
+      "confidence": 0.4272,
+      "hit": true
+    },
+    {
+      "target": "the File menu in the top bar",
+      "x": 27.0,
+      "y": 14.0,
+      "confidence": 0.3023,
+      "hit": true
+    },
+    {
+      "target": "the Layout workspace tab",
+      "x": 190.0,
+      "y": 14.0,
+      "confidence": 0.3261,
+      "hit": true
+    },
+    {
+      "target": "the Add menu in the 3D viewport header",
+      "x": 178.0,
+      "y": 45.0,
+      "confidence": 0.3798,
+      "hit": true
+    },
+    {
+      "target": "the Object Mode dropdown",
+      "x": 68.0,
+      "y": 42.0,
+      "confidence": 0.2115,
+      "hit": true
+    },
+    {
+      "target": "the Cube item in the outliner",
+      "x": 891.0,
+      "y": 143.0,
+      "confidence": 0.3629,
+      "hit": true
+    },
+    {
+      "target": "the Move tool in the left toolbar",
+      "x": 16.0,
+      "y": 201.0,
+      "confidence": 0.3243,
+      "hit": true
+    },
+    {
+      "target": "the cube object in the 3D viewport",
+      "x": 410.0,
+      "y": 450.0,
+      "confidence": 0.2518,
+      "hit": true
+    },
+    {
+      "target": "the Scale X field in the properties panel",
+      "x": 931.0,
+      "y": 677.0,
+      "confidence": 0.3557,
+      "hit": true
+    },
+    {
+      "target": "the play animation button in the timeline",
+      "x": 428.0,
+      "y": 917.0,
+      "confidence": 0.4272,
+      "hit": true
+    }
+  ],
+  "act_actions": [
+    {
+      "type": "click",
+      "x": 175.0,
+      "y": 43.0,
+      "button": "left"
+    },
+    {
+      "type": "click",
+      "x": 175.0,
+      "y": 43.0,
+      "button": "left"
+    },
+    {
+      "type": "click",
+      "x": 175.0,
+      "y": 43.0,
+      "button": "left"
+    }
+  ],
+  "act_first_step_ok": [
+    true,
+    true,
+    true
+  ],
+  "cached_tokens_seen": true
+}

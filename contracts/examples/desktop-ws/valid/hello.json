@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "message_id": "m1",
+  "reply_to": null,
+  "type": "hello",
+  "payload": {
+    "app_version": "0.1.0",
+    "platform": "macos",
+    "capabilities": []
+  }
+}

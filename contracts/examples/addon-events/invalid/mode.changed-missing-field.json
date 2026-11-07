@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "event_id": "e5",
+  "seq": 5,
+  "type": "mode.changed",
+  "ts_monotonic_ms": 4200,
+  "scene_revision": 4,
+  "payload": {
+    "current": "OBJECT"
+  }
+}

@@ -1,4 +1,25 @@
 # Contrat WebSocket desktop ↔ engine
+## Conventions de transport et consentement v1
+Le sidecar écrit sur stdout une ligne `ENGINE_READY {"ws_port":1234,"addon_port":1235}`
+après l'ouverture des sockets. Les diagnostics restent sur stderr. Le desktop peut aussi
+rejoindre un moteur déjà lancé via `ENGINE_WS_URL`. L'authentification accepte le header
+`Authorization: Bearer <jeton>` ou le paramètre `?token=<jeton>` ; aucun jeton dans les logs
+ni dans la WebView. Les origins locales sont filtrées, indépendamment du jeton.
+
+`user.intent` conserve le consentement JSON-dans-texte : source `bouton`, `text` contenant
+`{"intent":"fais-le","consent_token":"<uuid>"}`. Ce jeton est créé par Rust, jamais par le
+front ; il est repris dans `input.action`. Les booléens `delegation_confirmed: true` et
+`wants_to_learn: false` permettent la délégation explicitement confirmée sans apprentissage.
+Le moteur vérifie aussi version Blender, état, compétence, génération et expiration ;
+un énoncé texte ne vaut jamais consentement. Aucun changement incompatible de l'enveloppe.
+
+`lesson.state.ui_revision` est optionnel et désigne la révision UI du capteur Blender.
+Le desktop la recopie dans `capture.result`, sans compteur local indépendant. Les états
+inchangés ne sont pas renvoyés à chaque tick et ne doivent pas effacer un pointeur actif.
+Pour `pointer` et `success`, le guide renvoie `input.result` avec `status: "ok"` et
+`detail: "rendered"` après deux frames navigateur. Cet ack mesure le traitement du rendu,
+pas la présentation physique du compositeur ; une capture d'écran reste nécessaire.
+
 Un WebSocket local par session, authentifié avant messages applicatifs. Adresse donnée par le sidecar, origin autorisée explicitement ; pas de port accessible sur le LAN. Le front web n'accède pas directement aux secrets.
 | Champ enveloppe | Type / requis | Sens |
 |---|---|---|

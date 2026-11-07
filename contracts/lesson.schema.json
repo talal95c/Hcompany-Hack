@@ -1,0 +1,628 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hcompany-hack.invalid/contracts/lesson.schema.json",
+  "title": "lesson",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "lesson_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "language": {
+      "type": "string",
+      "minLength": 1
+    },
+    "blender_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "pending",
+        "failed",
+        "proven"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "uri": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "uri",
+        "sha256"
+      ],
+      "additionalProperties": false
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "skill_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "instruction": {
+            "type": "string",
+            "minLength": 1
+          },
+          "preconditions": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "mode"
+            ],
+            "additionalProperties": true
+          },
+          "check": {
+            "$ref": "#/$defs/check"
+          },
+          "target": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "area_type": {
+                "type": "string",
+                "minLength": 1
+              },
+              "region_type": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "description",
+              "area_type",
+              "region_type"
+            ],
+            "additionalProperties": false
+          },
+          "why": {
+            "type": "string",
+            "minLength": 1
+          },
+          "audio_ref": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?![A-Za-z]:)(?!.*\\\\).+$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "known_errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "check": {
+                  "$ref": "#/$defs/check"
+                },
+                "hint": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "code",
+                "check",
+                "hint"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "procedure_ref": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?![A-Za-z]:)(?!.*\\\\).+$"
+          },
+          "proof": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "enum": [
+                  "draft",
+                  "pending",
+                  "failed",
+                  "proven"
+                ]
+              },
+              "method": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evidence_ref": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?![A-Za-z]:)(?!.*\\\\).+$"
+              },
+              "ui_path_verified": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "status",
+              "method",
+              "evidence_ref",
+              "ui_path_verified"
+            ],
+            "additionalProperties": false
+          },
+          "challenge": {
+            "type": "boolean",
+            "default": false
+          },
+          "help": {
+            "type": "object",
+            "properties": {
+              "menu_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "safe_demo": {
+                "type": "boolean",
+                "default": false
+              },
+              "checkpoint_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false,
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "safe_demo": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "safe_demo"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "checkpoint_id"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "skill_id",
+          "instruction",
+          "preconditions",
+          "check",
+          "target",
+          "why",
+          "audio_ref",
+          "known_errors",
+          "procedure_ref",
+          "proof"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "proof": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_ref": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?![A-Za-z]:)(?!.*\\\\).+$"
+        },
+        "ui_path_verified": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "method",
+        "evidence_ref",
+        "ui_path_verified"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "lesson_id",
+    "revision",
+    "title",
+    "language",
+    "blender_version",
+    "status",
+    "source",
+    "skills",
+    "steps",
+    "proof"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "check": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "const": "object_exists"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "primitive": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "type",
+                "primitive"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "name",
+            "params"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "const": "object_count"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "primitive": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "count"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "name",
+            "params"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "const": "modifier_present"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "primitive": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "modifier_type": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "params": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": [
+                          "number",
+                          "boolean",
+                          "string"
+                        ]
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        }
+                      }
+                    ]
+                  }
+                },
+                "tolerance": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "modifier_type"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "name",
+            "params"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "const": "material_color"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "primitive": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "color": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "minItems": 4,
+                  "maxItems": 4
+                },
+                "tolerance": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "color"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "name",
+            "params"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "const": "shading_smooth"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "primitive": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "smooth": {
+                  "type": "boolean",
+                  "default": true
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "name",
+            "params"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "const": "mode_is"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "mode"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "name",
+            "params"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "const": "selection"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "primitive": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "active": {
+                  "type": "boolean"
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "name",
+            "params"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "const": "object_transform"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "primitive": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "location": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "scale": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "rotation": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "tolerance": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "anyOf": [
+                {
+                  "required": [
+                    "location"
+                  ]
+                },
+                {
+                  "required": [
+                    "scale"
+                  ]
+                },
+                {
+                  "required": [
+                    "rotation"
+                  ]
+                }
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "name",
+            "params"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

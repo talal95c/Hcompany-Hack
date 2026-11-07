@@ -1,0 +1,409 @@
+{
+  "date": "2026-11-07T14:49:53+00:00",
+  "host": {
+    "os": "Linux-6.8.0-1061-aws-x86_64-with-glibc2.35",
+    "python": "3.11.17"
+  },
+  "measured": true,
+  "summary": {
+    "jev.decide": {
+      "n": 23,
+      "n_ok": 23,
+      "failures": {},
+      "p50_ms": 152.9,
+      "p95_ms": 181.8,
+      "min_ms": 139.4,
+      "max_ms": 286.2
+    }
+  },
+  "calls": [
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 158.34,
+      "status": "ok",
+      "request_id": "req_808aee259a0e899cc104375c15383d4a",
+      "input_tokens": 228,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 182.79,
+      "status": "ok",
+      "request_id": "req_86d55e3a5998bcfdc0f825cd7d4a9ddd",
+      "input_tokens": 234,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 161.91,
+      "status": "ok",
+      "request_id": "req_8a7575ead51e53d19971768361a67152",
+      "input_tokens": 229,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 159.18,
+      "status": "ok",
+      "request_id": "req_7259f5c55895356d1d1afafd767d1d26",
+      "input_tokens": 229,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 154.1,
+      "status": "ok",
+      "request_id": "req_7a627249ded77347d79c0d5609c811e2",
+      "input_tokens": 232,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 146.73,
+      "status": "ok",
+      "request_id": "req_f8c3db0a40d281c4dc6268f7c2f25216",
+      "input_tokens": 229,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 160.53,
+      "status": "ok",
+      "request_id": "req_b756c66bf34ad3ee87489ebe1861392e",
+      "input_tokens": 236,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 143.77,
+      "status": "ok",
+      "request_id": "req_cab32a1f796c8f964f87a44f30e20186",
+      "input_tokens": 235,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 139.44,
+      "status": "ok",
+      "request_id": "req_2581571229081c0f7b7aa8acd8ebb945",
+      "input_tokens": 228,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 156.1,
+      "status": "ok",
+      "request_id": "req_06bd8e5eb54158a3d05bd64f46452472",
+      "input_tokens": 232,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 154.26,
+      "status": "ok",
+      "request_id": "req_04e6bc8c9020e4da1c430ce4bdb1f343",
+      "input_tokens": 236,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 143.25,
+      "status": "ok",
+      "request_id": "req_5824c210bd30eeaac32091d69d924507",
+      "input_tokens": 230,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 152.23,
+      "status": "ok",
+      "request_id": "req_97e756d74b0de60cb4b47ba59ba0099d",
+      "input_tokens": 230,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 146.35,
+      "status": "ok",
+      "request_id": "req_396b46aba4c4a1fe181ac8ef435f0a21",
+      "input_tokens": 231,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 147.5,
+      "status": "ok",
+      "request_id": "req_989bbf8aa2ef04992b49c29c52140f97",
+      "input_tokens": 228,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 173.26,
+      "status": "ok",
+      "request_id": "req_62a09dcbb7ca246ec7d04bcd5b128184",
+      "input_tokens": 228,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 156.62,
+      "status": "ok",
+      "request_id": "req_4e7bf029dc7a17adbfca02b637fa1df5",
+      "input_tokens": 227,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 152.93,
+      "status": "ok",
+      "request_id": "req_f6508cdc7a11b8357c1711fcd5e81d64",
+      "input_tokens": 228,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 140.0,
+      "status": "ok",
+      "request_id": "req_af9825e5b959cd45642ecd7896ecfe8b",
+      "input_tokens": 227,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 139.92,
+      "status": "ok",
+      "request_id": "req_487facbf805c08f715d3c7d1b911f8c9",
+      "input_tokens": 231,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 147.53,
+      "status": "ok",
+      "request_id": "req_794791f7efedf77bc5748ed2da6943ca",
+      "input_tokens": 267,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 152.13,
+      "status": "ok",
+      "request_id": "req_f6180fd59219fd4ff55cb97d7093ef9d",
+      "input_tokens": 258,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 286.24,
+      "status": "ok",
+      "request_id": "req_7f2b4516f35c7c10c8695b5af9d6d484",
+      "input_tokens": 257,
+      "cached_tokens": null,
+      "output_tokens": null
+    }
+  ],
+  "model": "openjev-latest",
+  "http_version": "HTTP/2",
+  "timeout_ms": 800,
+  "intent_accuracy": 1.0,
+  "intent_results": [
+    {
+      "text": "Pourquoi on utilise un tore ici ?",
+      "expected": "question",
+      "choice": "question",
+      "probability": 0.9994
+    },
+    {
+      "text": "C'est quoi la différence entre un mesh et un objet ?",
+      "expected": "question",
+      "choice": "question",
+      "probability": 0.9997
+    },
+    {
+      "text": "Comment je fais pour tourner la vue ?",
+      "expected": "question",
+      "choice": "question",
+      "probability": 0.9995
+    },
+    {
+      "text": "À quoi sert le modificateur subdivision ?",
+      "expected": "question",
+      "choice": "question",
+      "probability": 0.9996
+    },
+    {
+      "text": "Vas-y, fais-le toi-même.",
+      "expected": "fais_le",
+      "choice": "fais_le",
+      "probability": 0.9995
+    },
+    {
+      "text": "Tu peux le faire à ma place ?",
+      "expected": "fais_le",
+      "choice": "fais_le",
+      "probability": 0.9996
+    },
+    {
+      "text": "Montre-moi en le faisant, je n'y arrive pas.",
+      "expected": "fais_le",
+      "choice": "fais_le",
+      "probability": 0.9958
+    },
+    {
+      "text": "Fais l'extrusion pour moi s'il te plaît.",
+      "expected": "fais_le",
+      "choice": "fais_le",
+      "probability": 0.9995
+    },
+    {
+      "text": "Putain, ça marche pas !",
+      "expected": "frustration",
+      "choice": "frustration",
+      "probability": 0.9997
+    },
+    {
+      "text": "J'en ai marre, rien ne fonctionne.",
+      "expected": "frustration",
+      "choice": "frustration",
+      "probability": 0.9998
+    },
+    {
+      "text": "C'est super frustrant, j'ai encore tout cassé.",
+      "expected": "frustration",
+      "choice": "frustration",
+      "probability": 0.9998
+    },
+    {
+      "text": "Franchement ce logiciel me rend fou.",
+      "expected": "frustration",
+      "choice": "frustration",
+      "probability": 0.9997
+    },
+    {
+      "text": "Chut, laisse-moi réfléchir.",
+      "expected": "chut",
+      "choice": "chut",
+      "probability": 1.0
+    },
+    {
+      "text": "Tais-toi s'il te plaît.",
+      "expected": "chut",
+      "choice": "chut",
+      "probability": 0.9994
+    },
+    {
+      "text": "Arrête de parler deux minutes.",
+      "expected": "chut",
+      "choice": "chut",
+      "probability": 0.9994
+    },
+    {
+      "text": "Silence, je me concentre.",
+      "expected": "chut",
+      "choice": "chut",
+      "probability": 0.9994
+    },
+    {
+      "text": "Je vais prendre un café.",
+      "expected": "other",
+      "choice": "other",
+      "probability": 0.9998
+    },
+    {
+      "text": "Il fait beau aujourd'hui.",
+      "expected": "other",
+      "choice": "other",
+      "probability": 0.9994
+    },
+    {
+      "text": "Hmm, voyons voir...",
+      "expected": "other",
+      "choice": "other",
+      "probability": 0.9999
+    },
+    {
+      "text": "Mon chat vient de sauter sur le clavier.",
+      "expected": "other",
+      "choice": "other",
+      "probability": 0.9983
+    }
+  ],
+  "batched_assessments": [
+    {
+      "stuck_or_thinking": {
+        "choice": "stuck",
+        "probability": 0.9992
+      },
+      "deviation": {
+        "choice": "major",
+        "probability": 0.9785
+      }
+    },
+    {
+      "stuck_or_thinking": {
+        "choice": "thinking",
+        "probability": 0.9994
+      },
+      "deviation": {
+        "choice": "none",
+        "probability": 0.9447
+      }
+    },
+    {
+      "stuck_or_thinking": {
+        "choice": "thinking",
+        "probability": 0.9841
+      },
+      "deviation": {
+        "choice": "major",
+        "probability": 0.8067
+      }
+    }
+  ]
+}

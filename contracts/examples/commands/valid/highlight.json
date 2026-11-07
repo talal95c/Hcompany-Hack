@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "command_id": "c1",
+  "step_id": "add_torus",
+  "generation": 2,
+  "recipient": "addon",
+  "type": "highlight",
+  "deadline_ms": 1000,
+  "expected_scene_revision": 4,
+  "payload": {
+    "area_id": "a1",
+    "region_id": "r1",
+    "color": "#ffcc00",
+    "duration_ms": 3000
+  }
+}

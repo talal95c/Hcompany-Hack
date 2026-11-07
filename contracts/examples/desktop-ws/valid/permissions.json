@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "message_id": "m1",
+  "reply_to": null,
+  "type": "permissions",
+  "payload": {
+    "screen": false,
+    "accessibility": false,
+    "microphone": true
+  }
+}

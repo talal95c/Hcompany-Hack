@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "message_id": "m1",
+  "reply_to": null,
+  "type": "capture.result",
+  "payload": {
+    "ui_revision": 2,
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 1280,
+      "height": 800
+    },
+    "scale": 2,
+    "monitor_id": "main",
+    "image_ref": "buffer:cap1"
+  }
+}
