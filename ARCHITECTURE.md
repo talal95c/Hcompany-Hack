@@ -1,0 +1,83 @@
+# Architecture
+
+![Architecture](docs/schemas/architecture.svg)
+
+Cas d'usage pas à pas : [docs/schemas/cas-usage.svg](docs/schemas/cas-usage.svg) · justification de chaque optimisation : [docs/optimisations-v3.md](docs/optimisations-v3.md).
+
+## 1. Principe
+**Rien de lent ni de fragile sur le chemin critique.**
+- Tout ce qui est prévisible (tests, « pourquoi », audio, descriptions des cibles) est calculé **à la préparation**.
+- En direct, le chemin critique ne passe que par l'add-on, notre code et deux appels cloud courts (Gladia, Jev).
+- Holo (API H) pointe **en avance** : il localise la cible de l'étape N+1 pendant que l'utilisateur fait l'étape N.
+
+Règle de décision : **le code valide ce qui est sûr, Jev tranche l'ambigu, Holo voit et agit.**
+
+## 2. Les trois blocs
+
+### A. Préparation (`prep/`), hors ligne, une fois par tuto et par version
+```
+source (vidéo / doc / démo) → Gladia (fichier) → compilateur LLM → différence de version → preuve → leçon prouvée → face Agent
+```
+| Étape | Ce qu'elle fait | Brique |
+|---|---|---|
+| transcription | texte horodaté au mot, vocabulaire de l'interface Blender, traduction FR→EN | Gladia (`teach.py`, `check_gladia.py`) |
+| compilation | découpe en étapes ; chaque étape **choisit** un test dans la bibliothèque (~15 tests) au lieu d'écrire du code ; écrit le « pourquoi » ; génère l'audio | LLM + TTS |
+| différence | mémoire ReStep : quelles étapes ont changé depuis la version du tuto ? | ReStep |
+| preuve | inchangé → exécution `bpy` directe (millisecondes) ; changé → Holo rejoue le chemin d'interface en sandbox (`agent_loop.py`) ; bloqué → Linkup (`observe_docs.py`) ; pas de test → Devin (`devin.py`, en asynchrone) | ReStep, Holo, Linkup, Devin |
+| export | H Skill, une révision par version (`h_skills.py`) ; MCP (`restep_mcp.py`) | H |
+
+Résultat : `lessons/<id>/lesson.json` + l'audio en cache. Objectif estimé : moins d'1 min pour un tuto déjà connu, environ 2 min pour un nouveau.
+
+### B. Direct, sur le poste de l'utilisateur
+Un seul processus Python asyncio (`engine/`) et deux clients :
+- **`addon/`** (dans Blender) : il **pousse** des événements (opérateurs exécutés, changements de scène, mode, sélection, rectangles des zones de l'écran). Il exécute les ordres : surligner une zone (`draw_handler`), ouvrir un menu (`wm.call_menu`), rejouer en `bpy`.
+- **`overlay/`** (Electron) : il **affiche seulement** le pointeur, la pastille et le ✓, sans aucune logique.
+
+Dans `engine/` :
+| Module | Rôle |
+|---|---|
+| `bus/` | bus d'événements, serveurs socket (add-on) et WebSocket (overlay) |
+| `lesson/` | machine à états de la leçon en cours |
+| `checks/` | bibliothèque de tests sur l'état de Blender (< 10 ms) |
+| `policy/` | paliers d'aide ①→④, seuils, pause de 30 s, « chut », quand parler |
+| `learner/` | mémoire de compétences (répétition espacée) → palier de départ |
+| `cache/` | audio, cibles Holo (version × zone × échelle UI × cible) |
+| `services/` | clients cloud : Gladia live, Jev, Holo, LLM + TTS |
+| `fallback/` | mode dégradé (Jev > 800 ms → une règle ; sans Gladia → clavier ; sans LLM → cache) |
+| `platform/` | spécificités macOS / Windows (permissions, échelle de l'écran, capture) |
+| `debug/` | page web locale qui montre en direct événements, décisions et latences |
+
+### C. Services IA (cloud)
+| Service | Appel | Sur le chemin critique ? |
+|---|---|---|
+| Gladia live | audio → texte partiel puis final | oui (~0,3 s, est.) |
+| Jev | état + question → choix + probabilité ; connexion persistante ; questions simples groupées, l'intention seule dans son appel ; lancé dès le partiel | oui (~0,2–0,5 s) |
+| Holo4 35B-A3B (API H) | capture recadrée + description → (x, y), **en avance** ; `agent_loop` pour « fais-le » | non (en avance) |
+| LLM + TTS | questions hors script, en streaming | non (secours) |
+
+## 3. Quand le prof parle
+Par défaut, un ✓ silencieux. Il ne parle spontanément que si l'erreur est à corriger, après 20 s sans progrès, ou après 3 annulations d'affilée. Au moins 30 s entre deux interventions, et « chut » le fait taire.
+
+Paliers : ① indice à la voix → ② zone surlignée dans Blender → ③ pointeur exact (Holo) → ④ démo (3 à 5 s de la vidéo de preuve, ou action faite dans Blender puis annulée).
+
+## 4. Contrats (`contracts/`), figés en premier
+1. **Leçon** : étapes, test, cible (description, pas de coordonnées), « pourquoi », audio, erreurs connues.
+2. **Événements de l'add-on** : opérateur, changement de scène, mode, sélection, zones, version de Blender.
+3. **Ordres** : surligner, ouvrir un menu, rejouer, pointer, dire, ✓.
+
+Les contrats permettent aux trois personnes de l'équipe d'avancer en parallèle.
+
+## 5. Répartition à trois
+| Personne | Dossiers |
+|---|---|
+| A · préparation | `prep/`, `lessons/`, `engine/checks/` |
+| B · cerveau en direct | `engine/` (hors `services/holo`), `addon/` |
+| C · interface | `overlay/`, `engine/services/holo`, voix, pitch |
+
+## 6. Ce qui peut casser, et le secours
+| Risque | Secours |
+|---|---|
+| Holo trop lent ou réseau faible | zone surlignée + raccourci clavier ; partage de connexion 4G |
+| Jev au-delà de 800 ms | une règle prend le relais |
+| Action invisible dans `operators` (opérateurs non `REGISTER`) | on la voit dans l'état de la scène (`depsgraph`) |
+| Permissions macOS / Windows | écran de vérification au premier lancement |
