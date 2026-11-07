@@ -1,5 +1,5 @@
 # Contrat leçon v1
-Statut : spécification à figer M0 ; futurs JSON Schema dans contracts/, aucun schéma exécutable encore livré.
+Statut : JSON Schema exécutable v1 dans contracts/lesson.schema.json.
 | Champ | Type / obligatoire | Sens et contraintes |
 |---|---|---|
 | schema_version | string oui | "1.0", major incompatible refusé |
@@ -24,6 +24,35 @@ Statut : spécification à figer M0 ; futurs JSON Schema dans contracts/, aucun 
 | known_errors | object[] oui | code, check, hint ; vide autorisé |
 | procedure_ref | string oui | procédure autorisée de secours |
 | proof | object oui | statut, méthode, evidence_ref et ui_path_verified par étape |
+| challenge | boolean non | false par défaut ; réussite sans aide débloque la compétence |
+| help | object non | menu_id optionnel (carte UI de la version prouvée), safe_demo=false par défaut, checkpoint_id ; safe_demo=true exige un checkpoint |
+
+## Whitelist des checks
+Les paramètres sont fermés et partagés avec les checks d'erreurs connues. Sauf mode_is,
+les nouveaux checks acceptent les filtres optionnels type et primitive.
+| name | params |
+|---|---|
+| object_exists | type et primitive (obligatoires, compatible v1) |
+| object_count | count entier ≥0 obligatoire |
+| modifier_present | modifier_type obligatoire, params scalaires/vecteurs optionnels |
+| material_color | color RGBA (4 nombres entre 0 et 1) obligatoire |
+| shading_smooth | smooth boolean, true par défaut |
+| mode_is | mode obligatoire |
+| selection | active boolean optionnel (sinon sélection entière) |
+| object_transform | au moins un vecteur location, rotation ou scale de 3 nombres |
+modifier_present, material_color et object_transform acceptent tolerance ≥0, par défaut 1e-5.
+
+Au chargement d'une leçon proven, le runtime refuse les id dupliqués et exige des
+preuves non vides existantes, relatives au dossier de la leçon (sans sortie par symlink).
+source.sha256 doit être le SHA256 réel de l'archive source locale désignée par source.uri
+(chemin relatif ou URI file). Pour une URI distante, load_lesson exige source_path explicite
+pointant l'archive téléchargée : aucun accès réseau implicite ni hash illustratif accepté.
+La version Blender du hello doit correspondre exactement à blender_version avant toute
+validation d'étape ou mémorisation de réussite. Les exemples ci-dessous restent structurels.
+Les primitives exigent provenance et mesh.verts/edges/polys cohérents ; l'absence de edges
+donne unknown. Le contrôle d'Euler (0 pour tore, 2 pour sphère/cube) complète les contraintes
+de comptage ; il ne prétend pas reconstruire toute la géométrie à partir de ces résumés.
+Les métadonnées help sont consommées par le runtime, sans injection de contexte dans les tests.
 Une scène sans objet ne valide pas object_exists. Un objet MESH arbitraire ne prouve pas primitive=torus ; sans provenance et géométrie suffisantes, résultat unknown. Ne pas utiliser le nom de l'objet comme preuve.
 ## Exemple complet de leçon minimale
 ```json
