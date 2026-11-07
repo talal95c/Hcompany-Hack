@@ -8,6 +8,18 @@ export type MilestoneView = {
   /** The source video at the moment showing this milestone (YouTube imports). */
   video_url: string | null;
 };
+/** The front door's result: an answer, or a decision to guide. */
+export type QaAnswer = {
+  /** Holo's choice: answer the question, or guide the learner through it. */
+  kind: "answer" | "guide";
+  goal: string;
+  answer: string;
+  details: string[];
+  app_name: string;
+  target: string;
+  searches: { app_name: string; query: string; backend: string }[];
+  sources: { title: string; url: string }[];
+};
 export type Imported = { id: string; title: string; app: string; milestones: number; language: string | null };
 export type TutorialSummary = {
   id: string;
@@ -60,6 +72,7 @@ export const api = {
   resolveLang: (text: string, spoken: string | null, fallback: string | null) =>
     invoke<string>("resolve_lang", { text, spoken, fallback }),
   listTutorials: () => invoke<TutorialSummary[]>("list_tutorials"),
+  answerQuestion: (question: string, lang: string | null) => invoke<QaAnswer>("answer_question", { question, lang }),
   /** YouTube video → tutorial in the library (progress on "import:progress"). */
   importYoutube: (url: string) => invoke<Imported>("import_youtube", { url }),
   /** Real icons of installed apps, keyed by app name. */
@@ -89,32 +102,14 @@ export function errorText(e: unknown): string {
   return typeof e === "string" ? e : e instanceof Error ? e.message : JSON.stringify(e);
 }
 
-// ---------- Voice output: Phonon (local), WebKit speech as a fallback ----------
+// ---------- Voice output: Phonon (local), played natively; system voice as a fallback ----------
 
-let ctx: AudioContext | null = null;
-let current: AudioBufferSourceNode | null = null;
-let seq = 0;
-
-/** `lang` (ISO code) picks Phonon's language and voice; detected from the text when null. */
+/** `lang` (ISO code) hints Phonon's language; the text's own language wins. */
 export async function speak(text: string, lang: string | null = null) {
-  const id = ++seq;
-  stopAudio();
+  window.speechSynthesis?.cancel();
   try {
-    const raw = await invoke<ArrayBuffer>("say", { text, lang });
-    if (id !== seq) return; // superseded while synthesizing
-    const rate = new DataView(raw).getUint32(0, true);
-    const samples = new Float32Array(raw.slice(4));
-    ctx ??= new AudioContext();
-    if (ctx.state === "suspended") await ctx.resume();
-    const buffer = ctx.createBuffer(1, samples.length, rate);
-    buffer.copyToChannel(samples, 0);
-    const src = ctx.createBufferSource();
-    src.buffer = buffer;
-    src.connect(ctx.destination);
-    src.start();
-    current = src;
+    await invoke("speak", { text, lang });
   } catch (e) {
-    if (id !== seq) return;
     console.warn("Phonon unavailable, using system voice:", e);
     const synth = window.speechSynthesis;
     if (!synth) return;
@@ -124,17 +119,7 @@ export async function speak(text: string, lang: string | null = null) {
   }
 }
 
-function stopAudio() {
-  try {
-    current?.stop();
-  } catch {
-    /* already stopped */
-  }
-  current = null;
-  window.speechSynthesis?.cancel();
-}
-
 export function stopSpeaking() {
-  seq++;
-  stopAudio();
+  window.speechSynthesis?.cancel();
+  invoke("stop_speaking").catch(() => {});
 }

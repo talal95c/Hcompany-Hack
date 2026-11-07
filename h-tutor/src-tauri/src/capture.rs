@@ -4,9 +4,17 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use image::{imageops::FilterType, DynamicImage, GrayImage};
 use std::io::Cursor;
 
-/// Screenshots sent to Holo are capped at this width. Coordinates come back
-/// normalized (0..1000), so downscaling does not affect pointer accuracy much.
-const MAX_WIDTH: u32 = 1600;
+/// Screenshots sent to Holo are capped at this width (`HOLO_SCREENSHOT_WIDTH`).
+/// Benchmarked on 66 recorded click steps: 1600 px puts 79% of clicks within
+/// 30 pt of the target vs 70% at 1280 px, for only ~0.2 s of extra latency
+/// (Holo costs about width x height / 1024 tokens per image).
+fn max_width() -> u32 {
+    std::env::var("HOLO_SCREENSHOT_WIDTH")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .filter(|w| (640..=1920).contains(w))
+        .unwrap_or(1600)
+}
 
 pub struct Shot {
     /// `data:image/jpeg;base64,...`, ready for an `image_url` content part.
@@ -16,12 +24,12 @@ pub struct Shot {
 }
 
 pub fn capture_primary() -> Result<Shot, String> {
-    let monitors = xcap::Monitor::all().map_err(|e| format!("Échec de la capture d'écran : {e}"))?;
+    let monitors = xcap::Monitor::all().map_err(|e| format!("Screen capture failed: {e}"))?;
     let monitor = monitors
         .iter()
         .find(|m| m.is_primary().unwrap_or(false))
         .or(monitors.first())
-        .ok_or("Aucun écran trouvé")?;
+        .ok_or("No display found")?;
 
     let rgba = monitor.capture_image().map_err(|e| {
         format!("Screen capture failed ({e}). Allow Screen Recording in System Settings › Privacy & Security.")
@@ -29,11 +37,12 @@ pub fn capture_primary() -> Result<Shot, String> {
 
     let img = DynamicImage::ImageRgba8(
         image::RgbaImage::from_raw(rgba.width(), rgba.height(), rgba.into_raw())
-            .ok_or("Image de capture invalide")?,
+            .ok_or("Invalid capture image")?,
     );
-    let img = if img.width() > MAX_WIDTH {
-        let h = img.height() * MAX_WIDTH / img.width();
-        img.resize_exact(MAX_WIDTH, h, FilterType::Triangle)
+    let max = max_width();
+    let img = if img.width() > max {
+        let h = img.height() * max / img.width();
+        img.resize_exact(max, h, FilterType::Triangle)
     } else {
         img
     };
@@ -44,7 +53,7 @@ pub fn capture_primary() -> Result<Shot, String> {
     let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut buf, 82);
     img.to_rgb8()
         .write_with_encoder(encoder)
-        .map_err(|e| format!("Échec de l'encodage JPEG : {e}"))?;
+        .map_err(|e| format!("JPEG encoding failed: {e}"))?;
 
     Ok(Shot {
         data_uri: format!("data:image/jpeg;base64,{}", STANDARD.encode(buf.into_inner())),
@@ -55,20 +64,21 @@ pub fn capture_primary() -> Result<Shot, String> {
 /// Just the tiny grayscale thumbnail of the primary display, for watching
 /// the screen for changes several times a second without any encoding.
 pub fn capture_thumb() -> Result<GrayImage, String> {
-    let monitors = xcap::Monitor::all().map_err(|e| format!("Échec de la capture d'écran : {e}"))?;
+    let monitors = xcap::Monitor::all().map_err(|e| format!("Screen capture failed: {e}"))?;
     let monitor = monitors
         .iter()
         .find(|m| m.is_primary().unwrap_or(false))
         .or(monitors.first())
-        .ok_or("Aucun écran trouvé")?;
-    let rgba = monitor.capture_image().map_err(|e| format!("Échec de la capture d'écran : {e}"))?;
+        .ok_or("No display found")?;
+    let rgba = monitor.capture_image().map_err(|e| format!("Screen capture failed: {e}"))?;
     let img = DynamicImage::ImageRgba8(
-        image::RgbaImage::from_raw(rgba.width(), rgba.height(), rgba.into_raw()).ok_or("Image de capture invalide")?,
+        image::RgbaImage::from_raw(rgba.width(), rgba.height(), rgba.into_raw()).ok_or("Invalid capture image")?,
     );
     // Same pipeline as `capture_primary` so thumbnails are comparable.
-    let img = if img.width() > MAX_WIDTH {
-        let h = img.height() * MAX_WIDTH / img.width();
-        img.resize_exact(MAX_WIDTH, h, FilterType::Nearest)
+    let max = max_width();
+    let img = if img.width() > max {
+        let h = img.height() * max / img.width();
+        img.resize_exact(max, h, FilterType::Nearest)
     } else {
         img
     };

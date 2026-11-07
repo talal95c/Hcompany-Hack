@@ -1,0 +1,78 @@
+{
+  "id": "blender-blender-stool-modeling-k-fxfdnzh00",
+  "version": 1,
+  "title": "Blender Stool Modeling",
+  "app": {
+    "name": "Blender"
+  },
+  "goal": "Model a stool using Blender",
+  "language": "fr",
+  "source": "youtube",
+  "source_url": "https://www.youtube.com/watch?v=k-fXfdnZH00",
+  "milestones": [
+    {
+      "id": "m1",
+      "goal": "Delete default cube and create 'objets' collection",
+      "done_when": "Default cube is deleted and 'objets' collection is created in the Outliner.",
+      "hints": [
+        "X > Delete",
+        "N > Collections > New"
+      ],
+      "teach": "Organizing objects into collections keeps your scene tidy.",
+      "video_at": 0
+    },
+    {
+      "id": "m2",
+      "goal": "Create cylinder and chair sub-collections",
+      "done_when": "Cylinder is created and 'chaise 1' and 'chaise 2' sub-collections are visible in the Outliner.",
+      "hints": [
+        "Shift+A > Add > Mesh > Cylinder",
+        "N > Collections > New"
+      ],
+      "teach": "Sub-collections help manage complex models with multiple parts.",
+      "video_at": 91
+    },
+    {
+      "id": "m3",
+      "goal": "Add Subdivision Surface modifier",
+      "done_when": "Subdivision Surface modifier is added to the cylinder and appears in the modifier list.",
+      "hints": [
+        "Modifier Properties > Add Modifier > Subdivision Surface"
+      ],
+      "teach": "Subdivision Surface smooths the mesh by adding more geometry.",
+      "video_at": 182
+    },
+    {
+      "id": "m4",
+      "goal": "Adjust vertices to shape the stool",
+      "done_when": "Vertices are selected and shaped to form the stool's basic structure.",
+      "hints": [
+        "1 > Vertex Select Mode",
+        "G to grab and move vertices"
+      ],
+      "teach": "Vertex manipulation is fundamental to 3D modeling.",
+      "video_at": 273
+    },
+    {
+      "id": "m5",
+      "goal": "Add Mirror modifier on Y-axis",
+      "done_when": "Mirror modifier is added with Y-axis mirroring enabled.",
+      "hints": [
+        "Add Modifier > Mirror",
+        "Enable Y-axis mirroring"
+      ],
+      "teach": "Mirror modifier creates symmetrical geometry efficiently.",
+      "video_at": 364
+    },
+    {
+      "id": "m6",
+      "goal": "Add Bevel modifier to round edges",
+      "done_when": "Bevel modifier is applied and edges of the stool are rounded.",
+      "hints": [
+        "Add Modifier > Bevel"
+      ],
+      "teach": "Bevel modifier softens hard edges for a more realistic look.",
+      "video_at": 455
+    }
+  ]
+}
