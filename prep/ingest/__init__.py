@@ -61,6 +61,11 @@ class TranscriptionTimeout(TimeoutError):
 
 
 def vocabulary_from_ui_map(ui_map: dict | None) -> list[str]:
+    if ui_map and ui_map.get("kind") == "accessibility":
+        from prep.ui_map.accessibility import control_vocabulary
+
+        app_name = (ui_map.get("app") or {}).get("name")
+        return [*([app_name] if app_name else []), *control_vocabulary(ui_map, 499)]
     labels = set(DEFAULT_VOCABULARY)
     if ui_map:
         for menu in ui_map.get("menus", {}).values():

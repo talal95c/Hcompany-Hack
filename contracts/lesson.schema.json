@@ -321,6 +321,60 @@
         {
           "type": "object",
           "properties": {
+            "name": {"const": "calc.cell_formula"},
+            "params": {
+              "type": "object",
+              "properties": {
+                "sheet": {"type": "string", "minLength": 1},
+                "cell": {"type": "string", "pattern": "^[A-Z]{1,3}[1-9][0-9]{0,6}$"},
+                "formula": {"type": "string", "minLength": 2, "pattern": "^="},
+                "value": {"type": "number"}
+              },
+              "required": ["sheet", "cell", "formula", "value"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["name", "params"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {"const": "calc.range_bold"},
+            "params": {
+              "type": "object",
+              "properties": {
+                "sheet": {"type": "string", "minLength": 1},
+                "range": {"type": "string", "pattern": "^[A-Z]{1,3}[1-9][0-9]{0,6}:[A-Z]{1,3}[1-9][0-9]{0,6}$"},
+                "bold": {"type": "boolean", "default": true}
+              },
+              "required": ["sheet", "range"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["name", "params"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {"const": "calc.chart_source"},
+            "params": {
+              "type": "object",
+              "properties": {
+                "sheet": {"type": "string", "minLength": 1},
+                "range": {"type": "string", "pattern": "^[A-Z]{1,3}[1-9][0-9]{0,6}:[A-Z]{1,3}[1-9][0-9]{0,6}$"}
+              },
+              "required": ["sheet", "range"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["name", "params"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "name": {
               "enum": [
                 "object_exists",

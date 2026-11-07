@@ -39,3 +39,29 @@ Sans `--language`, la langue est celle détectée par Gladia, non vérifiée
 sémantiquement (un avertissement est émis). La détection peut être erronée sur
 une courte narration synthétique ; préciser `--language fr` ou `--language en`
 pour une leçon dont la langue est connue.
+
+## Applications génériques (`--app`)
+`--app blender` (défaut) garde le chemin Blender (add-on, checks `blender.*`). Tout autre
+profil de `prep/apps` (ex. `libreoffice-calc`, `libreoffice-writer`) passe par le chemin
+générique : carte UI depuis un instantané d'accessibilité (AT-SPI via `pyatspi`, même JSON
+normalisé `{ref, role, name, value?, states, bounds, parent_ref}` pour AX/UIA), checks
+`element_exists/value/state`, `window_title`, `visual_assert`, leçon v2 (`app.sensor`).
+
+```sh
+sudo apt-get install -y libreoffice-calc libreoffice-gtk3 at-spi2-core python3-pyatspi \
+  xvfb openbox xdotool imagemagick dbus-x11
+python -m prep tutoriel.txt --app libreoffice-calc --fixture donnees.csv \
+  --out lessons/libreoffice-calc/ --language en
+```
+
+Le prouveur lance l'app dans un bac à sable (Xvfb + D-Bus + bus AT-SPI privés, HOME
+jetable, variables secrètes filtrées), rejoue chaque étape avec Holo computer use et
+vérifie le check sur un instantané frais (ou par vision pour `visual_assert`), enregistre
+un checkpoint, revérifie après sauvegarde et écrit preuves, captures et SHA256.
+Un arbre incomplet ou perdu donne `unknown`, jamais `pass`.
+
+Limite AT-SPI observée (LibreOffice 7.3.7.2, VCL gtk3) : après « Terminer » de l'assistant
+graphique, l'application reste enregistrée avec un nom vide et toute requête AT-SPI la
+fige (écran noir, sauvegarde impossible). Les objets dessinés (graphique, image) sont donc
+compilés en `visual_assert`, et une étape visuelle ne fait aucune requête d'accessibilité :
+la détection de boîte de dialogue passe aussi par Holo.

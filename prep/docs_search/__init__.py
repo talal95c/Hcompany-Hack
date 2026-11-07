@@ -67,3 +67,51 @@ async def docs_search(
         return await search(client)
     async with httpx.AsyncClient() as session:
         return await search(session)
+
+
+async def search_docs(
+    query: str,
+    *,
+    domains: tuple[str, ...] | list[str],
+    client: httpx.AsyncClient | None = None,
+) -> list[dict]:
+    """Recherche Linkup restreinte aux domaines officiels d'une application (HTTPS seulement)."""
+    import httpx
+
+    key = os.environ.get("LINKUP_API_KEY")
+    if not key:
+        raise RuntimeError("Clé Linkup absente")
+    allowed = {d.lower() for d in domains if re.fullmatch(r"[a-z0-9.-]+\.[a-z]{2,}", d.lower())}
+    if not allowed:
+        raise ValueError("Aucun domaine documentaire valide")
+    started = time.perf_counter()
+
+    async def search(session: httpx.AsyncClient) -> list[dict]:
+        try:
+            response = await session.post(
+                "https://api.linkup.so/v1/search",
+                headers={"Authorization": f"Bearer {key}"},
+                json={
+                    "q": query,
+                    "depth": "standard",
+                    "outputType": "searchResults",
+                    "includeDomains": sorted(allowed),
+                },
+                timeout=15,
+            )
+            response.raise_for_status()
+            return [
+                {k: str(item.get(k, ""))[:2000] for k in ("name", "url", "content")}
+                for item in response.json().get("results", [])
+                if urlparse(item.get("url", "")).scheme == "https"
+                and (urlparse(item.get("url", "")).hostname or "") in allowed
+            ]
+        except httpx.TimeoutException as exc:
+            raise TimeoutError("Recherche Linkup : délai de 15 s dépassé") from exc
+        finally:
+            logging.getLogger(__name__).info("Linkup : %.3f s", time.perf_counter() - started)
+
+    if client is not None:
+        return await search(client)
+    async with httpx.AsyncClient() as session:
+        return await search(session)
