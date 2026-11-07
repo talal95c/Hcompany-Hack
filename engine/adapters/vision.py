@@ -144,7 +144,7 @@ class VisionAdapter:
                 try:
                     verdict = await self.verifier.verify(image, question(params),
                                                          timeout_s=self.timeout_s)
-                except (TimeoutError, ConnectionError, ValueError, RuntimeError) as error:
+                except Exception as error:  # noqa: BLE001 - toute panne cloud reste unknown
                     verdict = VerifyResult(None, None, (time.perf_counter() - start) * 1000,
                                            type(error).__name__)
                 self.metric("holo.verify", (time.perf_counter() - start) * 1000)
