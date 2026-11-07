@@ -1,7 +1,10 @@
 import { Btn, Label, Reveal } from "./ui";
 
 /** The web console for companies: where a team's tutorials and internal knowledge live. */
-export const APP_URL: string = import.meta.env.VITE_APP_URL || "https://rio.vignemale.com";
+// VITE_APP_URL="" when the console serves this page itself (same origin).
+const APP_ORIGIN: string = import.meta.env.VITE_APP_URL ?? "https://rio.vignemale.com";
+export const APP_URL = `${APP_ORIGIN}/home`;
+export const INSTALL_URL = `${APP_ORIGIN}/get-rio`;
 
 const POINTS = [
   {

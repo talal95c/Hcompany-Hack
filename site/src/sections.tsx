@@ -15,7 +15,7 @@ import {
   ScrollRevealText,
   Ticker,
 } from "./ui";
-import { APP_URL } from "./Teams";
+import { APP_URL, INSTALL_URL } from "./Teams";
 
 const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Finder", "Figma", "VS Code"];
 
@@ -953,7 +953,7 @@ export function FaqInsights() {
 export function Footer() {
   const cols = [
     { h: "Product", l: [["Use cases", "#use-cases"], ["For teams", "#teams"], ["Pricing", "#pricing"], ["FAQ", "#faq"]] },
-    { h: "Get started", l: [["Go to app", APP_URL], ["Install the Mac app", `${APP_URL}/get-rio`]] },
+    { h: "Get started", l: [["Go to app", APP_URL], ["Install the Mac app", INSTALL_URL]] },
     { h: "Built with", l: [["H Company", "https://www.hcompany.ai"], ["Gladia", "https://www.gladia.io"], ["Gradium", "https://gradium.ai"]] },
   ];
   return (
