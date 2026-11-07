@@ -179,7 +179,9 @@ async def test_live_recovery_exports_proven_procedure(tmp_path, caplog):
             {"id": step["procedure_ref"], "definition": PROCEDURE_LIBRARY[step["procedure_ref"]]}
         )
         assert all("/4.5/" in item["url"] for item in evidence["sources"])
-        replay = await prove_lesson(exported, sandbox, mapping, mapping, out)
+        replay = await prove_lesson(
+            exported, sandbox, mapping, mapping, out, fixture=out / "fixtures/initial.blend"
+        )
         assert replay["status"] == "proven"
         assert "REPLAY" in json.loads(evidence_path.read_text())["mode_trace"]
         print("Recovery Holo metrics:", json.dumps(compiler.metrics))

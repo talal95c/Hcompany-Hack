@@ -139,6 +139,11 @@ class HoloCompiler:
                     "why: string, known_errors: [{code: string, check: check, hint: string}]}]}. "
                     "Pour chaque étape réalisable, fournis au moins une erreur concrète : "
                     "son check autorisé doit être différent du check de réussite. "
+                    "Un check d'erreur pass signifie une mauvaise primitive présente, "
+                    "pas l'absence de la bonne primitive ni un mauvais mode. "
+                    "Exemple pour cube : {code: sphere_instead_of_cube, "
+                    "check: {name: object_exists, params: {type: MESH, primitive: uv_sphere}}, "
+                    "hint: 'Choisis Cube plutôt que Sphère UV.'}. "
                     "Pour une étape non prise en charge, known_errors peut être vide. "
                     "Bibliothèque : "
                     + json.dumps(PROCEDURE_LIBRARY)
@@ -152,7 +157,7 @@ class HoloCompiler:
         ]
         for attempt in range(2):
             try:
-                raw = await self._request(messages, self.fallback_model if attempt else None)
+                raw = await self._request(messages)
                 return self._build(raw, transcript, ui_map, lesson_id, blender_version)
             except (
                 json.JSONDecodeError,

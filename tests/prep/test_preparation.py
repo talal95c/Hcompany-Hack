@@ -305,7 +305,9 @@ async def test_search_filters_blender_version(monkeypatch, explicit):
     ]
 
     def handler(request):
-        assert "site:docs.blender.org/manual/en/4.5/" in json.loads(request.content)["q"]
+        query = json.loads(request.content)["q"]
+        assert query.startswith("site:docs.blender.org ")
+        assert "4.5.9" not in query
         return httpx.Response(
             200, json={"results": [{"url": f"https://docs.blender.org{path}"} for path in paths]}
         )
@@ -399,9 +401,11 @@ async def test_real_blender(tmp_path, caplog):
 @pytest.mark.skipif(not os.environ.get("LINKUP_API_KEY"), reason="Clé Linkup absente")
 async def test_live_linkup(caplog):
     caplog.set_level(logging.INFO)
-    results = await docs_search("Blender 4.5.9 manual mesh torus primitive")
+    results = await docs_search("Blender manual mesh torus primitive")
     assert results
     assert all(item["url"].startswith("https://docs.blender.org/") for item in results)
-    assert all("/4.5/" in item["url"] for item in results)
+    versioned = await docs_search("Blender manual mesh torus primitive", blender_version="4.5.9")
+    assert all("/4.5/" in item["url"] for item in versioned)
+    print(f"Linkup: {len(results)} sources, {len(versioned)} sources compatibles 4.5")
     assert "Linkup :" in caplog.text
     print(caplog.text)

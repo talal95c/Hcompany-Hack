@@ -31,6 +31,10 @@ async def docs_search(
             raise ValueError("Version Blender invalide pour la recherche")
         version = ".".join(version.split(".")[:2])
     path_pattern = re.compile(rf"^/(?:manual/[^/]+|api)/{re.escape(version)}/") if version else None
+    if version:
+        query = (
+            query.replace(match[0], f"Blender {version}") if match else f"Blender {version} {query}"
+        )
     started = time.perf_counter()
 
     async def search(session: httpx.AsyncClient) -> list[dict]:
@@ -39,11 +43,7 @@ async def docs_search(
                 "https://api.linkup.so/v1/search",
                 headers={"Authorization": f"Bearer {key}"},
                 json={
-                    "q": (
-                        f"site:docs.blender.org/manual/en/{version}/ {query}"
-                        if version
-                        else f"site:docs.blender.org {query}"
-                    ),
+                    "q": f"site:docs.blender.org {query}",
                     "depth": "standard",
                     "outputType": "searchResults",
                     "includeDomains": ["docs.blender.org"],
