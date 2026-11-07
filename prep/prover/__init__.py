@@ -45,6 +45,7 @@ async def prove_lesson(
     reselect: Callable[[dict, list[dict]], Awaitable[str | None]] | None = None,
     search: Callable[[str], Awaitable[list[dict]]] = docs_search,
     source_steps: list[dict] | None = None,
+    rejected_steps: dict[str, dict] | None = None,
 ) -> dict:
     result = copy.deepcopy(lesson)
     proof_dir = out / "proof"
@@ -101,7 +102,12 @@ async def prove_lesson(
 
         status, method = "pending", "bpy"
         old = json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
-        if check.get("name") not in CHECK_LIBRARY:
+        rejection = (rejected_steps or {}).get(step_id)
+        if (
+            check.get("name") not in CHECK_LIBRARY
+            or rejection
+            or step.get("proof", {}).get("method") == "handoff"
+        ):
             mode = Mode.OBSERVE
             trace.append(mode.value)
             transition("no_check")
@@ -110,9 +116,11 @@ async def prove_lesson(
                 out,
                 lesson_id=lesson["lesson_id"],
                 step_id=step_id,
-                reason="Check absent ou inconnu",
+                reason=rejection["reason"]
+                if rejection
+                else "Check absent ou procédure non autorisée",
                 fixture=str(checkpoint),
-                expected_result=check,
+                expected_result=rejection or check,
                 blender_version=version,
             )
             evidence["repair_request"] = str(request.relative_to(out))
