@@ -46,9 +46,8 @@ function Copy({ text }: { text: string }) {
   );
 }
 
-const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
-
 export function GetRio() {
+  const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
   useEffect(() => {
     scrollTo(0, 0);
   }, []);
