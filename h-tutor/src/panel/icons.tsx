@@ -72,3 +72,9 @@ export const IconGrid = () => (
     <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6" />
   </svg>
 );
+export const IconKeyboard = () => (
+  <svg {...base}>
+    <rect x="3" y="6" width="18" height="12" rx="2.5" />
+    <path d="M7 10h.01M11 10h.01M15 10h.01M8 14h8" />
+  </svg>
+);
