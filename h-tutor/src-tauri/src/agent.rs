@@ -286,6 +286,9 @@ pub struct Session {
     /// Actions given per milestone with what they did, used to turn this
     /// run into a tutorial with a verified known path.
     pub actions: HashMap<String, Vec<ActionRecord>>,
+    /// Milestone whose knowledge base lookup is done (it is added once to
+    /// the task message, before the first observation).
+    knowledge_for: Option<String>,
     /// Unproven `answer`s already challenged in the current milestone.
     challenged: (Option<String>, u8),
     /// The milestone closed last, whose path is recalled in `<progress>`.
@@ -321,6 +324,7 @@ impl Session {
             facts: Vec::new(),
             last_done: None,
             challenged: (None, 0),
+            knowledge_for: None,
             evidence: HashMap::new(),
             step: Step::default(),
             before: None,
@@ -668,7 +672,12 @@ pub trait Brain: Sync {
     /// Returns the assistant message, the request's duration in ms, and usage.
     fn chat(&self, body: &Value) -> impl std::future::Future<Output = Result<(Value, u128, Value), String>> + Send;
     fn search(&self, app_name: &str, query: &str) -> impl std::future::Future<Output = String> + Send;
+    /// The organization's knowledge base on a milestone: the text for Holo
+    /// and the matched skills, `None` when it has nothing relevant.
+    fn knowledge(&self, app_name: &str, goal: &str) -> impl std::future::Future<Output = Knowledge> + Send;
 }
+
+pub type Knowledge = Result<Option<(String, Vec<String>)>, String>;
 
 impl Brain for Holo {
     async fn chat(&self, body: &Value) -> Result<(Value, u128, Value), String> {
@@ -678,6 +687,9 @@ impl Brain for Holo {
     async fn search(&self, app_name: &str, query: &str) -> String {
         crate::emit_status(&format!("Searching {app_name} docs: {query}"));
         crate::search::run(self, app_name, query).await.text
+    }
+    async fn knowledge(&self, app_name: &str, goal: &str) -> Knowledge {
+        crate::platform::lookup(app_name, goal).await.map(|o| o.map(|(r, matches)| (r.text, matches)))
     }
 }
 
@@ -1194,6 +1206,39 @@ async fn choose(
     }
 }
 
+/// Looks the current milestone up in the organization's knowledge base,
+/// once, and adds what is relevant to the task message: the tutor then
+/// knows the documented path (e.g. "Ctrl+R, then Enter to confirm") instead
+/// of guessing. Found, empty or failed, the lookup is journaled.
+async fn ensure_knowledge(brain: &impl Brain, session: &mut Session) {
+    if session.current.is_none() || session.knowledge_for == session.current {
+        return;
+    }
+    session.knowledge_for = session.current.clone();
+    let Some(m) = session.current_milestone().cloned() else { return };
+    let app = session.tutorial.app.name.clone();
+    let started = std::time::Instant::now();
+    let ms = || started.elapsed().as_millis();
+    match brain.knowledge(&app, &m.goal).await {
+        Ok(Some((text, matches))) => {
+            journal::event(
+                "milestone_knowledge",
+                json!({ "milestone": m.id, "app": app, "query": m.goal, "matches": matches, "ms": ms() }),
+            );
+            if let Some(task) = session.messages.get_mut(1)
+                && let Some(t) = task["content"].as_str()
+            {
+                task["content"] = json!(format!("{t}\n\n{text}"));
+            }
+        }
+        Ok(None) => journal::event(
+            "milestone_knowledge",
+            json!({ "milestone": m.id, "app": app, "query": m.goal, "matches": [], "ms": ms() }),
+        ),
+        Err(e) => journal::event("knowledge_error", json!({ "milestone": m.id, "query": m.goal, "error": e })),
+    }
+}
+
 /// Appends an observation: the `<progress>` block, the screenshot, and any
 /// extra text (a learner's question). Keeps the conversation bounded.
 fn observe(session: &mut Session, shot: &Shot, extra: Option<&str>) {
@@ -1220,6 +1265,7 @@ async fn ask_holo(
     shot_path: Option<&str>,
 ) -> Result<Turn, String> {
     let started = std::time::Instant::now();
+    ensure_knowledge(brain, session).await;
     // A pending call always gets its tool result, or the conversation would
     // be malformed for the API.
     if let Some(id) = session.pending_call.take() {
@@ -1370,6 +1416,7 @@ pub async fn ask_in_loop(
         return Err("Aucune étape en cours".into());
     }
     journal::event("learner_question", json!({ "milestone": session.current, "question": question }));
+    ensure_knowledge(brain, session).await;
     let asked = format!("The learner paused and asks: “{question}”");
     let extra = match session.pending_call.take() {
         Some(id) => {
@@ -1615,6 +1662,7 @@ mod tests {
             facts: Vec::new(),
             last_done: None,
             challenged: (None, 0),
+            knowledge_for: None,
             evidence: HashMap::new(),
             step: Step::default(),
             before: None,
@@ -1674,6 +1722,9 @@ mod tests {
         replies: Mutex<VecDeque<Result<Value, String>>>,
         bodies: Mutex<Vec<Value>>,
         searches: Mutex<Vec<String>>,
+        /// What the knowledge base answers (None: nothing relevant).
+        kb: Mutex<Option<String>>,
+        lookups: Mutex<Vec<String>>,
     }
 
     impl Fake {
@@ -1694,6 +1745,10 @@ mod tests {
         async fn search(&self, _app: &str, query: &str) -> String {
             self.searches.lock().unwrap().push(query.into());
             format!("docs for {query}")
+        }
+        async fn knowledge(&self, _app: &str, goal: &str) -> Knowledge {
+            self.lookups.lock().unwrap().push(goal.into());
+            Ok(self.kb.lock().unwrap().clone().map(|t| (t, vec!["Add edge loops".to_string()])))
         }
     }
 
@@ -2044,6 +2099,9 @@ mod tests {
             async fn search(&self, _app: &str, _query: &str) -> String {
                 "é".repeat(10_000)
             }
+            async fn knowledge(&self, app: &str, goal: &str) -> Knowledge {
+                self.0.knowledge(app, goal).await
+            }
         }
         let mut s = linear(1);
         let brain = Verbose(Fake::new(vec![Ok(call("search", r#"{"query":"torus"}"#)), click()]));
@@ -2215,5 +2273,33 @@ mod tests {
         step_on(&brain, &mut s, "clicked", 100);
         let sent = brain.bodies.lock().unwrap()[0]["messages"].to_string();
         assert!(sent.contains("2 times in a row") && sent.contains("menus"), "{sent}");
+    }
+
+    // ---- knowledge base per milestone ----
+
+    #[test]
+    fn each_milestone_gets_its_knowledge_once() {
+        let mut s = linear(2);
+        let brain = Fake::new(vec![click(), click()]);
+        *brain.kb.lock().unwrap() = Some("Organization knowledge base: Add edge loops — Ctrl+R, then Enter".into());
+        step_on(&brain, &mut s, "start", 100);
+        step_on(&brain, &mut s, "clicked", 170);
+        // Looked up once for m0, with the milestone goal, and given to Holo in the task.
+        assert_eq!(*brain.lookups.lock().unwrap(), ["m0"]);
+        let task = brain.bodies.lock().unwrap()[0]["messages"][1]["content"].as_str().unwrap().to_string();
+        assert!(task.contains("Ctrl+R, then Enter"), "{task}");
+        // The next milestone gets its own lookup.
+        let next = Fake::new(vec![answer(), click()]);
+        step_on(&next, &mut s, "clicked", 200);
+        assert_eq!(*next.lookups.lock().unwrap(), ["m1"]);
+    }
+
+    #[test]
+    fn nothing_relevant_adds_nothing() {
+        let mut s = linear(1);
+        let brain = Fake::new(vec![click()]);
+        step_on(&brain, &mut s, "start", 100);
+        let task = brain.bodies.lock().unwrap()[0]["messages"][1]["content"].as_str().unwrap().to_string();
+        assert!(!task.contains("knowledge"), "{task}");
     }
 }

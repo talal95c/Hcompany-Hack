@@ -321,7 +321,7 @@ async fn perform(
         let (dx, dy) = rng.offset();
         (x, y) = ((x + dx).clamp(0.0, 1000.0), (y + dy).clamp(0.0, 1000.0));
     }
-    let (mut hits, mut misses, mut keys, mut enter) = (0, 0, 0, false);
+    let (mut hits, mut misses, mut clicks, mut keys, mut enter) = (0, 0, 0, 0, false);
     {
         let mut b = browser.lock().await;
         match d.action.as_str() {
@@ -350,7 +350,11 @@ async fn perform(
             _ => {}
         }
         if pointing {
-            if hit(step, x, y) { hits = 1 } else { misses = 1 }
+            match step.point {
+                None => clicks = 1,
+                Some(_) if hit(step, x, y) => hits = 1,
+                Some(_) => misses = 1,
+            }
         }
         b.settle().await;
     }
@@ -360,7 +364,7 @@ async fn perform(
         "sim_action",
         serde_json::json!({ "action": d.action, "x": x, "y": y, "text": d.text, "keys": d.keys, "hit": hits > 0, "changed": changed }),
     );
-    Ok(crate::watch::describe_event(hits, misses, keys, enter, changed))
+    Ok(crate::watch::describe_event(hits, misses, clicks, keys, enter, changed))
 }
 
 #[cfg(test)]

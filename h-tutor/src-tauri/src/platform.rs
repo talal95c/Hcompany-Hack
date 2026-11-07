@@ -45,15 +45,17 @@ pub fn enabled() -> bool {
     config().is_some()
 }
 
+/// A search can wake the knowledge worker (measured 3.6 s cold, 0.14 s warm);
+/// past the client's 10 s default it was silently lost.
+const SEARCH_TIMEOUT: Duration = Duration::from_secs(25);
+
 async fn get(path: &str, query: &[(&str, &str)]) -> Result<Value, String> {
     let (base, token) = config().ok_or("Rio platform not configured (RIO_API_URL, RIO_API_TOKEN)")?;
-    let r = HTTP
-        .get(format!("{base}{path}"))
-        .bearer_auth(token)
-        .query(query)
-        .send()
-        .await
-        .map_err(|e| format!("Rio platform unreachable: {e}"))?;
+    let mut req = HTTP.get(format!("{base}{path}")).bearer_auth(token).query(query);
+    if path == "/v1/search" {
+        req = req.timeout(SEARCH_TIMEOUT);
+    }
+    let r = req.send().await.map_err(|e| format!("Rio platform unreachable: {e}"))?;
     let status = r.status();
     let v: Value = r.json().await.map_err(|e| format!("Rio platform: bad response ({e})"))?;
     if !status.is_success() {
@@ -122,9 +124,98 @@ fn scope(app_name: &str, apps: &[String]) -> Option<String> {
     None
 }
 
+/// Wakes the platform and its knowledge worker at startup, so the learner's
+/// first request does not pay the cold start.
+pub async fn warm_up() {
+    if !enabled() {
+        return;
+    }
+    let started = Instant::now();
+    let apps = apps().await;
+    let r = search("", "warm up").await;
+    eprintln!(
+        "[platform] warm-up: {} apps, search {} in {} ms",
+        apps.len(),
+        if r.is_ok() { "ok" } else { "failed" },
+        started.elapsed().as_millis()
+    );
+}
+
+/// Smallest meaning similarity (cosine, 0..1) for a result to count.
+/// Measured on 16 milestone goals (Blender, DaVinci Resolve): 0.54 keeps
+/// "Add edge loops" for "Add loop cuts" (0.549) and drops off-topic hits
+/// such as "Set Bevel Segments" (0.39) or a constraint for "Apply a
+/// material" (0.526).
+const MIN_COSINE: f64 = 0.54;
+
+/// A question in another language than the (English) docs: words rarely
+/// match, and meaning is a little lower. Measured in French: "faire une
+/// coupe en boucle" → "Add edge loops" at 0.469 with words; "supprimer les
+/// sommets en double" → "Remove duplicate vertices" at 0.576 without.
+const FOREIGN_MIN_COSINE: f64 = 0.55;
+const FOREIGN_MIN_COSINE_WITH_WORDS: f64 = 0.45;
+
+/// Same hint as the platform: non-ASCII letters or common French words.
+fn looks_foreign(q: &str) -> bool {
+    const HINTS: [&str; 24] = [
+        "comment",
+        "pour",
+        "les",
+        "des",
+        "une",
+        "mon",
+        "mes",
+        "dans",
+        "faire",
+        "veux",
+        "est",
+        "que",
+        "sur",
+        "avec",
+        "supprimer",
+        "ajouter",
+        "couper",
+        "mettre",
+        "trouver",
+        "quoi",
+        "créer",
+        "creer",
+        "aide",
+        "rendre",
+    ];
+    !q.is_ascii() || q.to_lowercase().split(|c: char| !c.is_alphabetic()).any(|w| HINTS.contains(&w))
+}
+
+/// Keeps only real matches. In English: the query's words are found AND the
+/// meaning is close (meaning alone let "Make the tree more realistic" bring
+/// back "Enable Realize Instances"). In another language: close meaning, or
+/// words with a fair meaning. Without vectors (no cosine anywhere), the best
+/// word match alone is kept.
+fn relevant<'a>(results: &'a [Value], query: &str) -> Vec<&'a Value> {
+    let words = |r: &Value| r["match"]["words"].as_bool() == Some(true);
+    let cos = |r: &Value| r["match"]["cos"].as_f64();
+    if results.iter().all(|r| cos(r).is_none()) {
+        return results.iter().filter(|r| words(r)).take(1).collect();
+    }
+    let foreign = looks_foreign(query);
+    results
+        .iter()
+        .filter(|r| match (foreign, cos(r)) {
+            (_, None) => false,
+            (false, Some(c)) => words(r) && c >= MIN_COSINE,
+            (true, Some(c)) => c >= FOREIGN_MIN_COSINE || (words(r) && c >= FOREIGN_MIN_COSINE_WITH_WORDS),
+        })
+        .collect()
+}
+
 /// The organization's knowledge for a goal, as text for Holo. `Ok(None)`
 /// when the platform is not configured or has nothing on it.
 pub async fn search(app_name: &str, query: &str) -> Result<Option<SearchResult>, String> {
+    lookup(app_name, query).await.map(|o| o.map(|(r, _)| r))
+}
+
+/// Like `search`, with the matched skills' names (for the journal).
+pub async fn lookup(app_name: &str, query: &str) -> Result<Option<(SearchResult, Vec<String>)>, String> {
     if !enabled() {
         return Ok(None);
     }
@@ -136,12 +227,12 @@ pub async fn search(app_name: &str, query: &str) -> Result<Option<SearchResult>,
         Err(e) if e.ends_with("(404 Not Found)") => return Ok(None),
         r => r?,
     };
-    let results = v["results"].as_array().cloned().unwrap_or_default();
-    // The platform already keeps only real matches (words with enough coverage, or close meaning).
-    let results: Vec<&Value> = results.iter().collect();
+    let all = v["results"].as_array().cloned().unwrap_or_default();
+    let results = relevant(&all, query);
     if results.is_empty() {
         return Ok(None);
     }
+    let matches: Vec<String> = results.iter().map(|r| s(&r["intent"]).to_string()).collect();
     let mut text = format!(
         "Organization knowledge base (Rio platform) for \"{app_name}: {query}\". These paths come from the \
          organization's tutorials and docs, re-targeted to the learner's version. Prefer them over your own \
@@ -169,10 +260,10 @@ pub async fn search(app_name: &str, query: &str) -> Result<Option<SearchResult>,
             }
             text += &format!("   - {}", s(&st["do"]));
             // The shortcut the docs give, when the instruction does not already say it.
-            if let Some(k) = st["keys"].as_array().and_then(|k| k.first()).and_then(|k| k.as_str()) {
-                if !s(&st["do"]).contains(k) {
-                    text += &format!(" (shortcut {k})");
-                }
+            if let Some(k) = st["keys"].as_array().and_then(|k| k.first()).and_then(|k| k.as_str())
+                && !s(&st["do"]).contains(k)
+            {
+                text += &format!(" (shortcut {k})");
             }
             if st["changed"].as_bool().unwrap_or(false)
                 && let (Some(l), Some(v)) = (st["was"]["label"].as_str(), st["was"]["version"].as_str())
@@ -188,7 +279,7 @@ pub async fn search(app_name: &str, query: &str) -> Result<Option<SearchResult>,
         }
     }
     sources.dedup_by(|a, b| a.url == b.url);
-    Ok(Some(SearchResult { backend: "rio".into(), text, sources }))
+    Ok(Some((SearchResult { backend: "rio".into(), text, sources }, matches)))
 }
 
 /// Reports a tutorial event to the organization's usage page (fire and
@@ -286,6 +377,97 @@ pub fn installed_version(bundle_id: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+    fn hit(intent: &str, words: bool, cos: Option<f64>) -> serde_json::Value {
+        serde_json::json!({ "intent": intent, "match": { "words": words, "cos": cos } })
+    }
+
+    /// Cases measured on the local knowledge base (see `MIN_COSINE`).
+    #[test]
+    fn keeps_only_real_matches() {
+        let names = |v: Vec<&serde_json::Value>| {
+            v.iter().map(|r| r["intent"].as_str().unwrap().to_string()).collect::<Vec<_>>()
+        };
+        let loop_cuts = [
+            hit("Add edge loops", true, Some(0.549)),
+            hit("Set Bevel Segments", true, Some(0.39)),
+            hit("Change Bevel Segments", true, Some(0.392)),
+        ];
+        assert_eq!(names(super::relevant(&loop_cuts, "Add loop cuts to the cylinder")), ["Add edge loops"]);
+        let tree = [
+            hit("Enable Realize Instances", false, Some(0.443)),
+            hit("Shade object auto smooth", false, Some(0.441)),
+            hit("Make Duplicate Real", false, Some(0.425)),
+        ];
+        assert!(super::relevant(&tree, "Make the tree more realistic").is_empty());
+        let material =
+            [hit("Change object color", true, Some(0.579)), hit("Apply the result of a constraint", true, Some(0.526))];
+        assert_eq!(names(super::relevant(&material, "Apply a material to the object")), ["Change object color"]);
+        // No vectors: the best word match only.
+        let plain = [hit("Scale an object", true, None), hit("Apply Scale", true, None)];
+        assert_eq!(names(super::relevant(&plain, "Scale the object")), ["Scale an object"]);
+        // French, measured: the right skill stays, the off-topic one goes.
+        let coupe = [hit("Add edge loops", true, Some(0.469)), hit("Enable or disable clip", true, Some(0.40))];
+        assert_eq!(names(super::relevant(&coupe, "faire une coupe en boucle")), ["Add edge loops"]);
+        let doubles = [hit("Remove duplicate vertices", false, Some(0.576))];
+        assert_eq!(
+            names(super::relevant(&doubles, "comment supprimer les sommets en double")),
+            ["Remove duplicate vertices"]
+        );
+        let arbre =
+            [hit("Set collection to indirect only", true, None), hit("Enable Realize Instances", false, Some(0.502))];
+        assert!(super::relevant(&arbre, "aide moi à rendre l'arbre plus réaliste").is_empty());
+    }
+
+    /// Retrieval quality on milestone-like goals, against a running platform:
+    /// `cargo test --lib platform::tests::retrieval_quality -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn retrieval_quality() {
+        let _ = dotenvy::from_path(concat!(env!("CARGO_MANIFEST_DIR"), "/../.env"));
+        // (app, goal, expected skill words, or "" when nothing relevant exists)
+        let cases = [
+            ("Blender", "Add loop cuts to the cylinder", "edge loop"),
+            ("Blender", "Add subdivision surface modifier", "subdivision"),
+            ("Blender", "Remove duplicate vertices", "duplicate"),
+            ("Blender", "Scale the object", "scale"),
+            ("Blender", "Rotate the cube 90 degrees", "rotate"),
+            ("Blender", "Bevel the edges", "bevel"),
+            ("Blender", "Extrude the top face", "extrude"),
+            ("DaVinci Resolve", "Split the clip at the playhead", "split"),
+            ("DaVinci Resolve", "Add a transition between clips", "transition"),
+            ("DaVinci Resolve", "Export the video for YouTube", "export"),
+            ("Blender", "Make the tree more realistic", ""),
+            ("Blender", "Deform the cylinder into a tree shape", ""),
+            ("Blender", "Apply bark texture", ""),
+            ("Blender", "Add a torus", ""),
+            // The learner's own words (the planner's lookup).
+            ("Blender", "comment supprimer les sommets en double", "duplicate"),
+            ("Blender", "faire une coupe en boucle", "edge loop"),
+            ("DaVinci Resolve", "couper le clip à la tête de lecture", "cut"),
+            ("", "aide moi à rendre l'arbre plus réaliste", ""),
+            ("Blender", "ajouter un tore", ""),
+        ];
+        let (mut right, mut wrong) = (0, 0);
+        tauri::async_runtime::block_on(async {
+            for (app, goal, expected) in cases {
+                let found = super::lookup(app, goal).await.unwrap().map(|(_, m)| m).unwrap_or_default();
+                let ok = if expected.is_empty() {
+                    found.is_empty()
+                } else {
+                    found.first().is_some_and(|m| m.to_lowercase().contains(expected))
+                };
+                if ok {
+                    right += 1
+                } else {
+                    wrong += 1
+                }
+                println!("{} {app}: {goal} → {found:?}", if ok { "OK  " } else { "MISS" });
+            }
+        });
+        println!("{right}/{} right", right + wrong);
+        assert!(wrong <= 2, "{wrong} misses");
+    }
+
     #[test]
     fn scopes_a_search_to_the_organizations_apps() {
         let apps = ["Blender".to_string(), "DaVinci Resolve".to_string(), "Facturo".to_string()];

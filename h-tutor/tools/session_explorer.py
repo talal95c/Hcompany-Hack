@@ -112,6 +112,7 @@ def compute_stats(s: Session) -> dict:
         "stalls": sum(e.get("type") == "holo_retry" and "stalled" in str(e.get("error", "")) for e in ev),
         "rate_limited": sum(e.get("type") == "holo_rate_limited" for e in ev),
         "searches": sum(e.get("type") in ("search", "search_cached") for e in ev),
+        "knowledge_hits": sum(e.get("type") in ("milestone_knowledge", "plan_knowledge") and bool(e.get("matches")) for e in ev),
         "prompt_tokens": tokens,
         "model_s": model_ms / 1000,
         "first_chunk_median_ms": int(statistics.median(first_chunks)) if first_chunks else None,
@@ -461,6 +462,17 @@ def event_html(s: Session, e: dict, outcomes: dict) -> str | None:
         return f'<div class="line">🔎 Search <b>{esc(e.get("query"))}</b> in {esc(e.get("app"))} <span class="badge">{esc(e.get("backend"))}</span>{" <span class=badge>cached</span>" if t == "search_cached" else ""}</div>'
     if t in ("plan", "ask", "locate", "knowledge"):
         return model_call_html(e, t)
+    if t in ("milestone_knowledge", "plan_knowledge"):
+        where = "for this milestone" if t == "milestone_knowledge" else "for the plan"
+        matches = e.get("matches") or []
+        if e.get("error"):
+            return f'<div class="box alert bad"><b>Knowledge base failed {where}</b> <span class="dim">{esc(e["error"])}</span></div>'
+        if not matches:
+            return f'<div class="line">📚 Knowledge base {where}: nothing relevant for “{esc(e.get("query") or e.get("goal"))}”</div>'
+        items = "".join(f'<span class="badge ok">{esc(m)}</span> ' for m in matches)
+        return f'<div class="box">📚 <b>Knowledge base {where}</b> <span class="dim">“{esc(e.get("query") or e.get("goal"))}”</span><div class="kv">{items}</div></div>'
+    if t == "knowledge_error":
+        return f'<div class="box alert bad"><b>Knowledge base failed</b> <span class="dim">{esc(e.get("query"))}: {esc(e.get("error"))}</span></div>'
     if t == "tutorial_done":
         return '<div class="box"><span class="badge ok">Tutorial done</span></div>'
     if t == "saved_as_tutorial":
@@ -537,6 +549,7 @@ def build_session(s: Session, index_href: str) -> str:
 <div class="card"><div class="k">Tutor steps</div><div class="v">{st['steps']}</div></div>
 <div class="card"><div class="k">No-effect actions</div><div class="v">{st['no_effect']}</div></div>
 <div class="card"><div class="k">Questions</div><div class="v">{st['questions']}</div></div>
+<div class="card"><div class="k">Knowledge used</div><div class="v">{st['knowledge_hits']}</div></div>
 <div class="card"><div class="k">Duration</div><div class="v">{st['duration_s']:.0f}s</div></div>
 <div class="card"><div class="k">Holo time (steps)</div><div class="v">{st['model_s']:.0f}s</div></div>
 <div class="card"><div class="k">Prompt tokens</div><div class="v">{st['prompt_tokens'] / 1000:.0f}k</div></div>
