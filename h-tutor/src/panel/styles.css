@@ -16,6 +16,8 @@
   --danger: var(--text);
   --relief: inset 0 1px 0 rgba(255,255,255,.04);
   --pressed: inset 0 1px 2px rgba(0,0,0,.07), inset 0 -1px 0 rgba(255,255,255,.025);
+  --glass-sheen: linear-gradient(180deg, rgba(255,255,255,.065), rgba(255,255,255,.015) 32px, transparent 110px);
+  --glass-rim: linear-gradient(135deg, rgba(255,255,255,.32), rgba(255,255,255,.12) 32%, rgba(255,255,255,.025) 68%, rgba(255,255,255,.10));
   color-scheme: dark;
 }
 
@@ -379,7 +381,7 @@ p { margin: 0; }
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
 }
 
-.shell--library, .shell:has(> .palette) { border-radius: 0 0 20px 20px; overflow: hidden; background: var(--bar); border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 16px 40px -16px rgba(0,0,0,.45); backdrop-filter: blur(36px) saturate(125%); }
+.shell--library, .shell:has(> .palette) { position: relative; isolation: isolate; border-radius: 0 0 20px 20px; overflow: hidden; background: var(--bar); border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 16px 40px -16px rgba(0,0,0,.45); -webkit-backdrop-filter: blur(36px) saturate(125%); backdrop-filter: blur(36px) saturate(125%); }
 .shell--library > .palette, .shell--library > .bar, .shell:has(> .palette) > .palette, .shell:has(> .palette) > .bar { border: 0; border-radius: 0; box-shadow: none; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .shell--library > .bar, .shell:has(> .palette) > .bar { width: 100%; border-bottom: 1px solid var(--line); }
 .nav-item, .group-title, .nav-count, .card__meta, .palette__foot, .palette__foot kbd { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; }
@@ -523,6 +525,26 @@ p { margin: 0; }
 .job-card p { font-size: 16px; font-weight: 400; }
 .job-card__detail { display: block; margin-top: 6px; font: 13px/1.4 var(--mono); letter-spacing: .02em; color: var(--dim); overflow-wrap: anywhere; }
 .job-card__tag { flex: none; border-radius: 999px; padding: 6px 12px; background: rgba(255,255,255,.18); font-size: 14px; }
+.job-card { position: relative; }
+.bar, .palette, .shell--library, .shell:has(> .palette), .job-card { background-image: var(--glass-sheen); }
+.shell--library > .bar, .shell--library > .palette, .shell:has(> .palette) > .bar, .shell:has(> .palette) > .palette { background-image: none; }
+@supports (-webkit-mask-composite: xor) or (mask-composite: exclude) {
+  .bar::after, .palette::after, .shell--library::after, .shell:has(> .palette)::after, .job-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--glass-rim);
+    -webkit-mask: linear-gradient(white, white) content-box, linear-gradient(white, white);
+    mask: linear-gradient(white, white) content-box, linear-gradient(white, white);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .shell--library > .bar::after, .shell--library > .palette::after, .shell:has(> .palette) > .bar::after, .shell:has(> .palette) > .palette::after { content: none; }
+}
 .instruction { font-size: 26px; font-weight: 400; line-height: 1.25; margin: 20px 0 14px; }
 .run { display: flex; flex-direction: column; padding: 0; }
 .run > .explain { order: 1; }
