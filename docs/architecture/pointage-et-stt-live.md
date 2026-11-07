@@ -32,6 +32,13 @@ de deux pixels encodés sont tous requis ; réponse ambiguë ou malformée = ref
 Les refus conservent la consigne textuelle et sont journalisés par motif, sans image.
 
 Au début d'étape et après dévoilement, la pré-localisation utilise la priorité
+spéculative uniquement après opt-in explicite de l'apprenant à l'assistance vision
+cloud : `ENGINE_CLOUD_VISION_PRELOAD=1` (ou `EngineConfig.cloud_vision_preload=True`).
+La valeur par défaut est désactivée ; la permission de capture écran n'est pas un
+consentement à cet envoi cloud. Sans opt-in, la pré-localisation a11y reste locale et
+Holo n'est appelé pour le pointage qu'à l'escalade demandant effectivement le pointeur.
+L'opt-in n'annule aucune vérification de permission, génération ou fraîcheur.
+La pré-localisation cloud consentie utilise la priorité
 spéculative du planificateur partagé. Le niveau 2 dévoile et prépare ; l'escalade
 suivante affiche le point si le cache est prêt. Le cache comprend cible, génération,
 révisions UI/capture et contexte de région, d'échelle et d'application. Une référence

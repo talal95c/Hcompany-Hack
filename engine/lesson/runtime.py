@@ -505,7 +505,8 @@ class EngineRuntime:
         session.transition("CHECKING")
         generation = session.generation
         if (self.preload_generation != generation and self.permissions["screen"]
-                and self.desktop.clients and not self.pointer_request):
+                and self.desktop.clients and not self.pointer_request
+                and (self.config.cloud_vision_preload or self.adapter.sensor == "a11y")):
             self.preload_generation = generation
             self.spawn(self.capture_target(preload=True, reveal=False))
         focus_epoch = self.a11y.focus_epoch

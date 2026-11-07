@@ -64,6 +64,44 @@ def png(width=800, height=600):
     return output.getvalue()
 
 
+async def test_preload_without_consent_stays_local_but_pointer_request_can_use_cloud():
+    class Holo:
+        calls = 0
+
+        async def localize(self, *args, **kwargs):
+            self.calls += 1
+            return LocalizeResult(500, 500, 1, 0, True)
+
+        async def verify_point(self, *args, **kwargs):
+            self.calls += 1
+            return True
+
+    holo = Holo()
+    policy, _, _, _, _ = setup(holo=holo)
+    ctx = help_context(image_png=png())
+    assert await policy.prelocalize(ctx) is None
+    assert holo.calls == 0
+    local = replace(ctx, pointer=(500, 500), bounds_proven=True,
+                    expected_rect=(0, 0, 1000, 1000))
+    assert await policy.prelocalize(local) is not None
+    assert holo.calls == 0
+    policy.level = 2
+    await policy.intent("aide", ctx)
+    assert holo.calls == 2
+
+
+@pytest.mark.parametrize("value,enabled", [(None, False), ("0", False), ("true", False),
+                                          ("1", True)])
+def test_cloud_preload_opt_in_environment(monkeypatch, value, enabled):
+    from engine.config import EngineConfig
+
+    monkeypatch.setenv("ENGINE_SESSION_TOKEN", "test-token")
+    monkeypatch.delenv("ENGINE_CLOUD_VISION_PRELOAD", raising=False)
+    if value is not None:
+        monkeypatch.setenv("ENGINE_CLOUD_VISION_PRELOAD", value)
+    assert EngineConfig.from_env().cloud_vision_preload is enabled
+
+
 @pytest.mark.parametrize("scale", [1, 2])
 def test_resized_capture_preserves_physical_crop_metadata(scale):
     image = png()

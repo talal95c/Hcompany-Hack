@@ -11,6 +11,7 @@ import sys
 import time
 import zlib
 from copy import deepcopy
+from dataclasses import replace
 from pathlib import Path
 from uuid import uuid4
 
@@ -505,6 +506,8 @@ async def test_unlocked_consent_and_wrong_source(runtime):
 
 
 async def test_next_target_preload_off_critical_path(runtime):
+    runtime.config = replace(runtime.config, cloud_vision_preload=True)
+    runtime.policy.config = runtime.config
     started, release = asyncio.Event(), asyncio.Event()
 
     class Holo:
@@ -533,4 +536,47 @@ async def test_next_target_preload_off_critical_path(runtime):
         await runtime.preloader.task
         assert next(iter(runtime.targets.entries.values())).context.target == "Cible suivante"
     finally:
+        await ws.close()
+
+
+@pytest.mark.parametrize("opt_in", [False, True])
+async def test_step_start_cloud_preload_requires_opt_in(runtime, monkeypatch, opt_in):
+    runtime.config = replace(runtime.config, cloud_vision_preload=opt_in)
+    runtime.policy.config = runtime.config
+    calls = []
+
+    class Holo:
+        async def localize(self, *args, **kwargs):
+            calls.append("localize")
+            return LocalizeResult(500, 500, 1, 0, True)
+
+        async def verify_point(self, *args, **kwargs):
+            calls.append("verify")
+            return True
+
+    async def captured(**kwargs):
+        payload = capture(runtime)
+        runtime.pointer_request["preload"] = True
+        await runtime.accept_capture(payload)
+
+    runtime.policy.holo = Holo()
+    monkeypatch.setattr(runtime, "capture_target", captured)
+    ws = await desktop(runtime)
+    reader, writer = await addon(runtime)
+    try:
+        await permissions(ws)
+        await synchronized(runtime, writer, ws)
+        await asyncio.sleep(0)
+        if opt_in:
+            async with asyncio.timeout(1):
+                while not calls:
+                    await asyncio.sleep(0)
+            await runtime.preloader.task
+            assert calls == ["localize", "verify"]
+        else:
+            assert runtime.preload_generation is None
+            assert calls == []
+    finally:
+        writer.close()
+        await writer.wait_closed()
         await ws.close()

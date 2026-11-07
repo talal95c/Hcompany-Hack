@@ -318,6 +318,10 @@ class HelpPolicy:
         return result
 
     async def prelocalize(self, context: HelpContext):
+        local = bool(context.pointer and context.bounds_proven
+                     and context.expected_rect is not None)
+        if not self.config.cloud_vision_preload and not local:
+            return None
         generation, epoch = self.generation, self.capture_epoch
         if context.pointer:
             result = LocalizeResult(*context.pointer, 1, 0, True)
