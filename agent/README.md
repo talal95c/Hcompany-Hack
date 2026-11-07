@@ -150,3 +150,8 @@ export idempotent, échec distant. Mesures reproductibles avec `--capture=tee-sy
 Publication : création, PATCH protégé, no-op, conflits de version/révision,
 échec de PATCH et fichiers locaux distincts couverts par MockTransport.
 Pas de recette visuelle ni d'exécution Blender/desktop revendiquée.
+
+Sans `httpx`, `mcp` ou `uvicorn`, les modules de tests agent sont explicitement
+skipped avec la raison `agent extra not installed: pip install -e '.[agent]'`.
+CI doit installer `.[agent]` (`.github/workflows/ci.yml:18`) pour réellement
+exécuter ces tests ; l'installation actuelle `-e .` ne les exécute pas.

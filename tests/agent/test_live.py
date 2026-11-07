@@ -5,12 +5,16 @@ import logging
 import os
 from uuid import uuid4
 
-import httpx
 import pytest
-from conftest import FIXTURES
+from conftest import AGENT_EXTRA_INSTALLED, AGENT_EXTRA_REASON, FIXTURES
 
-from agent.catalog import VALIDATOR, Catalog
-from agent.skill_export import AGENTS_URL, artifact, measured_request, publish
+if AGENT_EXTRA_INSTALLED:
+    import httpx
+
+    from agent.catalog import VALIDATOR, Catalog
+    from agent.skill_export import AGENTS_URL, artifact, measured_request, publish
+else:
+    pytest.skip(AGENT_EXTRA_REASON, allow_module_level=True)
 
 
 @pytest.mark.live

@@ -1,4 +1,5 @@
 import asyncio
+import importlib.util
 import os
 import socket
 import subprocess
@@ -7,11 +8,18 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-import httpx
 import pytest
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-from mcp.client.streamable_http import streamable_http_client
+
+AGENT_EXTRA_INSTALLED = all(
+    importlib.util.find_spec(name) is not None for name in ("httpx", "mcp", "uvicorn")
+)
+AGENT_EXTRA_REASON = "agent extra not installed: pip install -e '.[agent]'"
+
+if AGENT_EXTRA_INSTALLED:
+    import httpx
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+    from mcp.client.streamable_http import streamable_http_client
 
 FIXTURES = Path(__file__).parent / "fixtures"
 

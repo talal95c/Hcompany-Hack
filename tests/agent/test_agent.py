@@ -5,14 +5,18 @@ import json
 import shutil
 from pathlib import Path
 
-import httpx
 import pytest
-from conftest import FIXTURES, call, connect
+from conftest import AGENT_EXTRA_INSTALLED, AGENT_EXTRA_REASON, FIXTURES, call, connect
 from jsonschema import Draft202012Validator
 
-from agent.catalog import AgentError, Catalog
-from agent.server import create_server
-from agent.skill_export import artifact, export, publish
+if AGENT_EXTRA_INSTALLED:
+    import httpx
+
+    from agent.catalog import AgentError, Catalog
+    from agent.server import create_server
+    from agent.skill_export import artifact, export, publish
+else:
+    pytest.skip(AGENT_EXTRA_REASON, allow_module_level=True)
 
 ARGS = {"lesson_id": "proven", "revision": 1, "blender_version": "5.2.3"}
 RUN = {**ARGS, "session_id": "session", "consent_token": "consent"}
