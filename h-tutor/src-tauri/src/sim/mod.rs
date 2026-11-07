@@ -83,6 +83,9 @@ pub struct Report {
     pub success: bool,
     /// The tutor declared the tutorial complete.
     pub tutor_done: bool,
+    /// The tutor said "done" but the check failed: the learner was
+    /// congratulated for something not done (the worst outcome).
+    pub false_done: bool,
     pub milestones_total: usize,
     pub milestones_done: usize,
     pub tutor_steps: usize,
@@ -272,6 +275,7 @@ async fn drive(
     report.milestones_total = progress.len();
     report.milestones_done = progress.iter().filter(|m| m.status == "done").count();
     report.success = browser.lock().await.eval(&scenario.success).await? == Value::Bool(true);
+    report.false_done = report.tutor_done && !report.success;
     if !session.finished {
         journal::end("sim-stopped");
     }
@@ -448,11 +452,12 @@ mod tests {
                 for seed in 1..=seeds {
                     let r = run(&holo, &scenario, &persona, seed).await;
                     println!(
-                        "{:<20} {:<10} seed {seed}: {} · milestones {}/{} · {} tutor steps · {} actions ({} misclicks) · \
+                        "{:<20} {:<10} seed {seed}: {}{} · milestones {}/{} · {} tutor steps · {} actions ({} misclicks) · \
                          {} questions · {} reveals · {:.0}s · {:?}",
                         r.scenario,
                         r.persona,
                         if r.success { "SUCCESS" } else { "FAIL" },
+                        if r.false_done { " (FALSE DONE)" } else { "" },
                         r.milestones_done,
                         r.milestones_total,
                         r.tutor_steps,

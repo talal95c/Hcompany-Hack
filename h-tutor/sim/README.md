@@ -41,7 +41,7 @@ steps), `distracted` (30 % misclicks), `curious` (asks half the time).
 
 ## Report fields
 
-`success` (the check passed), `tutor_done`, `milestones_done/total`,
+`success` (the check passed), `tutor_done`, `false_done` (the tutor said done but the check failed), `milestones_done/total`,
 `tutor_steps`, `learner_actions`, `misclicks`, `questions`,
 `explanations_pointing`, `tutor_questions`, `hint_only_steps`, `reveals`,
 `stuck`, `errors`, `wall_s`, `holo_requests`, `holo_model_s`,

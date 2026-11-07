@@ -66,6 +66,10 @@ pub async fn plan(holo: &Holo, request: &str, shot: &Shot, knowledge: Option<&st
            the app may name things in a dialog, a menu or inline.\n\
          - hints: up to 3 short known GUI paths (e.g. \"Add > Mesh > Torus\"), only if you are confident.\n\
          - teach: one sentence about the concept behind it, or empty.\n\
+         Keep every specific name, text and target of the request in the milestones (which item, which value): \
+         \"Mark the item Bread as important\", not \"Mark the note as important\"; \"A note named Groceries \
+         exists\", not \"A new note exists\" (a note already on screen must not count). A done_when never relies \
+         on how a button or icon looks (\"the star icon is filled\"): describe the object that changed.\n\
          Use the application visible on screen when relevant. Keep the tutorial focused on the request. Prefer \
          outcome milestones (\"A note named Groceries exists\") over guessed procedures (\"Create a note\" then \
          \"Rename it\"), and fewer milestones when one action may reach several outcomes."

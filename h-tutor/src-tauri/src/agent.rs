@@ -90,7 +90,9 @@ hidden, guide the learner step by step to reveal it.
 - If the previous action did not have the expected effect, notice it and help the learner recover. If an element \
 does not react after two tries, stop insisting on it: look for the command in the application's menus, or call search.
 - Call answer as soon as the latest screenshot meets the current task's success criterion, even if that happened \
-before you acted. Only work on the current task, not the later ones.
+before you acted. Only work on the current task, not the later ones. Your evidence must be the result itself \
+(the item, the name, the state that changed), never a control that is always there: a toolbar icon or a button \
+looking active proves nothing.
 Teaching:
 - The learner may pause and ask you something. You then receive their question and reply with explain: a short \
 spoken answer in their language, and the element to show when that helps. Then the current action resumes. \
@@ -138,7 +140,8 @@ fn tools(with_search: bool) -> Value {
             "description": "Call when the latest screenshot shows the current task's success criterion is met.",
             "parameters": { "type": "object",
                 "properties": { "content": { "type": "string",
-                    "description": "What on the screenshot proves the task is done (one short English sentence)" } },
+                    "description": "The result on the screenshot that proves the task is done, not a control that is \
+                        always there (one short English sentence)" } },
                 "required": ["content"] }
         }},
         { "type": "function", "function": {
