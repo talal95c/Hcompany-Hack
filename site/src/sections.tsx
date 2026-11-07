@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { RioArrow } from "./cursor";
 import {
   asset,
   Asterisk,
@@ -66,9 +67,7 @@ export function Hero() {
         />
         <div className="hero-shade" />
         <div className="tv-screen" aria-hidden>
-          <svg className="tv-cursor" viewBox="0 0 24 24" width={18} height={18}>
-            <path d="M4 2 L4 19 L8.5 14.8 L11.6 21.6 L14.4 20.4 L11.3 13.7 L17.5 13.7 Z" fill="#1a1a1a" stroke="#fff" strokeWidth={1.4} strokeLinejoin="round" />
-          </svg>
+          <span className="tv-cursor"><RioArrow size={20} /></span>
         </div>
         <div className="hero-content">
           <h1 className="h-hero">

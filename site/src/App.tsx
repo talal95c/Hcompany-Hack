@@ -1,8 +1,11 @@
 import { About, Capabilities, FaqInsights, Footer, Hero, Nav, Pricing, Process, Video, Vision, Works } from "./sections";
 
+import { GhostCursor } from "./cursor";
+
 export default function App() {
   return (
     <>
+      <GhostCursor />
       <Nav />
       <main className="page">
         <Hero />

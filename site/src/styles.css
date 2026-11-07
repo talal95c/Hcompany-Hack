@@ -515,3 +515,15 @@ ul { list-style: none; }
   100% { transform: translate(10%, 20%); }
 }
 @media (max-width: 700px) { .tv-screen { display: none; } }
+
+/* ---------- Rio ghost cursor ---------- */
+.has-ghost, .has-ghost * { cursor: none !important; }
+.ghost-arrow { position: fixed; left: -2px; top: -2px; z-index: 1000; pointer-events: none; transform-origin: 2px 2px; }
+.rio-arrow { display: block; filter: drop-shadow(0 2px 6px rgba(255, 110, 20, 0.55)); }
+.ghost-halo { position: fixed; left: 0; top: 0; z-index: 999; pointer-events: none; border-radius: 50%; translate: -50% -50%; border: 1px solid rgba(255, 122, 26, 0.55); background: radial-gradient(circle, rgba(255, 160, 80, 0.18), rgba(255, 122, 26, 0) 70%); display: grid; place-items: center; mix-blend-mode: normal; }
+.ghost-link { background: rgba(255, 122, 26, 0.16); border-color: rgba(255, 122, 26, 0.8); }
+.ghost-text { background: #ff7a1a; border-color: transparent; }
+.ghost-media { background: rgba(255, 122, 26, 0.92); border-color: transparent; }
+.ghost-label { font-family: var(--mono); font-size: 11px; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; }
+.tv-cursor { display: block; }
+.tv-cursor .rio-arrow { filter: drop-shadow(0 0 0.6px #1a1a1a) drop-shadow(0 0 0.6px #1a1a1a) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.55)); }
