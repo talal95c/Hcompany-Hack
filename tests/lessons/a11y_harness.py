@@ -418,7 +418,7 @@ def prove(directory, output, native_only=False):
                     for other in error_specs
                     if other["code"] != error["code"]
                 }
-                assert all(r["status"] != "pass" for r in discriminators.values()), discriminators
+                assert all(r["status"] == "fail" for r in discriminators.values()), discriminators
                 wrong_checks = [evaluator.evaluate(c) for c in checks]
                 artifact_mistake = [
                     inspect_document(Path(driver.workspace.name), specification)
@@ -462,7 +462,7 @@ def prove(directory, output, native_only=False):
                 evidence["evidence_ref"] = str(destination.relative_to(directory))
                 artifacts.append(evidence)
             correct_errors = [evaluator.evaluate(e["check"]) for e in error_specs]
-            assert "pass" not in statuses(correct_errors)
+            assert all(status == "fail" for status in statuses(correct_errors)), correct_errors
             for error, correct in zip(error_proofs, correct_errors):
                 error["on_correct_path"] = correct["status"]
                 error["correct_result"] = correct

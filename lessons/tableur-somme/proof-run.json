@@ -189,7 +189,7 @@
             {
               "role": "toggle button",
               "name": "Gras",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -217,7 +217,7 @@
             {
               "role": "push button",
               "name": "Monnaie",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -417,7 +417,7 @@
             {
               "role": "toggle button",
               "name": "Gras",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -445,7 +445,7 @@
             {
               "role": "push button",
               "name": "Monnaie",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -517,23 +517,58 @@
       "before_results": [
         {
           "status": "fail",
-          "seconds": 0.02143264899996211,
+          "seconds": 0.022431280999967385,
           "read_seconds": [
-            0.021428086000014446
+            0.022426123999991887
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A1",
+                "value": "",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "after_results": [
         {
           "status": "pass",
-          "seconds": 0.019732303000182583,
+          "seconds": 0.02356087399999751,
           "read_seconds": [
-            0.01972629500005496
+            0.023551349000001665
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A1",
+                "value": "Montant",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "selected",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "known_errors": [
@@ -778,7 +813,7 @@
                 {
                   "role": "toggle button",
                   "name": "Gras",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -806,7 +841,7 @@
                 {
                   "role": "push button",
                   "name": "Monnaie",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -1006,7 +1041,7 @@
                 {
                   "role": "toggle button",
                   "name": "Gras",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -1034,7 +1069,7 @@
                 {
                   "role": "push button",
                   "name": "Monnaie",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -1047,13 +1082,32 @@
           "on_mistake": "pass",
           "mistake_result": {
             "status": "pass",
-            "seconds": 0.02209470399975544,
+            "seconds": 0.021245061000001897,
             "read_seconds": [
-              0.02208709500018813
+              0.021236210999973082
             ],
             "visual": null,
-            "observed": null
+            "observed": {
+              "nodes": [
+                {
+                  "role": "table cell",
+                  "name": "A1",
+                  "value": "Total",
+                  "states": [
+                    "editable",
+                    "enabled",
+                    "selected",
+                    "visible"
+                  ],
+                  "unsupported_states": [
+                    "selected"
+                  ]
+                }
+              ],
+              "complete": true
+            }
           },
+          "other_error_results": {},
           "artifact_before": [],
           "artifact_on_mistake": [],
           "step_checks_on_mistake": [
@@ -1062,27 +1116,63 @@
           "step_check_results": [
             {
               "status": "fail",
-              "seconds": 0.022450459000083356,
+              "seconds": 0.02280357800003685,
               "read_seconds": [
-                0.02244774900009361
+                0.0228005549999466
               ],
               "visual": null,
-              "observed": null
+              "observed": {
+                "nodes": [
+                  {
+                    "role": "table cell",
+                    "name": "A1",
+                    "value": "Total",
+                    "states": [
+                      "editable",
+                      "enabled",
+                      "selected",
+                      "visible"
+                    ],
+                    "unsupported_states": [
+                      "selected"
+                    ]
+                  }
+                ],
+                "complete": true
+              }
             }
           ],
           "on_correct_path": "fail",
           "correct_result": {
             "status": "fail",
-            "seconds": 0.02177492600003461,
+            "seconds": 0.02820082700003468,
             "read_seconds": [
-              0.02177293400018243
+              0.028196399000023575
             ],
             "visual": null,
-            "observed": null
+            "observed": {
+              "nodes": [
+                {
+                  "role": "table cell",
+                  "name": "A1",
+                  "value": "Montant",
+                  "states": [
+                    "editable",
+                    "enabled",
+                    "selected",
+                    "visible"
+                  ],
+                  "unsupported_states": [
+                    "selected"
+                  ]
+                }
+              ],
+              "complete": true
+            }
           }
         }
       ],
-      "seconds": 8.350289513000007,
+      "seconds": 8.092125506999992,
       "artifact_results": []
     },
     {
@@ -1279,7 +1369,7 @@
             {
               "role": "toggle button",
               "name": "Gras",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -1307,7 +1397,7 @@
             {
               "role": "push button",
               "name": "Monnaie",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -1502,7 +1592,7 @@
             {
               "role": "toggle button",
               "name": "Gras",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -1530,7 +1620,7 @@
             {
               "role": "push button",
               "name": "Monnaie",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -1704,59 +1794,164 @@
       "before_results": [
         {
           "status": "fail",
-          "seconds": 0.019307855000079144,
+          "seconds": 0.01833477800005312,
           "read_seconds": [
-            0.01930355500007863
+            0.018330947000038122
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A2",
+                "value": "",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "selected",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         },
         {
           "status": "fail",
-          "seconds": 0.01884495500007688,
+          "seconds": 0.018844140999988213,
           "read_seconds": [
-            0.018843304999791144
+            0.01884184000005007
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A3",
+                "value": "",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "selected",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         },
         {
           "status": "fail",
-          "seconds": 0.018482141000276897,
+          "seconds": 0.01865159499999436,
           "read_seconds": [
-            0.0184808429999066
+            0.018649953000021924
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A4",
+                "value": "",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "selected",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "after_results": [
         {
           "status": "pass",
-          "seconds": 0.023344610999629367,
+          "seconds": 0.051365782000004856,
           "read_seconds": [
-            0.023338243999660335
+            0.051358139999990726
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A2",
+                "value": "12",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         },
         {
           "status": "pass",
-          "seconds": 0.025514075000046432,
+          "seconds": 0.022250936999967053,
           "read_seconds": [
-            0.025511469000321085
+            0.02224774400002616
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A3",
+                "value": "30",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         },
         {
           "status": "pass",
-          "seconds": 0.022594689000015933,
+          "seconds": 0.020727711000006366,
           "read_seconds": [
-            0.02259235199971954
+            0.020725457000025926
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A4",
+                "value": "8",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "known_errors": [
@@ -2060,7 +2255,7 @@
                 {
                   "role": "toggle button",
                   "name": "Gras",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -2088,7 +2283,7 @@
                 {
                   "role": "push button",
                   "name": "Monnaie",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -2283,7 +2478,7 @@
                 {
                   "role": "toggle button",
                   "name": "Gras",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -2311,7 +2506,7 @@
                 {
                   "role": "push button",
                   "name": "Monnaie",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -2324,13 +2519,31 @@
           "on_mistake": "pass",
           "mistake_result": {
             "status": "pass",
-            "seconds": 0.024810199000057764,
+            "seconds": 0.024634527999978673,
             "read_seconds": [
-              0.024804476000099385
+              0.024628526000014972
             ],
             "visual": null,
-            "observed": null
+            "observed": {
+              "nodes": [
+                {
+                  "role": "table cell",
+                  "name": "A3",
+                  "value": "3",
+                  "states": [
+                    "editable",
+                    "enabled",
+                    "visible"
+                  ],
+                  "unsupported_states": [
+                    "selected"
+                  ]
+                }
+              ],
+              "complete": true
+            }
           },
+          "other_error_results": {},
           "artifact_before": [],
           "artifact_on_mistake": [],
           "step_checks_on_mistake": [
@@ -2341,45 +2554,113 @@
           "step_check_results": [
             {
               "status": "pass",
-              "seconds": 0.02062227399983385,
+              "seconds": 0.021237857999949483,
               "read_seconds": [
-                0.020620469999812485
+                0.021235964000027252
               ],
               "visual": null,
-              "observed": null
+              "observed": {
+                "nodes": [
+                  {
+                    "role": "table cell",
+                    "name": "A2",
+                    "value": "12",
+                    "states": [
+                      "editable",
+                      "enabled",
+                      "visible"
+                    ],
+                    "unsupported_states": [
+                      "selected"
+                    ]
+                  }
+                ],
+                "complete": true
+              }
             },
             {
               "status": "fail",
-              "seconds": 0.02169738900010998,
+              "seconds": 0.019830334999994648,
               "read_seconds": [
-                0.021695431000352983
+                0.019828334999999697
               ],
               "visual": null,
-              "observed": null
+              "observed": {
+                "nodes": [
+                  {
+                    "role": "table cell",
+                    "name": "A3",
+                    "value": "3",
+                    "states": [
+                      "editable",
+                      "enabled",
+                      "visible"
+                    ],
+                    "unsupported_states": [
+                      "selected"
+                    ]
+                  }
+                ],
+                "complete": true
+              }
             },
             {
               "status": "pass",
-              "seconds": 0.024840124000093056,
+              "seconds": 0.019942570000011983,
               "read_seconds": [
-                0.024838368000018818
+                0.019940565000013066
               ],
               "visual": null,
-              "observed": null
+              "observed": {
+                "nodes": [
+                  {
+                    "role": "table cell",
+                    "name": "A4",
+                    "value": "8",
+                    "states": [
+                      "editable",
+                      "enabled",
+                      "visible"
+                    ],
+                    "unsupported_states": [
+                      "selected"
+                    ]
+                  }
+                ],
+                "complete": true
+              }
             }
           ],
           "on_correct_path": "fail",
           "correct_result": {
             "status": "fail",
-            "seconds": 0.022459566999714298,
+            "seconds": 0.02096301000000267,
             "read_seconds": [
-              0.022457061000295653
+              0.020960290999994413
             ],
             "visual": null,
-            "observed": null
+            "observed": {
+              "nodes": [
+                {
+                  "role": "table cell",
+                  "name": "A3",
+                  "value": "30",
+                  "states": [
+                    "editable",
+                    "enabled",
+                    "visible"
+                  ],
+                  "unsupported_states": [
+                    "selected"
+                  ]
+                }
+              ],
+              "complete": true
+            }
           }
         }
       ],
-      "seconds": 15.018449163000241,
+      "seconds": 13.992899793999982,
       "artifact_results": []
     },
     {
@@ -2571,7 +2852,7 @@
             {
               "role": "toggle button",
               "name": "Gras",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -2599,7 +2880,7 @@
             {
               "role": "push button",
               "name": "Monnaie",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -2794,7 +3075,7 @@
             {
               "role": "toggle button",
               "name": "Gras",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -2822,7 +3103,7 @@
             {
               "role": "push button",
               "name": "Monnaie",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -2894,23 +3175,57 @@
       "before_results": [
         {
           "status": "fail",
-          "seconds": 0.018202585000381077,
+          "seconds": 0.018858562999980677,
           "read_seconds": [
-            0.01819877199977782
+            0.018854625000017222
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A5",
+                "value": "",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "after_results": [
         {
           "status": "pass",
-          "seconds": 0.021865613000045414,
+          "seconds": 0.021578880999982175,
           "read_seconds": [
-            0.021859630000108154
+            0.02157143800002359
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A5",
+                "value": "50",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "known_errors": [
@@ -3156,7 +3471,7 @@
                 {
                   "role": "toggle button",
                   "name": "Gras",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -3184,7 +3499,7 @@
                 {
                   "role": "push button",
                   "name": "Monnaie",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -3379,7 +3694,7 @@
                 {
                   "role": "toggle button",
                   "name": "Gras",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -3407,7 +3722,7 @@
                 {
                   "role": "push button",
                   "name": "Monnaie",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -3420,12 +3735,57 @@
           "on_mistake": "pass",
           "mistake_result": {
             "status": "pass",
-            "seconds": 0.17748028400001203,
+            "seconds": 0.04201291599997603,
             "read_seconds": [
-              0.1774727960000746
+              0.04200478199999225
             ],
             "visual": null,
-            "observed": null
+            "observed": {
+              "nodes": [
+                {
+                  "role": "table cell",
+                  "name": "A5",
+                  "value": "SOMME(A2:A4)",
+                  "states": [
+                    "editable",
+                    "enabled",
+                    "visible"
+                  ],
+                  "unsupported_states": [
+                    "selected"
+                  ]
+                }
+              ],
+              "complete": true
+            }
+          },
+          "other_error_results": {
+            "wrong_range": {
+              "status": "fail",
+              "seconds": 0.03221479799998406,
+              "read_seconds": [
+                0.03221076099998754
+              ],
+              "visual": null,
+              "observed": {
+                "nodes": [
+                  {
+                    "role": "table cell",
+                    "name": "A5",
+                    "value": "SOMME(A2:A4)",
+                    "states": [
+                      "editable",
+                      "enabled",
+                      "visible"
+                    ],
+                    "unsupported_states": [
+                      "selected"
+                    ]
+                  }
+                ],
+                "complete": true
+              }
+            }
           },
           "artifact_before": [],
           "artifact_on_mistake": [],
@@ -3435,23 +3795,57 @@
           "step_check_results": [
             {
               "status": "fail",
-              "seconds": 0.17062898100039092,
+              "seconds": 0.024076407999984895,
               "read_seconds": [
-                0.1706243789999462
+                0.024073336999947514
               ],
               "visual": null,
-              "observed": null
+              "observed": {
+                "nodes": [
+                  {
+                    "role": "table cell",
+                    "name": "A5",
+                    "value": "SOMME(A2:A4)",
+                    "states": [
+                      "editable",
+                      "enabled",
+                      "visible"
+                    ],
+                    "unsupported_states": [
+                      "selected"
+                    ]
+                  }
+                ],
+                "complete": true
+              }
             }
           ],
           "on_correct_path": "fail",
           "correct_result": {
             "status": "fail",
-            "seconds": 0.020391752000250563,
+            "seconds": 0.020074079999972128,
             "read_seconds": [
-              0.0203893490001974
+              0.020070916000008765
             ],
             "visual": null,
-            "observed": null
+            "observed": {
+              "nodes": [
+                {
+                  "role": "table cell",
+                  "name": "A5",
+                  "value": "50",
+                  "states": [
+                    "editable",
+                    "enabled",
+                    "visible"
+                  ],
+                  "unsupported_states": [
+                    "selected"
+                  ]
+                }
+              ],
+              "complete": true
+            }
           }
         },
         {
@@ -3692,7 +4086,7 @@
                 {
                   "role": "toggle button",
                   "name": "Gras",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -3720,7 +4114,7 @@
                 {
                   "role": "push button",
                   "name": "Monnaie",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -3915,7 +4309,7 @@
                 {
                   "role": "toggle button",
                   "name": "Gras",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -3943,7 +4337,7 @@
                 {
                   "role": "push button",
                   "name": "Monnaie",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -3956,12 +4350,57 @@
           "on_mistake": "pass",
           "mistake_result": {
             "status": "pass",
-            "seconds": 0.02484226700016734,
+            "seconds": 0.03574424999999337,
             "read_seconds": [
-              0.02483548099962718
+              0.035735278999993625
             ],
             "visual": null,
-            "observed": null
+            "observed": {
+              "nodes": [
+                {
+                  "role": "table cell",
+                  "name": "A5",
+                  "value": "42",
+                  "states": [
+                    "editable",
+                    "enabled",
+                    "visible"
+                  ],
+                  "unsupported_states": [
+                    "selected"
+                  ]
+                }
+              ],
+              "complete": true
+            }
+          },
+          "other_error_results": {
+            "missing_equals": {
+              "status": "fail",
+              "seconds": 0.020674836000011965,
+              "read_seconds": [
+                0.020671220999986417
+              ],
+              "visual": null,
+              "observed": {
+                "nodes": [
+                  {
+                    "role": "table cell",
+                    "name": "A5",
+                    "value": "42",
+                    "states": [
+                      "editable",
+                      "enabled",
+                      "visible"
+                    ],
+                    "unsupported_states": [
+                      "selected"
+                    ]
+                  }
+                ],
+                "complete": true
+              }
+            }
           },
           "artifact_before": [],
           "artifact_on_mistake": [],
@@ -3971,27 +4410,61 @@
           "step_check_results": [
             {
               "status": "fail",
-              "seconds": 0.023061594999944646,
+              "seconds": 0.019375373000002583,
               "read_seconds": [
-                0.023059200000261626
+                0.0193730080000023
               ],
               "visual": null,
-              "observed": null
+              "observed": {
+                "nodes": [
+                  {
+                    "role": "table cell",
+                    "name": "A5",
+                    "value": "42",
+                    "states": [
+                      "editable",
+                      "enabled",
+                      "visible"
+                    ],
+                    "unsupported_states": [
+                      "selected"
+                    ]
+                  }
+                ],
+                "complete": true
+              }
             }
           ],
           "on_correct_path": "fail",
           "correct_result": {
             "status": "fail",
-            "seconds": 0.02126251499976206,
+            "seconds": 0.02547167699998454,
             "read_seconds": [
-              0.02126060000000507
+              0.02546905400004107
             ],
             "visual": null,
-            "observed": null
+            "observed": {
+              "nodes": [
+                {
+                  "role": "table cell",
+                  "name": "A5",
+                  "value": "50",
+                  "states": [
+                    "editable",
+                    "enabled",
+                    "visible"
+                  ],
+                  "unsupported_states": [
+                    "selected"
+                  ]
+                }
+              ],
+              "complete": true
+            }
           }
         }
       ],
-      "seconds": 29.024647925999943,
+      "seconds": 27.33101078599998,
       "artifact_results": []
     },
     {
@@ -4183,7 +4656,7 @@
             {
               "role": "toggle button",
               "name": "Gras",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -4211,7 +4684,7 @@
             {
               "role": "push button",
               "name": "Monnaie",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -4406,7 +4879,7 @@
             {
               "role": "toggle button",
               "name": "Gras",
-              "value": 1.0,
+              "value": 1,
               "states": [
                 "checked",
                 "enabled",
@@ -4435,7 +4908,7 @@
             {
               "role": "push button",
               "name": "Monnaie",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -4527,41 +5000,104 @@
       "before_results": [
         {
           "status": "fail",
-          "seconds": 0.035416195999914635,
+          "seconds": 0.03266480799999272,
           "read_seconds": [
-            0.035411587999988114
+            0.03266098599999623
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "toggle button",
+                "name": "Gras",
+                "value": 0,
+                "states": [
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": []
+              }
+            ],
+            "complete": true
+          }
         },
         {
           "status": "pass",
-          "seconds": 0.02131083500034947,
+          "seconds": 0.018446277999998983,
           "read_seconds": [
-            0.02130851000038092
+            0.01844376399998282
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A1",
+                "value": "Montant",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "after_results": [
         {
           "status": "pass",
-          "seconds": 0.04020900800014715,
+          "seconds": 0.032225564999976086,
           "read_seconds": [
-            0.04020279400037907
+            0.03221996100000979
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "toggle button",
+                "name": "Gras",
+                "value": 1,
+                "states": [
+                  "checked",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": []
+              }
+            ],
+            "complete": true
+          }
         },
         {
           "status": "pass",
-          "seconds": 0.025864822999665193,
+          "seconds": 0.023112774000026093,
           "read_seconds": [
-            0.025861641000119562
+            0.023109575999967547
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A1",
+                "value": "Montant",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "known_errors": [
@@ -4821,7 +5357,7 @@
                 {
                   "role": "toggle button",
                   "name": "Gras",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -4849,7 +5385,7 @@
                 {
                   "role": "push button",
                   "name": "Monnaie",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -5044,7 +5580,7 @@
                 {
                   "role": "toggle button",
                   "name": "Gras",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -5072,7 +5608,7 @@
                 {
                   "role": "push button",
                   "name": "Monnaie",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -5085,13 +5621,28 @@
           "on_mistake": "pass",
           "mistake_result": {
             "status": "pass",
-            "seconds": 0.03936067299991919,
+            "seconds": 0.03441226200004621,
             "read_seconds": [
-              0.039353789999950095
+              0.03440458900001886
             ],
             "visual": null,
-            "observed": null
+            "observed": {
+              "nodes": [
+                {
+                  "role": "toggle button",
+                  "name": "Gras",
+                  "value": 0,
+                  "states": [
+                    "enabled",
+                    "visible"
+                  ],
+                  "unsupported_states": []
+                }
+              ],
+              "complete": true
+            }
           },
+          "other_error_results": {},
           "artifact_before": [],
           "artifact_on_mistake": [],
           "step_checks_on_mistake": [
@@ -5101,36 +5652,82 @@
           "step_check_results": [
             {
               "status": "fail",
-              "seconds": 0.038093091000064305,
+              "seconds": 0.030711338999992677,
               "read_seconds": [
-                0.03808963700021195
+                0.030708386000014798
               ],
               "visual": null,
-              "observed": null
+              "observed": {
+                "nodes": [
+                  {
+                    "role": "toggle button",
+                    "name": "Gras",
+                    "value": 0,
+                    "states": [
+                      "enabled",
+                      "visible"
+                    ],
+                    "unsupported_states": []
+                  }
+                ],
+                "complete": true
+              }
             },
             {
               "status": "pass",
-              "seconds": 0.023028623999834963,
+              "seconds": 0.01786975399994617,
               "read_seconds": [
-                0.023026542000025074
+                0.01786769400001731
               ],
               "visual": null,
-              "observed": null
+              "observed": {
+                "nodes": [
+                  {
+                    "role": "table cell",
+                    "name": "A1",
+                    "value": "Montant",
+                    "states": [
+                      "editable",
+                      "enabled",
+                      "visible"
+                    ],
+                    "unsupported_states": [
+                      "selected"
+                    ]
+                  }
+                ],
+                "complete": true
+              }
             }
           ],
           "on_correct_path": "fail",
           "correct_result": {
             "status": "fail",
-            "seconds": 0.04319704699992144,
+            "seconds": 0.03141654900002777,
             "read_seconds": [
-              0.04319382999983645
+              0.0314140449999627
             ],
             "visual": null,
-            "observed": null
+            "observed": {
+              "nodes": [
+                {
+                  "role": "toggle button",
+                  "name": "Gras",
+                  "value": 1,
+                  "states": [
+                    "checked",
+                    "enabled",
+                    "visible"
+                  ],
+                  "unsupported_states": []
+                }
+              ],
+              "complete": true
+            }
           }
         }
       ],
-      "seconds": 20.005014662999656,
+      "seconds": 19.91314943200001,
       "artifact_results": []
     },
     {
@@ -5322,7 +5919,7 @@
             {
               "role": "toggle button",
               "name": "Gras",
-              "value": 1.0,
+              "value": 1,
               "states": [
                 "checked",
                 "enabled",
@@ -5351,7 +5948,7 @@
             {
               "role": "push button",
               "name": "Monnaie",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -5550,7 +6147,7 @@
             {
               "role": "toggle button",
               "name": "Gras",
-              "value": 0.0,
+              "value": 0,
               "states": [
                 "enabled",
                 "visible"
@@ -5578,7 +6175,7 @@
             {
               "role": "push button",
               "name": "Monnaie",
-              "value": 1.0,
+              "value": 1,
               "states": [
                 "checked",
                 "enabled",
@@ -5727,7 +6324,7 @@
         }
       ],
       "before_checks": [
-        "unknown",
+        "fail",
         "unknown",
         "fail",
         "fail",
@@ -5742,23 +6339,23 @@
       ],
       "before_results": [
         {
-          "status": "unknown",
-          "seconds": 1.1859716809999554,
+          "status": "fail",
+          "seconds": 1.3157691929999942,
           "read_seconds": [
-            1.18596752700023
+            1.3157640430000015
           ],
           "visual": {
             "model": "holo4-27b",
-            "request_id": "chatcmpl-01a1b6dd-45ea-7c83-a9fd-f882a9ec73e5",
-            "seconds": 0.49901648800005205,
-            "response": "{\"answer\": false, \"confidence\": 0.6}",
+            "request_id": "chatcmpl-01a1b6fb-f5cf-7ce1-ba76-65587d5f6473",
+            "seconds": 0.5475837399999932,
+            "response": "{\"answer\":false,\"confidence\":1.0}",
             "answer": false,
-            "confidence": 0.6,
+            "confidence": 1,
             "attempts": [
               {
-                "seconds": 0.49901477599996724,
+                "seconds": 0.5475817880000022,
                 "error": null,
-                "request_id": "chatcmpl-01a1b6dd-45ea-7c83-a9fd-f882a9ec73e5"
+                "request_id": "chatcmpl-01a1b6fb-f5cf-7ce1-ba76-65587d5f6473"
               }
             ],
             "original_dimensions": {
@@ -5776,22 +6373,22 @@
         },
         {
           "status": "unknown",
-          "seconds": 3.709127526999964,
+          "seconds": 3.9673413269999855,
           "read_seconds": [
-            3.7091246299996783
+            3.9673378350000235
           ],
           "visual": {
             "model": "holo4-27b",
-            "request_id": "chatcmpl-01a1b6dd-5459-7181-8691-4b228f3696aa",
-            "seconds": 0.5081814989998747,
+            "request_id": "chatcmpl-01a1b6fc-0470-7bd0-8a55-e26e828a8b09",
+            "seconds": 0.7941271720000032,
             "response": "{\"answer\": false, \"confidence\": 0.5}",
             "answer": false,
             "confidence": 0.5,
             "attempts": [
               {
-                "seconds": 0.5081800560001284,
+                "seconds": 0.7941254869999739,
                 "error": null,
-                "request_id": "chatcmpl-01a1b6dd-5459-7181-8691-4b228f3696aa"
+                "request_id": "chatcmpl-01a1b6fc-0470-7bd0-8a55-e26e828a8b09"
               }
             ],
             "original_dimensions": {
@@ -5809,22 +6406,22 @@
         },
         {
           "status": "fail",
-          "seconds": 4.742740562999643,
+          "seconds": 4.262205015000006,
           "read_seconds": [
-            4.742737902000044
+            4.2622010530000125
           ],
           "visual": {
             "model": "holo4-27b",
-            "request_id": "chatcmpl-01a1b6dd-646e-71a2-837c-969870e79725",
-            "seconds": 1.0919445340000493,
+            "request_id": "chatcmpl-01a1b6fc-1586-70a0-8392-debf22659538",
+            "seconds": 0.696152785000038,
             "response": "{\"answer\":false,\"confidence\":1.0}",
             "answer": false,
-            "confidence": 1.0,
+            "confidence": 1,
             "attempts": [
               {
-                "seconds": 1.0919427979997636,
+                "seconds": 0.6961513190000232,
                 "error": null,
-                "request_id": "chatcmpl-01a1b6dd-646e-71a2-837c-969870e79725"
+                "request_id": "chatcmpl-01a1b6fc-1586-70a0-8392-debf22659538"
               }
             ],
             "original_dimensions": {
@@ -5842,22 +6439,31 @@
         },
         {
           "status": "fail",
-          "seconds": 3.9336313160001737,
+          "seconds": 17.98722660300001,
           "read_seconds": [
-            3.9336285910003426
+            17.987222480999947
           ],
           "visual": {
             "model": "holo4-27b",
-            "request_id": "chatcmpl-01a1b6dd-75ed-7072-b8f4-9fad8f863730",
-            "seconds": 0.5522054090001802,
+            "request_id": "chatcmpl-01a1b6fc-5c7a-7773-9562-b7f2582780bf",
+            "seconds": 14.818667454999968,
             "response": "{\"answer\":false,\"confidence\":1.0}",
             "answer": false,
-            "confidence": 1.0,
+            "confidence": 1,
             "attempts": [
               {
-                "seconds": 0.5522040089999791,
+                "answer": null,
+                "confidence": 0,
+                "error": "timeout",
+                "http_status": null,
+                "model": "holo4-27b",
+                "seconds": 12.051744053999982,
+                "retry_after": null
+              },
+              {
+                "seconds": 0.25430807899999763,
                 "error": null,
-                "request_id": "chatcmpl-01a1b6dd-75ed-7072-b8f4-9fad8f863730"
+                "request_id": "chatcmpl-01a1b6fc-5c7a-7773-9562-b7f2582780bf"
               }
             ],
             "original_dimensions": {
@@ -5875,33 +6481,50 @@
         },
         {
           "status": "pass",
-          "seconds": 0.026273879999735072,
+          "seconds": 0.018457397000020137,
           "read_seconds": [
-            0.026271137000094313
+            0.01845390599999064
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A5",
+                "value": "50",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "after_results": [
         {
           "status": "pass",
-          "seconds": 2.787715193999702,
+          "seconds": 2.4137771690000136,
           "read_seconds": [
-            2.7877093540000715
+            2.4137707030000115
           ],
           "visual": {
             "model": "holo4-27b",
-            "request_id": "chatcmpl-01a1b6dd-84b9-7ff3-b685-056304578764",
-            "seconds": 0.8479926760001035,
-            "response": "{\"answer\": true, \"confidence\": 1.0}",
+            "request_id": "chatcmpl-01a1b6fc-6abe-7f53-9f0b-6560775e6007",
+            "seconds": 0.49277638000000934,
+            "response": "{\"answer\":true,\"confidence\":0.95}",
             "answer": true,
-            "confidence": 1.0,
+            "confidence": 0.95,
             "attempts": [
               {
-                "seconds": 0.8479910679998284,
+                "seconds": 0.49277496600001314,
                 "error": null,
-                "request_id": "chatcmpl-01a1b6dd-84b9-7ff3-b685-056304578764"
+                "request_id": "chatcmpl-01a1b6fc-6abe-7f53-9f0b-6560775e6007"
               }
             ],
             "original_dimensions": {
@@ -5919,22 +6542,22 @@
         },
         {
           "status": "pass",
-          "seconds": 3.8452827330002037,
+          "seconds": 3.6177642760000026,
           "read_seconds": [
-            3.8452800589998333
+            3.6177611880000313
           ],
           "visual": {
             "model": "holo4-27b",
-            "request_id": "chatcmpl-01a1b6dd-948d-7362-886e-8edb7816a1af",
-            "seconds": 0.610020366000299,
-            "response": "{\"answer\":true,\"confidence\":1.0}",
+            "request_id": "chatcmpl-01a1b6fc-78de-7632-a811-747db81e89b9",
+            "seconds": 0.49129693200001157,
+            "response": "{\"answer\":true,\"confidence\":0.95}",
             "answer": true,
-            "confidence": 1.0,
+            "confidence": 0.95,
             "attempts": [
               {
-                "seconds": 0.6100187150000238,
+                "seconds": 0.49129531999994924,
                 "error": null,
-                "request_id": "chatcmpl-01a1b6dd-948d-7362-886e-8edb7816a1af"
+                "request_id": "chatcmpl-01a1b6fc-78de-7632-a811-747db81e89b9"
               }
             ],
             "original_dimensions": {
@@ -5952,31 +6575,22 @@
         },
         {
           "status": "pass",
-          "seconds": 14.809125074999884,
+          "seconds": 3.6381376129999694,
           "read_seconds": [
-            14.809122821000074
+            3.6381341419999558
           ],
           "visual": {
             "model": "holo4-27b",
-            "request_id": "chatcmpl-01a1b6dd-ceec-7c40-ae53-ab8970ccc414",
-            "seconds": 11.605014523999671,
+            "request_id": "chatcmpl-01a1b6fc-8717-7f70-a005-46ad1069debf",
+            "seconds": 0.503251041999988,
             "response": "{\"answer\":true,\"confidence\":0.85}",
             "answer": true,
             "confidence": 0.85,
             "attempts": [
               {
-                "answer": null,
-                "confidence": 0,
-                "error": "quota",
-                "http_status": 429,
-                "model": "holo4-27b",
-                "seconds": 0.28413970499968855,
-                "retry_after": "11"
-              },
-              {
-                "seconds": 0.2655485290001707,
+                "seconds": 0.503249621000009,
                 "error": null,
-                "request_id": "chatcmpl-01a1b6dd-ceec-7c40-ae53-ab8970ccc414"
+                "request_id": "chatcmpl-01a1b6fc-8717-7f70-a005-46ad1069debf"
               }
             ],
             "original_dimensions": {
@@ -5994,22 +6608,22 @@
         },
         {
           "status": "pass",
-          "seconds": 3.697465215000193,
+          "seconds": 3.776388829000041,
           "read_seconds": [
-            3.697462629000256
+            3.776385305999952
           ],
           "visual": {
             "model": "holo4-27b",
-            "request_id": "chatcmpl-01a1b6dd-dd6b-7ee0-a034-880a75e9ef05",
-            "seconds": 0.5214678009997442,
+            "request_id": "chatcmpl-01a1b6fc-9580-7df3-92c4-9720490cae40",
+            "seconds": 0.5957249140000158,
             "response": "{\"answer\":true,\"confidence\":1}",
             "answer": true,
             "confidence": 1,
             "attempts": [
               {
-                "seconds": 0.5214661519999026,
+                "seconds": 0.5957232049999561,
                 "error": null,
-                "request_id": "chatcmpl-01a1b6dd-dd6b-7ee0-a034-880a75e9ef05"
+                "request_id": "chatcmpl-01a1b6fc-9580-7df3-92c4-9720490cae40"
               }
             ],
             "original_dimensions": {
@@ -6027,12 +6641,30 @@
         },
         {
           "status": "pass",
-          "seconds": 0.01926704100014831,
+          "seconds": 0.020480689999999413,
           "read_seconds": [
-            0.019264778999968257
+            0.020477394000010918
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A5",
+                "value": "50",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "selected",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "known_errors": [
@@ -6277,7 +6909,7 @@
                 {
                   "role": "toggle button",
                   "name": "Gras",
-                  "value": 1.0,
+                  "value": 1,
                   "states": [
                     "checked",
                     "enabled",
@@ -6306,7 +6938,7 @@
                 {
                   "role": "push button",
                   "name": "Monnaie",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -6501,7 +7133,7 @@
                 {
                   "role": "toggle button",
                   "name": "Gras",
-                  "value": 0.0,
+                  "value": 0,
                   "states": [
                     "enabled",
                     "visible"
@@ -6529,7 +7161,7 @@
                 {
                   "role": "push button",
                   "name": "Monnaie",
-                  "value": 1.0,
+                  "value": 1,
                   "states": [
                     "checked",
                     "enabled",
@@ -6544,22 +7176,22 @@
           "on_mistake": "pass",
           "mistake_result": {
             "status": "pass",
-            "seconds": 1.4057563850001316,
+            "seconds": 1.220936623,
             "read_seconds": [
-              1.4057502089999616
+              1.2209283980000123
             ],
             "visual": {
               "model": "holo4-27b",
-              "request_id": "chatcmpl-01a1b6dc-e1b1-7573-a3da-2fd35df3c81f",
-              "seconds": 0.578976670999964,
-              "response": "{\"answer\": true, \"confidence\": 0.8}",
+              "request_id": "chatcmpl-01a1b6fb-8c27-7a40-8df0-e415b6f024f5",
+              "seconds": 0.5179441269999643,
+              "response": "{\"answer\": true, \"confidence\": 1.0}",
               "answer": true,
-              "confidence": 0.8,
+              "confidence": 1,
               "attempts": [
                 {
-                  "seconds": 0.5789747349999743,
+                  "seconds": 0.5179423089999773,
                   "error": null,
-                  "request_id": "chatcmpl-01a1b6dc-e1b1-7573-a3da-2fd35df3c81f"
+                  "request_id": "chatcmpl-01a1b6fb-8c27-7a40-8df0-e415b6f024f5"
                 }
               ],
               "original_dimensions": {
@@ -6575,34 +7207,35 @@
             },
             "observed": null
           },
+          "other_error_results": {},
           "artifact_before": [],
           "artifact_on_mistake": [],
           "step_checks_on_mistake": [
             "pass",
             "fail",
-            "unknown",
+            "fail",
             "unknown",
             "pass"
           ],
           "step_check_results": [
             {
               "status": "pass",
-              "seconds": 3.69464035899955,
+              "seconds": 4.36606521799996,
               "read_seconds": [
-                3.694637407999835
+                4.36606214699998
               ],
               "visual": {
                 "model": "holo4-27b",
-                "request_id": "chatcmpl-01a1b6dc-f080-7232-85fa-25bb42d2703e",
-                "seconds": 0.49843114199984484,
-                "response": "{\"answer\":true,\"confidence\":0.85}",
+                "request_id": "chatcmpl-01a1b6fb-9bcc-74e2-9538-00d51c1c146a",
+                "seconds": 0.6281697850000114,
+                "response": "{\"answer\": true, \"confidence\": 0.85}",
                 "answer": true,
                 "confidence": 0.85,
                 "attempts": [
                   {
-                    "seconds": 0.4984295360000033,
+                    "seconds": 0.6281678229999557,
                     "error": null,
-                    "request_id": "chatcmpl-01a1b6dc-f080-7232-85fa-25bb42d2703e"
+                    "request_id": "chatcmpl-01a1b6fb-9bcc-74e2-9538-00d51c1c146a"
                   }
                 ],
                 "original_dimensions": {
@@ -6620,22 +7253,22 @@
             },
             {
               "status": "fail",
-              "seconds": 3.698513015000117,
+              "seconds": 3.727787056000011,
               "read_seconds": [
-                3.698510006000106
+                3.727782855999976
               ],
               "visual": {
                 "model": "holo4-27b",
-                "request_id": "chatcmpl-01a1b6dc-fed0-7171-b8e2-b6803d903500",
-                "seconds": 0.4966169499998614,
+                "request_id": "chatcmpl-01a1b6fb-abd3-7881-84de-f0fe9b791cff",
+                "seconds": 0.5038786789999676,
                 "response": "{\"answer\":false,\"confidence\":1.0}",
                 "answer": false,
-                "confidence": 1.0,
+                "confidence": 1,
                 "attempts": [
                   {
-                    "seconds": 0.496615514000041,
+                    "seconds": 0.5038768590000018,
                     "error": null,
-                    "request_id": "chatcmpl-01a1b6dc-fed0-7171-b8e2-b6803d903500"
+                    "request_id": "chatcmpl-01a1b6fb-abd3-7881-84de-f0fe9b791cff"
                   }
                 ],
                 "original_dimensions": {
@@ -6652,23 +7285,23 @@
               "observed": null
             },
             {
-              "status": "unknown",
-              "seconds": 3.696648290000212,
+              "status": "fail",
+              "seconds": 3.718519793999974,
               "read_seconds": [
-                3.696645303999958
+                3.718515088999993
               ],
               "visual": {
                 "model": "holo4-27b",
-                "request_id": "chatcmpl-01a1b6dd-0d60-76e1-a000-d5c30b6ddab3",
-                "seconds": 0.5030920599997444,
-                "response": "{\"answer\": false, \"confidence\": 0.6}",
+                "request_id": "chatcmpl-01a1b6fb-ba58-7bb1-8046-172e86f3319f",
+                "seconds": 0.5644585319999464,
+                "response": "{\"answer\":false,\"confidence\":1.0}",
                 "answer": false,
-                "confidence": 0.6,
+                "confidence": 1,
                 "attempts": [
                   {
-                    "seconds": 0.503090806000273,
+                    "seconds": 0.5644569039999965,
                     "error": null,
-                    "request_id": "chatcmpl-01a1b6dd-0d60-76e1-a000-d5c30b6ddab3"
+                    "request_id": "chatcmpl-01a1b6fb-ba58-7bb1-8046-172e86f3319f"
                   }
                 ],
                 "original_dimensions": {
@@ -6686,22 +7319,22 @@
             },
             {
               "status": "unknown",
-              "seconds": 3.704977414000041,
+              "seconds": 3.8972612329999947,
               "read_seconds": [
-                3.704974318999575
+                3.89725764100001
               ],
               "visual": {
                 "model": "holo4-27b",
-                "request_id": "chatcmpl-01a1b6dd-1bc4-7a12-9e81-5ef444162ab2",
-                "seconds": 0.5143745469999885,
-                "response": "{\"answer\": false, \"confidence\": 0.6}",
+                "request_id": "chatcmpl-01a1b6fb-c982-73c1-a43b-253b525ec177",
+                "seconds": 0.5747235140000271,
+                "response": "{\"answer\": false, \"confidence\": 0.5}",
                 "answer": false,
-                "confidence": 0.6,
+                "confidence": 0.5,
                 "attempts": [
                   {
-                    "seconds": 0.5143728529997134,
+                    "seconds": 0.5747216729999991,
                     "error": null,
-                    "request_id": "chatcmpl-01a1b6dd-1bc4-7a12-9e81-5ef444162ab2"
+                    "request_id": "chatcmpl-01a1b6fb-c982-73c1-a43b-253b525ec177"
                   }
                 ],
                 "original_dimensions": {
@@ -6719,33 +7352,50 @@
             },
             {
               "status": "pass",
-              "seconds": 0.01879531099984888,
+              "seconds": 0.02475762599999598,
               "read_seconds": [
-                0.018792754000060086
+                0.024752881999972942
               ],
               "visual": null,
-              "observed": null
+              "observed": {
+                "nodes": [
+                  {
+                    "role": "table cell",
+                    "name": "A5",
+                    "value": "50",
+                    "states": [
+                      "editable",
+                      "enabled",
+                      "visible"
+                    ],
+                    "unsupported_states": [
+                      "selected"
+                    ]
+                  }
+                ],
+                "complete": true
+              }
             }
           ],
           "on_correct_path": "fail",
           "correct_result": {
             "status": "fail",
-            "seconds": 3.7607070560002285,
+            "seconds": 3.7761049360000243,
             "read_seconds": [
-              3.760704288999932
+              3.776102442000024
             ],
             "visual": {
               "model": "holo4-27b",
-              "request_id": "chatcmpl-01a1b6dd-ebc6-7272-8f07-bd541c7b3a8f",
-              "seconds": 0.5433381930001815,
+              "request_id": "chatcmpl-01a1b6fc-a413-79e0-936f-6e38a5c4fab5",
+              "seconds": 0.5260351529999525,
               "response": "{\"answer\":false,\"confidence\":1.0}",
               "answer": false,
-              "confidence": 1.0,
+              "confidence": 1,
               "attempts": [
                 {
-                  "seconds": 0.5433362450003187,
+                  "seconds": 0.5260332120000157,
                   "error": null,
-                  "request_id": "chatcmpl-01a1b6dd-ebc6-7272-8f07-bd541c7b3a8f"
+                  "request_id": "chatcmpl-01a1b6fc-a413-79e0-936f-6e38a5c4fab5"
                 }
               ],
               "original_dimensions": {
@@ -6763,7 +7413,7 @@
           }
         }
       ],
-      "seconds": 80.13388871999996,
+      "seconds": 83.49558510899999,
       "artifact_results": []
     }
   ],
@@ -6772,55 +7422,55 @@
   "ui_path_verified": true,
   "native_only": false,
   "app_start_seconds": [
-    2.7778839050001807,
-    1.604994282000007,
-    2.6351038490001883,
-    1.5938888209998368,
-    1.6397443819996624,
-    2.5615059310002835,
-    1.6649338470001567,
-    1.6181625449999046,
-    1.5183990030000132,
-    1.651834630000394,
-    1.5108930500000497
+    2.4381172899999797,
+    1.7542047310000157,
+    1.4955230550000351,
+    1.5838793640000404,
+    1.6274634600000013,
+    1.6980188549999866,
+    1.5144822949999934,
+    1.5181339409999737,
+    1.4964623519999805,
+    1.5536569359999817,
+    1.6780483990000334
   ],
-  "seconds": 152.53991276299985,
+  "seconds": 152.83256955299998,
   "sha256": {
     "lesson.json": "dea67caaa265bcd61f5ce23e2ed2a6eebd5a071ca2330a2b9ef30c7f011c6244",
-    "steps.json": "df860dadbc21172047d50aefbf090f62de487c5cd8d4fa96d76d6268dec6a5e9",
+    "steps.json": "76769867bab03712c4877b97c90aaf80c8823c36514acc1433eb759c6dc53b2b",
     "SOURCE.md": "909275255b665fa84d050a58732f31940996d711dbc8399e20a60427b6d0b99b",
-    "proof/saisir_entete.json": "e65f4346a97672a7f75fc3c1ebc5a4fe88933290ea673555b154027bed83e285",
-    "proof/saisir_valeurs.json": "ddf5efd4569fabccbcba9747e98090f9cf7214a2666d48b76d13fa9c81c40846",
-    "proof/formule_somme.json": "52f56de210e11b5a1d58bd727df97cba85799ef417566e9660cc72f6375746d3",
-    "proof/entete_gras.json": "c52f7ec5ec0fdc4251bf9b4a6d7af0d6565053aa41189352c54b5de1c8ef1e8b",
-    "proof/format_monetaire.json": "b3ef4da4c03c412e2aa04a487a3d72e5215ab84b755847b617015e62e8292f58",
-    "proof/capture-001-sent.png": "d032a084146bec195f640e5bf3216ce72c9ed14cd36230b43050c8391ca2dfe7",
+    "proof/saisir_entete.json": "d50ec534c6986f0d6a5bf231779573c5d85782ecc45854d02facc311649d66c4",
+    "proof/saisir_valeurs.json": "a5ae5f869f2c86e75ba8fd44048c9de5a1bcda594bc48b65d574769cdac0c7e6",
+    "proof/formule_somme.json": "acf88206518f17df80cc78baebdb123015a68a3daec46e566cc35bba9c35a2f3",
+    "proof/entete_gras.json": "2ce887a2e7093c4c4eab5f492a18e9716082dcee30c3b943b2d50bd2a4898d51",
+    "proof/format_monetaire.json": "4bf2f36b7e9f5c641b9b65412070ef5a7a8fb228c57c82bd2f9b205381cf4193",
+    "proof/capture-001-sent.png": "c87c74cdd27a31371c0aa1526f14be2442def3b8cc7eccbbca5f3ed519110c8d",
     "proof/capture-001.png": "535516c7d10be0973677059e281cb3521c43a16a14048d5340560161a2c97366",
-    "proof/capture-002-sent.png": "af09010511dd64202ba25557bdb98f1359f84a3e93307d3a63c329f08b7e47f2",
+    "proof/capture-002-sent.png": "0d06924fb62325738476c9e44cd19a11db2a906f2578f5522a168fbaf0dbe7fd",
     "proof/capture-002.png": "535516c7d10be0973677059e281cb3521c43a16a14048d5340560161a2c97366",
-    "proof/capture-003-sent.png": "7630323ffa60ab326d46f99094cf4aa04ba442eab40ff146d8460c7578c6f154",
+    "proof/capture-003-sent.png": "781a120a24e56f8313a0e7af1f59087e60274ff1b944ea75d5bcc3f050646f84",
     "proof/capture-003.png": "535516c7d10be0973677059e281cb3521c43a16a14048d5340560161a2c97366",
-    "proof/capture-004-sent.png": "a920f3ef36ac4a3d31b33ccbf89265c6998fc187fdeab83e2f4b80c02a591c99",
+    "proof/capture-004-sent.png": "8fdd67991f4ea52de205344353b7b23ac3dd2a48d33af52b7b5ccf62b4106469",
     "proof/capture-004.png": "535516c7d10be0973677059e281cb3521c43a16a14048d5340560161a2c97366",
-    "proof/capture-005-sent.png": "3398c63bc01d8bc88d7b708477916e6a20a4d94217e57c6b6fe20851e4ab320f",
+    "proof/capture-005-sent.png": "08b47ff2ab3b3365171fb044440901a18722a8d8f815735a17f385feaad2983f",
     "proof/capture-005.png": "535516c7d10be0973677059e281cb3521c43a16a14048d5340560161a2c97366",
-    "proof/capture-006-sent.png": "c0b3c2eeb7a37fc7ee6325d76e4de1e982765ea08784c687a6bf7b015888f2a5",
+    "proof/capture-006-sent.png": "5356b2c89f75ff11e143bd1b4601f76ae4abaac5912f77189270f457b7a17bbd",
     "proof/capture-006.png": "142aab5b7f5c1662a794e407026e9f6b991ca32185f1ad29e8c0ef2b9cce64aa",
-    "proof/capture-007-sent.png": "102ad8ef09ee35a889c48537adc798febc8d394614d0a0dab395b4e8e46de6c3",
+    "proof/capture-007-sent.png": "78794b7d37ea1d7f9189f506c52268cfc58c4d8c15f7ed284ca4032b9c05a41c",
     "proof/capture-007.png": "142aab5b7f5c1662a794e407026e9f6b991ca32185f1ad29e8c0ef2b9cce64aa",
-    "proof/capture-008-sent.png": "c708ef2d45ae5887092687fc62d3a48908801b4bdea6809a16e27757ac106518",
+    "proof/capture-008-sent.png": "9edc9ab673474dda44ed86f97db59f6aa2a55ddc4dd5e05fe90c39ad49898c72",
     "proof/capture-008.png": "142aab5b7f5c1662a794e407026e9f6b991ca32185f1ad29e8c0ef2b9cce64aa",
-    "proof/capture-009-sent.png": "affb6322ef52f9b638b64da242462bedbf3d5145c3f96b83226f1c8e9636b254",
+    "proof/capture-009-sent.png": "e01b9a2efa027e6e4f839f7d28c50c4db784f94f4b0f678c95ae9ee560b635bc",
     "proof/capture-009.png": "142aab5b7f5c1662a794e407026e9f6b991ca32185f1ad29e8c0ef2b9cce64aa",
-    "proof/capture-010-sent.png": "6a0451d26dfcfcdbe908edb4ca6ce0b7b53c772e2473ecd75e6bdd2d19b940f6",
+    "proof/capture-010-sent.png": "cced144d8ecee258d299d6b5f70ac61773051d876e5047f1002b4d0aa96355fc",
     "proof/capture-010.png": "6dc68456e2aee2d3a84993ffb86d4fdfa0a5f8070e9a5b91ebf605d39bdaed8b",
-    "proof/capture-011-sent.png": "4c6653d61fc0a0af01cef23c4ef92ae7e873460eb32f03d04311c6c54d7c3abf",
+    "proof/capture-011-sent.png": "94efed5da5d410387dbd213c96a988049a420c720bf272fdc2d5e734f567b097",
     "proof/capture-011.png": "6dc68456e2aee2d3a84993ffb86d4fdfa0a5f8070e9a5b91ebf605d39bdaed8b",
-    "proof/capture-012-sent.png": "3f31396a50f5d0693657bfe91df776c30741a764daefbb1eb049e5e5615d6293",
+    "proof/capture-012-sent.png": "ff9882b622b7defd0651dbd9e6fe6b32b0b2bf9cc82983fb4662a9359648c182",
     "proof/capture-012.png": "6dc68456e2aee2d3a84993ffb86d4fdfa0a5f8070e9a5b91ebf605d39bdaed8b",
-    "proof/capture-013-sent.png": "91b42178d26f5a58a3b28a2f94e98309e5f2a7b96854a37e4a18903b4de6b29e",
+    "proof/capture-013-sent.png": "f1c85e3883c2cdf2b5e8eda48b5f24de3bbb447a356f60a1e23d03fd721f9054",
     "proof/capture-013.png": "6dc68456e2aee2d3a84993ffb86d4fdfa0a5f8070e9a5b91ebf605d39bdaed8b",
-    "proof/capture-014-sent.png": "3533112ecc5140da08b849592d4514c06f814cf627f6689a7ab47e4855417777",
+    "proof/capture-014-sent.png": "21b626e76a08e5833f318cb62f71bed963fa075a93f286fb7d6e8158cc44fd0f",
     "proof/capture-014.png": "6dc68456e2aee2d3a84993ffb86d4fdfa0a5f8070e9a5b91ebf605d39bdaed8b"
   }
 }

@@ -278,9 +278,9 @@
   "before_results": [
     {
       "status": "fail",
-      "seconds": 0.0008009349999156257,
+      "seconds": 0.0017272109998884844,
       "read_seconds": [
-        0.0007967980000103125
+        0.001721903000088787
       ],
       "visual": null,
       "observed": "Sans nom 1 - LibreOffice Writer"
@@ -289,9 +289,9 @@
   "after_results": [
     {
       "status": "pass",
-      "seconds": 0.012316833999875598,
+      "seconds": 0.009407207000094786,
       "read_seconds": [
-        0.01230816599991158
+        0.009398219999866342
       ],
       "visual": null,
       "observed": "rapport-mensuel.odt - LibreOffice Writer"
@@ -571,9 +571,9 @@
       "on_mistake": "pass",
       "mistake_result": {
         "status": "pass",
-        "seconds": 0.006923031000042101,
+        "seconds": 0.012880691999953342,
         "read_seconds": [
-          0.0069147909998719115
+          0.012871509999968112
         ],
         "visual": null,
         "observed": "brouillon.odt - LibreOffice Writer"
@@ -599,9 +599,9 @@
       "step_check_results": [
         {
           "status": "fail",
-          "seconds": 0.0018603149999307789,
+          "seconds": 0.0018313449998004216,
           "read_seconds": [
-            0.0018577760001790011
+            0.0018280019999110664
           ],
           "visual": null,
           "observed": "brouillon.odt - LibreOffice Writer"
@@ -610,21 +610,21 @@
       "on_correct_path": "fail",
       "correct_result": {
         "status": "fail",
-        "seconds": 0.0020180139999865787,
+        "seconds": 0.0017620000000988512,
         "read_seconds": [
-          0.0020134879998749966
+          0.0017591929999980493
         ],
         "visual": null,
         "observed": "rapport-mensuel.odt - LibreOffice Writer"
       }
     }
   ],
-  "seconds": 20.289819797000064,
+  "seconds": 20.410091213999976,
   "artifact_results": [
     {
       "file": "rapport-mensuel.odt",
       "exists": true,
-      "sha256": "bc8a3c3504c944503b2d2a541879df8b2594c6c64b6d506209db9902d8ee6b90",
+      "sha256": "4ee620d9d53979c0c412a49d7687be2437f6a20c9792912850c76b6cd937e1a5",
       "status": "pass",
       "mimetype": "application/vnd.oasis.opendocument.text",
       "headings": [
