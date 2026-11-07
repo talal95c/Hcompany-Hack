@@ -1,0 +1,273 @@
+{
+  "step_id": "proportional_tweak",
+  "blender_version": "4.5.9 LTS",
+  "ui_path_verified": false,
+  "before": {
+    "mode": "EDIT_MESH",
+    "objects": [
+      {
+        "type": "MESH",
+        "vertices": 576,
+        "edges": 1152,
+        "faces": 576,
+        "smooth_faces": 576,
+        "bounds": [
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            -0.44999998807907104,
+            0.44999998807907104
+          ]
+        ],
+        "materials": [],
+        "provenance": {
+          "primitive": "torus",
+          "major_segments": 48,
+          "minor_segments": 12,
+          "major_radius": 1.0,
+          "minor_radius": 0.45
+        },
+        "modifiers": [
+          {
+            "type": "SUBSURF",
+            "levels": 2
+          }
+        ]
+      }
+    ]
+  },
+  "after": {
+    "mode": "OBJECT",
+    "objects": [
+      {
+        "type": "MESH",
+        "vertices": 576,
+        "edges": 1152,
+        "faces": 576,
+        "smooth_faces": 576,
+        "bounds": [
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            -0.44999998807907104,
+            0.44999998807907104
+          ]
+        ],
+        "materials": [],
+        "provenance": {
+          "primitive": "torus",
+          "major_segments": 48,
+          "minor_segments": 12,
+          "major_radius": 1.0,
+          "minor_radius": 0.45
+        },
+        "modifiers": [
+          {
+            "type": "SUBSURF",
+            "levels": 2
+          }
+        ]
+      }
+    ]
+  },
+  "actions": [
+    {
+      "kind": "select",
+      "target": "torus",
+      "rule": {
+        "vertex": "max_x"
+      }
+    },
+    {
+      "kind": "operator",
+      "idname": "TRANSFORM_OT_translate",
+      "properties": {
+        "value": [
+          0,
+          0,
+          0.12
+        ],
+        "use_proportional_edit": true,
+        "proportional_size": 0.5,
+        "proportional_edit_falloff": "SMOOTH"
+      }
+    },
+    {
+      "kind": "operator",
+      "idname": "OBJECT_OT_mode_set",
+      "properties": {
+        "mode": "OBJECT"
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "object_exists",
+      "params": {
+        "type": "MESH",
+        "primitive": "torus"
+      }
+    },
+    {
+      "name": "mesh_deformed",
+      "params": {
+        "major_radius": 1.0,
+        "minor_radius": 0.45,
+        "threshold": 0.005
+      }
+    }
+  ],
+  "before_checks": [
+    "pass",
+    "fail"
+  ],
+  "after_checks": [
+    "pass",
+    "pass"
+  ],
+  "known_errors": [
+    "fail"
+  ],
+  "error_proofs": [
+    {
+      "code": "proportional_disabled",
+      "check": {
+        "name": "vertex_spike",
+        "params": {
+          "major_radius": 1,
+          "minor_radius": 0.45,
+          "threshold": 0.005
+        }
+      },
+      "actions": [
+        {
+          "kind": "select",
+          "target": "torus",
+          "rule": {
+            "vertex": "max_x"
+          }
+        },
+        {
+          "kind": "operator",
+          "idname": "TRANSFORM_OT_translate",
+          "properties": {
+            "value": [
+              0,
+              0,
+              0.12
+            ],
+            "use_proportional_edit": false,
+            "proportional_size": 0.5,
+            "proportional_edit_falloff": "SMOOTH"
+          }
+        },
+        {
+          "kind": "operator",
+          "idname": "OBJECT_OT_mode_set",
+          "properties": {
+            "mode": "OBJECT"
+          }
+        }
+      ],
+      "before": {
+        "mode": "EDIT_MESH",
+        "objects": [
+          {
+            "type": "MESH",
+            "vertices": 576,
+            "edges": 1152,
+            "faces": 576,
+            "smooth_faces": 576,
+            "bounds": [
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                -0.44999998807907104,
+                0.44999998807907104
+              ]
+            ],
+            "materials": [],
+            "provenance": {
+              "primitive": "torus",
+              "major_segments": 48,
+              "minor_segments": 12,
+              "major_radius": 1.0,
+              "minor_radius": 0.45
+            },
+            "modifiers": [
+              {
+                "type": "SUBSURF",
+                "levels": 2
+              }
+            ]
+          }
+        ]
+      },
+      "after": {
+        "mode": "OBJECT",
+        "objects": [
+          {
+            "type": "MESH",
+            "vertices": 576,
+            "edges": 1152,
+            "faces": 576,
+            "smooth_faces": 576,
+            "bounds": [
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                -0.44999998807907104,
+                0.44999998807907104
+              ]
+            ],
+            "materials": [],
+            "provenance": {
+              "primitive": "torus",
+              "major_segments": 48,
+              "minor_segments": 12,
+              "major_radius": 1.0,
+              "minor_radius": 0.45
+            },
+            "modifiers": [
+              {
+                "type": "SUBSURF",
+                "levels": 2
+              }
+            ]
+          }
+        ]
+      },
+      "on_mistake": "pass",
+      "step_checks_on_mistake": [
+        "pass",
+        "fail"
+      ],
+      "on_correct_path": "fail"
+    }
+  ],
+  "seconds": 0.03858242900003006
+}

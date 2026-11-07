@@ -1,0 +1,30 @@
+{
+  "lesson_id": "donut",
+  "blender_version": "4.5.9 LTS",
+  "ui_path_verified": false,
+  "seconds": 2.6971423770000342,
+  "negative_cases": {
+    "empty_scene": "fail",
+    "cube_instead_of_torus": "unknown",
+    "known_error_cube": "pass",
+    "renamed_cube": "unknown",
+    "untracked_mesh": "unknown",
+    "wrong_subdivision": "fail",
+    "broken_topology": "unknown"
+  },
+  "sha256": {
+    "lesson.json": "2fdf9352697d58402222beab828192e77c7caaa853e39b4d883d6c9ef2d1d6f5",
+    "steps.json": "176997ce2a2834e74f02602d6336d89da5eb260cf219a725968ae13b35da0baf",
+    "SOURCE.md": "7fce1436923ed24e6d0a8c04fe2ea468f5abac88856913a072a7dec783116f8a",
+    "proof/add_torus.json": "8bcb323bebb73f8cc83c1c0ef0412cece2b6c324bbbcd9d3eed4e21d395bfd8c",
+    "proof/adjust_torus_redo.json": "e0ec8147b3af3b813a5726358f9bebef60798bdd1249952756aecf1a9876ebab",
+    "proof/add_subdivision.json": "4ae7a7cee19efd26185e703443364e35778c006346b450f3c10894379f6e86be",
+    "proof/shade_smooth.json": "28942ab006a6c0cc0e06dd0b17927608857c2058afe66a2738ddc1299327cee0",
+    "proof/proportional_tweak.json": "9bba5670e0fa929af3a66783e358cf451df24ee951af423ff0f496cc91fce5aa",
+    "proof/icing_separate.json": "c1c7872c2d8c60953896a721a354d3bb161769d90e0babfd2ba84597c175b473",
+    "proof/solidify_icing.json": "1e32f4d055f9d4c561dfea8538630372c38786b2da5e841c303368f519359c2d",
+    "proof/donut_material.json": "0ca18f6f33feebd654cd16ee4c8347c0014012e07219f90486ef14efec530399",
+    "proof/icing_material.json": "ceec3c1fc9a5979e3cd95a857bcac09fdd58c005d87f19f07876480f6d8bd7b8"
+  },
+  "blender_wall_seconds": 3.007262077000007
+}
