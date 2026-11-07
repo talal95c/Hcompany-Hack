@@ -149,6 +149,7 @@ class Shim:
     def __init__(self, runtime: EngineRuntime, calc: Calc):
         self.runtime, self.calc = runtime, calc
         self.commands: list[tuple[dict, float]] = []
+        self.action_started: float | None = None
         self.condition = asyncio.Condition()
 
     async def start(self) -> None:
@@ -185,6 +186,8 @@ class Shim:
                 asyncio.create_task(self.answer_capture(payload))
 
     async def answer_a11y(self, payload: dict) -> None:
+        if payload["op"] == "action":
+            self.action_started = time.perf_counter()
         result = await self.calc.call({k: v for k, v in payload.items()
                                        if k not in {"request_id", "app"}})
         if payload["op"] == "action":
@@ -282,8 +285,8 @@ async def test_live_calc_end_to_end(tmp_path):
 
         # Étape 1 : vraie saisie, vrai arbre, vrai check element_value.
         count = len(shim.commands)
-        await calc.type_in(Rect.from_dict(a1["bounds"]).center, "42")
         typed = time.perf_counter()
+        await calc.type_in(Rect.from_dict(a1["bounds"]).center, "42")
         _, received = await shim.wait_for("success", count)
         type_to_success = (received - typed) * 1000
         async with asyncio.timeout(5):
@@ -294,8 +297,8 @@ async def test_live_calc_end_to_end(tmp_path):
         # Étape 2 : formule réelle évaluée par Calc.
         count = len(shim.commands)
         a2 = await calc.cell("A2")
-        await calc.type_in(Rect.from_dict(a2["bounds"]).center, "=A1*2")
         typed = time.perf_counter()
+        await calc.type_in(Rect.from_dict(a2["bounds"]).center, "=A1*2")
         _, received = await shim.wait_for("success", count)
         formula_to_success = (received - typed) * 1000
         async with asyncio.timeout(5):
@@ -313,7 +316,10 @@ async def test_live_calc_end_to_end(tmp_path):
         await send_ws(shim.ws, "user.intent", {"source": "bouton", "text": json.dumps({
             "intent": "fais-le", "consent_token": token,
             "delegation_confirmed": True, "wants_to_learn": False})})
-        await shim.wait_for("success", count)
+        _, received = await shim.wait_for("success", count)
+        assert shim.action_started is not None
+        action_to_success = (received - shim.action_started) * 1000
+        print(f"LIVE action a11y→check→✓ ms: {action_to_success:.1f}")
         assert (await calc.cell("B1"))["value"] == "73"
         async with asyncio.timeout(5):
             while runtime.session.status != "COMPLETE":
@@ -336,12 +342,14 @@ async def test_live_calc_end_to_end(tmp_path):
         step["check"] = {"name": "visual_assert", "params": yes}
         step["known_errors"][0]["check"] = {"name": "visual_assert", "params": no}
         state = await vision.refresh(step)
+        verify_latencies = [v.latency_ms for v in state.verdicts.values()]
         for _ in range(2):
             if all(v.answer is not None for v in state.verdicts.values()):
                 break
             # Un délai cloud donne unknown (jamais pass) ; nouvelle capture fraîche.
             print("LIVE holo verify retry:", [v.detail for v in state.verdicts.values()])
             state = await vision.refresh(step)
+            verify_latencies.extend(v.latency_ms for v in state.verdicts.values())
         verdicts = {k: (v.answer, v.confidence, round(v.latency_ms)) for k, v in
                     state.verdicts.items()}
         print("LIVE holo verify:", verdicts)
@@ -420,6 +428,7 @@ async def test_live_calc_end_to_end(tmp_path):
                 stats(stage, by_stage[stage])
         stats("atspi.find (pont)", calc.timings["atspi.find"])
         stats("capture fenêtre (import)", calc.timings["capture"])
+        stats("holo.verify (retries inclus)", verify_latencies)
         print(f"LIVE services ms: holo_pointer={holo_point_ms:.0f} jev={jev_ms:.0f} "
               f"linkup={linkup_ms:.0f} gladia={gladia_ms and round(gladia_ms)} "
               f"holo_verify={[v[2] for v in verdicts.values()]}")
