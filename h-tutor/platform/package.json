@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npm run build:web && wrangler dev",
+    "dev": "npm run build:web && wrangler dev --local-upstream 127.0.0.1:8787",
     "deploy": "npm run build:web && wrangler deploy",
     "test": "node --experimental-strip-types --no-warnings --test test/*.test.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p web",

@@ -94,12 +94,22 @@ const grounding = (a: AppRow): Grounding => ({ nav_ops: [], routine_ops: [], men
 /** Everything needed to re-target some skills: their claims, and where their operators are in every version. */
 async function load(db: D1Database, app: AppRow, skillIds: string[], ws: string | null = null) {
   if (!skillIds.length) return { skills: new Map<string, Skill & { name: string }>(), claims: new Map<string, Claim>(), L: lookup(new Map(), new Map()) };
-  const q = skillIds.map(() => "?").join(",");
-  const [sk, seg, pr] = await db.batch([
-    db.prepare(`select * from skill where id in (${q}) and (workspace is null or workspace = ?)`).bind(...skillIds, ws),
-    db.prepare(`select s.*, t.skill_id from segment s join teaches t on t.segment_id = s.id join source o on o.id = s.source_id where t.skill_id in (${q}) and (o.workspace is null or o.workspace = ?)`).bind(...skillIds, ws),
-    db.prepare(`select * from proof where skill_id in (${q})`).bind(...skillIds),
-  ]);
+  // D1 binds at most 100 values per statement: an app's whole skill list (162 for Blender) goes in chunks.
+  const sk = { results: [] as unknown[] };
+  const seg = { results: [] as unknown[] };
+  const pr = { results: [] as unknown[] };
+  for (let i = 0; i < skillIds.length; i += 90) {
+    const ids = skillIds.slice(i, i + 90);
+    const q = ids.map(() => "?").join(",");
+    const [a, b, c] = await db.batch([
+      db.prepare(`select * from skill where id in (${q}) and (workspace is null or workspace = ?)`).bind(...ids, ws),
+      db.prepare(`select s.*, t.skill_id from segment s join teaches t on t.segment_id = s.id join source o on o.id = s.source_id where t.skill_id in (${q}) and (o.workspace is null or o.workspace = ?)`).bind(...ids, ws),
+      db.prepare(`select * from proof where skill_id in (${q})`).bind(...ids),
+    ]);
+    sk.results.push(...a.results);
+    seg.results.push(...b.results);
+    pr.results.push(...c.results);
+  }
   const skills = new Map<string, Skill & { name: string; proofs: Record<string, string>; effect: string | null }>();
   for (const r of sk.results as { id: string; name: string; effect_atom: string | null; ops_json: string; steps_json: string }[]) {
     skills.set(r.id, { id: r.id, name: r.name, intent: r.name, ops: JSON.parse(r.ops_json), steps: JSON.parse(r.steps_json), sources: [], proofs: {}, effect: r.effect_atom });
@@ -176,12 +186,16 @@ const compact = (s: PathStep) => ({
 });
 
 async function sourcesOf(db: D1Database, ids: string[]) {
-  if (!ids.length) return new Map<string, Record<string, unknown>>();
-  const { results } = await db
-    .prepare(`select id, title, kind, url, version, language from source where id in (${ids.map(() => "?").join(",")})`)
-    .bind(...ids)
-    .all();
-  return new Map(results.map((x) => [x.id as string, x]));
+  const out = new Map<string, Record<string, unknown>>();
+  for (let i = 0; i < ids.length; i += 90) {
+    const chunk = ids.slice(i, i + 90);
+    const { results } = await db
+      .prepare(`select id, title, kind, url, version, language from source where id in (${chunk.map(() => "?").join(",")})`)
+      .bind(...chunk)
+      .all();
+    for (const x of results) out.set(x.id as string, x);
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------- search

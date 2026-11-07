@@ -48,6 +48,12 @@ async function kn<T>(c: C, path: string, params: Record<string, string | null | 
   const q = new URLSearchParams(Object.entries({ ...params, workspace: c.get("org") }).filter((e): e is [string, string] => !!e[1]));
   try {
     const r = await c.env.KNOWLEDGE.fetch(`https://knowledge${path}?${q}`, init);
+    // A failed read is treated as unreachable, so pages show an empty state instead of an error body.
+    // Writes keep the body: its error message is shown to the user.
+    if (!r.ok && !init) {
+      console.error(`knowledge ${path}: ${r.status} ${await r.text()}`);
+      return null;
+    }
     return (await r.json()) as T;
   } catch {
     return null;

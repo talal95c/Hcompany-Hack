@@ -5,6 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 # Public address. The vignemale.com zone is in this Cloudflare account: deploy creates the DNS record and certificate.
 # BETTER_AUTH_URL must match it (https://rio.vignemale.com), and so must Google's redirect URI.
+# `npm run dev` passes --local-upstream so that local requests keep their 127.0.0.1 origin (better-auth checks it).
 routes = [{ pattern = "rio.vignemale.com", custom_domain = true }]
 
 # The console (React, built by `npm run build:web`). /api and /v1 go to the Worker first.
