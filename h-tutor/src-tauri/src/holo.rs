@@ -39,7 +39,7 @@ impl Holo {
     /// message and the latency in ms.
     pub async fn chat(&self, body: &Value) -> Result<(Value, u128), String> {
         let started = std::time::Instant::now();
-        let key = api_key().ok_or("HAI_API_KEY is missing: add it to the .env file")?;
+        let key = api_key().ok_or("HAI_API_KEY manque : ajoute-la au fichier .env")?;
         let base = env_or("HAI_BASE_URL", "https://api.hcompany.ai/v1");
         let res = self
             .http
@@ -48,14 +48,14 @@ impl Holo {
             .json(body)
             .send()
             .await
-            .map_err(|e| format!("Network error: {e}"))?;
+            .map_err(|e| format!("Erreur réseau : {e}"))?;
         let status = res.status();
-        let text = res.text().await.map_err(|e| format!("Network error: {e}"))?;
+        let text = res.text().await.map_err(|e| format!("Erreur réseau : {e}"))?;
         if !status.is_success() {
             let detail: String = text.chars().take(300).collect();
             return Err(format!("Holo {status}: {detail}"));
         }
-        let v: Value = serde_json::from_str(&text).map_err(|e| format!("Unreadable response: {e}"))?;
+        let v: Value = serde_json::from_str(&text).map_err(|e| format!("Réponse illisible : {e}"))?;
         Ok((v["choices"][0]["message"].clone(), started.elapsed().as_millis()))
     }
 
@@ -81,7 +81,7 @@ impl Holo {
         schema: Value,
     ) -> Result<(T, Option<String>), String> {
         let started = std::time::Instant::now();
-        let key = api_key().ok_or("HAI_API_KEY is missing: add it to the .env file")?;
+        let key = api_key().ok_or("HAI_API_KEY manque : ajoute-la au fichier .env")?;
         let base = env_or("HAI_BASE_URL", "https://api.hcompany.ai/v1");
 
         let mut content: Vec<Value> = images
@@ -105,10 +105,10 @@ impl Holo {
             .json(&body)
             .send()
             .await
-            .map_err(|e| format!("Network error: {e}"))?;
+            .map_err(|e| format!("Erreur réseau : {e}"))?;
 
         let status = res.status();
-        let text = res.text().await.map_err(|e| format!("Network error: {e}"))?;
+        let text = res.text().await.map_err(|e| format!("Erreur réseau : {e}"))?;
         let ms = started.elapsed().as_millis();
         if !status.is_success() {
             crate::debug::record(tag, model, images, prompt, &format!("HTTP {status}: {text}"), ms);
@@ -123,10 +123,10 @@ impl Holo {
             return Err(format!("Holo {status}: {hint}. {detail}"));
         }
 
-        let v: Value = serde_json::from_str(&text).map_err(|e| format!("Unreadable response: {e}"))?;
+        let v: Value = serde_json::from_str(&text).map_err(|e| format!("Réponse illisible : {e}"))?;
         let raw = v["choices"][0]["message"]["content"]
             .as_str()
-            .ok_or("Empty response from the model")?;
+            .ok_or("Réponse vide du modèle")?;
         let id = crate::debug::record(tag, model, images, prompt, raw, ms);
         let cleaned = raw
             .trim()
@@ -136,6 +136,6 @@ impl Holo {
             .trim();
         serde_json::from_str(cleaned)
             .map(|v| (v, id))
-            .map_err(|e| format!("Unexpected JSON ({e}): {raw}"))
+            .map_err(|e| format!("JSON inattendu ({e}) : {raw}"))
     }
 }

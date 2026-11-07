@@ -45,7 +45,7 @@ pub fn listen_stop() {
 
 #[tauri::command]
 pub async fn listen_start(app: AppHandle) -> Result<(), String> {
-    let key = api_key().ok_or("GLADIA_API_KEY is missing from .env")?;
+    let key = api_key().ok_or("GLADIA_API_KEY manque dans .env")?;
     listen_stop();
     let stop = Arc::new(AtomicBool::new(false));
     *CURRENT.lock().unwrap() = Some(stop.clone());
@@ -72,7 +72,7 @@ pub async fn listen_start(app: AppHandle) -> Result<(), String> {
     if !status.is_success() {
         return Err(format!("Gladia {status}: {body}"));
     }
-    let url = body["url"].as_str().ok_or("Gladia: no session URL")?.to_string();
+    let url = body["url"].as_str().ok_or("Gladia : pas d'URL de session")?.to_string();
 
     // 2. Start the microphone on its own thread (cpal streams are not Send).
     let (audio_tx, audio_rx) = mpsc::unbounded_channel::<Vec<u8>>();
@@ -148,8 +148,8 @@ fn start_mic(tx: mpsc::UnboundedSender<Vec<u8>>, stop: Arc<AtomicBool>) -> Resul
         let setup = || -> Result<cpal::Stream, String> {
             let device = cpal::default_host()
                 .default_input_device()
-                .ok_or("No microphone found")?;
-            let config = device.default_input_config().map_err(|e| format!("Microphone: {e}"))?;
+                .ok_or("Aucun micro trouvé")?;
+            let config = device.default_input_config().map_err(|e| format!("Micro : {e}"))?;
             let channels = config.channels() as usize;
             let rate = config.sample_rate() as f64;
             let mut resampler = Resampler::new(rate, TARGET_RATE as f64, channels, tx);
@@ -169,10 +169,10 @@ fn start_mic(tx: mpsc::UnboundedSender<Vec<u8>>, stop: Arc<AtomicBool>) -> Resul
                     err,
                     None,
                 ),
-                f => return Err(format!("Unsupported microphone format {f:?}")),
+                f => return Err(format!("Format de micro non pris en charge {f:?}")),
             }
-            .map_err(|e| format!("Microphone: {e}"))?;
-            stream.play().map_err(|e| format!("Microphone: {e}"))?;
+            .map_err(|e| format!("Micro : {e}"))?;
+            stream.play().map_err(|e| format!("Micro : {e}"))?;
             Ok(stream)
         };
         match setup() {

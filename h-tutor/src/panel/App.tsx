@@ -173,7 +173,7 @@ export default function App() {
       const prefix = stepState === "thinking" ? "…" : `${Math.min(n, total)}/${total}`;
       api.setTray(`${prefix} · ${step.instruction}`);
     } else if (phase === "done") {
-      api.setTray("✓ Done");
+      api.setTray("✓ Terminé");
       const t = setTimeout(() => api.setTray(null), 6000);
       return () => clearTimeout(t);
     } else {
@@ -184,14 +184,14 @@ export default function App() {
   async function importVideo(url: string) {
     setHomeError("");
     setImported(null);
-    setImportStage("Reading the video…");
+    setImportStage("Lecture de la vidéo…");
     setPhase("importing");
     try {
       const t = await api.importYoutube(url.trim());
       setImported(t);
       setGoal("");
       setPhase("imported");
-      if (voiceRef.current) speak(`${t.title}: ${t.milestones} milestones, ready.`, langRef.current);
+      if (voiceRef.current) speak(readyLine(t.title, t.milestones, langRef.current), langRef.current);
     } catch (e) {
       setHomeError(errorText(e));
       setPhase("home");
@@ -387,20 +387,20 @@ export default function App() {
               value={listening && heard ? heard : goal}
               disabled={phase === "planning" || phase === "importing"}
               onChange={(e) => setGoal(e.target.value)}
-              placeholder={listening ? "Listening…" : "What do you want to learn? Or paste a YouTube link"}
+              placeholder={listening ? "Je t'écoute…" : "Que veux-tu apprendre ? Ou colle un lien YouTube"}
               spellCheck={false}
             />
             {phase === "importing" ? (
               <span className="hint shimmer">{importStage}</span>
             ) : phase === "planning" ? (
-              <span className="hint shimmer">{planning ? "Holo is planning milestones…" : "Starting…"}</span>
+              <span className="hint shimmer">{planning ? "Holo prépare les étapes…" : "Démarrage…"}</span>
             ) : (
               <>
                 <button
                   type="button"
                   className={`tool ${paletteOpen ? "tool--on" : ""}`}
                   onClick={() => setPaletteOpen((o) => !o)}
-                  title="Tutorials (⌘K)"
+                  title="Tutos (⌘K)"
                 >
                   <IconGrid />
                 </button>
@@ -408,11 +408,11 @@ export default function App() {
                   type="button"
                   className={`tool ${listening ? "tool--rec" : ""}`}
                   onClick={toggleMic}
-                  title={listening ? "Stop listening" : "Speak (Gladia)"}
+                  title={listening ? "Arrêter l'écoute" : "Parler"}
                 >
                   <IconMic />
                 </button>
-                <button className="key" type="submit" disabled={!goal.trim()} title="Start">
+                <button className="key" type="submit" disabled={!goal.trim()} title="Lancer">
                   <IconEnter />
                 </button>
               </>
@@ -420,7 +420,7 @@ export default function App() {
           </form>
           {homeError && <div className="note note--error">{homeError}</div>}
           {status && !status.has_key && !homeError && (
-            <div className="note note--error">HAI_API_KEY is missing from .env</div>
+            <div className="note note--error">HAI_API_KEY manque dans .env</div>
           )}
         </>
       )}
@@ -428,7 +428,7 @@ export default function App() {
       {phase === "running" && step && (
         <div className="run">
           <div className="row row--meta">
-            <div className="segments" aria-label="Milestones">
+            <div className="segments" aria-label="Étapes">
               {progress.map((m) => (
                 <span
                   key={m.id}
@@ -444,28 +444,28 @@ export default function App() {
               <button
                 className={`tool ${listening ? "tool--rec" : ""}`}
                 onClick={toggleMic}
-                title={listening ? "Stop listening" : "Ask a question out loud"}
+                title={listening ? "Arrêter l'écoute" : "Poser une question à voix haute"}
               >
                 <IconMic />
               </button>
-              <button className="tool" onClick={() => api.tutorRepoint()} disabled={busy} title="Show me again">
+              <button className="tool" onClick={() => api.tutorRepoint()} disabled={busy} title="Remontre-moi">
                 <IconReplay />
               </button>
-              <button className="tool" onClick={iDidIt} disabled={busy} title="I did it">
+              <button className="tool" onClick={iDidIt} disabled={busy} title="C'est fait">
                 <IconCheck />
               </button>
               <button
                 className="tool"
                 onClick={skipMilestone}
                 disabled={busy}
-                title="Skip this milestone"
+                title="Passer cette étape"
               >
                 <IconSkip />
               </button>
-              <button className="tool" onClick={toggleVoice} title={voice ? "Mute voice" : "Unmute voice"}>
+              <button className="tool" onClick={toggleVoice} title={voice ? "Couper la voix" : "Réactiver la voix"}>
                 {voice ? <IconVolume /> : <IconVolumeOff />}
               </button>
-              <button className="tool" onClick={quit} title="Stop">
+              <button className="tool" onClick={quit} title="Arrêter">
                 <IconClose />
               </button>
             </div>
@@ -488,16 +488,16 @@ export default function App() {
                   )}
                 </>
               ) : (
-                <p className="explain__a shimmer">Holo is thinking…</p>
+                <p className="explain__a shimmer">Holo réfléchit…</p>
               )}
               <div className="explain__actions">
                 {explain.target && (
                   <button className="pill" onClick={() => api.locate(explain.target, explain.answer ?? "")}>
-                    Show me
+                    Montre-moi
                   </button>
                 )}
                 <button className="pill pill--light" onClick={continueTutorial}>
-                  Continue
+                  Continuer
                 </button>
               </div>
             </div>
@@ -506,27 +506,27 @@ export default function App() {
           <p className={`instruction ${busy || explain ? "instruction--dim" : ""}`}>{step.instruction}</p>
           {step.teach && !busy && !explain && <div className="teach">{step.teach}</div>}
           {step.milestone?.video_url && !explain && (
-            <button className="video-link" onClick={() => openUrl(step.milestone!.video_url!)} title="Open the video at this moment">
-              ▶ Watch this part in the video
+            <button className="video-link" onClick={() => openUrl(step.milestone!.video_url!)} title="Ouvrir la vidéo à ce moment">
+              ▶ Voir ce passage dans la vidéo
             </button>
           )}
           {step.kind === "write" && step.text && !busy && (
             <div className="chip">
-              Type <code>{step.text}</code>
+              Tape <code>{step.text}</code>
             </div>
           )}
           {step.kind === "press_key" && step.keys && !busy && (
             <div className="chip">
-              Press <kbd>{step.keys}</kbd>
+              Appuie sur <kbd>{step.keys}</kbd>
             </div>
           )}
 
           {listening ? (
             <div className="status status--rec">{heard ? `“${heard}”` : "Listening…"}</div>
           ) : explain ? (
-            <div className="status">Paused while we talk.</div>
+            <div className="status">En pause pendant qu'on parle.</div>
           ) : busy ? (
-            <div className="status shimmer">Holo is looking at your screen…</div>
+            <div className="status shimmer">Holo regarde ton écran…</div>
           ) : stepState === "error" ? (
             <div className="status status--error">{message}</div>
           ) : stepState === "success" ? (
@@ -535,10 +535,10 @@ export default function App() {
             <div className="status">
               {message ||
                 (step.kind === "click"
-                  ? "Go where I'm pointing. I'm watching your screen."
+                  ? "Va là où je pointe. Je regarde ton écran."
                   : step.kind === "write"
-                    ? "Type it in the field I'm pointing at."
-                    : "Go ahead, I'm watching your screen.")}
+                    ? "Tape-le dans le champ que je pointe."
+                    : "Vas-y, je regarde ton écran.")}
             </div>
           )}
           <form
@@ -551,7 +551,7 @@ export default function App() {
             <input
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ask Holo anything…"
+              placeholder="Pose une question à Holo…"
               spellCheck={false}
             />
           </form>
@@ -562,13 +562,13 @@ export default function App() {
         <div className="row row--done">
           <span className="lead lead--yt">▶</span>
           <span className="done-text">
-            {imported.title} <span className="dim">· {imported.app} · {imported.milestones} milestones</span>
+            {imported.title} <span className="dim">· {imported.app} · {imported.milestones} étapes</span>
           </span>
           <button className="pill" onClick={() => setPhase("home")}>
-            Later
+            Plus tard
           </button>
           <button className="pill pill--light" onClick={() => startTutorial(imported.title, null, imported.id)}>
-            Start
+            Lancer
           </button>
         </div>
       )}
@@ -579,15 +579,15 @@ export default function App() {
             <IconCheck />
           </span>
           <span className="done-text">
-            {saved ? `Saved to your library` : "Done"} <span className="dim">· {saved ?? title}</span>
+            {saved ? "Ajouté à ta bibliothèque" : "Terminé"} <span className="dim">· {saved ?? title}</span>
           </span>
           {!saved && (
             <button
               className="pill"
               onClick={() => api.saveTutorial().then(setSaved).catch((e) => setHomeError(errorText(e)))}
-              title="Keep this run as a reusable tutorial, with the path you took as hints"
+              title="Garder ce parcours comme tuto réutilisable, avec le chemin que tu as pris comme indices"
             >
-              Save as tutorial
+              Garder comme tuto
             </button>
           )}
           <button
@@ -597,7 +597,7 @@ export default function App() {
               setPhase("home");
             }}
           >
-            New
+            Nouveau
           </button>
         </div>
       )}
@@ -607,5 +607,9 @@ export default function App() {
 }
 
 function doneLine(lang: string | null): string {
-  return lang === "fr" ? "Bravo, tu as terminé le tuto !" : "Well done, you finished the tutorial!";
+  return lang === "en" ? "Well done, you finished the tutorial!" : "Bravo, tu as terminé le tuto !";
+}
+
+function readyLine(title: string, milestones: number, lang: string | null): string {
+  return lang === "en" ? `${title}: ${milestones} milestones, ready.` : `${title} : ${milestones} étapes, c'est prêt.`;
 }
