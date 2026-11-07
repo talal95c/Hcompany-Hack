@@ -581,7 +581,7 @@ async fn ask_holo(
     let (call, msg, ms, usage) = loop {
         rounds += 1;
         if rounds > MAX_SEARCHES + 2 {
-            return Err("Holo kept searching without choosing an action".into());
+            return Err("Holo a continué à chercher sans choisir d'action".into());
         }
         let body = json!({
             "model": model,
@@ -612,7 +612,7 @@ async fn ask_holo(
             .as_array()
             .and_then(|c| c.first())
             .cloned()
-            .ok_or("Holo did not choose an action")?;
+            .ok_or("Holo n'a pas choisi d'action")?;
 
         // Keep only the parsed action in history, never the reasoning.
         session.messages.push(json!({
@@ -630,7 +630,7 @@ async fn ask_holo(
             let query = args["query"].as_str().unwrap_or("").to_string();
             let result = if searches < MAX_SEARCHES && !query.is_empty() {
                 searches += 1;
-                crate::emit_status(&format!("Searching {app_name} docs: {query}"));
+                crate::emit_status(&format!("Recherche dans la documentation de {app_name} : {query}"));
                 crate::search::run(holo, &app_name, &query).await.text
             } else {
                 "Search limit reached for this step: act on what is visible on screen.".to_string()

@@ -54,10 +54,10 @@ fn tool(name: &str) -> PathBuf {
 }
 
 fn run(cmd: &mut Command, what: &str) -> Result<Vec<u8>, String> {
-    let out = cmd.output().map_err(|e| format!("{what}: {e} (is it installed? brew install yt-dlp ffmpeg)"))?;
+    let out = cmd.output().map_err(|e| format!("{what} : {e} (est-il installé ? brew install yt-dlp ffmpeg)"))?;
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stderr);
-        return Err(format!("{what} failed: {}", err.lines().last().unwrap_or("").trim()));
+        return Err(format!("{what} a échoué : {}", err.lines().last().unwrap_or("").trim()));
     }
     Ok(out.stdout)
 }
@@ -79,13 +79,13 @@ struct Video {
 
 fn metadata(url: &str) -> Result<Video, String> {
     let out = run(Command::new(tool("yt-dlp")).args(["-J", "--no-playlist", "--socket-timeout", "30", url]), "yt-dlp")?;
-    let m: Value = serde_json::from_slice(&out).map_err(|e| format!("yt-dlp: {e}"))?;
+    let m: Value = serde_json::from_slice(&out).map_err(|e| format!("yt-dlp : {e}"))?;
     let duration = m["duration"].as_f64().unwrap_or(0.0);
     if duration <= 0.0 {
-        return Err("This video has no duration (live stream?)".into());
+        return Err("Cette vidéo n'a pas de durée (diffusion en direct ?)".into());
     }
     if duration > MAX_DURATION {
-        return Err(format!("Video too long ({} min): 45 min max", (duration / 60.0).round()));
+        return Err(format!("Vidéo trop longue ({} min) : 45 min maximum", (duration / 60.0).round()));
     }
     let mut segments: Vec<Segment> = m["chapters"]
         .as_array()
@@ -181,7 +181,7 @@ struct Utterance {
 
 /// Gladia pre-recorded transcription: upload, create the job, poll.
 async fn transcribe(audio: &Path) -> Result<(Vec<Utterance>, Option<String>), String> {
-    let key = std::env::var("GLADIA_API_KEY").map_err(|_| "GLADIA_API_KEY is missing from .env")?;
+    let key = std::env::var("GLADIA_API_KEY").map_err(|_| "La clé GLADIA_API_KEY manque dans .env")?;
     let http = reqwest::Client::new();
     let bytes = tokio::fs::read(audio).await.map_err(|e| e.to_string())?;
     let form = reqwest::multipart::Form::new().part(
@@ -194,22 +194,22 @@ async fn transcribe(audio: &Path) -> Result<(Vec<Utterance>, Option<String>), St
         .multipart(form)
         .send()
         .await
-        .map_err(|e| format!("Gladia upload: {e}"))?
+        .map_err(|e| format!("Envoi Gladia : {e}"))?
         .json()
         .await
-        .map_err(|e| format!("Gladia upload: {e}"))?;
-    let audio_url = up["audio_url"].as_str().ok_or_else(|| format!("Gladia upload: {up}"))?;
+        .map_err(|e| format!("Envoi Gladia : {e}"))?;
+    let audio_url = up["audio_url"].as_str().ok_or_else(|| format!("Envoi Gladia : {up}"))?;
     let job: Value = http
         .post("https://api.gladia.io/v2/pre-recorded")
         .header("x-gladia-key", &key)
         .json(&json!({ "audio_url": audio_url }))
         .send()
         .await
-        .map_err(|e| format!("Gladia: {e}"))?
+        .map_err(|e| format!("Gladia : {e}"))?
         .json()
         .await
-        .map_err(|e| format!("Gladia: {e}"))?;
-    let result_url = job["result_url"].as_str().ok_or_else(|| format!("Gladia: {job}"))?.to_string();
+        .map_err(|e| format!("Gladia : {e}"))?;
+    let result_url = job["result_url"].as_str().ok_or_else(|| format!("Gladia : {job}"))?.to_string();
     for _ in 0..200 {
         tokio::time::sleep(std::time::Duration::from_secs(3)).await;
         let r: Value = http
@@ -217,10 +217,10 @@ async fn transcribe(audio: &Path) -> Result<(Vec<Utterance>, Option<String>), St
             .header("x-gladia-key", &key)
             .send()
             .await
-            .map_err(|e| format!("Gladia: {e}"))?
+            .map_err(|e| format!("Gladia : {e}"))?
             .json()
             .await
-            .map_err(|e| format!("Gladia: {e}"))?;
+            .map_err(|e| format!("Gladia : {e}"))?;
         match r["status"].as_str() {
             Some("done") => {
                 let t = &r["result"]["transcription"];
@@ -228,11 +228,11 @@ async fn transcribe(audio: &Path) -> Result<(Vec<Utterance>, Option<String>), St
                 let lang = t["languages"][0].as_str().map(String::from);
                 return Ok((utterances, lang));
             }
-            Some("error") => return Err(format!("Gladia transcription failed: {}", r["error_code"])),
+            Some("error") => return Err(format!("Échec de la transcription Gladia : {}", r["error_code"])),
             _ => {}
         }
     }
-    Err("Gladia transcription timed out".into())
+    Err("Délai dépassé pour la transcription Gladia".into())
 }
 
 fn narration(utt: &[Utterance], s: &Segment, limit: usize) -> String {
@@ -384,10 +384,10 @@ async fn design(holo: &Holo, v: &Video, notes: &[FrameNote]) -> Result<Plan, Str
         "reasoning_effort": "low",
     });
     let (msg, ms) = holo.chat(&body).await?;
-    let raw = msg["content"].as_str().ok_or("Holo returned no tutorial")?;
+    let raw = msg["content"].as_str().ok_or("Holo n'a renvoyé aucun tuto")?;
     crate::debug::record("yt_design", &holo::smart_model(), &[], &prompt, raw, ms);
     serde_json::from_str(raw.trim().trim_start_matches("```json").trim_end_matches("```"))
-        .map_err(|e| format!("Unexpected tutorial JSON ({e})"))
+        .map_err(|e| format!("JSON de tuto inattendu ({e})"))
 }
 
 #[derive(Serialize)]
@@ -406,31 +406,31 @@ pub async fn run_import(
     report: impl Fn(&'static str, String),
 ) -> Result<(Tutorial, Option<String>), String> {
     if !is_youtube(url) {
-        return Err("Not a YouTube link".into());
+        return Err("Ce n'est pas un lien YouTube".into());
     }
-    report("video", "Reading the video…".into());
+    report("video", "Lecture de la vidéo…".into());
     let u = url.to_string();
     let video = tauri::async_runtime::spawn_blocking(move || metadata(&u)).await.map_err(|e| e.to_string())??;
     let dir = std::env::temp_dir().join("h-tutor-youtube").join(tutorial::slug(&video.id));
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
 
-    report("video", format!("Downloading “{}”…", video.title));
+    report("video", format!("Téléchargement de « {} »…", video.title));
     let (u, d) = (video.url.clone(), dir.clone());
     let (video_file, audio) = tauri::async_runtime::spawn_blocking(move || download(&u, &d))
         .await
         .map_err(|e| e.to_string())??;
 
-    report("transcript", "Transcribing with Gladia…".into());
+    report("transcript", "Transcription avec Gladia…".into());
     let segments = video.segments.clone();
     let (vf, d) = (video_file.clone(), dir.clone());
     let frames_task = tauri::async_runtime::spawn_blocking(move || key_frames(&vf, &segments, &d));
     let (utterances, language) = transcribe(&audio).await?;
     let frames = frames_task.await.map_err(|e| e.to_string())??;
 
-    report("reading", format!("Holo is watching {} key moments…", frames.len()));
+    report("reading", format!("Holo regarde les {} moments clés…", frames.len()));
     let notes = read_frames(holo, &frames, &video.segments, &utterances).await?;
 
-    report("designing", "Holo is designing the milestones…".into());
+    report("designing", "Holo construit les étapes…".into());
     let plan = design(holo, &video, &notes).await?;
 
     let milestones: Vec<Milestone> = plan
@@ -460,7 +460,7 @@ pub async fn run_import(
         milestones,
     };
     tutorial::save(&t)?;
-    report("saved", format!("“{}” is in your library", t.title));
+    report("saved", format!("« {} » est dans ta bibliothèque", t.title));
     Ok((t, language))
 }
 

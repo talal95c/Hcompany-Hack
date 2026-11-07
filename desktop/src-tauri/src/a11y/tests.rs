@@ -26,12 +26,52 @@ struct Control {
     started: Notify,
     resume: Notify,
     actions: AtomicUsize,
+    collections: AtomicUsize,
+    scoped_reads: AtomicUsize,
 }
 struct Mock {
     scenario: Scenario,
     control: Arc<Control>,
 }
 impl AccessibilitySensor for Mock {
+    fn scoped<'a>(&'a self, _: &'a scoped::Binding, _: Instant, _: usize) -> Task<'a, Tree> {
+        Box::pin(async move {
+            self.control.scoped_reads.fetch_add(1, Ordering::SeqCst);
+            if matches!(self.scenario, Scenario::Defunct) {
+                return Err(Error::StaleRef);
+            }
+            if matches!(self.scenario, Scenario::PausedRefresh) {
+                self.control.started.notify_one();
+                self.control.resume.notified().await;
+            }
+            let count = match self.scenario {
+                Scenario::Ambiguous => 2,
+                Scenario::Incomplete => 65,
+                Scenario::Empty => 0,
+                _ => 1,
+            };
+            let nodes = (0..count)
+                .map(|_| {
+                    let mut node = node(if matches!(self.scenario, Scenario::Moved) {
+                        "Other"
+                    } else {
+                        "Save"
+                    });
+                    node.value = Some("scoped-value".into());
+                    RawNode {
+                        node,
+                        handle: app(),
+                        parent: None,
+                    }
+                })
+                .collect();
+            Ok(Tree {
+                nodes,
+                complete: true,
+                reasons: BTreeMap::new(),
+            })
+        })
+    }
     fn apps(&self) -> Task<'_, Vec<App>> {
         Box::pin(async move {
             if matches!(
@@ -52,6 +92,7 @@ impl AccessibilitySensor for Mock {
     }
     fn snapshot<'a>(&'a self, _: &'a Handle, _: usize, deadline: Instant) -> Task<'a, Tree> {
         Box::pin(async move {
+            self.control.collections.fetch_add(1, Ordering::SeqCst);
             if matches!(self.scenario, Scenario::Timeout) {
                 return std::future::pending().await;
             }
@@ -143,6 +184,7 @@ fn service(scenario: Scenario) -> (Arc<Service>, Arc<Control>) {
                 control: control.clone(),
             }),
             store: Mutex::new(Store::default()),
+            ..Service::default()
         }),
         control,
     )
@@ -150,10 +192,359 @@ fn service(scenario: Scenario) -> (Arc<Service>, Arc<Control>) {
 fn snapshot_request() -> Value {
     json!({"request_id":"q","app":"editor","op":"snapshot"})
 }
+
+#[tokio::test]
+async fn concurrent_finds_share_only_an_in_flight_snapshot() {
+    let (service, control) = service(Scenario::PausedSnapshot);
+    let request = json!({"request_id":"first","op":"find","app":"editor","generation":1,
+        "query":{"name":"Save"}});
+    let first = {
+        let service = service.clone();
+        let request = request.clone();
+        tokio::spawn(async move { service.run(None, request).await })
+    };
+    control.started.notified().await;
+    let second = {
+        let service = service.clone();
+        let mut request = request;
+        request["request_id"] = json!("second");
+        request["query"] = json!({"role":"button"});
+        tokio::spawn(async move { service.run(None, request).await })
+    };
+    tokio::time::sleep(Duration::from_millis(10)).await;
+    control.resume.notify_one();
+    let first = first.await.unwrap();
+    let second = second.await.unwrap();
+    assert_eq!(first["snapshot_id"], second["snapshot_id"]);
+    assert_eq!(control.collections.load(Ordering::SeqCst), 1);
+    assert_eq!(second["nodes"][0]["name"], "Save");
+    control.resume.notify_one();
+    let fresh = service.run(None, snapshot_request()).await;
+    assert_ne!(first["snapshot_id"], fresh["snapshot_id"]);
+    assert_eq!(control.collections.load(Ordering::SeqCst), 2);
+}
+
+#[tokio::test]
+async fn watched_refresh_reads_current_values_without_collecting() {
+    let (service, control) = service(Scenario::Moved);
+    let snapshot = service.run(None, snapshot_request()).await;
+    let reference = snapshot["nodes"][0]["ref"].as_str().unwrap();
+    let watched = service
+        .run(
+            None,
+            json!({"request_id":"watch","op":"watch",
+        "app":"editor","watch_id":"generation-1","refs":[reference]}),
+        )
+        .await;
+    assert_eq!(watched["complete"], true);
+    let result = service
+        .run(
+            None,
+            json!({"request_id":"get","op":"get",
+        "app":"editor","ref":reference,"query":{"name":"Save"}}),
+        )
+        .await;
+    assert_eq!(result["nodes"][0]["value"], "fresh-value");
+    assert_eq!(control.collections.load(Ordering::SeqCst), 1);
+    let watch = service.watch.lock().unwrap().clone().unwrap();
+    assert!(service.change(
+        &watch,
+        &events::Change {
+            source: app(),
+            reconcile: false,
+            focus: false,
+            scoped: true
+        }
+    ));
+    assert!(!service.change(
+        &watch,
+        &events::Change {
+            source: Handle {
+                bus: "other".into(),
+                path: "/".into()
+            },
+            reconcile: false,
+            focus: false,
+            scoped: true
+        }
+    ));
+    let mismatch = service
+        .run(
+            None,
+            json!({"request_id":"get","op":"get",
+        "app":"editor","ref":reference,"query":{"name":"Other"}}),
+        )
+        .await;
+    assert_eq!(mismatch["error"]["code"], "STALE_REF");
+    service.clear();
+    let stale = service
+        .run(
+            None,
+            json!({"request_id":"get","op":"get",
+        "app":"editor","ref":reference}),
+        )
+        .await;
+    assert_eq!(stale["error"]["code"], "STALE_REF");
+}
+
+#[tokio::test]
+async fn events_prevent_queued_finds_from_reusing_an_old_collection() {
+    let (service, control) = service(Scenario::PausedSnapshot);
+    let request = json!({"request_id":"first","op":"find","app":"editor","query":{"name":"Save"}});
+    let first = {
+        let service = service.clone();
+        let request = request.clone();
+        tokio::spawn(async move { service.run(None, request).await })
+    };
+    control.started.notified().await;
+    let second = {
+        let service = service.clone();
+        tokio::spawn(async move { service.run(None, request).await })
+    };
+    tokio::time::sleep(Duration::from_millis(10)).await;
+    service.invalidate_collection();
+    control.resume.notify_one();
+    let first = first.await.unwrap();
+    let second = second.await.unwrap();
+    assert_eq!(first["complete"], true);
+    assert_eq!(second["error"]["code"], "STALE_REF");
+    assert_eq!(control.collections.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn cancelled_collection_releases_the_coalescing_lock() {
+    let (service, control) = service(Scenario::PausedSnapshot);
+    let (abort, registration) = futures_util::future::AbortHandle::new_pair();
+    service.track("abandoned".into(), abort);
+    let task = {
+        let service = service.clone();
+        tokio::spawn(async move {
+            futures_util::future::Abortable::new(
+                service.run(None, snapshot_request()),
+                registration,
+            )
+            .await
+        })
+    };
+    control.started.notified().await;
+    service.cancel("abandoned");
+    assert!(task.await.unwrap().is_err());
+    control.resume.notify_one();
+    let result = tokio::time::timeout(
+        Duration::from_secs(1),
+        service.run(None, snapshot_request()),
+    )
+    .await
+    .unwrap();
+    assert_eq!(result["complete"], true);
+    assert_eq!(control.collections.load(Ordering::SeqCst), 2);
+}
+
+#[tokio::test]
+async fn structural_events_reconcile_the_query_scope_not_unrelated_toolbars() {
+    let (service, _) = service(Scenario::Normal);
+    let handle = |path: &str| Handle {
+        bus: app().bus,
+        path: path.into(),
+    };
+    let nodes = vec![
+        RawNode {
+            node: Node {
+                role: "frame".into(),
+                ..node("Document")
+            },
+            handle: handle("/frame"),
+            parent: None,
+        },
+        RawNode {
+            node: Node {
+                role: "toolbar".into(),
+                ..node("Tools")
+            },
+            handle: handle("/tools"),
+            parent: Some(0),
+        },
+        RawNode {
+            node: Node {
+                role: "table".into(),
+                ..node("Sheet")
+            },
+            handle: handle("/sheet"),
+            parent: Some(0),
+        },
+        RawNode {
+            node: Node {
+                role: "table_cell".into(),
+                ..node("A1")
+            },
+            handle: handle("/a1"),
+            parent: Some(2),
+        },
+    ];
+    let (_, nodes) = service.store.lock().unwrap().insert(
+        app(),
+        Tree {
+            nodes,
+            complete: true,
+            reasons: BTreeMap::new(),
+        },
+    );
+    let result = service.run(None, json!({"request_id":"watch","op":"watch","app":"editor",
+        "watch_id":"w","refs":[nodes[3].reference],"query":{"path":["frame:Document","table:Sheet"]}})).await;
+    assert_eq!(result["complete"], true);
+    let watch = service.watch.lock().unwrap().clone().unwrap();
+    assert_eq!(watch.scopes, [nodes[2].reference.clone()]);
+    assert!(!service.change(
+        &watch,
+        &events::Change {
+            source: handle("/tools"),
+            reconcile: true,
+            focus: false,
+            scoped: true
+        }
+    ));
+    assert!(service.change(
+        &watch,
+        &events::Change {
+            source: handle("/sheet"),
+            reconcile: true,
+            focus: false,
+            scoped: true
+        }
+    ));
+    assert!(service.change(
+        &watch,
+        &events::Change {
+            source: handle("/frame"),
+            reconcile: true,
+            focus: false,
+            scoped: true
+        }
+    ));
+}
 fn validate_result(result: &Value) {
     let packet = crate::protocol::envelope("s", "a11y.result", result.clone(), Some("request"));
     assert!(crate::protocol::validate(&packet, "s").is_ok());
     assert!(result.get("reasons").is_none());
+}
+
+fn scoped_service(scenario: Scenario) -> (Arc<Service>, Arc<Control>, String) {
+    let (service, control) = service(scenario);
+    let (_, nodes) = service.store.lock().unwrap().insert(app(), tree());
+    let reference = nodes[0].reference.clone();
+    *service.watch.lock().unwrap() = Some(events::Watch {
+        id: "w".into(),
+        app: app(),
+        refs: vec![reference.clone()],
+        request_id: "watch".into(),
+        scopes: vec![],
+        bindings: vec![scoped::Binding {
+            aliases: vec![reference.clone()],
+            app: app(),
+            ancestors: vec![(node("Parent"), app())],
+            target: nodes[0].clone(),
+            handle: app(),
+            position: None,
+        }],
+    });
+    service.store.lock().unwrap().snapshots.clear();
+    (service, control, reference)
+}
+
+#[tokio::test]
+async fn scoped_resolution_replaces_stale_refs_without_a_full_collection() {
+    let (service, control, reference) = scoped_service(Scenario::Normal);
+    let request = json!({"request_id":"read","op":"get","app":"editor",
+        "ref":reference,"query":{"role":"button","name":"Save"}});
+    let result = service.run(None, request.clone()).await;
+    validate_result(&result);
+    assert_eq!(result["complete"], true);
+    assert_eq!(result["nodes"][0]["value"], "scoped-value");
+    assert_ne!(result["nodes"][0]["ref"], reference);
+    assert!(service
+        .store
+        .lock()
+        .unwrap()
+        .get(&reference, &app())
+        .is_err());
+    assert_eq!(
+        service.watch.lock().unwrap().as_ref().unwrap().refs[0],
+        result["nodes"][0]["ref"]
+    );
+    assert_eq!(service.run(None, request).await["complete"], true);
+    assert_eq!(control.scoped_reads.load(Ordering::SeqCst), 2);
+    assert_eq!(control.collections.load(Ordering::SeqCst), 0);
+}
+
+#[tokio::test]
+async fn scoped_ambiguity_absence_identity_change_and_budget_never_publish_success() {
+    for scenario in [
+        Scenario::Ambiguous,
+        Scenario::Empty,
+        Scenario::Moved,
+        Scenario::Incomplete,
+        Scenario::Defunct,
+    ] {
+        let (service, _, reference) = scoped_service(scenario);
+        let result = service
+            .run(
+                None,
+                json!({"request_id":"read","op":"get","app":"editor",
+            "ref":reference,"query":{"name":"Save"}}),
+            )
+            .await;
+        validate_result(&result);
+        assert_eq!(result["complete"], false);
+        assert_eq!(result["nodes"], json!([]));
+        assert_eq!(
+            result["error"]["code"],
+            if matches!(scenario, Scenario::Ambiguous) {
+                "AMBIGUOUS_TARGET"
+            } else {
+                "STALE_REF"
+            }
+        );
+    }
+}
+
+#[tokio::test]
+async fn scoped_result_is_rejected_after_another_structural_invalidation() {
+    let (service, control, reference) = scoped_service(Scenario::PausedRefresh);
+    let pending = {
+        let service = service.clone();
+        tokio::spawn(async move {
+            service
+                .run(
+                    None,
+                    json!({"request_id":"read","op":"get","app":"editor",
+            "ref":reference,"query":{"name":"Save"}}),
+                )
+                .await
+        })
+    };
+    control.started.notified().await;
+    service.store.lock().unwrap().epoch += 1;
+    control.resume.notify_one();
+    assert_eq!(pending.await.unwrap()["error"]["code"], "STALE_REF");
+}
+
+#[test]
+fn scoped_ancestor_recovery_requires_a_unique_role_and_name() {
+    let mut replacement = tree().nodes;
+    replacement[0].handle.path = "/replacement".into();
+    let recovered = scoped::unique_ancestor(replacement, &node("Save"), 0).unwrap();
+    assert_eq!(recovered.handle.path, "/replacement");
+    assert_eq!(recovered.parent, Some(0));
+    let mut ambiguous = tree().nodes;
+    ambiguous.extend(tree().nodes);
+    assert!(matches!(
+        scoped::unique_ancestor(ambiguous, &node("Save"), 0),
+        Err(Error::AmbiguousTarget)
+    ));
+    assert!(matches!(
+        scoped::unique_ancestor(tree().nodes, &node("Other"), 0),
+        Err(Error::StaleRef)
+    ));
 }
 
 struct ConsentContext {

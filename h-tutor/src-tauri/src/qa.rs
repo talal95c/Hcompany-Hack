@@ -115,7 +115,7 @@ pub async fn answer_question(
 
         if call["function"]["name"] == "search" && searches.len() < 2 {
             let (app_name, query) = (s("app_name"), s("query"));
-            crate::emit_status(&format!("Searching {app_name} docs: {query}"));
+            crate::emit_status(&format!("Recherche dans la documentation de {app_name} : {query}"));
             let r = search::run(holo, &app_name, &query).await;
             searches.push(SearchDone { app_name, query, backend: r.backend.clone() });
             sources.extend(r.sources.clone());
@@ -160,5 +160,5 @@ pub async fn answer_question(
         messages.push(json!({ "role": "tool", "tool_call_id": call["id"],
             "content": "No more searches: reply now with what you know and what is on screen." }));
     }
-    Err("Holo did not answer".into())
+    Err("Holo n'a pas répondu".into())
 }

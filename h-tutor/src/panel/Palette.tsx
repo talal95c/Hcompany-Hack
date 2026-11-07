@@ -4,9 +4,9 @@ import { api, type AppIcon, type TutorialSummary } from "./api";
 import { IconClose, IconGrid } from "./icons";
 
 const SOURCE_LABEL: Record<string, string> = {
-  generated: "Generated",
-  recorded: "From a session",
-  youtube: "From YouTube",
+  generated: "Généré",
+  recorded: "Issu d'une session",
+  youtube: "Depuis YouTube",
 };
 
 type Props = {
@@ -103,10 +103,10 @@ export default function Palette({ tutorials, onStart, onClose }: Props) {
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={app ? `Search ${app} tutorials` : "Search tutorials"}
+          placeholder={app ? `Chercher un tuto ${app}` : "Chercher un tuto"}
           spellCheck={false}
         />
-        <button className="tool" onClick={onClose} title="Close (esc)">
+        <button className="tool" onClick={onClose} title="Fermer (esc)">
           <IconClose />
         </button>
       </div>
@@ -134,9 +134,9 @@ export default function Palette({ tutorials, onStart, onClose }: Props) {
         </nav>
 
         <div className="palette__list" ref={listRef}>
-          <div className="group-title">{app ?? (query ? "Results" : "Tutorials")}</div>
+          <div className="group-title">{app ?? (query ? "Résultats" : "Tutos")}</div>
           {results.length === 0 ? (
-            <p className="palette__empty">No tutorial matches. Close and type your goal in the bar: Holo will plan one.</p>
+            <p className="palette__empty">Aucun tuto ne correspond. Ferme et tape ton objectif dans la barre : Holo en préparera un.</p>
           ) : (
             <div className="cards">
               {results.map((t, i) => {
@@ -154,7 +154,7 @@ export default function Palette({ tutorials, onStart, onClose }: Props) {
                     <span className="card__title">{t.title}</span>
                     <span className="card__meta">
                       <Icon app={t.app} size={16} />
-                      {t.app} · {t.milestones} milestones
+                      {t.app} · {t.milestones} étapes
                       {SOURCE_LABEL[t.source] ? ` · ${SOURCE_LABEL[t.source]}` : ""}
                     </span>
                   </motion.button>

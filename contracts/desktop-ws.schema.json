@@ -39,6 +39,8 @@
         "capture.request",
         "a11y.request",
         "a11y.result",
+        "a11y.event",
+        "a11y.cancel",
         "app.focus",
         "highlight.rect"
       ]
@@ -567,6 +569,37 @@
     {
       "properties": {
         "type": {
+          "const": "a11y.cancel"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {"request_id": {"type": "string", "minLength": 1}},
+          "required": ["request_id"],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {"const": "a11y.event"},
+        "payload": {
+          "type": "object",
+          "properties": {
+            "watch_id": {"type": "string", "minLength": 1},
+            "sequence": {"type": "integer", "minimum": 1},
+            "refs": {"type": "array", "maxItems": 64, "items": {"type": "string", "minLength": 1}},
+            "reconcile": {"type": "boolean"},
+            "events_supported": {"type": "boolean"},
+            "scoped": {"type": "boolean"}
+          },
+          "required": ["watch_id", "sequence", "refs", "reconcile", "events_supported"],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {
           "const": "a11y.request"
         },
         "payload": {
@@ -581,7 +614,9 @@
                 "snapshot",
                 "find",
                 "get",
-                "action"
+                "action",
+                "watch",
+                "unwatch"
               ]
             },
             "app": {
@@ -619,6 +654,12 @@
               "minimum": 1,
               "maximum": 64
             },
+            "deadline_ms": {"type": "integer", "minimum": 100, "maximum": 3000},
+            "generation": {"type": "integer", "minimum": 0},
+            "focus_epoch": {"type": "integer", "minimum": 0},
+            "watch_id": {"type": "string", "minLength": 1},
+            "refs": {"type": "array", "maxItems": 64, "uniqueItems": true,
+              "items": {"type": "string", "minLength": 1}},
             "consent_token": {
               "type": "string",
               "minLength": 1
@@ -631,6 +672,14 @@
           ],
           "additionalProperties": false,
           "allOf": [
+            {
+              "if": {"properties": {"op": {"const": "watch"}}},
+              "then": {"required": ["watch_id", "refs"]}
+            },
+            {
+              "if": {"properties": {"op": {"const": "unwatch"}}},
+              "then": {"required": ["watch_id"]}
+            },
             {
               "if": {
                 "properties": {
@@ -720,6 +769,7 @@
         "payload": {
           "type": "object",
           "properties": {
+            "events_supported": {"type": "boolean"},
             "request_id": {
               "type": "string",
               "minLength": 1

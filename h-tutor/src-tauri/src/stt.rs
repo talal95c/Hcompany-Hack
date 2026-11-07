@@ -45,7 +45,7 @@ pub fn listen_stop() {
 
 #[tauri::command]
 pub async fn listen_start(app: AppHandle) -> Result<(), String> {
-    let key = api_key().ok_or("GLADIA_API_KEY is missing from .env")?;
+    let key = api_key().ok_or("La clé GLADIA_API_KEY manque dans .env")?;
     listen_stop();
     let stop = Arc::new(AtomicBool::new(false));
     *CURRENT.lock().unwrap() = Some(stop.clone());
@@ -66,11 +66,11 @@ pub async fn listen_start(app: AppHandle) -> Result<(), String> {
         }))
         .send()
         .await
-        .map_err(|e| format!("Gladia: {e}"))?;
+        .map_err(|e| format!("Gladia : {e}"))?;
     let status = res.status();
-    let body: Value = res.json().await.map_err(|e| format!("Gladia: {e}"))?;
+    let body: Value = res.json().await.map_err(|e| format!("Gladia : {e}"))?;
     if !status.is_success() {
-        return Err(format!("Gladia {status}: {body}"));
+        return Err(format!("Gladia {status} : {body}"));
     }
     let url = body["url"].as_str().ok_or("Gladia : pas d'URL de session")?.to_string();
 
@@ -81,7 +81,7 @@ pub async fn listen_start(app: AppHandle) -> Result<(), String> {
     // 3. Pump audio up and transcripts down.
     let (ws, _) = tokio_tungstenite::connect_async(url.as_str())
         .await
-        .map_err(|e| format!("Gladia WebSocket: {e}"))?;
+        .map_err(|e| format!("WebSocket Gladia : {e}"))?;
     let (mut sink, mut source) = ws.split();
     app.emit_to("main", "stt:state", true).ok();
 
@@ -166,8 +166,8 @@ fn start_mic(tx: mpsc::UnboundedSender<Vec<u8>>, stop: Arc<AtomicBool>) -> Resul
         let setup = || -> Result<cpal::Stream, String> {
             let device = cpal::default_host()
                 .default_input_device()
-                .ok_or("No microphone found")?;
-            let config = device.default_input_config().map_err(|e| format!("Microphone: {e}"))?;
+                .ok_or("Aucun micro trouvé")?;
+            let config = device.default_input_config().map_err(|e| format!("Micro : {e}"))?;
             let channels = config.channels() as usize;
             let rate = config.sample_rate() as f64;
             let mut resampler = Resampler::new(rate, TARGET_RATE as f64, channels, tx);
@@ -187,10 +187,10 @@ fn start_mic(tx: mpsc::UnboundedSender<Vec<u8>>, stop: Arc<AtomicBool>) -> Resul
                     err,
                     None,
                 ),
-                f => return Err(format!("Unsupported microphone format {f:?}")),
+                f => return Err(format!("Format de micro non pris en charge {f:?}")),
             }
-            .map_err(|e| format!("Microphone: {e}"))?;
-            stream.play().map_err(|e| format!("Microphone: {e}"))?;
+            .map_err(|e| format!("Micro : {e}"))?;
+            stream.play().map_err(|e| format!("Micro : {e}"))?;
             Ok(stream)
         };
         match setup() {
@@ -206,7 +206,7 @@ fn start_mic(tx: mpsc::UnboundedSender<Vec<u8>>, stop: Arc<AtomicBool>) -> Resul
             }
         }
     });
-    ready_rx.recv().map_err(|_| "Microphone thread failed".to_string())?
+    ready_rx.recv().map_err(|_| "Le fil du micro a échoué".to_string())?
 }
 
 /// Downmix + linear-interpolation resampling to 16 kHz, batched into PCM16 chunks.

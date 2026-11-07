@@ -85,22 +85,22 @@ impl Tutorial {
     /// Checks ids and references so a bad file fails on load, not mid-session.
     pub fn validate(&self) -> Result<(), String> {
         if self.milestones.is_empty() {
-            return Err(format!("{}: no milestones", self.id));
+            return Err(format!("{} : aucune étape", self.id));
         }
         let ids: HashSet<&str> = self.milestones.iter().map(|m| m.id.as_str()).collect();
         if ids.len() != self.milestones.len() {
-            return Err(format!("{}: duplicate milestone ids", self.id));
+            return Err(format!("{} : identifiants d'étape en double", self.id));
         }
         for m in &self.milestones {
             for r in m.next.iter().chain(&m.requires) {
                 if !ids.contains(r.as_str()) {
-                    return Err(format!("{}: milestone {} references unknown {r}", self.id, m.id));
+                    return Err(format!("{} : l'étape {} référence un identifiant inconnu ({r})", self.id, m.id));
                 }
             }
         }
         if let Some(s) = &self.start {
             if !ids.contains(s.as_str()) {
-                return Err(format!("{}: unknown start {s}", self.id));
+                return Err(format!("{} : point de départ inconnu ({s})", self.id));
             }
         }
         Ok(())
@@ -179,8 +179,8 @@ pub fn list() -> Vec<Summary> {
 
 pub fn load(id: &str) -> Result<Tutorial, String> {
     let path = dir().join(format!("{}.json", slug(id)));
-    let t: Tutorial = serde_json::from_slice(&std::fs::read(&path).map_err(|e| format!("{id}: {e}"))?)
-        .map_err(|e| format!("{id}: invalid tutorial ({e})"))?;
+    let t: Tutorial = serde_json::from_slice(&std::fs::read(&path).map_err(|e| format!("{id} : {e}"))?)
+        .map_err(|e| format!("{id} : tuto invalide ({e})"))?;
     t.validate()?;
     Ok(t)
 }

@@ -400,8 +400,15 @@ class EngineRuntime:
     async def observe_app(self) -> None:
         while True:
             await self.observe_once()
-            await asyncio.sleep(self.config.vision_poll_s if self.adapter is self.vision
-                                else self.config.a11y_poll_s)
+            if self.adapter is self.a11y and self.a11y.events_supported:
+                try:
+                    await asyncio.wait_for(self.a11y.changed.wait(), 4)
+                except TimeoutError:
+                    self.a11y.reconcile = True
+                self.a11y.changed.clear()
+            else:
+                await asyncio.sleep(self.config.vision_poll_s if self.adapter is self.vision
+                                    else self.config.a11y_poll_s)
 
     async def observe_once(self) -> None:
         """Relit l'application via le capteur générique actif puis évalue l'étape."""
@@ -413,6 +420,7 @@ class EngineRuntime:
                 or session.status in {"COMPLETE", "ACTING"}):
             return
         generation, received = session.generation, time.perf_counter()
+        self.a11y.on_generation(generation)
         epoch = getattr(adapter, "focus_epoch", 0)
 
         def current():
@@ -447,6 +455,8 @@ class EngineRuntime:
                 self.a11y.state.verdicts = dict(visual.verdicts)
         async with self.lock:
             await self.evaluate({"type": "heartbeat", "payload": {}, "received_at": received})
+            if self.session and self.session.generation != generation:
+                self.a11y.on_generation(self.session.generation)
 
     async def request_refresh(self) -> None:
         if self.plugin and self.adapter is self.plugin:
@@ -694,6 +704,7 @@ class EngineRuntime:
     async def desktop_message(self, message: dict, connection) -> None:
         kind, payload = message["type"], message["payload"]
         if kind == "hello":
+            self.a11y.can_watch = "a11y.events" in payload.get("capabilities", [])
             self.invalidate_capture()
             await self.send_state(connection)
         elif kind == "ping":
@@ -711,6 +722,8 @@ class EngineRuntime:
             self.select_adapter()
         elif kind == "a11y.result":
             self.a11y.resolve(payload)
+        elif kind == "a11y.event":
+            self.a11y.on_event(payload)
         elif kind == "permissions":
             self.permissions = payload.copy()
             self.a11y.permission = payload["accessibility"]
