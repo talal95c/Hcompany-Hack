@@ -1,0 +1,1690 @@
+{
+  "version": 1,
+  "scenes": [
+    {
+      "id": "calc-00",
+      "app": "calc",
+      "sensor": "accessibility",
+      "image": "calc-00.png",
+      "sha256": "3117d0e76aecf57db52cee07d07a75ae64059c3df7a175408332aa8e8be9067c",
+      "image_size": [
+        1280,
+        776
+      ],
+      "captured_at": "2026-11-07T16:02:16.513733+00:00",
+      "evidence": {
+        "facts": {
+          "cell_has_value": false,
+          "cell_empty": true,
+          "bold": false,
+          "italic": false,
+          "underline": false
+        },
+        "buttons": {
+          "bold": {
+            "role": "toggle button",
+            "name": "Bold",
+            "bounds": [
+              385,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "italic": {
+            "role": "toggle button",
+            "name": "Italic",
+            "bounds": [
+              418,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "underline": {
+            "role": "push button",
+            "name": "Underline",
+            "bounds": [
+              451,
+              116,
+              44,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          }
+        },
+        "cell": "A1",
+        "startup": {
+          "time_to_bus_ms": 1898.9542700001039,
+          "time_to_window_ms": 1898.9550389999295,
+          "app_name": "soffice",
+          "display": ":1",
+          "plugin": "gtk3",
+          "system_python": "3.10.12",
+          "pid": 26856
+        }
+      },
+      "questions": [
+        {
+          "id": "calc-00-cell_empty",
+          "assertion": "La cellule A1 est-elle vide ?",
+          "fact": "cell_empty",
+          "expected": "yes",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        },
+        {
+          "id": "calc-00-cell_has_value",
+          "assertion": "La cellule A1 contient-elle la valeur 424242 ?",
+          "fact": "cell_has_value",
+          "expected": "no",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        }
+      ]
+    },
+    {
+      "id": "calc-01",
+      "app": "calc",
+      "sensor": "accessibility",
+      "image": "calc-01.png",
+      "sha256": "b418616c9930d5818988d359ab682c1e5aac81bb766a457705e9d3fbe9e996e5",
+      "image_size": [
+        1280,
+        776
+      ],
+      "captured_at": "2026-11-07T16:02:22.548422+00:00",
+      "evidence": {
+        "facts": {
+          "cell_has_value": true,
+          "cell_empty": false,
+          "bold": false,
+          "italic": false,
+          "underline": false
+        },
+        "buttons": {
+          "bold": {
+            "role": "toggle button",
+            "name": "Bold",
+            "bounds": [
+              385,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "italic": {
+            "role": "toggle button",
+            "name": "Italic",
+            "bounds": [
+              418,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "underline": {
+            "role": "push button",
+            "name": "Underline",
+            "bounds": [
+              451,
+              116,
+              44,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          }
+        },
+        "cell": "A1",
+        "startup": {
+          "time_to_bus_ms": 1937.7051369999663,
+          "time_to_window_ms": 1937.7059769999505,
+          "app_name": "soffice",
+          "display": ":1",
+          "plugin": "gtk3",
+          "system_python": "3.10.12",
+          "pid": 27072
+        }
+      },
+      "questions": [
+        {
+          "id": "calc-01-cell_has_value",
+          "assertion": "La cellule A1 contient-elle la valeur 424242 ?",
+          "fact": "cell_has_value",
+          "expected": "yes",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        },
+        {
+          "id": "calc-01-bold",
+          "assertion": "Le bouton Gras de la barre d'outils est-il activé ?",
+          "fact": "bold",
+          "expected": "no",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        }
+      ]
+    },
+    {
+      "id": "calc-02",
+      "app": "calc",
+      "sensor": "accessibility",
+      "image": "calc-02.png",
+      "sha256": "077032028e9387852cd6a3092f98bc170c1730c7a280682a1217d5b8e8ff055c",
+      "image_size": [
+        1280,
+        776
+      ],
+      "captured_at": "2026-11-07T16:02:28.673503+00:00",
+      "evidence": {
+        "facts": {
+          "cell_has_value": true,
+          "cell_empty": false,
+          "bold": true,
+          "italic": false,
+          "underline": false
+        },
+        "buttons": {
+          "bold": {
+            "role": "toggle button",
+            "name": "Bold",
+            "bounds": [
+              385,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "checked",
+              "enabled",
+              "focusable",
+              "focused",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "italic": {
+            "role": "toggle button",
+            "name": "Italic",
+            "bounds": [
+              418,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "underline": {
+            "role": "push button",
+            "name": "Underline",
+            "bounds": [
+              451,
+              116,
+              44,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          }
+        },
+        "cell": "A1",
+        "startup": {
+          "time_to_bus_ms": 1918.6990769999284,
+          "time_to_window_ms": 1918.7000110000554,
+          "app_name": "soffice",
+          "display": ":1",
+          "plugin": "gtk3",
+          "system_python": "3.10.12",
+          "pid": 27251
+        }
+      },
+      "questions": [
+        {
+          "id": "calc-02-bold",
+          "assertion": "Le bouton Gras de la barre d'outils est-il activé ?",
+          "fact": "bold",
+          "expected": "yes",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        },
+        {
+          "id": "calc-02-italic",
+          "assertion": "Le bouton Italique de la barre d'outils est-il activé ?",
+          "fact": "italic",
+          "expected": "no",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        }
+      ]
+    },
+    {
+      "id": "calc-03",
+      "app": "calc",
+      "sensor": "accessibility",
+      "image": "calc-03.png",
+      "sha256": "b07b480cefcbb3cd8c20ed59e8d77c097607fb3d8a689ab74c9b49d24acb076a",
+      "image_size": [
+        1280,
+        776
+      ],
+      "captured_at": "2026-11-07T16:02:34.805875+00:00",
+      "evidence": {
+        "facts": {
+          "cell_has_value": true,
+          "cell_empty": false,
+          "bold": false,
+          "italic": true,
+          "underline": false
+        },
+        "buttons": {
+          "bold": {
+            "role": "toggle button",
+            "name": "Bold",
+            "bounds": [
+              385,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "italic": {
+            "role": "toggle button",
+            "name": "Italic",
+            "bounds": [
+              418,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "checked",
+              "enabled",
+              "focusable",
+              "focused",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "underline": {
+            "role": "push button",
+            "name": "Underline",
+            "bounds": [
+              451,
+              116,
+              44,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          }
+        },
+        "cell": "A1",
+        "startup": {
+          "time_to_bus_ms": 1965.4930700000932,
+          "time_to_window_ms": 1965.4943780001304,
+          "app_name": "soffice",
+          "display": ":1",
+          "plugin": "gtk3",
+          "system_python": "3.10.12",
+          "pid": 27453
+        }
+      },
+      "questions": [
+        {
+          "id": "calc-03-italic",
+          "assertion": "Le bouton Italique de la barre d'outils est-il activé ?",
+          "fact": "italic",
+          "expected": "yes",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        },
+        {
+          "id": "calc-03-bold",
+          "assertion": "Le bouton Gras de la barre d'outils est-il activé ?",
+          "fact": "bold",
+          "expected": "no",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        }
+      ]
+    },
+    {
+      "id": "calc-04",
+      "app": "calc",
+      "sensor": "accessibility",
+      "image": "calc-04.png",
+      "sha256": "54c84acf6314a3864108423e1c04a87ed5ad22322a943024dcb10ae6f64193a2",
+      "image_size": [
+        1280,
+        776
+      ],
+      "captured_at": "2026-11-07T16:02:41.069878+00:00",
+      "evidence": {
+        "facts": {
+          "cell_has_value": true,
+          "cell_empty": false,
+          "bold": false,
+          "italic": false,
+          "underline": true
+        },
+        "buttons": {
+          "bold": {
+            "role": "toggle button",
+            "name": "Bold",
+            "bounds": [
+              385,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "italic": {
+            "role": "toggle button",
+            "name": "Italic",
+            "bounds": [
+              418,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "underline": {
+            "role": "push button",
+            "name": "Underline",
+            "bounds": [
+              451,
+              116,
+              44,
+              35
+            ],
+            "states": [
+              "checked",
+              "enabled",
+              "focusable",
+              "focused",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          }
+        },
+        "cell": "A1",
+        "startup": {
+          "time_to_bus_ms": 1905.827539000029,
+          "time_to_window_ms": 1905.8284350001031,
+          "app_name": "soffice",
+          "display": ":1",
+          "plugin": "gtk3",
+          "system_python": "3.10.12",
+          "pid": 27621
+        }
+      },
+      "questions": [
+        {
+          "id": "calc-04-underline",
+          "assertion": "Le bouton Souligné de la barre d'outils est-il activé ?",
+          "fact": "underline",
+          "expected": "yes",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        },
+        {
+          "id": "calc-04-italic",
+          "assertion": "Le bouton Italique de la barre d'outils est-il activé ?",
+          "fact": "italic",
+          "expected": "no",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        }
+      ]
+    },
+    {
+      "id": "calc-05",
+      "app": "calc",
+      "sensor": "accessibility",
+      "image": "calc-05.png",
+      "sha256": "2650ecbabc85fcc3ac427c3ec335e0ec2a35efb479a6f35a1fb73f3fbd14b666",
+      "image_size": [
+        1280,
+        776
+      ],
+      "captured_at": "2026-11-07T16:02:47.121820+00:00",
+      "evidence": {
+        "facts": {
+          "cell_has_value": false,
+          "cell_empty": true,
+          "bold": true,
+          "italic": false,
+          "underline": false
+        },
+        "buttons": {
+          "bold": {
+            "role": "toggle button",
+            "name": "Bold",
+            "bounds": [
+              385,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "checked",
+              "enabled",
+              "focusable",
+              "focused",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "italic": {
+            "role": "toggle button",
+            "name": "Italic",
+            "bounds": [
+              418,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "underline": {
+            "role": "push button",
+            "name": "Underline",
+            "bounds": [
+              451,
+              116,
+              44,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          }
+        },
+        "cell": "A1",
+        "startup": {
+          "time_to_bus_ms": 2287.0279260000643,
+          "time_to_window_ms": 2287.028823000128,
+          "app_name": "soffice",
+          "display": ":1",
+          "plugin": "gtk3",
+          "system_python": "3.10.12",
+          "pid": 27830
+        }
+      },
+      "questions": [
+        {
+          "id": "calc-05-bold",
+          "assertion": "Le bouton Gras de la barre d'outils est-il activé ?",
+          "fact": "bold",
+          "expected": "yes",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        },
+        {
+          "id": "calc-05-cell_has_value",
+          "assertion": "La cellule A1 contient-elle la valeur 424242 ?",
+          "fact": "cell_has_value",
+          "expected": "no",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        }
+      ]
+    },
+    {
+      "id": "calc-06",
+      "app": "calc",
+      "sensor": "accessibility",
+      "image": "calc-06.png",
+      "sha256": "6c78e3062f94b32abde7d6670376b0aaf3426dafd46e2e06b925318d6aa5dd66",
+      "image_size": [
+        1280,
+        776
+      ],
+      "captured_at": "2026-11-07T16:02:53.740093+00:00",
+      "evidence": {
+        "facts": {
+          "cell_has_value": true,
+          "cell_empty": false,
+          "bold": true,
+          "italic": true,
+          "underline": false
+        },
+        "buttons": {
+          "bold": {
+            "role": "toggle button",
+            "name": "Bold",
+            "bounds": [
+              385,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "checked",
+              "enabled",
+              "focusable",
+              "focused",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "italic": {
+            "role": "toggle button",
+            "name": "Italic",
+            "bounds": [
+              418,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "checked",
+              "enabled",
+              "focusable",
+              "focused",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "underline": {
+            "role": "push button",
+            "name": "Underline",
+            "bounds": [
+              451,
+              116,
+              44,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          }
+        },
+        "cell": "A1",
+        "startup": {
+          "time_to_bus_ms": 2210.2977519998603,
+          "time_to_window_ms": 2210.2987619998657,
+          "app_name": "soffice",
+          "display": ":1",
+          "plugin": "gtk3",
+          "system_python": "3.10.12",
+          "pid": 27998
+        }
+      },
+      "questions": [
+        {
+          "id": "calc-06-bold",
+          "assertion": "Le bouton Gras de la barre d'outils est-il activé ?",
+          "fact": "bold",
+          "expected": "yes",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        },
+        {
+          "id": "calc-06-underline",
+          "assertion": "Le bouton Souligné de la barre d'outils est-il activé ?",
+          "fact": "underline",
+          "expected": "no",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        }
+      ]
+    },
+    {
+      "id": "calc-07",
+      "app": "calc",
+      "sensor": "accessibility",
+      "image": "calc-07.png",
+      "sha256": "b6cab72f4e068e9f6a4c3abbbf9fa4d558d97a13b38667358cf1f10d1d0dce08",
+      "image_size": [
+        1280,
+        776
+      ],
+      "captured_at": "2026-11-07T16:03:00.050234+00:00",
+      "evidence": {
+        "facts": {
+          "cell_has_value": true,
+          "cell_empty": false,
+          "bold": true,
+          "italic": false,
+          "underline": true
+        },
+        "buttons": {
+          "bold": {
+            "role": "toggle button",
+            "name": "Bold",
+            "bounds": [
+              385,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "checked",
+              "enabled",
+              "focusable",
+              "focused",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "italic": {
+            "role": "toggle button",
+            "name": "Italic",
+            "bounds": [
+              418,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "underline": {
+            "role": "push button",
+            "name": "Underline",
+            "bounds": [
+              451,
+              116,
+              44,
+              35
+            ],
+            "states": [
+              "checked",
+              "enabled",
+              "focusable",
+              "focused",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          }
+        },
+        "cell": "A1",
+        "startup": {
+          "time_to_bus_ms": 2056.9066909999947,
+          "time_to_window_ms": 2056.9075759999578,
+          "app_name": "soffice",
+          "display": ":1",
+          "plugin": "gtk3",
+          "system_python": "3.10.12",
+          "pid": 28209
+        }
+      },
+      "questions": [
+        {
+          "id": "calc-07-underline",
+          "assertion": "Le bouton Souligné de la barre d'outils est-il activé ?",
+          "fact": "underline",
+          "expected": "yes",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        },
+        {
+          "id": "calc-07-italic",
+          "assertion": "Le bouton Italique de la barre d'outils est-il activé ?",
+          "fact": "italic",
+          "expected": "no",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        }
+      ]
+    },
+    {
+      "id": "calc-08",
+      "app": "calc",
+      "sensor": "accessibility",
+      "image": "calc-08.png",
+      "sha256": "2381b0b057824e733a763dba66b69342033d68029f262d7e34c3a141f2e0c723",
+      "image_size": [
+        1280,
+        776
+      ],
+      "captured_at": "2026-11-07T16:03:06.880619+00:00",
+      "evidence": {
+        "facts": {
+          "cell_has_value": true,
+          "cell_empty": false,
+          "bold": false,
+          "italic": true,
+          "underline": true
+        },
+        "buttons": {
+          "bold": {
+            "role": "toggle button",
+            "name": "Bold",
+            "bounds": [
+              385,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "enabled",
+              "focusable",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "italic": {
+            "role": "toggle button",
+            "name": "Italic",
+            "bounds": [
+              418,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "checked",
+              "enabled",
+              "focusable",
+              "focused",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "underline": {
+            "role": "push button",
+            "name": "Underline",
+            "bounds": [
+              451,
+              116,
+              44,
+              35
+            ],
+            "states": [
+              "checked",
+              "enabled",
+              "focusable",
+              "focused",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          }
+        },
+        "cell": "A1",
+        "startup": {
+          "time_to_bus_ms": 2330.0066369999968,
+          "time_to_window_ms": 2330.007447999833,
+          "app_name": "soffice",
+          "display": ":1",
+          "plugin": "gtk3",
+          "system_python": "3.10.12",
+          "pid": 28414
+        }
+      },
+      "questions": [
+        {
+          "id": "calc-08-italic",
+          "assertion": "Le bouton Italique de la barre d'outils est-il activé ?",
+          "fact": "italic",
+          "expected": "yes",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        },
+        {
+          "id": "calc-08-bold",
+          "assertion": "Le bouton Gras de la barre d'outils est-il activé ?",
+          "fact": "bold",
+          "expected": "no",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        }
+      ]
+    },
+    {
+      "id": "calc-09",
+      "app": "calc",
+      "sensor": "accessibility",
+      "image": "calc-09.png",
+      "sha256": "101a47f266a3602bcb1667e1797c9546208ce0bc9766f6ad27f5d077d6beeb95",
+      "image_size": [
+        1280,
+        776
+      ],
+      "captured_at": "2026-11-07T16:03:13.806405+00:00",
+      "evidence": {
+        "facts": {
+          "cell_has_value": true,
+          "cell_empty": false,
+          "bold": true,
+          "italic": true,
+          "underline": true
+        },
+        "buttons": {
+          "bold": {
+            "role": "toggle button",
+            "name": "Bold",
+            "bounds": [
+              385,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "checked",
+              "enabled",
+              "focusable",
+              "focused",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "italic": {
+            "role": "toggle button",
+            "name": "Italic",
+            "bounds": [
+              418,
+              116,
+              33,
+              35
+            ],
+            "states": [
+              "checked",
+              "enabled",
+              "focusable",
+              "focused",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          },
+          "underline": {
+            "role": "push button",
+            "name": "Underline",
+            "bounds": [
+              451,
+              116,
+              44,
+              35
+            ],
+            "states": [
+              "checked",
+              "enabled",
+              "focusable",
+              "focused",
+              "sensitive",
+              "showing",
+              "visible"
+            ]
+          }
+        },
+        "cell": "A1",
+        "startup": {
+          "time_to_bus_ms": 2345.122253999989,
+          "time_to_window_ms": 2345.123393999984,
+          "app_name": "soffice",
+          "display": ":1",
+          "plugin": "gtk3",
+          "system_python": "3.10.12",
+          "pid": 28582
+        }
+      },
+      "questions": [
+        {
+          "id": "calc-09-italic",
+          "assertion": "Le bouton Italique de la barre d'outils est-il activé ?",
+          "fact": "italic",
+          "expected": "yes",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        },
+        {
+          "id": "calc-09-cell_empty",
+          "assertion": "La cellule A1 est-elle vide ?",
+          "fact": "cell_empty",
+          "expected": "no",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 1000,
+            "h": 450
+          }
+        }
+      ]
+    },
+    {
+      "id": "blender-00",
+      "app": "blender",
+      "sensor": "bpy",
+      "image": "blender-00.png",
+      "sha256": "01f9cbaf9abc8a424d9ca1b6478648bb7ae4b8567b609d2b494fd2ccd46ebd22",
+      "image_size": [
+        1280,
+        800
+      ],
+      "captured_at": "2026-11-07T16:03:19.329406+00:00",
+      "evidence": {
+        "facts": {
+          "has_cube": true,
+          "has_torus": false,
+          "has_sphere": false,
+          "empty_scene": false,
+          "editing": false,
+          "modifier_panel": false,
+          "two_meshes": false,
+          "cube_scaled": false,
+          "sidebar": false
+        },
+        "mode": "OBJECT",
+        "objects": [
+          {
+            "name": "Cube",
+            "type": "MESH",
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "version": "4.5.9 LTS",
+        "window_size": [
+          1600,
+          1000
+        ]
+      },
+      "questions": [
+        {
+          "id": "blender-00-has_cube",
+          "assertion": "Un cube est-il présent dans la scène ?",
+          "fact": "has_cube",
+          "expected": "yes"
+        },
+        {
+          "id": "blender-00-has_torus",
+          "assertion": "Un tore est-il présent dans la scène ?",
+          "fact": "has_torus",
+          "expected": "no"
+        }
+      ]
+    },
+    {
+      "id": "blender-01",
+      "app": "blender",
+      "sensor": "bpy",
+      "image": "blender-01.png",
+      "sha256": "43ac0ed4786f971b4f96074cccdd3771a09071a8efd7a68a7dcef7f84b20b08c",
+      "image_size": [
+        1280,
+        800
+      ],
+      "captured_at": "2026-11-07T16:03:22.391012+00:00",
+      "evidence": {
+        "facts": {
+          "has_cube": false,
+          "has_torus": false,
+          "has_sphere": false,
+          "empty_scene": true,
+          "editing": false,
+          "modifier_panel": false,
+          "two_meshes": false,
+          "cube_scaled": false,
+          "sidebar": false
+        },
+        "mode": "OBJECT",
+        "objects": [],
+        "version": "4.5.9 LTS",
+        "window_size": [
+          1600,
+          1000
+        ]
+      },
+      "questions": [
+        {
+          "id": "blender-01-empty_scene",
+          "assertion": "La scène est-elle vide de tout objet ?",
+          "fact": "empty_scene",
+          "expected": "yes"
+        },
+        {
+          "id": "blender-01-has_cube",
+          "assertion": "Un cube est-il présent dans la scène ?",
+          "fact": "has_cube",
+          "expected": "no"
+        }
+      ]
+    },
+    {
+      "id": "blender-02",
+      "app": "blender",
+      "sensor": "bpy",
+      "image": "blender-02.png",
+      "sha256": "549a6b63e2ec6371cecd290fc8d55f1bd30ba1c12d244a8afb38ded9edef3a2c",
+      "image_size": [
+        1280,
+        800
+      ],
+      "captured_at": "2026-11-07T16:03:25.614332+00:00",
+      "evidence": {
+        "facts": {
+          "has_cube": false,
+          "has_torus": true,
+          "has_sphere": false,
+          "empty_scene": false,
+          "editing": false,
+          "modifier_panel": false,
+          "two_meshes": false,
+          "cube_scaled": false,
+          "sidebar": false
+        },
+        "mode": "OBJECT",
+        "objects": [
+          {
+            "name": "Torus",
+            "type": "MESH",
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "version": "4.5.9 LTS",
+        "window_size": [
+          1600,
+          1000
+        ]
+      },
+      "questions": [
+        {
+          "id": "blender-02-has_torus",
+          "assertion": "Un tore est-il présent dans la scène ?",
+          "fact": "has_torus",
+          "expected": "yes"
+        },
+        {
+          "id": "blender-02-has_cube",
+          "assertion": "Un cube est-il présent dans la scène ?",
+          "fact": "has_cube",
+          "expected": "no"
+        }
+      ]
+    },
+    {
+      "id": "blender-03",
+      "app": "blender",
+      "sensor": "bpy",
+      "image": "blender-03.png",
+      "sha256": "7e7db2308e0e5732c079d1303551016a586dfa01508647b4b93b108583c52803",
+      "image_size": [
+        1280,
+        800
+      ],
+      "captured_at": "2026-11-07T16:03:28.933836+00:00",
+      "evidence": {
+        "facts": {
+          "has_cube": false,
+          "has_torus": false,
+          "has_sphere": true,
+          "empty_scene": false,
+          "editing": false,
+          "modifier_panel": false,
+          "two_meshes": false,
+          "cube_scaled": false,
+          "sidebar": false
+        },
+        "mode": "OBJECT",
+        "objects": [
+          {
+            "name": "Sphere",
+            "type": "MESH",
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "version": "4.5.9 LTS",
+        "window_size": [
+          1600,
+          1000
+        ]
+      },
+      "questions": [
+        {
+          "id": "blender-03-has_sphere",
+          "assertion": "Une sphère est-elle présente dans la scène ?",
+          "fact": "has_sphere",
+          "expected": "yes"
+        },
+        {
+          "id": "blender-03-has_torus",
+          "assertion": "Un tore est-il présent dans la scène ?",
+          "fact": "has_torus",
+          "expected": "no"
+        }
+      ]
+    },
+    {
+      "id": "blender-04",
+      "app": "blender",
+      "sensor": "bpy",
+      "image": "blender-04.png",
+      "sha256": "cf774372580747edd8850a6999e95e968fca2ae5614178a52ed470f47bbc5b09",
+      "image_size": [
+        1280,
+        800
+      ],
+      "captured_at": "2026-11-07T16:03:32.227152+00:00",
+      "evidence": {
+        "facts": {
+          "has_cube": true,
+          "has_torus": false,
+          "has_sphere": false,
+          "empty_scene": false,
+          "editing": true,
+          "modifier_panel": false,
+          "two_meshes": false,
+          "cube_scaled": false,
+          "sidebar": false
+        },
+        "mode": "EDIT_MESH",
+        "objects": [
+          {
+            "name": "Cube",
+            "type": "MESH",
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "version": "4.5.9 LTS",
+        "window_size": [
+          1600,
+          1000
+        ]
+      },
+      "questions": [
+        {
+          "id": "blender-04-editing",
+          "assertion": "L'objet actif est-il en mode Édition ?",
+          "fact": "editing",
+          "expected": "yes"
+        },
+        {
+          "id": "blender-04-has_torus",
+          "assertion": "Un tore est-il présent dans la scène ?",
+          "fact": "has_torus",
+          "expected": "no"
+        }
+      ]
+    },
+    {
+      "id": "blender-05",
+      "app": "blender",
+      "sensor": "bpy",
+      "image": "blender-05.png",
+      "sha256": "e9ee90d4c5c8a3bec034ee0606f01b97e73b1d12b38204605018d5e2aea20e3f",
+      "image_size": [
+        1280,
+        800
+      ],
+      "captured_at": "2026-11-07T16:03:35.497104+00:00",
+      "evidence": {
+        "facts": {
+          "has_cube": false,
+          "has_torus": true,
+          "has_sphere": false,
+          "empty_scene": false,
+          "editing": true,
+          "modifier_panel": false,
+          "two_meshes": false,
+          "cube_scaled": false,
+          "sidebar": false
+        },
+        "mode": "EDIT_MESH",
+        "objects": [
+          {
+            "name": "Torus.001",
+            "type": "MESH",
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "version": "4.5.9 LTS",
+        "window_size": [
+          1600,
+          1000
+        ]
+      },
+      "questions": [
+        {
+          "id": "blender-05-editing",
+          "assertion": "L'objet actif est-il en mode Édition ?",
+          "fact": "editing",
+          "expected": "yes"
+        },
+        {
+          "id": "blender-05-has_cube",
+          "assertion": "Un cube est-il présent dans la scène ?",
+          "fact": "has_cube",
+          "expected": "no"
+        }
+      ]
+    },
+    {
+      "id": "blender-06",
+      "app": "blender",
+      "sensor": "bpy",
+      "image": "blender-06.png",
+      "sha256": "b76fe445520ae40a1672761521dbd406c84a07bedb5052dd43c965763e33b9db",
+      "image_size": [
+        1280,
+        800
+      ],
+      "captured_at": "2026-11-07T16:03:38.742851+00:00",
+      "evidence": {
+        "facts": {
+          "has_cube": true,
+          "has_torus": false,
+          "has_sphere": false,
+          "empty_scene": false,
+          "editing": false,
+          "modifier_panel": true,
+          "two_meshes": false,
+          "cube_scaled": false,
+          "sidebar": false
+        },
+        "mode": "OBJECT",
+        "objects": [
+          {
+            "name": "Cube",
+            "type": "MESH",
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "version": "4.5.9 LTS",
+        "window_size": [
+          1600,
+          1000
+        ]
+      },
+      "questions": [
+        {
+          "id": "blender-06-modifier_panel",
+          "assertion": "L'onglet Modificateurs est-il ouvert dans l'éditeur de propriétés ?",
+          "fact": "modifier_panel",
+          "expected": "yes"
+        },
+        {
+          "id": "blender-06-editing",
+          "assertion": "L'objet actif est-il en mode Édition ?",
+          "fact": "editing",
+          "expected": "no"
+        }
+      ]
+    },
+    {
+      "id": "blender-07",
+      "app": "blender",
+      "sensor": "bpy",
+      "image": "blender-07.png",
+      "sha256": "76964f49e5e2583176bc013f557233fd6f6307ef03566c3c374e176504374399",
+      "image_size": [
+        1280,
+        800
+      ],
+      "captured_at": "2026-11-07T16:03:42.261141+00:00",
+      "evidence": {
+        "facts": {
+          "has_cube": true,
+          "has_torus": true,
+          "has_sphere": false,
+          "empty_scene": false,
+          "editing": false,
+          "modifier_panel": false,
+          "two_meshes": true,
+          "cube_scaled": false,
+          "sidebar": false
+        },
+        "mode": "OBJECT",
+        "objects": [
+          {
+            "name": "Cube",
+            "type": "MESH",
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "name": "Torus.002",
+            "type": "MESH",
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "version": "4.5.9 LTS",
+        "window_size": [
+          1600,
+          1000
+        ]
+      },
+      "questions": [
+        {
+          "id": "blender-07-two_meshes",
+          "assertion": "La scène contient-elle exactement deux objets maillages ?",
+          "fact": "two_meshes",
+          "expected": "yes"
+        },
+        {
+          "id": "blender-07-empty_scene",
+          "assertion": "La scène est-elle vide de tout objet ?",
+          "fact": "empty_scene",
+          "expected": "no"
+        }
+      ]
+    },
+    {
+      "id": "blender-08",
+      "app": "blender",
+      "sensor": "bpy",
+      "image": "blender-08.png",
+      "sha256": "cde6e1cfd94d41d6d0cd1caae7f47f9cd0adca3f836a574bf6b7077090403666",
+      "image_size": [
+        1280,
+        800
+      ],
+      "captured_at": "2026-11-07T16:03:45.626088+00:00",
+      "evidence": {
+        "facts": {
+          "has_cube": true,
+          "has_torus": false,
+          "has_sphere": false,
+          "empty_scene": false,
+          "editing": false,
+          "modifier_panel": false,
+          "two_meshes": false,
+          "cube_scaled": true,
+          "sidebar": false
+        },
+        "mode": "OBJECT",
+        "objects": [
+          {
+            "name": "Cube",
+            "type": "MESH",
+            "scale": [
+              2.0,
+              2.0,
+              2.0
+            ]
+          }
+        ],
+        "version": "4.5.9 LTS",
+        "window_size": [
+          1600,
+          1000
+        ]
+      },
+      "questions": [
+        {
+          "id": "blender-08-has_cube",
+          "assertion": "Un cube est-il présent dans la scène ?",
+          "fact": "has_cube",
+          "expected": "yes"
+        },
+        {
+          "id": "blender-08-has_sphere",
+          "assertion": "Une sphère est-elle présente dans la scène ?",
+          "fact": "has_sphere",
+          "expected": "no"
+        }
+      ]
+    },
+    {
+      "id": "blender-09",
+      "app": "blender",
+      "sensor": "bpy",
+      "image": "blender-09.png",
+      "sha256": "e8ea96e841dbeef8560c461451821d3de830b4c5eebe764fb204ec7e6d50ce07",
+      "image_size": [
+        1280,
+        800
+      ],
+      "captured_at": "2026-11-07T16:03:48.902997+00:00",
+      "evidence": {
+        "facts": {
+          "has_cube": true,
+          "has_torus": false,
+          "has_sphere": false,
+          "empty_scene": false,
+          "editing": false,
+          "modifier_panel": false,
+          "two_meshes": false,
+          "cube_scaled": false,
+          "sidebar": true
+        },
+        "mode": "OBJECT",
+        "objects": [
+          {
+            "name": "Cube",
+            "type": "MESH",
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "version": "4.5.9 LTS",
+        "window_size": [
+          1600,
+          1000
+        ]
+      },
+      "questions": [
+        {
+          "id": "blender-09-sidebar",
+          "assertion": "Le panneau latéral Item/Transform est-il ouvert à droite de la vue 3D ?",
+          "fact": "sidebar",
+          "expected": "yes"
+        },
+        {
+          "id": "blender-09-editing",
+          "assertion": "L'objet actif est-il en mode Édition ?",
+          "fact": "editing",
+          "expected": "no"
+        }
+      ]
+    }
+  ]
+}
