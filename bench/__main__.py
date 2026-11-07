@@ -4,7 +4,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from bench import a11y, addon, gladia, holo, jev, verify
+from bench import a11y, addon, gladia, holo, jev, pointer, verify
 from bench.common import write_report
 
 
@@ -19,6 +19,7 @@ SUITES: dict[str, Callable] = {
     "gladia": gladia.run,
     "a11y": a11y.run,
     "verify": verify.run,
+    "pointer": pointer.run,
 }
 
 
@@ -37,7 +38,7 @@ def main() -> None:
     parser.add_argument("--max-depth", type=int, default=12)
     parser.add_argument("--restart-each-iteration", action="store_true")
     parser.add_argument("--vcl-plugin", choices=["gtk3", "gen"], default="gtk3")
-    parser.add_argument("--repeats", type=int, default=2)
+    parser.add_argument("--repeats", type=int, default=None)
     parser.add_argument("--reuse-assets", action="store_true")
     args = parser.parse_args()
     names = list(SUITES) if args.suite == "all" else [args.suite]
@@ -58,8 +59,15 @@ def main() -> None:
                     "out": args.out,
                     "blender": args.blender,
                     "models": args.models or ["holo4-27b"],
-                    "repeats": args.repeats,
+                    "repeats": args.repeats if args.repeats is not None else 2,
                     "reuse_assets": args.reuse_assets,
+                    "timeout": args.timeout or 30,
+                }
+            elif name == "pointer":
+                options = {
+                    "out": args.out,
+                    "models": args.models or ["holo4-27b"],
+                    "repeats": args.repeats if args.repeats is not None else 3,
                     "timeout": args.timeout or 30,
                 }
             elif name == "jev":
@@ -85,7 +93,7 @@ def main() -> None:
         except (OSError, ValueError, RuntimeError, TimeoutError) as exc:
             parser.exit(1, f"Erreur benchmark : {exc}\n")
         print(write_report(name, report, args.out))
-        if name in ("a11y", "verify") and report["summary"]["failures"]:
+        if name in ("a11y", "verify", "pointer") and report["summary"]["failures"]:
             parser.exit(1, "Échecs conservés dans le rapport.\n")
 
 

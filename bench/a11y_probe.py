@@ -319,7 +319,65 @@ class Probe:
         if len(identifiers) != 1:
             raise RuntimeError("ambiguous_capture_window")
         subprocess.run(["import", "-window", identifiers[0], path], check=True, timeout=10)
-        return {"window_id": identifiers[0]}
+        geometry = subprocess.check_output(
+            ["xdotool", "getwindowgeometry", "--shell", identifiers[0]], text=True, timeout=5
+        )
+        fields = dict(line.split("=", 1) for line in geometry.splitlines() if "=" in line)
+        return {
+            "window_id": identifiers[0],
+            "bounds": [int(fields[key]) for key in ("X", "Y", "WIDTH", "HEIGHT")],
+        }
+
+    def click_toggle(self, name, x, y):
+        names = ("Bold", "Italic", "Underline")
+        if name not in names:
+            raise ValueError("unsupported_toggle")
+
+        def states():
+            result = {}
+            for target in names:
+                button = self.find(target)
+                if button is None:
+                    raise RuntimeError("toggle_unavailable")
+                result[target] = any(s in button["states"] for s in ("checked", "pressed"))
+            return result
+
+        before = states()
+        subprocess.run(
+            ["xdotool", "mousemove", "--sync", str(x), str(y), "click", "1"],
+            check=True,
+            timeout=5,
+            stdout=subprocess.DEVNULL,
+        )
+        time.sleep(0.3)
+        after = states()
+        subprocess.run(
+            ["xdotool", "key", "--clearmodifiers", "Escape", "Escape"],
+            check=True,
+            timeout=5,
+            stdout=subprocess.DEVNULL,
+        )
+        for target in names:
+            if states()[target] != before[target]:
+                for node, _ in self.walk(skip_tables=True):
+                    if node.name == target and node.getRoleName() in (
+                        "push button",
+                        "toggle button",
+                    ):
+                        if not node.queryAction().doAction(0):
+                            raise RuntimeError("toggle_restore_failed")
+                        break
+        time.sleep(0.2)
+        restored = states()
+        if restored != before:
+            raise RuntimeError("toggle_restore_failed")
+        expected = {**before, name: not before[name]}
+        return {
+            "before": before,
+            "after": after,
+            "restored": restored,
+            "success": after == expected,
+        }
 
     def dispatch(self, request):
         op = request["op"]
@@ -350,6 +408,7 @@ class Probe:
                 "configure_cell",
                 "verify_cell_state",
                 "capture",
+                "click_toggle",
             }
             else None
         )

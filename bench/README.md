@@ -14,8 +14,45 @@ ruff check .
 ```
 
 `live` est ignoré par défaut ; `-m live` ou `BENCH_LIVE=1` l'active.
-Les six suites sont disponibles ; `all` les exécute successivement avec leurs clés.
+Les sept suites sont disponibles ; `all` les exécute successivement avec leurs clés.
 Options addon : `--blender /opt/blender/blender`, `--timeout 60`, `--operations 50`.
+
+## Pointeurs Calc
+
+```sh
+python -m bench pointer
+python -m bench pointer --models holo4-27b holo4-35b-a3b --repeats 3
+pytest -q bench/tests -m live -k pointer
+```
+
+Même environnement privé et dépendances que `a11y`/`verify`, clé `HAI_API_KEY`.
+Neuf contrôles exposés par Calc : Gras, Italique, Souligné, alignement horizontal
+centré, tri ascendant, graphique, choix de fonction, retour à la ligne et fusion
+sans centrage. Descriptions françaises/anglaises enregistrées, jamais le seul
+nom accessible. Trois répétitions par défaut : 27 recherches AT-SPI et 27 appels
+Holo, modèle `holo4-27b`. Client de localisation, schéma, thinking désactivé,
+pacing et retries réutilisés de `bench.holo` sans modification.
+
+Capture fraîche de la fenêtre par cible/répétition, utilisée pour les deux
+méthodes ; géométrie et bounds relus avant toute évaluation/clic. Capture PNG
+réduite, origine et dimensions physiques originales conservées : millièmes =
+1000 × (point écran − origine fenêtre) / dimensions originales. Conversion
+inverse et arrondi au pixel pour le clic ; aucune multiplication DPI.
+
+Le hit géométrique seul est auto-référencé pour AT-SPI. Sur les trois contrôles
+de formatage, **chaque méthode clique réellement** avec xdotool ; la lecture
+AT-SPI doit montrer exactement l'inversion attendue sans changement des deux
+autres contrôles. Les états initiaux sont ensuite restaurés et relus. Le taux
+fonctionnel utilise tous ces essais, même un pointeur absent ; les six autres
+contrôles ne sont pas cliqués (pas de prétendue validation fonctionnelle).
+
+`pointer_assets/` conserve captures, SHA-256, géométries, noms et prompts ;
+`pointer-calls.jsonl` conserve chaque point, bounds, preuves avant/après/restaurées,
+requêtes HTTP et latences. Distances p50/p95 en pixels physiques. Latence AT-SPI :
+recherche + conversion, IPC/client système inclus ; Holo : dernière tentative
+HTTP, séparée du mur incluant pacing/retries. Capture et clic hors latence de
+localisation. Miss/clic sans effet = résultat incorrect ; erreur HTTP/parse =
+échec. Les limites du dataset synthétique et de l'auto-référence restent visibles.
 
 ## Assertions visuelles Holo
 
