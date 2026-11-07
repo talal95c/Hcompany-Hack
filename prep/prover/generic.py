@@ -21,6 +21,7 @@ from typing import Any, Protocol
 
 from engine.services.errors import ServiceError
 from engine.services.protocols import ActTurn, HoloAction
+from prep.apps import GENERIC_CHECKS
 from prep.prover.checks import evaluate_check
 from prep.prover.planner import Mode, next_mode
 from prep.repair import write_repair_request
@@ -138,7 +139,7 @@ async def completion_check(
     verdict = await evaluate_check(step["check"], sandbox, operator, wait_for_pass=False)
     if verdict["result"] != "pass":
         return verdict
-    if step["check"]["name"] == "visual_assert":
+    if step["check"]["name"] not in GENERIC_CHECKS or step["check"]["name"] == "visual_assert":
         dialogs = await visual_dialogs(sandbox, operator)
     else:
         snapshot = await sandbox.snapshot()
@@ -183,13 +184,16 @@ async def drive_step(
 ) -> dict[str, Any]:
     """Boucle computer use ; s'arrête dès que le check d'état devient vrai."""
     check = step["check"]
-    accessible = check["name"] != "visual_assert"
+    accessible = check["name"] in GENERIC_CHECKS and check["name"] != "visual_assert"
     goal = f"{step['instruction']} Target: {step['target']['description']}."
     history: list[ActTurn] = []
     turns: list[dict[str, Any]] = []
     verdict: dict[str, Any] = {"result": "unknown", "reason": "aucune action"}
     # Étape visuelle : aucune requête d'accessibilité pendant l'étape (arbre parfois instable).
     baseline = (await sandbox.snapshot()).get("windows", []) if accessible else None
+    prepare = getattr(sandbox, "prepare_step", None)
+    if prepare is not None:
+        context = f"{context}\n{await prepare(check)}"
     dialog_open = False
     for turn in range(max_turns):
         image = await sandbox.screenshot()
@@ -223,12 +227,16 @@ async def drive_step(
         await sandbox.execute(action.native(), image_size=size)
         await asyncio.sleep(DIALOG_SETTLE_SECONDS if dialog_open else 0.8)
         history.append(ActTurn(action, "executed"))
-        if accessible:
+        if accessible or check["name"] not in GENERIC_CHECKS:
             verdict = await evaluate_check(check, sandbox, operator, wait_for_pass=False)
             record["check_after_action"] = verdict["result"]
             dialog_open = False
             if verdict["result"] == "pass":
-                dialogs = open_dialogs(await sandbox.snapshot(), baseline)
+                dialogs = (
+                    open_dialogs(await sandbox.snapshot(), baseline)
+                    if accessible
+                    else await visual_dialogs(sandbox, operator)
+                )
                 if not dialogs:
                     break
                 dialog_open = True
@@ -352,7 +360,7 @@ async def prove_generic_lesson(
                 await sandbox.open(checkpoint, sha256=None)
                 baseline = (
                     (await sandbox.snapshot()).get("windows", [])
-                    if check["name"] != "visual_assert"
+                    if check["name"] in GENERIC_CHECKS and check["name"] != "visual_assert"
                     else None
                 )
                 verified = await verify_checkpoint(step, sandbox, operator, output, baseline)
@@ -473,7 +481,9 @@ async def _execute(
     method = f"holo_sandbox+{sensor}"
     await sandbox.open(checkpoint, sha256=checkpoint_sha)
     baseline = (
-        (await sandbox.snapshot()).get("windows", []) if check["name"] != "visual_assert" else None
+        (await sandbox.snapshot()).get("windows", [])
+        if check["name"] in GENERIC_CHECKS and check["name"] != "visual_assert"
+        else None
     )
     before = await sandbox.screenshot()
     (proof_dir / f"{step_id}-before.png").write_bytes(before)

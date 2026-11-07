@@ -66,7 +66,7 @@ class HoloDesktopAgent:
 
     async def _quota_retry(self, operation: str, call: Any) -> Any:
         """Réessaie un 429 (quota partagé) avec attente croissante, borné à 3 essais."""
-        for attempt, delay in enumerate((5.0, 15.0, 0.0)):
+        for attempt, delay in enumerate((30.0, 60.0, 0.0)):
             try:
                 return await call()
             except (RateLimitError, QuotaExceeded) as exc:

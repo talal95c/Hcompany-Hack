@@ -5,12 +5,14 @@ import json
 import os
 import shutil
 from pathlib import Path
+from statistics import median
 
 import jsonschema
 import pytest
 
 from prep.__main__ import parser, prepare
 from prep.apps import get_profile
+from tests.prep.ods_assertions import assert_tutorial_ods
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = Path(__file__).with_name("fixtures") / "calc"
@@ -62,12 +64,10 @@ async def test_live_calc_tutorial_to_proven_lesson(tmp_path):
     jsonschema.validate(lesson, json.loads((ROOT / "contracts/lesson.schema.json").read_text()))
     assert lesson["status"] == "proven" and lesson["app"]["id"] == "libreoffice-calc"
     assert len(lesson["steps"]) == 3
-    assert {s["check"]["name"] for s in lesson["steps"]} <= {
-        "element_exists",
-        "element_value",
-        "element_state",
-        "window_title",
-        "visual_assert",
+    assert {s["check"]["name"] for s in lesson["steps"]} == {
+        "calc.cell_formula",
+        "calc.range_bold",
+        "calc.chart_source",
     }
     manifest = json.loads((out / "proof/manifest.json").read_text())
     for path, digest in manifest["artifacts_sha256"].items():
@@ -78,6 +78,27 @@ async def test_live_calc_tutorial_to_proven_lesson(tmp_path):
         assert evidence["attempts"][-1]["check"]["result"] == "pass"
     timings = json.loads((out / "timings.json").read_text())
     assert timings["holo_operator"] and timings["sandbox"]
+    last = lesson["steps"][-1]["id"]
+    saved = out / f"proof/{last}-checkpoint.ods"
+    for snippet in assert_tutorial_ods(saved):
+        print(snippet)
+    holo = [item["duration"] for item in timings["holo_operator"] if "duration" in item]
+    atspi = [
+        item["duration"] for item in timings["sandbox"] if item["operation"] == "a11y_snapshot"
+    ]
+    print("Calc artifact:", saved)
+    print(
+        "Calc measured latencies (s):",
+        json.dumps(
+            {
+                "total": timings["total"],
+                "compile": timings["compile"],
+                "prove": timings["prove"],
+                "holo_median": median(holo),
+                "atspi_median": median(atspi),
+            }
+        ),
+    )
 
 
 @pytest.mark.live

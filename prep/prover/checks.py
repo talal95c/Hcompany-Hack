@@ -118,6 +118,10 @@ async def evaluate_check(
     started = time.perf_counter()
     name, params = check.get("name"), check.get("params", {})
     if name not in GENERIC_CHECKS:
+        evaluate = getattr(observer, "evaluate_app_check", None)
+        if evaluate is not None:
+            verdict = await evaluate(check)
+            return {**verdict, "duration": time.perf_counter() - started}
         return {"result": "unknown", "reason": f"check non générique : {name}", "duration": 0.0}
     if name == "visual_assert":
         if judge is None:

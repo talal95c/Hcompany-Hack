@@ -12,6 +12,8 @@ import shlex
 from dataclasses import dataclass, field
 from typing import Literal
 
+from prep.apps.calc import CalcAdapter
+
 Sensor = Literal["addon", "accessibility", "vision"]
 GENERIC_CHECKS = (
     "element_exists",
@@ -42,6 +44,7 @@ class AppProfile:
     save_keys: tuple[str, ...] = ("ctrl", "s")
     env: dict[str, str] = field(default_factory=dict)
     app_checks: tuple[str, ...] = ()
+    outcome_adapter: type | None = None
     docs_domains: tuple[str, ...] = ()
 
     @property
@@ -94,6 +97,8 @@ def _libreoffice(
         ),
         convertible_suffixes=sources,
         env=LIBREOFFICE_ENV,
+        app_checks=CalcAdapter.checks if module == "calc" else (),
+        outcome_adapter=CalcAdapter if module == "calc" else None,
         docs_domains=("help.libreoffice.org",),
     )
 

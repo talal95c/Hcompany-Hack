@@ -31,7 +31,9 @@ ALWAYS_RESOLVABLE = frozenset({"cell", "document", "embedded"})
 
 def _system_prompt(profile: AppProfile, version: str, ui_map: dict, fixture: str | None) -> str:
     checks = {
-        name: CHECK_SPECS.get(name, "voir contrat de l'adaptateur") for name in profile.checks
+        name: (profile.outcome_adapter.specs.get(name) if profile.outcome_adapter else None)
+        or CHECK_SPECS.get(name, "voir contrat de l'adaptateur")
+        for name in profile.checks
     }
     controls = "\n".join(prompt_controls(ui_map))
     return (
@@ -46,11 +48,10 @@ def _system_prompt(profile: AppProfile, version: str, ui_map: dict, fixture: str
         "Aucun code, aucune coordonnée, aucune macro. "
         "Chaque check doit être FAUX avant l'étape et VRAI juste après, sur la fixture décrite : "
         "calcule précisément les valeurs attendues à partir des données. "
-        "Préfère un check d'accessibilité vérifiable (element_value, element_state, "
-        "element_exists, window_title) ; visual_assert seulement si l'arbre ne peut pas montrer "
-        "le résultat. Un bouton bascule actif (Gras, Italique…) a l'état checked. Un objet "
-        "inséré dessiné (graphique, image, forme) se vérifie par visual_assert : son arbre "
-        "d'accessibilité n'est pas fiable. "
+        "Vérifie le résultat attendu sur la cible de l'utilisateur, jamais l'état du bouton "
+        "utilisé pour l'obtenir. Préfère les checks de résultat exacts de l'adaptateur. "
+        "Sinon utilise un check d'accessibilité vérifiable ; visual_assert seulement si "
+        "l'arbre ne peut pas montrer le résultat ET si l'image permet de le certifier. "
         "Une cible = {description: chemin UI en français, role, name, path?}. "
         "role et name doivent venir de la liste de contrôles ci-dessous, sauf une cellule de "
         "tableur (role cell, name = référence A1) ou un objet inséré (role embedded ou "
@@ -63,9 +64,11 @@ def _system_prompt(profile: AppProfile, version: str, ui_map: dict, fixture: str
         "commise (ex. mauvaise valeur dans la cellule) ; laisse vide si tu n'en as pas. "
         "Checks autorisés : "
         + json.dumps(checks, ensure_ascii=False)
+        + (profile.outcome_adapter.compiler_rules if profile.outcome_adapter else "")
         + ("\nFixture initiale (données) :\n" + fixture if fixture else "")
         + "\nContrôles accessibles (role | name | path) :\n"
         + controls
+        + (profile.outcome_adapter.compiler_context(ui_map) if profile.outcome_adapter else "")
     )
 
 
@@ -208,6 +211,8 @@ class GenericCompiler(HoloCompiler):
             target = _sanitize_target(original["target"], ui_map, unresolved)
             try:
                 check = _sanitize_check(original["check"], self.profile, ui_map, unresolved)
+                if self.profile.outcome_adapter:
+                    self.profile.outcome_adapter.validate_success(check, ui_map)
                 errors = []
                 for error in original.get("known_errors") or []:
                     try:

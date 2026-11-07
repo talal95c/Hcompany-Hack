@@ -160,8 +160,10 @@ class DesktopSandbox:
         self._services: list[asyncio.subprocess.Process] = []
         self._app: asyncio.subprocess.Process | None = None
         self._document: Path | None = None
+        self._document_dirty = False
         self._opened_sha: str | None = None
         self.metrics: list[dict[str, Any]] = []
+        self.outcomes = profile.outcome_adapter(self) if profile.outcome_adapter else None
 
     async def __aenter__(self) -> DesktopSandbox:
         await self.start()
@@ -391,6 +393,7 @@ class DesktopSandbox:
             LOGGER.warning("Arbre d'accessibilité vide : vérification visuelle seulement")
         await asyncio.sleep(1)
         self._opened_sha = sha256
+        self._document_dirty = False
         self._measure("app_open", started)
 
     async def save(self, checkpoint_out: Path, *, timeout: float = 20) -> Path:
@@ -398,27 +401,66 @@ class DesktopSandbox:
         if self._document is None:
             raise RuntimeError("Aucun document ouvert")
         started = time.perf_counter()
-        before = self._document.stat().st_mtime_ns
-        for attempt in range(2):
-            if attempt:
-                # Mode d'édition imbriqué (objet inséré actif) : en sortir puis réessayer.
-                await self.key(["escape"])
-                await asyncio.sleep(0.5)
-            await self.key(self.profile.save_keys)
-            deadline = time.monotonic() + (timeout / 4 if attempt == 0 else timeout)
-            while self._document.stat().st_mtime_ns == before and time.monotonic() < deadline:
-                await asyncio.sleep(0.2)
-            if self._document.stat().st_mtime_ns != before:
-                break
-        else:
-            raise TimeoutError("Enregistrement du checkpoint non observé")
-        size = -1
-        while size != self._document.stat().st_size:
-            size = self._document.stat().st_size
-            await asyncio.sleep(0.5)
-        shutil.copyfile(self._document, checkpoint_out)
+        data = await self.document_snapshot(timeout=timeout)
+        Path(checkpoint_out).write_bytes(data)
         self._measure("save", started)
         return Path(checkpoint_out)
+
+    async def document_snapshot(self, *, timeout: float = 20) -> bytes:
+        if self._document is None:
+            raise RuntimeError("Aucun document ouvert")
+        if not self._document_dirty:
+            return self._document.read_bytes()
+        await self.key(self.profile.save_keys)
+        await asyncio.sleep(1)
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            before = self._document.read_bytes()
+            await asyncio.sleep(0.5)
+            if before == self._document.read_bytes():
+                self._document_dirty = False
+                return before
+        raise TimeoutError("Document instable pendant l'enregistrement")
+
+    async def evaluate_app_check(self, check: dict[str, Any]) -> dict[str, Any]:
+        if self.outcomes is None:
+            return {"result": "unknown", "reason": "Adaptateur de document absent"}
+        return await self.outcomes.evaluate(check)
+
+    async def prepare_step(self, check: dict[str, Any]) -> str:
+        if self.outcomes is None or check.get("name") not in self.outcomes.checks:
+            return ""
+        return await self.outcomes.prepare_step(check)
+
+    async def focus_text(self, *, ancestor_role: str, ancestor_name: str) -> None:
+        request = {
+            "operation": "focus",
+            "app": self.profile.accessible_name,
+            "role": "text",
+            "ancestor_role": ancestor_role,
+            "ancestor_name": ancestor_name,
+        }
+        raw = await self._run(
+            self.atspi_python,
+            str(WORKER),
+            timeout=self.snapshot_timeout,
+            stdin=json.dumps(request).encode(),
+        )
+        result = json.loads(raw)
+        jsonschema.validate(
+            result,
+            {
+                "type": "object",
+                "properties": {
+                    "ok": {"type": "boolean"},
+                    "error": {"enum": ["AMBIGUOUS_TARGET", "APP_NOT_FOUND"]},
+                },
+                "required": ["ok"],
+                "additionalProperties": False,
+            },
+        )
+        if not result["ok"]:
+            raise RuntimeError("Cible de focus absente ou ambiguë")
 
     def mark_current(self, sha256: str) -> None:
         self._opened_sha = sha256
@@ -486,12 +528,15 @@ class DesktopSandbox:
 
     async def click(self, x: int, y: int, button: str = "left") -> None:
         code = {"left": "1", "middle": "2", "right": "3"}[button]
+        self._document_dirty = True
         await self._run("xdotool", "mousemove", "--sync", str(x), str(y), "click", code)
 
     async def type_text(self, text: str) -> None:
+        self._document_dirty = True
         await self._run("xdotool", "type", "--delay", "40", "--", text, timeout=60)
 
     async def key(self, keys: list[str] | tuple[str, ...]) -> None:
+        self._document_dirty = True
         await self._run("xdotool", "key", "--clearmodifiers", xdotool_chord(keys))
 
     async def execute(self, action: dict[str, Any], *, image_size: tuple[int, int]) -> None:

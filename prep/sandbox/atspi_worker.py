@@ -164,7 +164,32 @@ def press(args):
     return {"ok": False, "error": "APP_NOT_FOUND"}
 
 
+def focus(args):
+    matches = []
+
+    def walk(node, within=False, depth=0):
+        if node is None or depth > 30:
+            return
+        role, name = node.getRoleName(), node.name or ""
+        within = within or (role == args["ancestor_role"] and name == args["ancestor_name"])
+        state = node.getState()
+        if within and role == args["role"] and state.contains(pyatspi.STATE_SHOWING):
+            if state.contains(pyatspi.STATE_EDITABLE):
+                matches.append(node)
+        if state.contains(pyatspi.STATE_MANAGES_DESCENDANTS):
+            return
+        for index in range(node.childCount):
+            walk(node.getChildAtIndex(index), within, depth + 1)
+
+    for app in pyatspi.Registry.getDesktop(0):
+        if app is not None and app.name == args["app"]:
+            walk(app)
+    if len(matches) != 1:
+        return {"ok": False, "error": "AMBIGUOUS_TARGET" if matches else "APP_NOT_FOUND"}
+    return {"ok": bool(matches[0].queryComponent().grabFocus())}
+
+
 if __name__ == "__main__":
     request = json.loads(sys.stdin.read())
-    operation = {"snapshot": snapshot, "press": press}[request.pop("operation")]
+    operation = {"snapshot": snapshot, "press": press, "focus": focus}[request.pop("operation")]
     sys.stdout.write(json.dumps(operation(request)))

@@ -2,6 +2,7 @@ import copy
 import json
 import struct
 import zlib
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -70,7 +71,12 @@ def png(width=4, height=3):
 def test_profiles():
     assert not PROFILES["blender"].generic
     calc = get_profile("libreoffice-calc")
-    assert calc.generic and calc.sensor == "accessibility" and calc.checks == GENERIC_CHECKS
+    assert calc.generic and calc.sensor == "accessibility"
+    assert calc.checks == GENERIC_CHECKS + (
+        "calc.cell_formula",
+        "calc.range_bold",
+        "calc.chart_source",
+    )
     custom = get_profile("gedit", command="gedit --new-window {file}")
     assert custom.command[0] == "gedit" and custom.accessible_name == "gedit"
     with pytest.raises(ValueError):
@@ -342,7 +348,9 @@ def raw_lesson():
 
 async def test_generic_compiler_v2_lesson():
     client = HoloStub(["nope", json.dumps(raw_lesson())])
-    compiler = GenericCompiler(get_profile("libreoffice-calc"), client=client)
+    compiler = GenericCompiler(
+        replace(get_profile("libreoffice-calc"), outcome_adapter=None), client=client
+    )
     lesson = await compiler.compile(
         transcript(), build_ui_map(snapshot(), app=APP), lesson_id="ventes", app_version="7.3.7.2"
     )
@@ -438,7 +446,8 @@ class FakeOperator:
 
 async def compiled():
     compiler = GenericCompiler(
-        get_profile("libreoffice-calc"), client=HoloStub([json.dumps(raw_lesson())])
+        replace(get_profile("libreoffice-calc"), outcome_adapter=None),
+        client=HoloStub([json.dumps(raw_lesson())]),
     )
     return await compiler.compile(
         transcript(), build_ui_map(snapshot(), app=APP), lesson_id="ventes", app_version="7.3.7.2"
@@ -638,7 +647,7 @@ async def test_holo_quota_retry(monkeypatch):
             raise QuotaExceeded("holo", "HTTP 429 busy")
         return "ok"
 
-    assert await agent._quota_retry("act", flaky) == "ok" and sleeps == [5.0]
+    assert await agent._quota_retry("act", flaky) == "ok" and sleeps == [30.0]
 
     async def payment():
         raise QuotaExceeded("holo", "HTTP 402 credits")
