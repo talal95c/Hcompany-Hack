@@ -812,6 +812,9 @@
             "window_title": {
               "type": "string"
             },
+            "version": {
+              "type": "string"
+            },
             "window_bounds": {
               "$ref": "#/$defs/rect_px"
             },

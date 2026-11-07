@@ -135,7 +135,7 @@
           "on_correct_path": "unknown"
         }
       ],
-      "seconds": 0.00976968399999123
+      "seconds": 0.008613246999999546
     },
     {
       "step_id": "add_bevel",
@@ -342,7 +342,7 @@
           "on_correct_path": "fail"
         }
       ],
-      "seconds": 0.0031514009999682457
+      "seconds": 0.004358177000000296
     },
     {
       "step_id": "shade_smooth",
@@ -543,7 +543,7 @@
           "on_correct_path": "fail"
         }
       ],
-      "seconds": 0.00273549199999934
+      "seconds": 0.002700228999998444
     }
   ],
   "negative_cases": {
@@ -555,6 +555,6 @@
     "wrong_subdivision": "fail",
     "broken_topology": "unknown"
   },
-  "seconds": 0.02482089300002599,
-  "blender_wall_seconds": 0.35914185799998677
+  "seconds": 0.025103397999998833,
+  "blender_wall_seconds": 0.3305540879999995
 }

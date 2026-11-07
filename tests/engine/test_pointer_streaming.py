@@ -113,6 +113,6 @@ async def test_unbounded_app_capture_requires_visibility_and_gives_text_fallback
     policy, _, commands, _, _ = setup(holo=Holo())
     policy.level = 2
     context = replace(help_context(capture_id="app", image_png=b"png"),
-                      area_id=None, region_id=None, require_visible=True)
+                      zone=(), reveal=(), require_visible=True)
     await policy.intent("aide", context)
     assert [command["type"] for command in drain(commands)] == ["say"]

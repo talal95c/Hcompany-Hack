@@ -1,9 +1,26 @@
 # Leçons prouvées sur Blender 4.5.9
 
 Deux leçons originales en français : [donut](donut/README.md) (9 étapes) et
-mini-cube (ajout, biseau, lissage). `lesson.json` respecte le contrat v1 figé ;
+mini-cube (ajout, biseau, lissage). `lesson.json` respecte le contrat v2 ;
 `steps.json` porte objectifs, quatre paliers d'aide et procédures ordonnées.
 Son schéma strict est `steps.schema.json` (draft 2020-12).
+La migration explicite porte les deux leçons à la révision 2, avec
+`app={id: blender, name: Blender, version: 4.5.9, sensor: addon}` et conserve
+`blender_version`. Chaque révision est à nouveau prouvée sur cette version.
+Les noms de checks historiques sont conservés : le registre actuel du moteur
+(`engine/checks/__init__.py`) ne reconnaît pas encore les alias `blender.*`.
+
+Une leçon multi-app séparée, [tableur-somme](tableur-somme/README.md), enseigne
+une somme dans LibreOffice Calc 7.3.7 avec AT-SPI et Holo. Son compagnon strict
+est `generic-steps.schema.json` ; sa reproduction utilise `build_generic.py`
+et `tests/lessons/prove_generic.py`, sans modifier les parcours ci-dessous.
+Sa révision 1 est prouvée ; les appels cloud utilisent des tentatives bornées.
+La leçon
+[texte-titre](texte-titre/README.md) réutilise ce compagnon et ce pilote pour
+Writer : titre structuré et enregistrement ODT. AT-SPI vérifie le titre appliqué
+au mauvais paragraphe ; Holo distingue le gras seul d'un véritable style de titre
+en lisant aussi le sélecteur de style. Les checks natifs temporisés exigent deux
+lectures concordantes ; leur budget de 2000 ms n'est pas une latence mesurée.
 
 ## Reproduction depuis la racine
 
@@ -68,9 +85,10 @@ la reconstruction des checkpoints, pas uniquement le geste réussi.
 
 ## Limites
 
-Le contrat n'autorise que `object_exists` : les checks riches restent dans le
-compagnon en attendant un contrat v1.1. Ce vérificateur est local aux tests,
-pas encore intégré au moteur ou à l'add-on. Aucune preuve UI :
+Les leçons utilisent `object_exists` dans le contrat et conservent leurs checks
+géométriques riches dans le compagnon. Le moteur charge ce compagnon pour les
+vérifications prises en charge ; la preuve complète est rejouée par le lanceur
+Blender local aux tests. Aucune preuve UI :
 `ui_path_verified=false`, menus français descriptifs, pas de recette macOS.
 La sélection géométrique déterministe remplace la sélection manuelle dans le viewport.
 `redo` supprime la sortie du dernier opérateur créateur puis le réexécute avec les

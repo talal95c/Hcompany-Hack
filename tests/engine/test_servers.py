@@ -334,14 +334,20 @@ async def test_debug_http_ws_metrics_and_redaction(runtime):
     async with httpx.AsyncClient() as client:
         page = await client.get(base)
         assert page.status_code == 200 and "Diagnostic du moteur" in page.text
+        runtime.debug.record({"kind": "status", "status": "READY"})
         runtime.debug.record({"kind": "latency", "service": "holo", "latency_ms": 12,
                               "image_png": b"private", "consent_token": "private-token"})
         metrics = (await client.get(base + "/metrics")).json()
         assert metrics["holo"] == {"count": 1, "p50": 12, "p95": 12, "max": 12}
     async with connect(base.replace("http:", "ws:") + "/ws") as ws:
-        raw = await asyncio.wait_for(ws.recv(), 1)
-        assert "private" not in raw
-        assert json.loads(raw)["latency_ms"] == 12
+        async with asyncio.timeout(1):
+            while True:
+                raw = await ws.recv()
+                assert "private" not in raw
+                event = json.loads(raw)
+                if event.get("kind") == "latency" and event.get("service") == "holo":
+                    assert event["latency_ms"] == 12
+                    break
 
 
 @pytest.mark.parametrize("shutdown", ["signal", "stdin"])

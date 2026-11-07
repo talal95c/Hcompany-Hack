@@ -1,0 +1,266 @@
+{
+  "schema_version": "2.0",
+  "lesson_id": "texte-titre",
+  "revision": 1,
+  "title": "Rédiger et enregistrer un titre structuré",
+  "language": "fr-FR",
+  "app": {
+    "id": "libreoffice-writer",
+    "name": "LibreOffice Writer",
+    "version": "7.3.7",
+    "sensor": "auto"
+  },
+  "status": "proven",
+  "source": {
+    "uri": "authored://lessons/texte-titre/SOURCE.md",
+    "sha256": "0f9884ec607bca67daa1b964d267afe73d5b94ed29db11738358d32610aa9eb0"
+  },
+  "skills": [
+    "type_title",
+    "apply_heading",
+    "save_document"
+  ],
+  "steps": [
+    {
+      "id": "type_title",
+      "skill_id": "type_title",
+      "instruction": "Saisis Rapport mensuel dans le document vierge.",
+      "preconditions": {
+        "window_title": "Sans nom 1 - LibreOffice Writer"
+      },
+      "target": {
+        "description": "Document de rédaction vierge",
+        "role": "document text",
+        "name": "Sans nom 1 - Document LibreOffice",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "check": {
+        "name": "element_value",
+        "params": {
+          "target": {
+            "description": "Unique paragraphe du document encore sans style de titre",
+            "role": "paragraph",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "value": "Rapport mensuel",
+          "timeout_ms": 2000
+        }
+      },
+      "why": "Un intitulé explicite situe le document avant toute mise en forme.",
+      "audio_ref": null,
+      "known_errors": [
+        {
+          "code": "wrong_title",
+          "check": {
+            "name": "element_value",
+            "params": {
+              "target": {
+                "description": "Unique paragraphe du document encore sans style de titre",
+                "role": "paragraph",
+                "path": [
+                  "frame:Sans nom 1 - LibreOffice Writer",
+                  "panel:",
+                  "panel:",
+                  "root pane:Sans nom 1 - LibreOffice Writer",
+                  "panel:",
+                  "scroll pane:",
+                  "document text:Sans nom 1 - Document LibreOffice"
+                ],
+                "app_region": "scroll pane:"
+              },
+              "value": "Brouillon",
+              "timeout_ms": 2000
+            }
+          },
+          "hint": "Remplace Brouillon par Rapport mensuel."
+        }
+      ],
+      "procedure_ref": "texte-titre/type_title",
+      "proof": {
+        "status": "proven",
+        "method": "accessibility",
+        "evidence_ref": "proof/type_title.json",
+        "ui_path_verified": true
+      }
+    },
+    {
+      "id": "apply_heading",
+      "skill_id": "apply_heading",
+      "instruction": "Place le curseur dans le titre et applique Titre 1 avec Ctrl+1.",
+      "preconditions": {
+        "window_title": "Sans nom 1 - LibreOffice Writer"
+      },
+      "target": {
+        "description": "Texte du sélecteur Style de paragraphe de Formatage",
+        "role": "text",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "tool bar:Formatage",
+          "panel:Style de paragraphe",
+          "panel:",
+          "filler:",
+          "panel:",
+          "panel:",
+          "filler:",
+          "filler:"
+        ],
+        "app_region": "panel:Style de paragraphe"
+      },
+      "check": {
+        "name": "element_value",
+        "params": {
+          "target": {
+            "description": "Texte du sélecteur Style de paragraphe de Formatage",
+            "role": "text",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "tool bar:Formatage",
+              "panel:Style de paragraphe",
+              "panel:",
+              "filler:",
+              "panel:",
+              "panel:",
+              "filler:",
+              "filler:"
+            ],
+            "app_region": "panel:Style de paragraphe"
+          },
+          "value": "Titre 1",
+          "timeout_ms": 2000
+        }
+      },
+      "why": "Un style de titre crée une structure navigable ; le gras seul ne crée pas de section.",
+      "audio_ref": null,
+      "known_errors": [
+        {
+          "code": "bold_only",
+          "check": {
+            "name": "visual_assert",
+            "params": {
+              "assertion": "Le texte Rapport mensuel est-il en gras ET le sélecteur de style en haut à gauche affiche-t-il « Style de paragraphe » (libellé tronqué), et NON « Titre 1 » ?",
+              "region": {
+                "x": 0,
+                "y": 0,
+                "w": 750,
+                "h": 400
+              },
+              "min_confidence": 0.8
+            }
+          },
+          "hint": "Utilise Ctrl+1 : le gras seul ne suffit pas."
+        },
+        {
+          "code": "wrong_paragraph",
+          "check": {
+            "name": "element_value",
+            "params": {
+              "target": {
+                "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+                "role": "heading",
+                "path": [
+                  "frame:Sans nom 1 - LibreOffice Writer",
+                  "panel:",
+                  "panel:",
+                  "root pane:Sans nom 1 - LibreOffice Writer",
+                  "panel:",
+                  "scroll pane:",
+                  "document text:Sans nom 1 - Document LibreOffice"
+                ],
+                "app_region": "scroll pane:"
+              },
+              "value": "Corps du rapport.",
+              "timeout_ms": 2000
+            }
+          },
+          "hint": "Applique Titre 1 au premier paragraphe, pas à la ligne suivante."
+        }
+      ],
+      "procedure_ref": "texte-titre/apply_heading",
+      "proof": {
+        "status": "proven",
+        "method": "accessibility",
+        "evidence_ref": "proof/apply_heading.json",
+        "ui_path_verified": true
+      }
+    },
+    {
+      "id": "save_document",
+      "skill_id": "save_document",
+      "instruction": "Enregistre sous rapport-mensuel.odt avec Ctrl+Maj+S. Garde le format Texte ODF (.odt).",
+      "preconditions": {
+        "window_title": "Sans nom 1 - LibreOffice Writer"
+      },
+      "target": {
+        "description": "Commande Enregistrer sous de la barre Standard",
+        "role": "push button",
+        "name": "Enregistrer sous...",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "tool bar:Standard"
+        ],
+        "app_region": "tool bar:Standard"
+      },
+      "check": {
+        "name": "window_title",
+        "params": {
+          "value": "rapport-mensuel.odt"
+        }
+      },
+      "why": "Le nom identifie le livrable ; ODT conserve la structure de titre, pas seulement son aspect.",
+      "audio_ref": null,
+      "known_errors": [
+        {
+          "code": "wrong_filename",
+          "check": {
+            "name": "window_title",
+            "params": {
+              "value": "brouillon.odt"
+            }
+          },
+          "hint": "Enregistre le fichier sous le nom exact rapport-mensuel.odt."
+        }
+      ],
+      "procedure_ref": "texte-titre/save_document",
+      "proof": {
+        "status": "proven",
+        "method": "accessibility",
+        "evidence_ref": "proof/save_document.json",
+        "ui_path_verified": true
+      }
+    }
+  ],
+  "proof": {
+    "method": "per_step",
+    "evidence_ref": "proof/manifest.json",
+    "ui_path_verified": true
+  }
+}

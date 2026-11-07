@@ -1,0 +1,1405 @@
+{
+  "step_id": "apply_heading",
+  "app_version": "LibreOffice 7.3.7.2 30(Build:2)",
+  "ui_path_verified": true,
+  "before": [
+    {
+      "target": {
+        "description": "Document de rédaction vierge",
+        "role": "document text",
+        "name": "Sans nom 1 - Document LibreOffice",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": [
+        {
+          "role": "document text",
+          "name": "Sans nom 1 - Document LibreOffice",
+          "value": null,
+          "states": [
+            "editable",
+            "enabled",
+            "visible"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Unique paragraphe du document encore sans style de titre",
+        "role": "paragraph",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:",
+          "document text:Sans nom 1 - Document LibreOffice"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": [
+        {
+          "role": "paragraph",
+          "name": "",
+          "value": "Rapport mensuel",
+          "states": [
+            "editable",
+            "enabled",
+            "focused",
+            "visible"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Texte du sélecteur Style de paragraphe de Formatage",
+        "role": "text",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "tool bar:Formatage",
+          "panel:Style de paragraphe",
+          "panel:",
+          "filler:",
+          "panel:",
+          "panel:",
+          "filler:",
+          "filler:"
+        ],
+        "app_region": "panel:Style de paragraphe"
+      },
+      "nodes": [
+        {
+          "role": "text",
+          "name": "",
+          "value": "Style de paragraphe par défaut",
+          "states": [
+            "editable",
+            "enabled",
+            "visible"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+        "role": "heading",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:",
+          "document text:Sans nom 1 - Document LibreOffice"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": []
+    },
+    {
+      "target": {
+        "description": "Commande Enregistrer sous de la barre Standard",
+        "role": "push button",
+        "name": "Enregistrer sous...",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "tool bar:Standard"
+        ],
+        "app_region": "tool bar:Standard"
+      },
+      "nodes": [
+        {
+          "role": "push button",
+          "name": "Enregistrer sous...",
+          "value": 0.0,
+          "states": [
+            "enabled"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    }
+  ],
+  "after": [
+    {
+      "target": {
+        "description": "Document de rédaction vierge",
+        "role": "document text",
+        "name": "Sans nom 1 - Document LibreOffice",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": [
+        {
+          "role": "document text",
+          "name": "Sans nom 1 - Document LibreOffice",
+          "value": null,
+          "states": [
+            "editable",
+            "enabled",
+            "visible"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Unique paragraphe du document encore sans style de titre",
+        "role": "paragraph",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:",
+          "document text:Sans nom 1 - Document LibreOffice"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": []
+    },
+    {
+      "target": {
+        "description": "Texte du sélecteur Style de paragraphe de Formatage",
+        "role": "text",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "tool bar:Formatage",
+          "panel:Style de paragraphe",
+          "panel:",
+          "filler:",
+          "panel:",
+          "panel:",
+          "filler:",
+          "filler:"
+        ],
+        "app_region": "panel:Style de paragraphe"
+      },
+      "nodes": [
+        {
+          "role": "text",
+          "name": "",
+          "value": "Titre 1",
+          "states": [
+            "editable",
+            "enabled",
+            "visible"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+        "role": "heading",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:",
+          "document text:Sans nom 1 - Document LibreOffice"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": [
+        {
+          "role": "heading",
+          "name": "",
+          "value": "Rapport mensuel",
+          "states": [
+            "editable",
+            "enabled",
+            "focused",
+            "visible"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Commande Enregistrer sous de la barre Standard",
+        "role": "push button",
+        "name": "Enregistrer sous...",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "tool bar:Standard"
+        ],
+        "app_region": "tool bar:Standard"
+      },
+      "nodes": [
+        {
+          "role": "push button",
+          "name": "Enregistrer sous...",
+          "value": 0.0,
+          "states": [
+            "enabled"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "kind": "key",
+      "keys": "ctrl+Home"
+    },
+    {
+      "kind": "key",
+      "keys": "ctrl+1"
+    }
+  ],
+  "checks": [
+    {
+      "name": "element_value",
+      "params": {
+        "target": {
+          "description": "Texte du sélecteur Style de paragraphe de Formatage",
+          "role": "text",
+          "path": [
+            "frame:Sans nom 1 - LibreOffice Writer",
+            "panel:",
+            "panel:",
+            "root pane:Sans nom 1 - LibreOffice Writer",
+            "panel:",
+            "tool bar:Formatage",
+            "panel:Style de paragraphe",
+            "panel:",
+            "filler:",
+            "panel:",
+            "panel:",
+            "filler:",
+            "filler:"
+          ],
+          "app_region": "panel:Style de paragraphe"
+        },
+        "value": "Titre 1",
+        "timeout_ms": 2000
+      }
+    }
+  ],
+  "before_checks": [
+    "fail"
+  ],
+  "after_checks": [
+    "pass"
+  ],
+  "before_results": [
+    {
+      "status": "fail",
+      "seconds": 2.0018859379999867,
+      "read_seconds": [
+        0.03825810099988303,
+        0.04805286300006628,
+        0.04166302499993435,
+        0.04571295000005193,
+        0.04363397700012683,
+        0.041826372999821615,
+        0.0415565420000803,
+        0.04614491300003465,
+        0.03946808899991083,
+        0.04360908700004984,
+        0.04505319700001564,
+        0.04254393800010803,
+        0.04749143799995181,
+        0.04000380299999051,
+        0.04437710299998798,
+        0.04267956600006073,
+        0.039657844999965164,
+        0.04011805400000412,
+        0.040186761000086335,
+        0.03912149699999645,
+        0.05034062700019604,
+        0.04381674800015389
+      ],
+      "visual": null,
+      "observed": {
+        "nodes": [
+          {
+            "role": "text",
+            "name": "",
+            "value": "Style de paragraphe par défaut",
+            "states": [
+              "editable",
+              "enabled",
+              "visible"
+            ],
+            "unsupported_states": []
+          }
+        ],
+        "complete": true
+      }
+    }
+  ],
+  "after_results": [
+    {
+      "status": "pass",
+      "seconds": 0.14259190200004923,
+      "read_seconds": [
+        0.05162138800005778,
+        0.04067078200000651
+      ],
+      "visual": null,
+      "observed": {
+        "nodes": [
+          {
+            "role": "text",
+            "name": "",
+            "value": "Titre 1",
+            "states": [
+              "editable",
+              "enabled",
+              "visible"
+            ],
+            "unsupported_states": []
+          }
+        ],
+        "complete": true
+      }
+    }
+  ],
+  "known_errors": [
+    "fail",
+    "fail"
+  ],
+  "error_proofs": [
+    {
+      "code": "bold_only",
+      "check": {
+        "name": "visual_assert",
+        "params": {
+          "assertion": "Le texte Rapport mensuel est-il en gras ET le sélecteur de style en haut à gauche affiche-t-il « Style de paragraphe » (libellé tronqué), et NON « Titre 1 » ?",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 750,
+            "h": 400
+          },
+          "min_confidence": 0.8
+        }
+      },
+      "actions": [
+        {
+          "kind": "key",
+          "keys": "ctrl+Home"
+        },
+        {
+          "kind": "key",
+          "keys": "ctrl+shift+End"
+        },
+        {
+          "kind": "key",
+          "keys": "ctrl+g"
+        },
+        {
+          "kind": "key",
+          "keys": "ctrl+Home"
+        }
+      ],
+      "before": [
+        {
+          "target": {
+            "description": "Document de rédaction vierge",
+            "role": "document text",
+            "name": "Sans nom 1 - Document LibreOffice",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": [
+            {
+              "role": "document text",
+              "name": "Sans nom 1 - Document LibreOffice",
+              "value": null,
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Unique paragraphe du document encore sans style de titre",
+            "role": "paragraph",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": [
+            {
+              "role": "paragraph",
+              "name": "",
+              "value": "Rapport mensuel",
+              "states": [
+                "editable",
+                "enabled",
+                "focused",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Texte du sélecteur Style de paragraphe de Formatage",
+            "role": "text",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "tool bar:Formatage",
+              "panel:Style de paragraphe",
+              "panel:",
+              "filler:",
+              "panel:",
+              "panel:",
+              "filler:",
+              "filler:"
+            ],
+            "app_region": "panel:Style de paragraphe"
+          },
+          "nodes": [
+            {
+              "role": "text",
+              "name": "",
+              "value": "Style de paragraphe par défaut",
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+            "role": "heading",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": []
+        },
+        {
+          "target": {
+            "description": "Commande Enregistrer sous de la barre Standard",
+            "role": "push button",
+            "name": "Enregistrer sous...",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "tool bar:Standard"
+            ],
+            "app_region": "tool bar:Standard"
+          },
+          "nodes": [
+            {
+              "role": "push button",
+              "name": "Enregistrer sous...",
+              "value": 0.0,
+              "states": [
+                "enabled"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "target": {
+            "description": "Document de rédaction vierge",
+            "role": "document text",
+            "name": "Sans nom 1 - Document LibreOffice",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": [
+            {
+              "role": "document text",
+              "name": "Sans nom 1 - Document LibreOffice",
+              "value": null,
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Unique paragraphe du document encore sans style de titre",
+            "role": "paragraph",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": [
+            {
+              "role": "paragraph",
+              "name": "",
+              "value": "Rapport mensuel",
+              "states": [
+                "editable",
+                "enabled",
+                "focused",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Texte du sélecteur Style de paragraphe de Formatage",
+            "role": "text",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "tool bar:Formatage",
+              "panel:Style de paragraphe",
+              "panel:",
+              "filler:",
+              "panel:",
+              "panel:",
+              "filler:",
+              "filler:"
+            ],
+            "app_region": "panel:Style de paragraphe"
+          },
+          "nodes": [
+            {
+              "role": "text",
+              "name": "",
+              "value": "Style de paragraphe par défaut",
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+            "role": "heading",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": []
+        },
+        {
+          "target": {
+            "description": "Commande Enregistrer sous de la barre Standard",
+            "role": "push button",
+            "name": "Enregistrer sous...",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "tool bar:Standard"
+            ],
+            "app_region": "tool bar:Standard"
+          },
+          "nodes": [
+            {
+              "role": "push button",
+              "name": "Enregistrer sous...",
+              "value": 0.0,
+              "states": [
+                "enabled"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        }
+      ],
+      "on_mistake": "pass",
+      "mistake_result": {
+        "status": "pass",
+        "seconds": 19.489229056000113,
+        "read_seconds": [
+          19.489222373000075
+        ],
+        "visual": {
+          "model": "holo4-27b",
+          "request_id": "chatcmpl-01a1b709-09ba-7b23-a7c6-d7c364669b5c",
+          "seconds": 18.800287822999962,
+          "response": "{\"answer\":true,\"confidence\":0.99}",
+          "answer": true,
+          "confidence": 0.99,
+          "attempts": [
+            {
+              "answer": null,
+              "confidence": 0,
+              "error": "timeout",
+              "http_status": null,
+              "model": "holo4-27b",
+              "seconds": 12.003554682999948,
+              "retry_after": null
+            },
+            {
+              "seconds": 4.284034818999999,
+              "error": null,
+              "request_id": "chatcmpl-01a1b709-09ba-7b23-a7c6-d7c364669b5c"
+            }
+          ],
+          "original_dimensions": {
+            "width": 1125,
+            "height": 360
+          },
+          "sent_dimensions": {
+            "width": 1875,
+            "height": 600
+          },
+          "original_image": "proof/capture-001.png",
+          "image": "proof/capture-001-sent.png"
+        },
+        "observed": null
+      },
+      "other_error_results": {
+        "wrong_paragraph": {
+          "status": "fail",
+          "seconds": 2.0156288110001697,
+          "read_seconds": [
+            0.016852553000035186,
+            0.01923693800017645,
+            0.01882680700009587,
+            0.014276225000003251,
+            0.017172039000115547,
+            0.016937480000024152,
+            0.022045748999971693,
+            0.017998377999902004,
+            0.022740433000080884,
+            0.016362347000040245,
+            0.016823447999968266,
+            0.019470302999934574,
+            0.016797457000166105,
+            0.017302718999872013,
+            0.014562511000121958,
+            0.026199330000054033,
+            0.014454116000024442,
+            0.019030844000099023,
+            0.015622322999888638,
+            0.019156925000061165,
+            0.024346267000055377,
+            0.02372886600005586,
+            0.015624882000111029,
+            0.019261948000121265,
+            0.020555139999942185,
+            0.03249268700005814,
+            0.01811492900014855,
+            0.01824131200010015,
+            0.017432465999945634,
+            0.0153888840000036
+          ],
+          "visual": null,
+          "observed": {
+            "nodes": [],
+            "complete": true
+          }
+        }
+      },
+      "artifact_before": [],
+      "artifact_on_mistake": [],
+      "step_checks_on_mistake": [
+        "fail"
+      ],
+      "step_check_results": [
+        {
+          "status": "fail",
+          "seconds": 2.027803707999965,
+          "read_seconds": [
+            0.03985427700013133,
+            0.04156289899992771,
+            0.04419699100003527,
+            0.0479566110000178,
+            0.044299489999957586,
+            0.041686573999868415,
+            0.050460010000051625,
+            0.06394970800010924,
+            0.04974245099992913,
+            0.04777228900002228,
+            0.04516478999994433,
+            0.07355684999993173,
+            0.057294385999966835,
+            0.038567079000131343,
+            0.04829868699994222,
+            0.05053995799994482,
+            0.04256840300013209,
+            0.04408422699998482,
+            0.04316167000001769,
+            0.05360231100007695,
+            0.053601582000055714
+          ],
+          "visual": null,
+          "observed": {
+            "nodes": [
+              {
+                "role": "text",
+                "name": "",
+                "value": "Style de paragraphe par défaut",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": []
+              }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "on_correct_path": "fail",
+      "correct_result": {
+        "status": "fail",
+        "seconds": 1.2034966480000548,
+        "read_seconds": [
+          1.2034939360000863
+        ],
+        "visual": {
+          "model": "holo4-27b",
+          "request_id": "chatcmpl-01a1b709-5b4b-7c82-8fb9-01c0ffe8fe15",
+          "seconds": 0.5185543239999788,
+          "response": "{\"answer\":false,\"confidence\":0.99}",
+          "answer": false,
+          "confidence": 0.99,
+          "attempts": [
+            {
+              "seconds": 0.5185529150001003,
+              "error": null,
+              "request_id": "chatcmpl-01a1b709-5b4b-7c82-8fb9-01c0ffe8fe15"
+            }
+          ],
+          "original_dimensions": {
+            "width": 1125,
+            "height": 360
+          },
+          "sent_dimensions": {
+            "width": 1875,
+            "height": 600
+          },
+          "original_image": "proof/capture-003.png",
+          "image": "proof/capture-003-sent.png"
+        },
+        "observed": null
+      }
+    },
+    {
+      "code": "wrong_paragraph",
+      "check": {
+        "name": "element_value",
+        "params": {
+          "target": {
+            "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+            "role": "heading",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "value": "Corps du rapport.",
+          "timeout_ms": 2000
+        }
+      },
+      "actions": [
+        {
+          "kind": "key",
+          "keys": "ctrl+End"
+        },
+        {
+          "kind": "key",
+          "keys": "Return"
+        },
+        {
+          "kind": "type",
+          "text": "Corps du rapport."
+        },
+        {
+          "kind": "key",
+          "keys": "ctrl+1"
+        },
+        {
+          "kind": "key",
+          "keys": "ctrl+Home"
+        }
+      ],
+      "before": [
+        {
+          "target": {
+            "description": "Document de rédaction vierge",
+            "role": "document text",
+            "name": "Sans nom 1 - Document LibreOffice",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": [
+            {
+              "role": "document text",
+              "name": "Sans nom 1 - Document LibreOffice",
+              "value": null,
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Unique paragraphe du document encore sans style de titre",
+            "role": "paragraph",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": [
+            {
+              "role": "paragraph",
+              "name": "",
+              "value": "Rapport mensuel",
+              "states": [
+                "editable",
+                "enabled",
+                "focused",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Texte du sélecteur Style de paragraphe de Formatage",
+            "role": "text",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "tool bar:Formatage",
+              "panel:Style de paragraphe",
+              "panel:",
+              "filler:",
+              "panel:",
+              "panel:",
+              "filler:",
+              "filler:"
+            ],
+            "app_region": "panel:Style de paragraphe"
+          },
+          "nodes": [
+            {
+              "role": "text",
+              "name": "",
+              "value": "Style de paragraphe par défaut",
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+            "role": "heading",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": []
+        },
+        {
+          "target": {
+            "description": "Commande Enregistrer sous de la barre Standard",
+            "role": "push button",
+            "name": "Enregistrer sous...",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "tool bar:Standard"
+            ],
+            "app_region": "tool bar:Standard"
+          },
+          "nodes": [
+            {
+              "role": "push button",
+              "name": "Enregistrer sous...",
+              "value": 0.0,
+              "states": [
+                "enabled"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "target": {
+            "description": "Document de rédaction vierge",
+            "role": "document text",
+            "name": "Sans nom 1 - Document LibreOffice",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": [
+            {
+              "role": "document text",
+              "name": "Sans nom 1 - Document LibreOffice",
+              "value": null,
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Unique paragraphe du document encore sans style de titre",
+            "role": "paragraph",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": [
+            {
+              "role": "paragraph",
+              "name": "",
+              "value": "Rapport mensuel",
+              "states": [
+                "editable",
+                "enabled",
+                "focused",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Texte du sélecteur Style de paragraphe de Formatage",
+            "role": "text",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "tool bar:Formatage",
+              "panel:Style de paragraphe",
+              "panel:",
+              "filler:",
+              "panel:",
+              "panel:",
+              "filler:",
+              "filler:"
+            ],
+            "app_region": "panel:Style de paragraphe"
+          },
+          "nodes": [
+            {
+              "role": "text",
+              "name": "",
+              "value": "Style de paragraphe par défaut",
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+            "role": "heading",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": [
+            {
+              "role": "heading",
+              "name": "",
+              "value": "Corps du rapport.",
+              "states": [
+                "editable",
+                "enabled",
+                "focused",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Commande Enregistrer sous de la barre Standard",
+            "role": "push button",
+            "name": "Enregistrer sous...",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "tool bar:Standard"
+            ],
+            "app_region": "tool bar:Standard"
+          },
+          "nodes": [
+            {
+              "role": "push button",
+              "name": "Enregistrer sous...",
+              "value": 0.0,
+              "states": [
+                "enabled"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        }
+      ],
+      "on_mistake": "pass",
+      "mistake_result": {
+        "status": "pass",
+        "seconds": 0.09526955899991663,
+        "read_seconds": [
+          0.02046341099980964,
+          0.02441147799981991
+        ],
+        "visual": null,
+        "observed": {
+          "nodes": [
+            {
+              "role": "heading",
+              "name": "",
+              "value": "Corps du rapport.",
+              "states": [
+                "editable",
+                "enabled",
+                "focused",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ],
+          "complete": true
+        }
+      },
+      "other_error_results": {
+        "bold_only": {
+          "status": "fail",
+          "seconds": 1.364021485999956,
+          "read_seconds": [
+            1.36401740600013
+          ],
+          "visual": {
+            "model": "holo4-27b",
+            "request_id": "chatcmpl-01a1b709-36ef-70c0-86fe-3db4d9d2fad7",
+            "seconds": 0.5277485300000535,
+            "response": "{\"answer\":false,\"confidence\":0.99}",
+            "answer": false,
+            "confidence": 0.99,
+            "attempts": [
+              {
+                "seconds": 0.527747225999974,
+                "error": null,
+                "request_id": "chatcmpl-01a1b709-36ef-70c0-86fe-3db4d9d2fad7"
+              }
+            ],
+            "original_dimensions": {
+              "width": 1125,
+              "height": 360
+            },
+            "sent_dimensions": {
+              "width": 1875,
+              "height": 600
+            },
+            "original_image": "proof/capture-002.png",
+            "image": "proof/capture-002-sent.png"
+          },
+          "observed": null
+        }
+      },
+      "artifact_before": [],
+      "artifact_on_mistake": [],
+      "step_checks_on_mistake": [
+        "fail"
+      ],
+      "step_check_results": [
+        {
+          "status": "fail",
+          "seconds": 2.041635380000116,
+          "read_seconds": [
+            0.04077496900004007,
+            0.04291880100004164,
+            0.04672350399982861,
+            0.04218760499998098,
+            0.04431017799993242,
+            0.04605758499997137,
+            0.04100499900005161,
+            0.041750594999939494,
+            0.05118631799996365,
+            0.04801435600006698,
+            0.060415516999910324,
+            0.0429157569999461,
+            0.04219045700006063,
+            0.03987147600014396,
+            0.047240522999800305,
+            0.03927428600013627,
+            0.046487837999848125,
+            0.04632270599995536,
+            0.05715943900008824,
+            0.0463793019998775,
+            0.04372113799990984,
+            0.0413182570000572
+          ],
+          "visual": null,
+          "observed": {
+            "nodes": [
+              {
+                "role": "text",
+                "name": "",
+                "value": "Style de paragraphe par défaut",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": []
+              }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "on_correct_path": "fail",
+      "correct_result": {
+        "status": "fail",
+        "seconds": 2.024526749000188,
+        "read_seconds": [
+          0.014461697999877288,
+          0.019711865000090256,
+          0.01914112600002227,
+          0.02147637300004135,
+          0.01804016099981709,
+          0.017296037000051,
+          0.02380745699997533,
+          0.017236275999948703,
+          0.01648270199984836,
+          0.017374894999875323,
+          0.01550437800005966,
+          0.020926055000018096,
+          0.014518755999915811,
+          0.023009396000134075,
+          0.02048091500000737,
+          0.017052283000111856,
+          0.01888151699995433,
+          0.021350222999899415,
+          0.017193111999858957,
+          0.019625636999990093,
+          0.02054020499986109,
+          0.02004849399986597,
+          0.02293880199999876,
+          0.01606028400010473,
+          0.0177342019999287,
+          0.018736063999995167,
+          0.015923979999797666,
+          0.014578024999991612,
+          0.018490176999875985,
+          0.02674491399989165
+        ],
+        "visual": null,
+        "observed": {
+          "nodes": [
+            {
+              "role": "heading",
+              "name": "",
+              "value": "Rapport mensuel",
+              "states": [
+                "editable",
+                "enabled",
+                "focused",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ],
+          "complete": true
+        }
+      }
+    }
+  ],
+  "seconds": 46.94869734200006,
+  "artifact_results": []
+}

@@ -28,6 +28,9 @@ class EngineConfig:
     stt_final_timeout_s: float = 2
     holo_model: str = "holo4-27b"
     stt_vocabulary: tuple[str, ...] = ()
+    a11y_poll_s: float = 0.25
+    a11y_timeout_s: float = 1.5
+    vision_poll_s: float = 2.0
 
     def __post_init__(self) -> None:
         if any(not 0 <= p <= 65535 for p in (self.port, self.addon_port, self.debug_port)):
