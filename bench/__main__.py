@@ -28,7 +28,7 @@ def main() -> None:
     parser.add_argument("--blender", default="/opt/blender/blender")
     parser.add_argument("--timeout", type=float, default=None)
     parser.add_argument("--models", nargs="+", choices=holo.MODELS, default=holo.MODELS)
-    parser.add_argument("--concurrency", type=int, choices=[1, 2], default=2)
+    parser.add_argument("--concurrency", type=int, choices=[1], default=1)
     args = parser.parse_args()
     names = list(SUITES) if args.suite == "all" else [args.suite]
     if any(SUITES[name] is unavailable for name in names):

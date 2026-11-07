@@ -103,13 +103,26 @@ Hit si le point est dans la région attendue (bords droit et bas exclus).
 
 ### Mesures et cache
 
-Chaque paire envoie exactement le même corps deux fois de suite, sans historique ;
-au maximum deux paires en parallèle. Cela représente 192 appels de localisation,
-hors retries et test live. Timeout par requête 30 s ; 429/5xx et erreurs transport
-retentés jusqu'à trois fois, attente exponentielle 1 puis 2 s. Parse invalide ou HTTP
-en erreur = miss ; 401/403 arrêtent la suite. Latences perf_counter mesurées de bout
-en bout, retries/backoff inclus. Un passage 1 peut déjà être caché ; le passage 2
-n'est pas supposé caché sans cached_tokens réellement renvoyés.
+Chaque paire utilise un nonce UUID unique au tout début du message système, avant
+les instructions stables. Le passage `uncached` utilise ce préfixe inédit ; le passage
+`cached` répète le corps identique immédiatement, sans autre requête intercalée.
+Nonce et SHA-256 du corps sont conservés pour vérifier le protocole, et les vrais
+cached_tokens servent de contrôle de cache. Cela représente 192 appels logiques.
+
+La concurrence est fixée à 1. Le client partage un token bucket de capacité 1 avec
+un intervalle initial de 2 s entre départs ; il ne permet aucune rafale. Retry-After
+(secondes ou date HTTP) et les resets request/token avec quota épuisé sont respectés.
+L'intervalle s'adapte aussi aux quotas restants et augmente de 50 % après un 429.
+Sans en-têtes, on ne prétend pas connaître le plafond exact du fournisseur.
+Backoff 429 : 15, 30 puis 60 s ; backoff serveur/transport : 5, 10, 20, 40 puis 60 s.
+Les instructions serveur plus longues sont respectées sans troncature. Timeout par
+tentative 30 s, garde de sécurité 20 tentatives ; 401/403 arrêtent immédiatement.
+
+**Latence = durée perf_counter de la seule tentative HTTP 200.** Les attentes pacing,
+cooldown, durées des tentatives échouées, temps total et nombre de 429 sont enregistrés
+séparément. Les erreurs finales éventuelles restent des misses avec latence null,
+jamais mélangées aux percentiles des succès. Les tableaux comparent les passages
+uncached/cached dans chaque groupe modèle/échelle/full-crop, pas seulement un agrégat.
 
 `holo-calls.jsonl` conserve chaque réponse mesurée et ses tentatives (latence, statut,
 request id et usage) immédiatement pour ne pas perdre les mesures en cas d'arrêt.
@@ -118,14 +131,25 @@ tokens et tous les misses (point prédit contre boîte). Les coûts sont calcul�
 les tokens à $0.30/M entrée, $0.03/M cache et $2/M sortie, pas une facture ; le catalogue
 API annonce des tarifs supérieurs pour 27B. Aucune clé ni en-tête Authorization n'est loggé.
 
-### Limite du relevé conservé
+Les anciens relevés sans pacing ont été remplacés. Les en-têtes de quota reçus sont
+conservés dans `attempts[].rate_headers` ; un objet vide signifie qu'aucun en-tête
+Retry-After/rate-limit n'a été fourni, pas une limite supposée illimitée.
 
-La matrice entière a été exécutée : 192 requêtes logiques, 354 tentatives HTTP,
-117 réponses 200 et 75 erreurs finales 429 malgré les retries. Ces erreurs restent
-des misses, pas des points inventés. Les 117 réponses 200 sont toutes parsées ;
-87 hits, soit 74,36 % conditionnellement aux réponses 200 (45,31 % sur toute la matrice).
-Les tableaux indiquent séparément les erreurs HTTP : ne pas interpréter ces taux bruts
-comme une comparaison isolée de précision des deux modèles. Le relevé n'a pas été
-relancé pour masquer les limites du service ni engager des appels supplémentaires.
-Le cache a été réellement observé ; la comparaison cache/non-cache mélange modèles,
-échelles et conditions, elle n'établit pas une accélération causale.
+### Relevé avec pacing
+
+192/192 appels logiques ont reçu HTTP 200, sans échec de parsing ; 136 hits.
+193 tentatives de localisation, dont un 429, puis passage de 2 à 3 s entre départs.
+Le 429 expose `x-ratelimit-limit: 30`, `x-ratelimit-remaining: 0`,
+`x-ratelimit-reset: 2` et `retry-after: 2` ; la fenêtre du quota 30 n'est pas indiquée.
+Les 192 succès n'exposent aucun en-tête de quota. Le cooldown a duré 15,075 s,
+le pacing 348,310 s, exclus des latences. Ces observations ne déterminent pas un
+plafond de débit garanti ; 3 s a suffi pour le reste de cette matrice.
+
+Les 96 premiers passages ont zéro token caché ; les 96 répétitions ont un corps et
+un nonce identiques à leur premier passage. 20 répétitions sur 96 ont réellement
+utilisé du cache (76 832 tokens). Le cache fournisseur est best effort, sans garantie
+de hit même pour un corps identique, selon
+https://hub.hcompany.ai/models-api/build-an-agent/core-concepts.md#prompt-caching.
+Les tableaux `uncached`/`cached` désignent donc les conditions du protocole, pas une
+garantie de cache servi. Total : 717 040 tokens entrée + 2 622 sortie = 719 662 ; coût
+calculé 0,19961136 USD, hors requêtes catalogue et probe préalable.

@@ -81,6 +81,12 @@ def test_request() -> None:
     assert body["chat_template_kwargs"] == {"enable_thinking": False}
     assert body["messages"][0]["role"] == "system"
     assert aggregate([])["calls"] == 0
+    image = Image.new("RGB", (10, 10))
+    first = request_body("model", image, "target", "unique-pair")
+    assert first["messages"][0]["content"].startswith("unique-pair\n")
+    assert first == request_body("model", image, "target", "unique-pair")
+    assert first != request_body("model", image, "target", "another-pair")
+    assert request_body("model", image, "target") != request_body("model", image, "target")
 
 
 def test_summary() -> None:
