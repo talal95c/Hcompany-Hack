@@ -1,0 +1,27 @@
+body { min-height: 100vh; overflow: auto; }
+.study-background { position: fixed; inset: -50px; z-index: -3; background: radial-gradient(ellipse at 78% 38%, #da9fae 0%, transparent 40%), linear-gradient(178deg,#516b7a 0%,#7e758c 32%,#b98b9c 49%,#323c4c 65%,#131a22 77%,#090d11 100%); filter: blur(28px); }
+.study-background::after { content: ""; position: absolute; left: -10%; right: -10%; bottom: 0; height: 40%; background: #080e13; border-radius: 50% 75% 0 0; transform: rotate(-7deg); filter: blur(32px); }
+html[data-background="terracotta"] .study-background { background: radial-gradient(ellipse at 65% 95%, #111315 0%, transparent 40%), radial-gradient(ellipse at 8% 65%,#b55e2d 0%,transparent 45%), linear-gradient(125deg,#a97558,#b57551 40%,#a64c33); }
+html[data-background="grey"] .study-background { background: radial-gradient(ellipse at 62% 95%,#282b2d 0%,transparent 45%),radial-gradient(ellipse at 8% 90%,#ad653d 0%,transparent 40%),linear-gradient(125deg,#9a9c9b,#a0a1a2 50%,#888c90); }
+body::after { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .045; z-index: 20; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath filter='url(%23n)' opacity='.7' d='M0 0h160v160H0z'/%3E%3C/svg%3E"); }
+.study-controls { position: fixed; inset: 24px 32px auto; display: flex; gap: 20px; align-items: center; color: rgba(255,255,255,.65); font: 10px var(--mono); letter-spacing: .06em; text-transform: uppercase; z-index: 10; }
+.r-mark { width: 24px; height: 24px; margin-right: 4px; color: white; }
+.study-controls > span { margin-right: auto; }
+.study-controls label { display: flex; align-items: center; gap: 8px; }
+.study-controls select { max-width: 150px; color: white; background: rgba(24,24,28,.35); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 8px; font: inherit; }
+.study-stage { width: 560px; max-width: calc(100vw - 64px); min-height: 100vh; display: flex; align-items: center; margin: auto; padding: 110px 0; }
+.study-stage > .shell { width: 100%; }
+.study-stage--wide { width: 760px; }
+.study-caption { position: fixed; bottom: 28px; left: 32px; color: rgba(255,255,255,.48); font: 9px var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.study-caption span { margin: 0 10px; }
+.busy-app { position: fixed; inset: 0; z-index: -2; background: #fff; color: #39414a; font: 12px Arial,sans-serif; }
+.busy-app__menu { background: #f2f3f5; padding: 10px 24px; border-bottom: 1px solid #ccc; }
+.busy-app__toolbar { background: #f8f9fa; padding: 18px 24px; border-bottom: 1px solid #d5d7d9; }
+.busy-app__formula { padding: 9px 22px; border-bottom: 1px solid #bbb; }
+.busy-app__grid { display: grid; grid-template-columns: repeat(12,1fr); }
+.busy-app__grid span { height: 31px; padding: 6px 10px; text-align: right; border-right: 1px solid #d8dce0; border-bottom: 1px solid #e1e5e9; }
+.busy-app__grid span:nth-child(-n+12), .busy-app__grid span:nth-child(12n+1) { background: #eff1f3; color: #52575d; }
+html[data-background="busy"][data-material="native"] .study-stage { --bar: rgba(16,16,20,.62); }
+html[data-background="busy"] .study-controls, html[data-background="busy"] .study-caption { color: #51545a; }
+html[data-background="busy"] .r-mark { color: #292d32; }
+@media(max-width:700px) { .study-controls { inset: 16px; flex-wrap: wrap; gap: 10px; } .study-controls > span { display: none; } .study-stage { max-width: calc(100vw - 32px); } }
