@@ -134,6 +134,7 @@ pub fn toggle_bar(app: &AppHandle) {
 }
 
 pub fn show_bar(app: &AppHandle) {
+    if crate::autopilot::is_running() { return; }
     let Some(bar) = app.get_webview_window("main") else { return };
     let height = bar
         .inner_size()
