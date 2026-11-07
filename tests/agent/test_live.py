@@ -20,10 +20,19 @@ else:
 
 @pytest.mark.live
 @pytest.mark.skipif(not os.getenv("HAI_API_KEY"), reason="HAI_API_KEY required for live calls")
-async def test_authenticated_skill_publish(tmp_path, caplog):
+@pytest.mark.parametrize(
+    "lesson_id,version,prefix,compatibility",
+    [
+        ("proven", "5.2.3", "blender-lesson-", "Blender 5.2.3"),
+        ("calc-value", "24.2", "libreoffice-calc-lesson-", "LibreOffice Calc 24.2"),
+    ],
+)
+async def test_authenticated_skill_publish(
+    tmp_path, caplog, lesson_id, version, prefix, compatibility
+):
     key = os.environ["HAI_API_KEY"]
     caplog.set_level(logging.INFO, logger="agent.skill_export")
-    record = copy.deepcopy(Catalog(FIXTURES, tmp_path).get("proven", 1, "5.2.3"))
+    record = copy.deepcopy(Catalog(FIXTURES, tmp_path).get(lesson_id, 1, version))
     record["lesson"]["lesson_id"] = "integration-" + uuid4().hex
 
     def revision(number):
@@ -31,18 +40,23 @@ async def test_authenticated_skill_publish(tmp_path, caplog):
         VALIDATOR.validate(record["lesson"])
         record["fingerprint"] = hashlib.sha256(json.dumps(record["lesson"]).encode()).hexdigest()
         skill = artifact(record)
-        skill["description"] = "Integration fixture only — not a validated Blender lesson"
+        skill["description"] = "Fixture d'intégration uniquement — pas une leçon réellement prouvée"
         return skill
 
     first = revision(1)
     second = revision(2)
     assert first["name"] == second["name"]
+    assert first["name"].startswith(prefix)
+    assert first["compatibility"] == compatibility
     endpoint = AGENTS_URL + "/skills/" + first["name"]
     async with httpx.AsyncClient(headers={"Authorization": "Bearer " + key}, timeout=30) as client:
         try:
             response = await measured_request(client, "GET", "https://api.hcompany.ai/v1/models")
             assert response.status_code == 200
-            assert (await publish(first, key))["body"] == first["body"]
+            created = await publish(first, key)
+            assert created["body"] == first["body"]
+            assert created["name"].startswith(prefix)
+            assert created["compatibility"] == compatibility
             updated = await publish(second, key)
             assert updated["body"] == second["body"]
             current = await measured_request(client, "GET", endpoint)
