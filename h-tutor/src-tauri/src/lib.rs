@@ -99,6 +99,9 @@ struct Answer {
     /// "point" (show `target`), "next" (step is done / skip), "repeat" (show the step again) or "none".
     action: String,
     target: String,
+    /// True when the pointer is already on `target` (no need to locate it).
+    #[serde(default)]
+    pointed: bool,
 }
 
 async fn shoot() -> Result<Shot, String> {
@@ -153,6 +156,18 @@ async fn locate(target: String, label: String, app: AppHandle, state: State<'_, 
     Ok(pointer)
 }
 
+/// Shows the ghost pointer at a normalized point with a label (an element
+/// Holo shows while answering a question).
+fn show_point(app: &AppHandle, x: f64, y: f64, label: String) -> Result<(), String> {
+    let (pointer, _) = to_overlay_coords(app, x, y, label)?;
+    if let Some(state) = app.try_state::<AppState>() {
+        state.overlay_gen.fetch_add(1, Ordering::SeqCst);
+    }
+    set_overlay_visible(app, true);
+    app.emit_to("overlay", "pointer:show", pointer).ok();
+    Ok(())
+}
+
 /// Maps Holo's normalized (0..1000) point on the primary monitor to logical
 /// pixels inside the overlay window (which may be offset, e.g. by the menu bar).
 /// Also returns the point in global logical coordinates, to match real clicks.
@@ -184,6 +199,12 @@ fn apply_step(app: &AppHandle, state: &AppState, step: &agent::Step) -> Result<(
             *state.target.lock().unwrap() = (step.kind != "scroll").then_some(global);
             *state.target_rect.lock().unwrap() = rect.filter(|_| step.kind != "scroll");
             state.overlay_gen.fetch_add(1, Ordering::SeqCst);
+            // The learner finds it alone: the target still counts clicks,
+            // but nothing is shown until they ask (`tutor_reveal`).
+            if step.hint_only {
+                app.emit_to("overlay", "pointer:hide", ()).ok();
+                return Ok(());
+            }
             set_overlay_visible(app, true);
             app.emit_to("overlay", "pointer:show", pointer).ok();
         }
@@ -439,6 +460,18 @@ async fn save_tutorial(state: State<'_, AppState>) -> Result<String, String> {
     Ok(t.title)
 }
 
+/// Shows where the current step's element is, for a step the learner was
+/// meant to find alone.
+#[tauri::command]
+async fn tutor_reveal(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    let guard = state.session.lock().await;
+    if let Some(session) = guard.as_ref() {
+        journal::event("reveal", json!({ "instruction": session.step.instruction }));
+        apply_step(&app, &state, &agent::Step { hint_only: false, ..session.step.clone() })?;
+    }
+    Ok(())
+}
+
 /// Shows the current step's pointer again, without asking Holo.
 #[tauri::command]
 async fn tutor_repoint(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
@@ -557,10 +590,39 @@ async fn ask(
     instruction: Option<String>,
     target: Option<String>,
     lang: Option<String>,
+    app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<Answer, String> {
     // Questions pause the tutorial: exploring the screen is not doing the step.
     watch::disarm();
+    let generation = state.generation.current();
+    {
+        let mut guard = state.session.lock().await;
+        if let Some(session) = guard.as_mut().filter(|s| !s.finished && s.blocked.is_none()) {
+            // Inside a tutorial the question joins the milestone's conversation,
+            // so the next steps know what was asked and answered.
+            session.set_lang(lang.as_deref());
+            let ask = async {
+                let shot = shoot().await?;
+                agent::ask_in_loop(&state.holo, session, &question, shot).await
+            };
+            let reply = state.generation.run(generation, cancel::STEP_DEADLINE, ask).await?;
+            if !state.generation.is_current(generation) {
+                return Err(cancel::STOPPED.into());
+            }
+            let pointed = match reply.point {
+                Some((x, y)) => show_point(&app, x, y, reply.answer.clone()).is_ok(),
+                None => false,
+            };
+            return Ok(Answer {
+                answer: reply.answer,
+                details: reply.details,
+                action: reply.action,
+                target: reply.target,
+                pointed,
+            });
+        }
+    }
     let tutorial = state.session.lock().await.as_ref().map(|s| s.context()).unwrap_or_default();
     let shot = shoot().await?;
     let schema = json!({
@@ -779,6 +841,7 @@ pub fn run() {
             tutor_start,
             tutor_next,
             tutor_repoint,
+            tutor_reveal,
             tutor_resume,
             tutor_skip_milestone,
             list_tutorials,

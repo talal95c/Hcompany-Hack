@@ -85,7 +85,15 @@ hidden, guide the learner step by step to reveal it.
 - When the learner has to make a choice (a name, a file, an item in a list), point at a sensible default and say they can pick another one.
 - If the previous action did not have the expected effect, notice it and help the learner recover.
 - Call answer as soon as the latest screenshot meets the current task's success criterion, even if that happened \
-before you acted. Only work on the current task, not the later ones.";
+before you acted. Only work on the current task, not the later ones.
+Teaching:
+- The learner may pause and ask you something. You then receive their question and reply with explain: a short \
+spoken answer in their language, and the element to show when that helps. Then the current action resumes.
+- Make the learner think, not only click: at most once per task, and never for a trivial click, call ask_learner \
+to have them predict where an option lives or why a step matters. Their reply comes back as the tool result: \
+acknowledge it briefly in your next instruction.
+- Fade your help: when <progress> shows the learner already did the same kind of action successfully, set \
+show_pointer to false so they find it themselves. Point again if they fail or ask.";
 
 fn tool(name: &str, desc: &str, mut props: Value, mut required: Vec<&str>) -> Value {
     props["instruction"] = json!({
@@ -103,14 +111,18 @@ fn tools(with_search: bool) -> Value {
     let el = json!({ "type": "string", "description": "Detailed description of the target UI element" });
     let x = json!({ "type": "integer", "minimum": 0, "maximum": 1000, "description": "X coordinate as integer in [0, 1000]" });
     let y = json!({ "type": "integer", "minimum": 0, "maximum": 1000, "description": "Y coordinate as integer in [0, 1000]" });
+    let show = json!({ "type": "boolean",
+        "description": "false to let the learner find the element alone (they did this kind of action before); default true" });
     let mut list = json!([
         tool("click", "Click at (x, y) coordinates",
-            json!({ "element": el, "x": x, "y": y }), vec!["element", "x", "y"]),
+            json!({ "element": el, "x": x, "y": y, "show_pointer": show }), vec!["element", "x", "y"]),
         tool("write", "Type text into the element at (x, y)",
-            json!({ "element": el, "x": x, "y": y, "content": { "type": "string", "description": "Text to type" } }),
+            json!({ "element": el, "x": x, "y": y, "content": { "type": "string", "description": "Text to type" },
+                    "show_pointer": show }),
             vec!["element", "x", "y", "content"]),
         tool("scroll", "Scroll at (x, y)",
-            json!({ "x": x, "y": y, "direction": { "type": "string", "enum": ["up", "down", "left", "right"] } }),
+            json!({ "x": x, "y": y, "direction": { "type": "string", "enum": ["up", "down", "left", "right"] },
+                    "show_pointer": show }),
             vec!["x", "y", "direction"]),
         tool("press_key", "Press a keyboard key or shortcut",
             json!({ "keys": { "type": "string", "description": "e.g. cmd+n, enter" } }), vec!["keys"]),
@@ -121,6 +133,19 @@ fn tools(with_search: bool) -> Value {
                 "properties": { "content": { "type": "string",
                     "description": "What on the screenshot proves the task is done (one short English sentence)" } },
                 "required": ["content"] }
+        }},
+        { "type": "function", "function": {
+            "name": "ask_learner",
+            "description": "Ask the learner a short question that makes them think (predict where something is, \
+                or why a step matters). Their reply comes back as the tool result. The learner does nothing on screen meanwhile.",
+            "parameters": { "type": "object",
+                "properties": {
+                    "question": { "type": "string",
+                        "description": "One short question in the learner's language (max 20 words), read aloud" },
+                    "options": { "type": "array", "items": { "type": "string" }, "maxItems": 4,
+                        "description": "Up to 4 short answer choices, or empty for a free answer" }
+                },
+                "required": ["question"] }
         }}
     ]);
     // Once the search budget is spent, search is no longer offered at all.
@@ -128,6 +153,39 @@ fn tools(with_search: bool) -> Value {
         list.as_array_mut().expect("tools").push(crate::search::tool());
     }
     list
+}
+
+/// Tools for a learner's question: an explanation (and search).
+fn question_tools(with_search: bool) -> Value {
+    let mut list = json!([{ "type": "function", "function": {
+        "name": "explain",
+        "description": "Reply to the learner's question. The current action resumes afterwards.",
+        "parameters": { "type": "object",
+            "properties": {
+                "say": { "type": "string",
+                    "description": "Short spoken answer in the learner's language (max 35 words), read aloud" },
+                "details": { "type": "array", "items": { "type": "string" }, "maxItems": 5,
+                    "description": "Up to 5 short points shown on screen when a fuller explanation helps, else empty" },
+                "element": { "type": "string", "description": "Element to show on screen, if that helps; else empty" },
+                "x": { "type": "integer", "minimum": 0, "maximum": 1000, "description": "X of that element in [0, 1000]" },
+                "y": { "type": "integer", "minimum": 0, "maximum": 1000, "description": "Y of that element in [0, 1000]" },
+                "intent": { "type": "string", "enum": ["question", "done", "skip", "repeat"],
+                    "description": "question: a real question; done: they say the current step is done; skip: they \
+                        want to skip it; repeat: they want the current step shown again" },
+                "remember": { "type": "string",
+                    "description": "A choice or preference of the learner to keep for the rest of the tutorial \
+                        (e.g. a name they want to use), in English; else empty" }
+            },
+            "required": ["say", "intent"] }
+    }}]);
+    if with_search {
+        list.as_array_mut().expect("tools").push(crate::search::tool());
+    }
+    list
+}
+
+fn tool_names(tools: &Value) -> Vec<&str> {
+    tools.as_array().into_iter().flatten().filter_map(|t| t["function"]["name"].as_str()).collect()
 }
 
 #[derive(Serialize, Clone, Default, Debug)]
@@ -143,7 +201,7 @@ pub struct MilestoneView {
 /// What the learner should do now, as shown in the bar.
 #[derive(Serialize, Clone, Default, Debug)]
 pub struct Step {
-    /// click | write | scroll | press_key | done, or pending while a new
+    /// click | write | scroll | press_key | ask_learner | done, or pending while a new
     /// milestone's first action is not known yet
     pub kind: String,
     pub instruction: String,
@@ -160,6 +218,11 @@ pub struct Step {
     /// Milestones closed while computing this step (for a "✓" toast).
     pub completed: Vec<String>,
     pub teach: Option<String>,
+    /// The learner should find the element alone: the pointer stays hidden
+    /// (clicks on it are still recognized) until they ask to be shown.
+    pub hint_only: bool,
+    /// Answer choices of an `ask_learner` step.
+    pub options: Vec<String>,
 }
 
 /// What became of an action given to the learner, judged on the next
@@ -389,6 +452,10 @@ impl Session {
         if after > 0 {
             out += &format!("… {after} more milestones after these\n");
         }
+        let mastered = self.mastered();
+        if !mastered.is_empty() {
+            out += &format!("Learner already did successfully: {}\n", mastered.join("; "));
+        }
         if !self.facts.is_empty() {
             out += &format!("Learner entries so far (reuse them): {}\n", self.facts.join("; "));
         }
@@ -431,6 +498,27 @@ impl Session {
             })
             .map(|(_, a)| a.path.clone())
             .collect()
+    }
+
+    /// Actions the learner performed with a visible effect in other
+    /// milestones, with counts, most recent first: what Holo may stop
+    /// pointing at.
+    fn mastered(&self) -> Vec<String> {
+        let mut counts: Vec<(String, usize)> = Vec::new();
+        let finished = self.tutorial.milestones.iter().filter(|m| Some(&m.id) != self.current.as_ref());
+        for m in finished.rev() {
+            for a in self.actions.get(&m.id).into_iter().flatten().rev() {
+                if a.outcome != Outcome::Changed || a.typed.is_some() {
+                    continue;
+                }
+                match counts.iter_mut().find(|(p, _)| *p == a.path) {
+                    Some((_, n)) => *n += 1,
+                    None => counts.push((a.path.clone(), 1)),
+                }
+            }
+        }
+        counts.truncate(8);
+        counts.into_iter().map(|(p, n)| if n > 1 { format!("{p} (x{n})") } else { p }).collect()
     }
 
     /// Judges the last action of the current milestone on the new screen.
@@ -683,6 +771,8 @@ enum Action {
     PressKey { keys: String, instruction: String },
     Search { app_name: Option<String>, query: String },
     Answer { evidence: String },
+    AskLearner { question: String, options: Vec<String> },
+    Explain { say: String, details: Vec<String>, show: Option<(String, f64, f64)>, intent: String, remember: String },
 }
 
 #[derive(Deserialize)]
@@ -725,6 +815,26 @@ struct SearchArgs {
 #[derive(Deserialize)]
 struct AnswerArgs {
     content: String,
+}
+#[derive(Deserialize)]
+struct AskLearnerArgs {
+    question: String,
+    #[serde(default)]
+    options: Vec<String>,
+}
+#[derive(Deserialize)]
+struct ExplainArgs {
+    say: String,
+    #[serde(default)]
+    details: Vec<String>,
+    #[serde(default)]
+    element: String,
+    x: Option<f64>,
+    y: Option<f64>,
+    #[serde(default)]
+    intent: String,
+    #[serde(default)]
+    remember: String,
 }
 
 /// Why a model response was not accepted, and what to tell Holo.
@@ -785,7 +895,7 @@ fn point(x: f64, y: f64, call: &Value) -> Result<(f64, f64), Invalid> {
 /// exactly one supported tool call with an id, arguments that parse into the
 /// tool's type, required fields present, coordinates on screen, and short
 /// non-empty evidence for `answer`.
-fn validate(msg: &Value, with_search: bool) -> Result<(Value, Action), Invalid> {
+fn validate(msg: &Value, offered: &Value) -> Result<(Value, Action), Invalid> {
     if msg["finish_reason"] == "length" {
         return Err(Invalid::retry("response cut off (length)"));
     }
@@ -801,6 +911,13 @@ fn validate(msg: &Value, with_search: bool) -> Result<(Value, Action), Invalid> 
         return Err(Invalid::retry("tool call without id"));
     }
     let name = call["function"]["name"].as_str().unwrap_or("");
+    if !tool_names(offered).contains(&name) {
+        return Err(Invalid::tell(
+            &format!("tool not offered: {name:?}"),
+            &format!("`{name}` is not available now. Use one of the offered tools."),
+            None,
+        ));
+    }
     let raw = call["function"]["arguments"].as_str().unwrap_or("");
     let Ok(args) = serde_json::from_str::<Value>(raw).map(|a| a.is_object().then_some(a)) else {
         return Err(Invalid::tell(
@@ -854,7 +971,7 @@ fn validate(msg: &Value, with_search: bool) -> Result<(Value, Action), Invalid> 
             let a: KeyArgs = typed(args, name, call)?;
             Action::PressKey { keys: nonempty(a.keys, "keys", call)?, instruction: a.instruction }
         }
-        "search" if with_search => {
+        "search" => {
             let a: SearchArgs = typed(args, name, call)?;
             Action::Search {
                 app_name: a.app_name.filter(|n| !n.trim().is_empty()),
@@ -873,6 +990,33 @@ fn validate(msg: &Value, with_search: bool) -> Result<(Value, Action), Invalid> 
                 ));
             }
             Action::Answer { evidence }
+        }
+        "ask_learner" => {
+            let a: AskLearnerArgs = typed(args, name, call)?;
+            let options: Vec<String> =
+                a.options.into_iter().map(|o| o.trim().to_string()).filter(|o| !o.is_empty()).take(4).collect();
+            Action::AskLearner { question: nonempty(a.question, "question", call)?, options }
+        }
+        "explain" => {
+            let a: ExplainArgs = typed(args, name, call)?;
+            let show = match (a.element.trim(), a.x, a.y) {
+                ("", _, _) | (_, None, _) | (_, _, None) => None,
+                (element, Some(x), Some(y)) => {
+                    let (x, y) = point(x, y, call)?;
+                    Some((element.to_string(), x, y))
+                }
+            };
+            let intent = match a.intent.as_str() {
+                "done" | "skip" | "repeat" => a.intent,
+                _ => "question".into(),
+            };
+            Action::Explain {
+                say: nonempty(a.say, "say", call)?,
+                details: a.details.into_iter().filter(|d| !d.trim().is_empty()).take(5).collect(),
+                show,
+                intent,
+                remember: a.remember.trim().to_string(),
+            }
         }
         _ => {
             return Err(Invalid::tell(
@@ -911,41 +1055,23 @@ impl Metrics {
     }
 }
 
-/// One Holo turn on the current milestone's conversation.
-async fn ask_holo(
+/// Asks Holo for one validated action on the current conversation, with
+/// the tools `offer(search_allowed)` returns. Searches run inside: Holo
+/// asks, we fetch, Holo continues on the same screenshot, until it picks
+/// something else. Search is withdrawn once its budget is spent, so this
+/// ends. The accepted call is appended to the conversation.
+async fn choose(
     brain: &impl Brain,
     session: &mut Session,
-    event: Option<String>,
-    shot: &Shot,
-    shot_path: Option<&str>,
-) -> Result<Turn, String> {
-    let started = std::time::Instant::now();
-    // A pending call always gets its tool result, or the conversation would
-    // be malformed for the API.
-    if let Some(id) = session.pending_call.take() {
-        let content = event.unwrap_or_else(|| "No report from the learner.".into());
-        session.messages.push(json!({ "role": "tool", "tool_call_id": id, "content": content }));
-    }
-    compact(&mut session.messages, CONTEXT_BUDGET);
-    session.messages.push(json!({ "role": "user", "content": [
-        { "type": "text", "text": session.progress_block() },
-        { "type": "text", "text": "<observation>\n" },
-        { "type": "image_url", "image_url": { "url": shot.data_uri } },
-        { "type": "text", "text": "\n</observation>" }
-    ]}));
-    session.trim_images();
-
-    let model = holo::smart_model();
-    let mut metrics = Metrics::default();
-    // Searches run inside the step: Holo asks, we fetch, Holo continues on
-    // the same screenshot, until it picks an action for the learner. Search
-    // is withdrawn once its budget is spent, so this loop ends.
-    let (call, action, msg) = loop {
-        let with_search = (metrics.searches as usize) < MAX_SEARCHES;
+    offer: fn(bool) -> Value,
+    metrics: &mut Metrics,
+) -> Result<(Value, Action, Value), String> {
+    loop {
+        let offered = offer((metrics.searches as usize) < MAX_SEARCHES);
         let mut body = json!({
-            "model": model,
+            "model": holo::smart_model(),
             "messages": session.messages,
-            "tools": tools(with_search),
+            "tools": offered,
             "tool_choice": "required",
             "temperature": 0.8,
             "reasoning_effort": std::env::var("HOLO_REASONING").unwrap_or_else(|_| "low".into()),
@@ -960,7 +1086,7 @@ async fn ask_holo(
         for _ in 0..MAX_ATTEMPTS {
             let (m, t, u) = brain.chat(&body).await?;
             metrics.add(t, &u);
-            match validate(&m, with_search) {
+            match validate(&m, &offered) {
                 Ok((call, action)) => {
                     accepted = Some((call, action, m));
                     break;
@@ -1003,10 +1129,48 @@ async fn ask_holo(
             continue;
         }
         session.messages.push(assistant);
-        break (call, action, msg);
-    };
-    session.pending_call = call["id"].as_str().map(String::from);
+        session.pending_call = call["id"].as_str().map(String::from);
+        return Ok((call, action, msg));
+    }
+}
 
+/// Appends an observation: the `<progress>` block, the screenshot, and any
+/// extra text (a learner's question). Keeps the conversation bounded.
+fn observe(session: &mut Session, shot: &Shot, extra: Option<&str>) {
+    compact(&mut session.messages, CONTEXT_BUDGET);
+    let mut parts = vec![
+        json!({ "type": "text", "text": session.progress_block() }),
+        json!({ "type": "text", "text": "<observation>\n" }),
+        json!({ "type": "image_url", "image_url": { "url": shot.data_uri } }),
+        json!({ "type": "text", "text": "\n</observation>" }),
+    ];
+    if let Some(extra) = extra {
+        parts.push(json!({ "type": "text", "text": extra }));
+    }
+    session.messages.push(json!({ "role": "user", "content": parts }));
+    session.trim_images();
+}
+
+/// One Holo turn on the current milestone's conversation.
+async fn ask_holo(
+    brain: &impl Brain,
+    session: &mut Session,
+    event: Option<String>,
+    shot: &Shot,
+    shot_path: Option<&str>,
+) -> Result<Turn, String> {
+    let started = std::time::Instant::now();
+    // A pending call always gets its tool result, or the conversation would
+    // be malformed for the API.
+    if let Some(id) = session.pending_call.take() {
+        let content = event.unwrap_or_else(|| "No report from the learner.".into());
+        session.messages.push(json!({ "role": "tool", "tool_call_id": id, "content": content }));
+    }
+    observe(session, shot, None);
+
+    let model = holo::smart_model();
+    let mut metrics = Metrics::default();
+    let (call, action, msg) = choose(brain, session, tools, &mut metrics).await?;
     let reasoning = msg["reasoning"].as_str().or(msg["reasoning_content"].as_str()).unwrap_or("");
     let milestone_id = session.current.clone().unwrap_or_default();
     let args: Value =
@@ -1031,12 +1195,28 @@ async fn ask_holo(
         }),
     );
 
+    let show_pointer = args["show_pointer"].as_bool() != Some(false);
+    let current = session.current_milestone().cloned();
     let (kind, element, point, text, keys, instruction, path, typed) = match action {
         Action::Answer { evidence } => {
             let id = session.close_current(Status::Done, &evidence).ok_or("Aucune étape en cours")?;
             return Ok(Turn::MilestoneDone(id));
         }
-        Action::Search { .. } => unreachable!("searches are handled in the loop"),
+        Action::AskLearner { question, options } => {
+            journal::event(
+                "ask_learner",
+                json!({ "milestone": milestone_id, "question": question, "options": options }),
+            );
+            return Ok(Turn::Action(Box::new(Step {
+                kind: "ask_learner".into(),
+                instruction: question,
+                options,
+                milestone: current.as_ref().map(|m| view(&session.tutorial, m, "current")),
+                progress: session.progress(),
+                ..Default::default()
+            })));
+        }
+        Action::Search { .. } | Action::Explain { .. } => unreachable!("not offered for an action turn"),
         Action::Click { element, x, y, instruction } => {
             let fallback = format!("Click {element}");
             let path = format!("click {element}");
@@ -1069,7 +1249,6 @@ async fn ask_holo(
     if let (Some(rel), Some((x, y))) = (shot_path, point) {
         journal::mark(rel, &shot.data_uri, x, y);
     }
-    let current = session.current_milestone().cloned();
     Ok(Turn::Action(Box::new(Step {
         kind: kind.into(),
         instruction,
@@ -1082,7 +1261,75 @@ async fn ask_holo(
         progress: session.progress(),
         completed: Vec::new(),
         teach: current.and_then(|m| m.teach),
+        hint_only: point.is_some() && !show_pointer,
+        options: Vec::new(),
     })))
+}
+
+/// Holo's reply to a learner's question, for the bar.
+#[derive(Serialize, Clone, Debug, PartialEq)]
+pub struct Reply {
+    pub answer: String,
+    pub details: Vec<String>,
+    /// "point" (an element is shown), "next" (step done / skip), "repeat" or "none".
+    pub action: String,
+    pub target: String,
+    /// Where to point, when Holo showed an element.
+    pub point: Option<(f64, f64)>,
+}
+
+/// The learner paused to ask something. The question enters the current
+/// milestone's conversation (as the result of the pending action, or as a
+/// new message), Holo replies with `explain` on the live screen, and the
+/// exchange stays in context for the following steps.
+pub async fn ask_in_loop(
+    brain: &impl Brain,
+    session: &mut Session,
+    question: &str,
+    shot: Shot,
+) -> Result<Reply, String> {
+    if session.current.is_none() {
+        return Err("Aucune étape en cours".into());
+    }
+    journal::event("learner_question", json!({ "milestone": session.current, "question": question }));
+    let asked = format!("The learner paused and asks: “{question}”");
+    let extra = match session.pending_call.take() {
+        Some(id) => {
+            let note = format!("{asked}. They have not done this action yet.");
+            session.messages.push(json!({ "role": "tool", "tool_call_id": id, "content": note }));
+            None
+        }
+        None => Some(asked.as_str()),
+    };
+    observe(session, &shot, extra);
+    let mut metrics = Metrics::default();
+    let (_, action, _) = choose(brain, session, question_tools, &mut metrics).await?;
+    let Action::Explain { say, details, show, intent, remember } = action else {
+        unreachable!("only explain and search are offered for a question")
+    };
+    if !remember.is_empty() {
+        session.facts.push(remember.clone());
+        let excess = session.facts.len().saturating_sub(MAX_FACTS);
+        session.facts.drain(..excess);
+    }
+    journal::event(
+        "explain",
+        json!({ "milestone": session.current, "say": say, "intent": intent, "show": show, "remember": remember,
+                "requests": metrics.requests, "model_ms": metrics.model_ms }),
+    );
+    let action = match (intent.as_str(), &show) {
+        ("done" | "skip", _) => "next",
+        ("repeat", _) => "repeat",
+        (_, Some(_)) => "point",
+        _ => "none",
+    };
+    Ok(Reply {
+        answer: say,
+        details,
+        action: action.into(),
+        target: show.as_ref().map(|(e, _, _)| e.clone()).unwrap_or_default(),
+        point: show.map(|(_, x, y)| (x, y)),
+    })
 }
 
 /// Rough prompt size of a conversation: text at ~4 characters per token,
@@ -1201,34 +1448,36 @@ mod tests {
 
     #[test]
     fn accepts_a_well_formed_click() {
-        let (_, a) =
-            validate(&call("click", r#"{"element":"Add menu","x":120,"y":40,"instruction":"Ouvre Add"}"#), true)
-                .unwrap();
+        let (_, a) = validate(
+            &call("click", r#"{"element":"Add menu","x":120,"y":40,"instruction":"Ouvre Add"}"#),
+            &tools(true),
+        )
+        .unwrap();
         assert_eq!(a, Action::Click { element: "Add menu".into(), x: 120.0, y: 40.0, instruction: "Ouvre Add".into() });
     }
 
     #[test]
     fn truncated_answer_never_closes_a_milestone() {
-        let e = validate(&call("answer", r#"{"content":"The object is"#), true).unwrap_err();
+        let e = validate(&call("answer", r#"{"content":"The object is"#), &tools(true)).unwrap_err();
         assert!(e.call.is_none(), "a broken call is not echoed back");
-        assert!(validate(&call("answer", "{}"), true).is_err());
-        assert!(validate(&call("answer", r#"{"content":"  "}"#), true).is_err());
+        assert!(validate(&call("answer", "{}"), &tools(true)).is_err());
+        assert!(validate(&call("answer", r#"{"content":"  "}"#), &tools(true)).is_err());
     }
 
     #[test]
     fn cut_off_response_is_rejected() {
         let mut m = call("answer", r#"{"content":"Torus visible"}"#);
         m["finish_reason"] = json!("length");
-        assert!(validate(&m, true).is_err());
+        assert!(validate(&m, &tools(true)).is_err());
     }
 
     #[test]
     fn rejects_out_of_range_and_missing_fields() {
-        assert!(validate(&call("click", r#"{"element":"e","x":8000,"y":10}"#), true).is_err());
-        assert!(validate(&call("click", r#"{"element":"e"}"#), true).is_err());
-        assert!(validate(&call("press_key", r#"{"keys":""}"#), true).is_err());
-        assert!(validate(&call("scroll", r#"{"x":1,"y":1,"direction":"sideways"}"#), true).is_err());
-        assert!(validate(&call("teleport", "{}"), true).is_err());
+        assert!(validate(&call("click", r#"{"element":"e","x":8000,"y":10}"#), &tools(true)).is_err());
+        assert!(validate(&call("click", r#"{"element":"e"}"#), &tools(true)).is_err());
+        assert!(validate(&call("press_key", r#"{"keys":""}"#), &tools(true)).is_err());
+        assert!(validate(&call("scroll", r#"{"x":1,"y":1,"direction":"sideways"}"#), &tools(true)).is_err());
+        assert!(validate(&call("teleport", "{}"), &tools(true)).is_err());
     }
 
     #[test]
@@ -1236,10 +1485,10 @@ mod tests {
         let mut m = call("click", r#"{"element":"e","x":1,"y":1}"#);
         let first = m["tool_calls"][0].clone();
         m["tool_calls"].as_array_mut().unwrap().push(first);
-        assert!(validate(&m, true).is_err());
+        assert!(validate(&m, &tools(true)).is_err());
         let mut m = call("click", r#"{"element":"e","x":1,"y":1}"#);
         m["tool_calls"][0]["id"] = json!("");
-        assert!(validate(&m, true).is_err());
+        assert!(validate(&m, &tools(true)).is_err());
     }
 
     #[test]
@@ -1247,17 +1496,17 @@ mod tests {
         // Refused each time, not only the first: validation has no "refused once" bypass.
         let long = format!(r#"{{"content":"{}"}}"#, "x".repeat(300));
         for _ in 0..3 {
-            let e = validate(&call("answer", &long), true).unwrap_err();
+            let e = validate(&call("answer", &long), &tools(true)).unwrap_err();
             assert!(e.feedback.unwrap().starts_with("Refused"));
         }
-        assert!(validate(&call("answer", r#"{"content":"line one\nline two"}"#), true).is_err());
+        assert!(validate(&call("answer", r#"{"content":"line one\nline two"}"#), &tools(true)).is_err());
     }
 
     #[test]
     fn search_is_refused_once_its_budget_is_spent() {
         let c = call("search", r#"{"app_name":"Blender","query":"add torus"}"#);
-        assert!(validate(&c, true).is_ok());
-        assert!(validate(&c, false).is_err());
+        assert!(validate(&c, &tools(true)).is_ok());
+        assert!(validate(&c, &tools(false)).is_err());
         let names: Vec<_> = tools(false).as_array().unwrap().iter().map(|t| t["function"]["name"].clone()).collect();
         assert!(!names.contains(&json!("search")));
     }
@@ -1715,5 +1964,127 @@ mod tests {
         tauri::async_runtime::block_on(advance_on(&brain, &mut s, None, shot(), false)).unwrap();
         let tool = s.messages.iter().find(|m| m["role"] == "tool").unwrap()["content"].as_str().unwrap().to_string();
         assert!(tool.len() <= MAX_SEARCH_CHARS + 20 && tool.ends_with("[result truncated]"));
+    }
+
+    // ---- the learner in the loop ----
+
+    fn explain(args: &str) -> Result<Value, String> {
+        Ok(call("explain", args))
+    }
+
+    fn ask(brain: &Fake, s: &mut Session, q: &str) -> Result<Reply, String> {
+        tauri::async_runtime::block_on(ask_in_loop(brain, s, q, shot()))
+    }
+
+    #[test]
+    fn a_question_joins_the_milestone_conversation() {
+        let mut s = linear(1);
+        step_on(&Fake::new(vec![click()]), &mut s, "start", 100);
+        let brain = Fake::new(vec![explain(r#"{"say":"Le menu Add crée des objets.","intent":"question"}"#)]);
+        let r = ask(&brain, &mut s, "C'est quoi le menu Add ?").unwrap();
+        assert_eq!(r.answer, "Le menu Add crée des objets.");
+        assert_eq!(r.action, "none");
+        // Asked as the result of the pending click, with the screen.
+        let sent = brain.bodies.lock().unwrap()[0].clone();
+        let tool = sent["messages"].as_array().unwrap().iter().rev().find(|m| m["role"] == "tool").unwrap().clone();
+        assert!(tool["content"].as_str().unwrap().contains("C'est quoi le menu Add ?"));
+        let offered: Vec<_> = tool_names(&sent["tools"]).into_iter().map(String::from).collect();
+        assert!(offered.contains(&"explain".to_string()) && !offered.contains(&"click".to_string()));
+        // The next step sees the question and the explanation.
+        let next = Fake::new(vec![click()]);
+        step_on(&next, &mut s, "The learner clicked", 100);
+        let history = next.bodies.lock().unwrap()[0]["messages"].to_string();
+        assert!(history.contains("menu Add ?") && history.contains("crée des objets"));
+        let last_tool = next.bodies.lock().unwrap()[0]["messages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .rev()
+            .find(|m| m["role"] == "tool")
+            .unwrap()["content"]
+            .clone();
+        assert_eq!(last_tool, "The learner clicked");
+    }
+
+    #[test]
+    fn a_question_without_pending_action_is_a_message() {
+        let mut s = linear(1);
+        let brain = Fake::new(vec![explain(r#"{"say":"Oui.","intent":"question"}"#)]);
+        ask(&brain, &mut s, "On commence ?").unwrap();
+        let sent = brain.bodies.lock().unwrap()[0]["messages"].clone();
+        let last = sent.as_array().unwrap().last().unwrap().clone();
+        assert!(last["content"].to_string().contains("The learner paused and asks: “On commence ?”"));
+    }
+
+    #[test]
+    fn explain_can_show_an_element_or_move_on() {
+        let mut s = linear(1);
+        let shown =
+            Fake::new(vec![explain(r#"{"say":"Ici.","element":"Add menu","x":120,"y":40,"intent":"question"}"#)]);
+        let r = ask(&shown, &mut s, "Où ?").unwrap();
+        assert_eq!((r.action.as_str(), r.target.as_str(), r.point), ("point", "Add menu", Some((120.0, 40.0))));
+        let done = Fake::new(vec![explain(r#"{"say":"Super, on continue.","intent":"done"}"#)]);
+        assert_eq!(ask(&done, &mut s, "C'est fait").unwrap().action, "next");
+        let bad = Fake::new(vec![
+            explain(r#"{"say":"Ici.","element":"Add","x":5000,"y":40,"intent":"question"}"#),
+            explain(r#"{"say":"Ici.","intent":"question"}"#),
+        ]);
+        assert_eq!(ask(&bad, &mut s, "Où ?").unwrap().point, None);
+        assert_eq!(bad.requests(), 2, "out-of-range point is refused, not clamped");
+    }
+
+    #[test]
+    fn a_learner_choice_is_remembered() {
+        let mut s = linear(2);
+        let brain = Fake::new(vec![explain(
+            r#"{"say":"Oui, appelle-le Bob.","intent":"question","remember":"The learner wants to name the object Bob"}"#,
+        )]);
+        ask(&brain, &mut s, "Je peux l'appeler Bob ?").unwrap();
+        assert!(s.progress_block().contains("name the object Bob"));
+    }
+
+    #[test]
+    fn tools_are_kept_to_their_turn() {
+        assert!(validate(&call("explain", r#"{"say":"x","intent":"question"}"#), &tools(true)).is_err());
+        assert!(validate(&call("click", r#"{"element":"e","x":1,"y":1}"#), &question_tools(true)).is_err());
+        assert!(validate(&call("search", r#"{"query":"q"}"#), &question_tools(true)).is_ok());
+    }
+
+    #[test]
+    fn holo_can_ask_the_learner() {
+        let mut s = linear(1);
+        let q = Ok(call(
+            "ask_learner",
+            r#"{"question":"À ton avis, quel menu ajoute un objet ?","options":["Add","View"," "]}"#,
+        ));
+        let st = step_on(&Fake::new(vec![q]), &mut s, "start", 100);
+        assert_eq!(st.kind, "ask_learner");
+        assert_eq!(st.options, ["Add", "View"]);
+        assert!(st.point.is_none());
+        assert_eq!(crate::watch::Mode::for_kind(&st.kind), None, "nothing to watch while they answer");
+        let next = Fake::new(vec![click()]);
+        step_on(&next, &mut s, "The learner answered: “Add”.", 100);
+        let tool = next.bodies.lock().unwrap()[0]["messages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .rev()
+            .find(|m| m["role"] == "tool")
+            .unwrap()["content"]
+            .clone();
+        assert_eq!(tool, "The learner answered: “Add”.");
+    }
+
+    #[test]
+    fn help_fades_on_actions_already_mastered() {
+        let mut s = linear(2);
+        step_on(&Fake::new(vec![click()]), &mut s, "start", 100);
+        step_on(&Fake::new(vec![answer(), click()]), &mut s, "clicked", 170);
+        assert!(s.progress_block().contains("Learner already did successfully: click Add menu"));
+        let alone = Ok(call("click", r#"{"element":"Add menu","x":100,"y":50,"show_pointer":false}"#));
+        let st = step_on(&Fake::new(vec![alone]), &mut s, "clicked", 170);
+        assert!(st.hint_only && st.point.is_some());
+        let shown = step_on(&Fake::new(vec![click()]), &mut s, "clicked", 170);
+        assert!(!shown.hint_only);
     }
 }

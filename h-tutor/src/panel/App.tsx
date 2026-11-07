@@ -316,9 +316,19 @@ export default function App() {
 
   // ---------- Questions (pause, explain, continue) ----------
 
+  /** The learner's reply to a question Holo asked (an `ask_learner` step). */
+  function answerHolo(reply: string) {
+    const r = reply.trim();
+    if (!r) return;
+    setQuestion("");
+    setAsking(false);
+    report(`The learner answered: “${r}”.`);
+  }
+
   async function askQuestion(text: string, spoken: string | null = null) {
     const q = text.trim();
     if (!q || phase !== "running") return;
+    if (liveRef.current.step?.kind === "ask_learner") return answerHolo(q);
     langRef.current = await api.resolveLang(q, spoken, langRef.current);
     stopSpeaking();
     api.hidePointer();
@@ -341,7 +351,7 @@ export default function App() {
       }
       const target = a.action === "point" ? a.target : "";
       setExplain({ question: q, answer: a.answer, details: a.details ?? [], target });
-      if (target) api.locate(target, a.answer).catch(() => {});
+      if (target && !a.pointed) api.locate(target, a.answer).catch(() => {});
     } catch (e) {
       setExplain({ question: q, details: [], target: "", error: errorText(e) });
     }
@@ -673,6 +683,23 @@ export default function App() {
               Tape <code>{step.text}</code>
             </div>
           )}
+          {step.kind === "ask_learner" && !busy && !explain && (
+            <div className="row">
+              {step.options.map((o) => (
+                <button key={o} className="pill" onClick={() => answerHolo(o)}>
+                  {o}
+                </button>
+              ))}
+              <button className="pill pill--light" onClick={() => setAsking(true)}>
+                Répondre
+              </button>
+            </div>
+          )}
+          {step.hint_only && !busy && !explain && (
+            <button className="pill" onClick={() => api.tutorReveal()} title="Show me where it is">
+              Montre-moi
+            </button>
+          )}
           {step.kind === "press_key" && step.keys && !busy && (
             <div className="chip">
               Appuie sur <kbd>{step.keys}</kbd>
@@ -697,7 +724,11 @@ export default function App() {
           ) : (
             <div className="status">
               {message ||
-                (step.kind === "click"
+                (step.kind === "ask_learner"
+                  ? "Réponds à voix haute ou tape ta réponse."
+                  : step.hint_only
+                    ? "À toi de le trouver ! Je regarde ton écran."
+                    : step.kind === "click"
                   ? "Go where I'm pointing. I'm watching your screen."
                   : step.kind === "write"
                     ? "Tape-le dans le champ que je pointe."
@@ -736,7 +767,7 @@ export default function App() {
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     onKeyDown={(e) => e.key === "Escape" && setAsking(false)}
-                    placeholder="Ask Holo anything…"
+                    placeholder={step?.kind === "ask_learner" ? "Ta réponse…" : "Ask Holo anything…"}
                     spellCheck={false}
                   />
                 </motion.form>
