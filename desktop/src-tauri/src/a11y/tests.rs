@@ -571,6 +571,12 @@ fn query_path_is_an_ordered_ancestor_subsequence() {
         ..Default::default()
     };
     assert_eq!(matches(&nodes, &query).len(), 1);
+    query.path = Some(vec!["FRAME:window".into(), "toolbar:Tools".into()]);
+    assert_eq!(matches(&nodes, &query).len(), 1);
+    query.path = Some(vec!["frame:Wrong window".into(), "toolbar:Tools".into()]);
+    assert!(matches(&nodes, &query).is_empty());
+    query.path = Some(vec!["frame:Window".into(), "panel:Tools".into()]);
+    assert!(matches(&nodes, &query).is_empty());
     query.path = Some(vec!["toolbar".into(), "frame".into()]);
     assert!(matches(&nodes, &query).is_empty());
 }

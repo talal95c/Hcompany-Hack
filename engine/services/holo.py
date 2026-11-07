@@ -26,6 +26,7 @@ from engine.services.errors import (
     ServiceUnavailable,
     error_for_status,
 )
+from engine.services.holo_scheduler import HoloScheduler
 from engine.services.latency import LatencyRecorder
 from engine.services.protocols import (
     NORMALIZED_MAX,
@@ -38,7 +39,6 @@ from engine.services.protocols import (
 SERVICE = "holo"
 DEFAULT_BASE_URL = "https://api.hcompany.ai/v1"
 DEFAULT_MODEL = "holo4-27b"
-_NEXT_REQUEST = 0.0
 
 # Préfixes système stables : ne pas les formater par requête, le cache de prompt en dépend.
 LOCATE_SYSTEM_PROMPT = (
@@ -183,7 +183,7 @@ class HoloCloudClient:
         self.act_timeout_s = act_timeout_s
         self.recorder = recorder or LatencyRecorder()
         self._client = client or AsyncOpenAI(api_key=key, base_url=base_url, max_retries=0)
-        self._pace_requests = client is None
+        self.scheduler = HoloScheduler()
 
     async def aclose(self) -> None:
         await self._client.close()
@@ -206,12 +206,6 @@ class HoloCloudClient:
             attempt_number += 1
             task = asyncio.current_task()
             path = f"attempt_{attempt_number}.{task.get_name() if task else 'primary'}"
-            global _NEXT_REQUEST
-            if self._pace_requests:
-                now = time.monotonic()
-                slot = max(now, _NEXT_REQUEST)
-                _NEXT_REQUEST = slot + 2.5
-                await asyncio.sleep(slot - now)
             response = await self._complete_attempt(
                 operation, min(timeout_s, 6.0), _start=start, _path=path, **kwargs
             )
@@ -244,22 +238,28 @@ class HoloCloudClient:
         with self.recorder.measure(SERVICE, operation) as ctx:
             ctx.start_offset_ms = round((time.perf_counter() - _start) * 1000, 2)
             ctx.path = _path
-            if self._pace_requests:
-                kwargs["extra_headers"] = {"Connection": "close"}
+            async def send():
+                ctx.start_offset_ms = round((time.perf_counter() - _start) * 1000, 2)
+                arguments = dict(
+                    model=self.model, temperature=0,
+                    extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+                    timeout=timeout_s, **kwargs,
+                )
+                if isinstance(self._client, AsyncOpenAI):
+                    raw = await self._client.chat.completions.with_raw_response.create(**arguments)
+                    await self.scheduler.observe(raw.status_code, raw.headers)
+                    return raw.parse()
+                return await self._client.chat.completions.create(**arguments)
+
             try:
                 resp = await asyncio.wait_for(
-                    self._client.chat.completions.create(
-                        model=self.model,
-                        temperature=0,
-                        extra_body={"chat_template_kwargs": {"enable_thinking": False}},
-                        timeout=timeout_s,
-                        **kwargs,
-                    ),
+                    self.scheduler.run(send),
                     timeout=timeout_s,
                 )
             except (TimeoutError, APITimeoutError) as exc:
                 raise ServiceTimeout(SERVICE, f"{operation} > {timeout_s}s") from exc
             except APIStatusError as exc:
+                await self.scheduler.observe(exc.status_code, exc.response.headers)
                 rid = exc.response.headers.get("x-request-id") if exc.response else None
                 ctx.request_id = rid
                 error = error_for_status(SERVICE, exc.status_code, str(exc), request_id=rid)

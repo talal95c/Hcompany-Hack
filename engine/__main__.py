@@ -13,6 +13,15 @@ from engine.lesson.runtime import EngineRuntime
 from engine.services.adapters import build_clients
 
 
+async def warm_up_jev(clients: dict) -> None:
+    jev = clients.get("jev")
+    if jev is not None:
+        try:
+            await jev.client.warm_up()
+        except Exception:
+            logging.getLogger(__name__).debug("Préchauffage Jev indisponible")
+
+
 async def main() -> None:
     logging.basicConfig(stream=sys.stderr, level=logging.WARNING)
     config = EngineConfig.from_env()
@@ -42,12 +51,15 @@ async def main() -> None:
                 pending = b""
 
     threading.Thread(target=stdin, daemon=True).start()
+    warm_up = asyncio.create_task(warm_up_jev(clients))
     try:
         await runtime.start()
         print("ENGINE_READY " + json.dumps({"ws_port": runtime.desktop.port,
                                            "addon_port": runtime.addon.port}), flush=True)
         await stopped.wait()
     finally:
+        warm_up.cancel()
+        await asyncio.gather(warm_up, return_exceptions=True)
         await asyncio.wait_for(runtime.close(), 2.5)
         await asyncio.gather(*(client.aclose() for client in clients.values()))
 

@@ -8,7 +8,12 @@ from openai import AsyncOpenAI
 
 from engine.adapters.holo import HoloRequests, PacedHoloAdapter, retry_after
 from engine.adapters.vision import HoloAssertVerifier
-from engine.services.errors import AuthenticationError, InvalidResponse, ServiceTimeout
+from engine.services.errors import (
+    AuthenticationError,
+    InvalidResponse,
+    QuotaExceeded,
+    ServiceTimeout,
+)
 from engine.services.holo import HoloCloudClient
 from tests.engine.test_servers import png
 
@@ -110,10 +115,10 @@ async def test_timeout_is_per_attempt_and_cancel_does_not_retry():
     with pytest.raises(asyncio.CancelledError):
         await task
     assert len(calls) <= 1
-    assert not requests.lock.locked()
+    assert task.cancelled()
 
 
-async def test_verification_and_localization_serialize_and_pace():
+async def test_verification_and_localization_allow_a_burst():
     clock = Clock()
     entered = asyncio.Event()
     release = asyncio.Event()
@@ -129,11 +134,9 @@ async def test_verification_and_localization_serialize_and_pace():
     first = asyncio.create_task(requests._complete("verify", 30))
     await entered.wait()
     second = asyncio.create_task(requests._complete("locate", 30))
-    await asyncio.sleep(0)
-    assert len(calls) == 1
     release.set()
     assert await asyncio.gather(first, second) == ["verify", "locate"]
-    assert calls == [("verify", 0, 20), ("locate", 2, 20)]
+    assert calls == [("verify", 0, 20), ("locate", 0, 20)]
 
 
 @pytest.mark.parametrize("value,expected", [("2", 2), ("invalid", 0), ("-1", 0)])
@@ -170,3 +173,22 @@ async def test_retry_after_beyond_budget_does_not_issue_another_request():
         await requests._complete("verify", 5)
     assert calls == ["verify"]
     assert clock.now == requests.budget_s(5)
+
+
+async def test_quota_retry_uses_retry_after_without_an_extra_fixed_pause():
+    clock = Clock()
+    calls = []
+
+    async def complete(operation, timeout_s, **kwargs):
+        calls.append(clock())
+        if len(calls) == 1:
+            error = QuotaExceeded("holo", "quota")
+            error.__cause__ = httpx.HTTPStatusError(
+                "quota", request=httpx.Request("POST", "https://test.invalid"),
+                response=httpx.Response(429, headers={"retry-after": "1"}))
+            raise error
+        return "ok"
+
+    requests = HoloRequests(SimpleNamespace(_complete=complete), clock=clock, sleep=clock.sleep)
+    assert await requests._complete("locate", 5) == "ok"
+    assert calls == [0, 1]

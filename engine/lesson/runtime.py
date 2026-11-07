@@ -49,6 +49,7 @@ from engine.lesson import Session, lesson_app, load_lesson, load_verification
 from engine.lesson.live_audio import LiveUtterance
 from engine.policy import HelpContext, HelpPolicy
 from engine.services.adapters import HoloAdapter, JevAdapter, SearchAdapter
+from engine.services.holo_scheduler import StaleSpeculation, speculative_request
 
 
 def decode_capture(payload: dict) -> bytes:
@@ -412,9 +413,16 @@ class EngineRuntime:
                 or session.status in {"COMPLETE", "ACTING"}):
             return
         generation, received = session.generation, time.perf_counter()
+        epoch = getattr(adapter, "focus_epoch", 0)
+
+        def current():
+            return (generation == session.generation and adapter is self.adapter
+                    and epoch == getattr(adapter, "focus_epoch", 0))
+
         try:
-            await adapter.refresh(session.step)
-        except (ConnectionError, RuntimeError):
+            with speculative_request(current):
+                await adapter.refresh(session.step)
+        except (ConnectionError, RuntimeError, StaleSpeculation):
             return
         self.metric("refresh", (time.perf_counter() - received) * 1000)
         if (adapter is self.a11y and adapter.last_error
@@ -429,7 +437,11 @@ class EngineRuntime:
             epoch = self.a11y.focus_epoch
             self.a11y.state.verdicts.clear()
             if self.vision.available():
-                visual = await self.vision.refresh(session.step)
+                try:
+                    with speculative_request(current):
+                        visual = await self.vision.refresh(session.step)
+                except StaleSpeculation:
+                    return
                 if epoch != self.a11y.focus_epoch or not visual.recent:
                     return
                 self.a11y.state.verdicts = dict(visual.verdicts)
@@ -950,14 +962,18 @@ class EngineRuntime:
                 following = self.session.lesson["steps"][self.session.index + 1]
                 next_target = replace(target, target=following["target"]["description"])
                 generation = self.session.generation
+                capture_epoch = self.policy.capture_epoch
 
                 async def localize():
-                    return await self.fallback.call(
-                        "holo", lambda: self.policy.holo.localize(
-                            image, next_target.target, timeout_s=self.config.holo_timeout_s,
-                        ), localization_budget(self.policy.holo, self.config.holo_timeout_s),
-                        lambda: None,
-                    )
+                    with speculative_request(lambda: self.session is not None
+                                             and generation == self.session.generation
+                                             and capture_epoch == self.policy.capture_epoch):
+                        return await self.fallback.call(
+                            "holo", lambda: self.policy.holo.localize(
+                                image, next_target.target, timeout_s=self.config.holo_timeout_s,
+                            ), localization_budget(self.policy.holo, self.config.holo_timeout_s),
+                            lambda: None,
+                        )
 
                 await self.preloader.start(generation, next_target, payload["capture_id"],
                                            localize, self.targets,

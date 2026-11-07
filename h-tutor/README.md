@@ -34,6 +34,24 @@ A tutorial is a **graph of milestones** (`tutorials/*.json`), not a click script
 
 ## How it works
 
+### Bibliothèque de skills (Rust)
+
+Une session réussie crée ou met à jour `skills/<tutorial_id>/skill.json` avec
+le graph et le chemin réellement suivi, l'app et l'historique du journal.
+Les écritures sont atomiques ; `compiled` reste vide (aucun script exécuté).
+Les dates et `muted_until` sont des secondes Unix, `duration_s` est mesurée.
+
+- `skills_list()` retourne les skills ; `skill_decline({skillId})` enregistre
+  un refus. Deux refus consécutifs mettent le skill en sourdine pendant 24 h.
+- Sans tutoriel actif, le contexte est vérifié toutes les 3 s via le nom de
+  l'app ayant le focus (sans capture). Une app reçoit au plus une proposition
+  toutes les 30 min ; `RIO_SKILLS_COOLDOWN_SECONDS` règle ce délai pour les tests.
+- `autopilot:propose` contient `{skill_id, title, goal, app}` ; `app` contient
+  `name` et, lorsqu'il existe, `bundle_id`.
+- `skill_propose_now({skillId})` propose immédiatement un skill déjà réussi,
+  même en sourdine (demande explicite), et réinitialise le délai de l'app.
+  Aucune UI ni exécution automatique n'est ajoutée dans ce bloc.
+
 ```
 Bar (React)                Rust (src-tauri)                          H Models API
 ───────────                ────────────────                          ────────────
