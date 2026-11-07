@@ -1,4 +1,4 @@
-# Holo Tutor
+# Rio
 
 A live software coach. Tell it what you want to learn: Holo (H Company) looks at your screen, breaks the task into steps, and a ghost cursor shows you where to click. You do each action yourself; the app sees your click and moves on.
 
