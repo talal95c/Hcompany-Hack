@@ -172,6 +172,11 @@ export const I = {
       <path d="M20 20l-4.2-4.2" />
     </svg>
   ),
+  Download: () => (
+    <svg {...P} className="nav__icon">
+      <path d="M12 3v12M7 10l5 5 5-5M4 19h16" />
+    </svg>
+  ),
   Copy: () => (
     <svg {...P} width={14} height={14}>
       <rect x="8" y="8" width="12" height="12" rx="2.5" />

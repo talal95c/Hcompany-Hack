@@ -4,6 +4,7 @@ import { Avatar } from "./cards";
 import { type TutorialRow, auth, initials, navigate, usePath, useApi } from "./lib";
 import { AuthPage, InvitePage, OnboardingPage } from "./pages/Auth";
 import { CommunityPage } from "./pages/Community";
+import { GetRioPage } from "./pages/GetRio";
 import { HomePage } from "./pages/Home";
 import { KnowledgePage } from "./pages/Knowledge";
 import { LibraryPage } from "./pages/Library";
@@ -25,6 +26,7 @@ const TEAM = [
   { path: "/usage", label: "Insights", icon: I.Chart },
   { path: "/settings", label: "Settings", icon: I.Gear },
 ];
+const GET_RIO = { path: "/get-rio", label: "Get the Mac app", icon: I.Download };
 
 function App() {
   const path = usePath();
@@ -50,7 +52,7 @@ function App() {
 }
 
 function Shell({ path, orgId }: { path: string; orgId: string }) {
-  const known = [...MAIN, ...TEAM].some((p) => path.startsWith(p.path)) || path.startsWith("/t/");
+  const known = [...MAIN, ...TEAM, GET_RIO].some((p) => path.startsWith(p.path)) || path.startsWith("/t/");
   useEffect(() => {
     if (!known) navigate("/home", true);
   }, [known]);
@@ -75,6 +77,8 @@ function Shell({ path, orgId }: { path: string; orgId: string }) {
             <MembersPage canManage={canManage} />
           ) : path.startsWith("/settings") ? (
             <TokensPage canManage={canManage} />
+          ) : path.startsWith("/get-rio") ? (
+            <GetRioPage />
           ) : path.startsWith("/usage") ? (
             <UsagePage />
           ) : (
@@ -126,6 +130,9 @@ function Sidebar({ path, orgId }: { path: string; orgId: string }) {
       {TEAM.map((p) => (
         <NavLink key={p.path} to={p.path} label={p.label} icon={p.icon} path={path} />
       ))}
+      <div className="side__get">
+        <NavLink to={GET_RIO.path} label={GET_RIO.label} icon={GET_RIO.icon} path={path} />
+      </div>
       <div className="side__foot">
         <Avatar name={user?.name || user?.email || "?"} />
         <span className="who">
