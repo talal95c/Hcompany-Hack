@@ -2,7 +2,7 @@
   "lesson_id": "donut",
   "blender_version": "4.5.9 LTS",
   "ui_path_verified": false,
-  "seconds": 2.7314730870002677,
+  "seconds": 2.736195209999991,
   "negative_cases": {
     "empty_scene": "fail",
     "cube_instead_of_torus": "unknown",
@@ -13,18 +13,18 @@
     "broken_topology": "unknown"
   },
   "sha256": {
-    "lesson.json": "13bb5105873f203109283612b7e4b690761d5680906ae7597723c055c8fc78a2",
+    "lesson.json": "e8cd83e5c57785102e4c9f62dc757deb1a7c377f42d626c465f6c85266bb4157",
     "steps.json": "176997ce2a2834e74f02602d6336d89da5eb260cf219a725968ae13b35da0baf",
     "SOURCE.md": "7fce1436923ed24e6d0a8c04fe2ea468f5abac88856913a072a7dec783116f8a",
-    "proof/add_torus.json": "129971cffd2cc1db40100d68422d6d29b8c62257a46d95b32dc0a466eebc4dfa",
-    "proof/adjust_torus_redo.json": "71e1b89962972547d996d361547d215cc737d1e9632a04fd2477522709f9ccd2",
-    "proof/add_subdivision.json": "c4d0f49f935547a885a38c37e388bff74994d2000401b5fc6a026e134a402304",
-    "proof/shade_smooth.json": "a2394e699d5349a5d089cc446ad380d736eb5abf262d4a68d6f915b3f6fcce8b",
-    "proof/proportional_tweak.json": "61d1f8b76fd5664527a080922a7b99fdea155e35609fac2d48a793b11bfc3582",
-    "proof/icing_separate.json": "46055c8ccd26499ecb0c04ee82b9726df5e4a68ba0d4726dfb9fb6df50fe98b8",
-    "proof/solidify_icing.json": "fe37f7aac73c73eb7387848d8f30659c756952817628f4150bc9e8efa8ec70d3",
-    "proof/donut_material.json": "9d99f5db01339d871bde15b14eb30e1ce29574cd76e1d76e60875f28369c2b4f",
-    "proof/icing_material.json": "1634b0847b5cbd3f2c0d0146c7e2dba6ca82bf1e229d6a1d346732ffaded293f"
+    "proof/add_torus.json": "36ecab5b5ddf85ad65db3793e44bc673509a23cbfe22d9f686a929357b830289",
+    "proof/adjust_torus_redo.json": "750e1f08c74d439b56a044edfb60fd4fc1d4bf9f17298b89892aac342bbf784b",
+    "proof/add_subdivision.json": "7c982f035075732ebd810155203402c239bed49fed882f016a00c3a5549a7f81",
+    "proof/shade_smooth.json": "33c319d704e77a6913f1eb2444f70da82a444466ae2d113fc5157ac03aa5bbec",
+    "proof/proportional_tweak.json": "d65b5a35cf510dfa7078360baaf1790ffd0d6f2985c86c789dc8822eb3fd9f2c",
+    "proof/icing_separate.json": "0305be01116a5519484f16c9c43549835cb2472ea2d88f0e41bfb65ea275252b",
+    "proof/solidify_icing.json": "66fb34f820c3e116c6ff205a05b8fd01b1b8c5de64813b12004d63092f72110d",
+    "proof/donut_material.json": "103ac696a8d311f8e0d48244f3b714f5604e1e42221dd550ba98f0893d796f3c",
+    "proof/icing_material.json": "84a938484dbd885ae1cefa5cae4e1d6039228906db9a6b9f729644abbe301a8b"
   },
-  "blender_wall_seconds": 3.081679326000085
+  "blender_wall_seconds": 3.1135234300000008
 }

@@ -9,6 +9,17 @@ from error_cases import errors
 from pedagogy import CONTENT
 
 ROOT = Path(__file__).resolve().parent
+MENU_IDS = {
+    "add_torus": "VIEW3D_MT_mesh_add",
+    "add_cube": "VIEW3D_MT_mesh_add",
+    "adjust_torus_redo": "TOPBAR_MT_edit",
+    "add_subdivision": "OBJECT_MT_modifier_add_generate",
+    "add_bevel": "OBJECT_MT_modifier_add_generate",
+    "shade_smooth": "VIEW3D_MT_object_shading",
+    "proportional_tweak": "VIEW3D_MT_transform",
+    "icing_separate": "VIEW3D_MT_edit_mesh",
+    "solidify_icing": "OBJECT_MT_modifier_add_generate",
+}
 
 
 def write(path: Path, data: Any) -> None:
@@ -418,15 +429,23 @@ def author() -> None:
                 "checks": checks,
                 "known_errors_extra": errors(lesson_id, sid, actions),
             }
+            if sid in MENU_IDS:
+                steps[-1]["help"] = {"menu_id": MENU_IDS[sid]}
         write(
             directory / "lesson.json",
             {
-                "schema_version": "1.0",
+                "schema_version": "2.0",
                 "lesson_id": lesson_id,
-                "revision": 1,
+                "revision": 2,
                 "title": title,
                 "language": "fr-FR",
                 "blender_version": "4.5.9",
+                "app": {
+                    "id": "blender",
+                    "name": "Blender",
+                    "version": "4.5.9",
+                    "sensor": "addon",
+                },
                 "status": "proven",
                 "source": {
                     "uri": f"authored://lessons/{lesson_id}/SOURCE.md",

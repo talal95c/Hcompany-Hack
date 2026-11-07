@@ -1,10 +1,16 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "lesson_id": "donut",
-  "revision": 1,
+  "revision": 2,
   "title": "Mon premier donut",
   "language": "fr-FR",
   "blender_version": "4.5.9",
+  "app": {
+    "id": "blender",
+    "name": "Blender",
+    "version": "4.5.9",
+    "sensor": "addon"
+  },
   "status": "proven",
   "source": {
     "uri": "authored://lessons/donut/SOURCE.md",

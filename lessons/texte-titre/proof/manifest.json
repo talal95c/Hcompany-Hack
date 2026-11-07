@@ -1,0 +1,31 @@
+{
+  "lesson_id": "texte-titre",
+  "app_version": "LibreOffice 7.3.7.2 30(Build:2)",
+  "ui_path_verified": true,
+  "native_only": false,
+  "app_start_seconds": [
+    2.856014850999827,
+    1.456609237000066,
+    1.3820256360002077,
+    1.3956288330000461,
+    1.4288875810000263,
+    1.4680759949999356,
+    1.6568362769999112
+  ],
+  "seconds": 81.09339312200018,
+  "sha256": {
+    "lesson.json": "06c3c87e6e7eec06e614e0070c94002bd46afe4de7ad4149065c84ad42c2fa44",
+    "steps.json": "538ed84bd71975392291de35bb0950fe75e28103efcd2f67a86aabaa4a7dda75",
+    "SOURCE.md": "0f9884ec607bca67daa1b964d267afe73d5b94ed29db11738358d32610aa9eb0",
+    "proof/type_title.json": "11fa651ce5b2849dcfea340b3c2f77c6313834e555633c1ebb3560bc0571d735",
+    "proof/apply_heading.json": "ffbe6eac4600180109f7429112b7d7b6b2c40d97c0f7600f2e84adaaa21a8a4d",
+    "proof/save_document.json": "d6538d300c11375f84a24cb8182a951cf308a8c5b5cde822fdc42f76296976e9",
+    "proof/capture-001-sent.png": "3ef845d98e1f2df0dc63ec3bef90fa6d1057ae5d8ec90574c1895a803d5ecbc4",
+    "proof/capture-001.png": "a6cad77d2373c9620b62bf2fe51c061d4890fd5acc479dd4797a225bb952f46e",
+    "proof/capture-002-sent.png": "726687274c7034062f898712403aedfa6f15d4e03d00e35aaa00e0686466830c",
+    "proof/capture-002.png": "2c04b5003e4c5fc6fa67d7109f32e5a9bd3146cea1627567fb66caa8401d6cf5",
+    "proof/capture-003-sent.png": "e9de89ed1fcd41d52e5c4f29e32f407f50c36b05fc22b810c14a04d04bebf18b",
+    "proof/capture-003.png": "54f5961081723fffb8e48ca38978fff224d692dce9d11e5396e626c507c5b27e",
+    "proof/save_document-rapport-mensuel.odt": "4ee620d9d53979c0c412a49d7687be2437f6a20c9792912850c76b6cd937e1a5"
+  }
+}
