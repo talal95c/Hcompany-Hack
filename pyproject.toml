@@ -16,6 +16,7 @@ dependencies = [
 
 [project.optional-dependencies]
 agent = ["mcp>=1.26,<2", "httpx>=0.27,<1", "uvicorn>=0.30,<1"]
+bench = ["jsonschema>=4.22,<5", "pillow>=11,<13", "httpx>=0.27,<1", "websockets>=14,<17", "piper-tts>=1.2,<2"]
 holo = ["openai>=1.60,<3"]
 jev = ["httpx>=0.27,<1", "h2>=4,<5"]
 gladia = ["httpx>=0.27,<1", "websockets>=14,<17"]
