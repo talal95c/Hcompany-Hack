@@ -20,6 +20,14 @@ fn pill(window: &WebviewWindow) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub fn frontend_ready(
+    window: WebviewWindow,
+    state: tauri::State<'_, Arc<State>>,
+) -> Result<(), String> {
+    state.frontend_ready(window.label())
+}
+
+#[tauri::command]
 pub fn permission_status() -> native::Permissions {
     native::permissions()
 }

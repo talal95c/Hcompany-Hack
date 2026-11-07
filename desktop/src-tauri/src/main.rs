@@ -29,6 +29,7 @@ fn main() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
+            bridge::frontend_ready,
             bridge::permission_status,
             bridge::permission_request,
             bridge::monitor_list,
@@ -58,6 +59,7 @@ fn main() {
             pill.set_ignore_cursor_events(true)?;
             let (tx, rx) = mpsc::channel(32);
             let (lifecycle, control) = watch::channel(Lifecycle::Running);
+            let (frontend, _) = watch::channel(0);
             let session = std::env::var("ENGINE_SESSION_ID")
                 .unwrap_or_else(|_| uuid::Uuid::new_v4().to_string());
             let state = Arc::new(State {
@@ -66,6 +68,7 @@ fn main() {
                     .unwrap_or_else(|_| uuid::Uuid::new_v4().to_string()),
                 tx: tx.clone(),
                 lifecycle,
+                frontend,
                 connected: AtomicBool::new(false),
                 stopped: AtomicBool::new(true),
                 shutdown_done: AtomicBool::new(false),
@@ -95,7 +98,7 @@ fn main() {
                 })?;
             let shortcut =
                 std::env::var("HCOMPANY_PTT_HOTKEY").unwrap_or_else(|_| "Ctrl+Shift+Space".into());
-            if let Err(error) =
+            let startup_error = if let Err(error) =
                 app.global_shortcut()
                     .on_shortcut(shortcut.as_str(), |app, _, event| {
                         let state = app.state::<Arc<State>>();
@@ -106,14 +109,12 @@ fn main() {
                         } else {
                             state.audio.stop();
                         }
-                    })
-            {
+                    }) {
                 eprintln!("desktop PTT hotkey unavailable: {error}");
-                let _ = app.emit(
-                    "native:error",
-                    "Raccourci vocal indisponible ; utilisez le bouton micro.",
-                );
-            }
+                Some("Raccourci vocal indisponible ; utilisez le bouton micro.")
+            } else {
+                None
+            };
             let hover_app = app.handle().clone();
             std::thread::spawn(move || loop {
                 let state = hover_app.state::<Arc<State>>();
@@ -135,7 +136,13 @@ fn main() {
                 }
                 std::thread::sleep(Duration::from_millis(25));
             });
-            tauri::async_runtime::spawn(transport::run(app.handle().clone(), state, rx, control));
+            tauri::async_runtime::spawn(transport::run(
+                app.handle().clone(),
+                state,
+                rx,
+                control,
+                startup_error,
+            ));
             Ok(())
         })
         .build(tauri::generate_context!())

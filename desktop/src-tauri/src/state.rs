@@ -33,6 +33,7 @@ pub struct State {
     pub token: String,
     pub tx: mpsc::Sender<Value>,
     pub lifecycle: watch::Sender<Lifecycle>,
+    pub frontend: watch::Sender<u8>,
     pub connected: AtomicBool,
     pub stopped: AtomicBool,
     pub shutdown_done: AtomicBool,
@@ -48,6 +49,12 @@ pub struct State {
 }
 
 impl State {
+    pub fn frontend_ready(&self, window: &str) -> Result<(), String> {
+        let bit = frontend_bit(window)?;
+        self.frontend.send_modify(|ready| *ready |= bit);
+        Ok(())
+    }
+
     pub fn send(&self, kind: &str, payload: Value, reply: Option<&str>) -> Result<(), String> {
         if !self.connected.load(Ordering::SeqCst) {
             return Err("Engine déconnecté".into());
@@ -57,5 +64,65 @@ impl State {
         self.tx
             .try_send(packet)
             .map_err(|_| "File engine saturée".into())
+    }
+}
+
+fn frontend_bit(window: &str) -> Result<u8, String> {
+    match window {
+        "guide" => Ok(1),
+        "pill" => Ok(2),
+        _ => Err("unknown frontend window".into()),
+    }
+}
+
+pub async fn wait_for_frontend(
+    mut ready: watch::Receiver<u8>,
+    mut control: watch::Receiver<Lifecycle>,
+) -> bool {
+    loop {
+        if *control.borrow() == Lifecycle::Shutdown {
+            return false;
+        }
+        if *ready.borrow_and_update() == 3 {
+            return true;
+        }
+        tokio::select! {
+            result = ready.changed() => if result.is_err() { return false; },
+            result = control.changed() => if result.is_err() { return false; },
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn both_frontends_must_acknowledge_listeners() {
+        let (ready, rx) = watch::channel(0);
+        let (_control, control_rx) = watch::channel(Lifecycle::Running);
+        let mut waiting = tokio::spawn(wait_for_frontend(rx, control_rx));
+        for _ in 0..2 {
+            ready.send_modify(|bits| *bits |= frontend_bit("pill").unwrap());
+            assert!(
+                tokio::time::timeout(std::time::Duration::from_millis(10), &mut waiting)
+                    .await
+                    .is_err()
+            );
+        }
+        ready.send_modify(|bits| *bits |= frontend_bit("guide").unwrap());
+        assert!(waiting.await.unwrap());
+        assert!(frontend_bit("other").is_err());
+    }
+
+    #[tokio::test]
+    async fn readiness_survives_early_acks_and_shutdown_cancels_wait() {
+        let (ready, rx) = watch::channel(0);
+        let (control, control_rx) = watch::channel(Lifecycle::Running);
+        ready.send_modify(|bits| *bits = 3);
+        assert!(wait_for_frontend(rx, control_rx.clone()).await);
+        let (_not_ready, rx) = watch::channel(0);
+        control.send(Lifecycle::Shutdown).unwrap();
+        assert!(!wait_for_frontend(rx, control_rx).await);
     }
 }

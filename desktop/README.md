@@ -24,6 +24,10 @@ Rust lance `python -u -m engine` avec `ENGINE_HOST=127.0.0.1`, un `ENGINE_PORT`
 éphémère, `ENGINE_SESSION_ID` et `ENGINE_SESSION_TOKEN`. Il attend au plus 10 s la ligne
 `ENGINE_READY {"ws_port":1234,"addon_port":1235}` avant la connexion WebSocket.
 Le client natif utilise `Authorization: Bearer …` et `Origin: tauri://localhost`.
+Le transport attend l'accusé `frontend_ready` des deux fenêtres, envoyé après
+l'installation de leurs listeners : la première instruction ne dépend pas de la
+vitesse de chargement des WebViews. Un échec de listener reste visible et ne lance
+pas le moteur ; l'arrêt peut toujours annuler cette attente.
 `ENGINE_WS_URL=ws://127.0.0.1:…/` permet de se connecter à un moteur déjà lancé ; les
 adresses distantes sont refusées. Aucun jeton de transport ni clé cloud dans la WebView.
 

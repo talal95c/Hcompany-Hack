@@ -129,7 +129,16 @@ pub async fn run(
     state: Arc<State>,
     mut rx: mpsc::Receiver<Value>,
     mut control: watch::Receiver<Lifecycle>,
+    startup_error: Option<&'static str>,
 ) {
+    if !crate::state::wait_for_frontend(state.frontend.subscribe(), control.clone()).await {
+        state.shutdown_done.store(true, Ordering::SeqCst);
+        app.exit(0);
+        return;
+    }
+    if let Some(error) = startup_error {
+        let _ = app.emit("native:error", error);
+    }
     loop {
         while *control.borrow() == Lifecycle::Stopped {
             if control.changed().await.is_err() {
