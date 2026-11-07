@@ -144,6 +144,7 @@ struct LiveDriver<'a> {
     actions: usize,
     progressed: bool,
     ticket: u64,
+    pending: Option<agent::Step>,
 }
 
 impl Driver for LiveDriver<'_> {
@@ -155,6 +156,9 @@ impl Driver for LiveDriver<'_> {
     }
 
     async fn advance(&mut self) -> Result<agent::Step, String> {
+        if let Some(step) = self.pending.take() {
+            return Ok(step);
+        }
         let after_action = std::mem::take(&mut self.after_action);
         let before = self.session.before.as_ref().map(|s| s.thumb.clone());
         let event = after_action.then(|| {
@@ -241,16 +245,55 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
             actions: 0,
             progressed: true,
             ticket,
+            pending: None,
         };
+        let candidate = crate::script::eligible(&skill);
+        let mut run_mode = skills::Mode::Rio;
         let result = if journal::current_dir().is_none() {
             Err(Failure::Failed(
                 "Impossible d'ouvrir le journal ; aucune action exécutée".into(),
             ))
         } else {
-            tokio::select! {
-                biased;
-                _ = wait_stop() => Err(Failure::Stopped),
-                result = bounded(&mut driver, Limits::default()) => result,
+            let script_result = if let Some(ref artifact) = candidate {
+                journal::set_mode("script");
+                crate::script::run(artifact).await
+            } else {
+                Err(crate::script::Failure::NotEligible)
+            };
+            match script_result {
+                Ok(()) => {
+                    run_mode = skills::Mode::Script;
+                    match driver.advance().await {
+                        Ok(step) if step.kind == "done" => Ok(0),
+                        Ok(step) => {
+                            journal::event(
+                                "script_fallback",
+                                serde_json::json!({"reason":"La vérification Holo demande encore des actions"}),
+                            );
+                            journal::set_mode("rio");
+                            run_mode = skills::Mode::Rio;
+                            driver.pending = Some(step);
+                            bounded(&mut driver, Limits::default()).await
+                        }
+                        Err(_) => {
+                            journal::event(
+                                "script_fallback",
+                                serde_json::json!({"reason":"vérification Holo échouée"}),
+                            );
+                            journal::set_mode("rio");
+                            run_mode = skills::Mode::Rio;
+                            bounded(&mut driver, Limits::default()).await
+                        }
+                    }
+                }
+                Err(error) => {
+                    journal::event(
+                        "script_fallback",
+                        serde_json::json!({"reason": error.to_string()}),
+                    );
+                    journal::set_mode("rio");
+                    tokio::select! { biased; _ = wait_stop() => Err(Failure::Stopped), result = bounded(&mut driver, Limits::default()) => result }
+                }
             }
         };
         let (outcome, message) = if autopilot::stop_requested() {
@@ -268,7 +311,7 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
             "rio_done",
             serde_json::json!({ "outcome": outcome, "actions": driver.actions, "message": message }),
         );
-        if let Some(run) = journal::skill_run(skills::Mode::Rio, outcome)
+        if let Some(run) = journal::skill_run(run_mode, outcome)
             && let Err(error) = skills::record_run(agent::to_tutorial(&driver.session), run)
         {
             journal::event("skill_record_error", serde_json::json!({ "error": error }));

@@ -7,6 +7,8 @@ mod audio_out;
 mod ax;
 mod capture;
 mod debug;
+mod devin;
+mod script;
 mod clicks;
 mod holo;
 mod journal;
@@ -754,6 +756,7 @@ pub fn run() {
             skills::skills_list,
             skills::skill_decline,
             skills::skill_propose_now,
+            devin::skill_compile,
             tray::set_tray_status,
             tray::hide_bar,
             tray::resize_bar,

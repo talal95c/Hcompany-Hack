@@ -53,6 +53,7 @@ export type AutopilotView = {
   label: string;
   outcome: "completed" | "failed" | "stopped" | null;
   message: string | null;
+  mode: "script" | "rio";
 };
 
 /** One action for the learner, decided by Holo from the live screen. */

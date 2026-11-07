@@ -47,6 +47,7 @@ pub struct Proposal {
     pub title: String,
     pub goal: String,
     pub app: App,
+    pub mode: String,
 }
 
 pub fn now() -> u64 {
@@ -131,8 +132,25 @@ fn record_at(root: &Path, graph: Tutorial, run: Run) -> Result<Skill, String> {
 }
 
 pub fn record_run(graph: Tutorial, run: Run) -> Result<Skill, String> {
+    let succeeded = run.outcome == "completed";
+    let skill = {
+        let _guard = STORE.lock().unwrap();
+        record_at(&dir(), graph, run)?
+    };
+    if succeeded { crate::devin::auto_compile(&skill); }
+    Ok(skill)
+}
+
+pub fn save_compilation(id: &str, artifact: &crate::devin::Compiled) -> Result<(), String> {
     let _guard = STORE.lock().unwrap();
-    record_at(&dir(), graph, run)
+    let mut skill = read(&dir(), id)?;
+    let value = serde_json::to_value(artifact).map_err(|_| "Compilation non sérialisable")?;
+    if let Some(old) = skill.compiled.iter_mut().find(|v| v["session_id"] == artifact.session_id) {
+        *old = value;
+    } else {
+        skill.compiled.push(value);
+    }
+    write(&dir(), &skill)
 }
 
 pub fn load(id: &str) -> Result<Skill, String> {
@@ -196,6 +214,7 @@ fn emit(app: &AppHandle, skill: &Skill) -> Result<(), String> {
             title: skill.title.clone(),
             goal: skill.goal.clone(),
             app: skill.app.clone(),
+            mode: crate::devin::mode(skill).into(),
         },
     )
     .map_err(|e| e.to_string())

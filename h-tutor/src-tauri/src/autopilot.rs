@@ -26,6 +26,7 @@ pub struct View {
     pub label: String,
     pub outcome: Option<String>,
     pub message: Option<String>,
+    pub mode: String,
 }
 
 #[derive(Default)]
@@ -50,6 +51,7 @@ impl Controller {
             goal: skill.goal.clone(),
             total: skill.graph.milestones.len(),
             label: "Observation de l'écran".into(),
+            mode: crate::devin::mode(skill).into(),
             ..View::default()
         };
         Ok(())

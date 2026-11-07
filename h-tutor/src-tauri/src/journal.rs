@@ -118,6 +118,10 @@ pub fn current_dir() -> Option<PathBuf> {
     CURRENT.lock().unwrap().as_ref().map(|j| j.dir.clone())
 }
 
+pub fn set_mode(mode: &str) {
+    if let Some(j) = CURRENT.lock().unwrap().as_mut() { j.meta["mode"] = json!(mode); }
+}
+
 pub fn skill_run(mode: crate::skills::Mode, outcome: &str) -> Option<crate::skills::Run> {
     let guard = CURRENT.lock().unwrap();
     let j = guard.as_ref()?;
