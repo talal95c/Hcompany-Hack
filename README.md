@@ -33,11 +33,16 @@ Tous les services IA sont dans le cloud ; rien ne tourne en local à part notre 
 Démo sur **macOS**. Tout est prévu pour tourner aussi sous **Windows** : Python, add-on Blender, Tauri v2. Les spécificités de chaque OS (permissions, mise à l'échelle de l'écran, capture) sont isolées dans `desktop/` et `engine/platform/`.
 
 ## Le dépôt
+
+La [landing Holo Tutor](landing/README.md) est un site React/Vite indépendant
+de l’application native : `cd landing && npm ci && npm run dev`.
+
 ```
 contracts/  formats partagés (leçon, événements, ordres) — figés en premier
 engine/     orchestrateur Python (la boucle en direct)
 addon/      add-on Blender « Œil » (capteur + surlignage)
 h-tutor/    front principal : barre + curseur fantôme (Tauri v2, React)
+landing/    site de présentation français avec entrée ordinateur interactive
 desktop/    overlay Tauri v2 branché sur l'engine (pointeur, pastille, ✓)
 prep/       préparation : tuto → leçon prouvée
 agent/      face Agent : H Skills + serveur MCP
