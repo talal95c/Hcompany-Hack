@@ -11,7 +11,6 @@ import {
   IconMic,
   IconReplay,
   IconSkip,
-  IconSpark,
   IconVolume,
   IconVolumeOff,
 } from "./icons";
@@ -378,9 +377,11 @@ export default function App() {
               startTutorial();
             }}
           >
-            <span className="lead">
-              {phase === "planning" || phase === "importing" ? <span className="spinner" /> : <IconSpark />}
-            </span>
+            {(phase === "planning" || phase === "importing") && (
+              <span className="lead">
+                <span className="spinner" />
+              </span>
+            )}
             <input
               ref={inputRef}
               autoFocus
@@ -560,7 +561,6 @@ export default function App() {
 
       {phase === "imported" && imported && (
         <div className="row row--done">
-          <span className="lead lead--yt">▶</span>
           <span className="done-text">
             {imported.title} <span className="dim">· {imported.app} · {imported.milestones} étapes</span>
           </span>
