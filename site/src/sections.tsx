@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   asset,
   Asterisk,
@@ -50,7 +50,58 @@ export function Nav() {
 
 /* ---------------- Hero ---------------- */
 
+/** What people paste or type in Rio, shown in turn in the hero. */
+const SOURCES = [
+  { word: "YouTube tutorial.", kind: "YouTube", input: "youtube.com/watch?v=your-first-donut" },
+  { word: "blog post.", kind: "Article", input: "notes.design/how-to-export-for-web-in-figma" },
+  { word: "help page.", kind: "Docs", input: "docs.blender.org/manual/modeling/bevel.html" },
+];
+const TYPE_MS = 38;
+const HOLD_MS = 2200;
+
+/** Cycles through SOURCES, typing each input like someone pasting or asking. */
+function useSource() {
+  const reduced = useReducedMotion();
+  const [i, setI] = useState(0);
+  const [n, setN] = useState(0);
+  const full = SOURCES[i].input.length;
+  useEffect(() => {
+    if (reduced) {
+      const t = setTimeout(() => setI((i + 1) % SOURCES.length), HOLD_MS + 1200);
+      return () => clearTimeout(t);
+    }
+    if (n < full) {
+      const t = setTimeout(() => setN(n + 1), TYPE_MS);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => {
+      setN(0);
+      setI((i + 1) % SOURCES.length);
+    }, HOLD_MS);
+    return () => clearTimeout(t);
+  }, [i, n, full, reduced]);
+  return { src: SOURCES[i], i, typed: reduced ? SOURCES[i].input : SOURCES[i].input.slice(0, n) };
+}
+
+function HeroLine({ text, k }: { text: string; k: number }) {
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.span
+        key={k}
+        className="hero-swap"
+        initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        exit={{ opacity: 0, y: -18, filter: "blur(8px)" }}
+        transition={{ duration: 0.45, ease: EASE }}
+      >
+        {text}
+      </motion.span>
+    </AnimatePresence>
+  );
+}
+
 export function Hero() {
+  const { src, i, typed } = useSource();
   const up = (d: number) => ({
     initial: { opacity: 0, y: 40, filter: "blur(10px)" },
     animate: { opacity: 1, y: 0, filter: "blur(0px)" },
@@ -71,17 +122,20 @@ export function Hero() {
         <div className="hero-content">
           <h1 className="h-hero">
             <motion.span className="hero-l1" {...up(0.2)}>
-              Paste a YouTube tutorial.
+              <span className="sr-only">Paste a YouTube tutorial, a blog post or a help page.</span>
+              <span aria-hidden>Paste a <HeroLine text={src.word} k={i} /></span>
             </motion.span>
             <motion.span className="hero-l2" {...up(0.32)}>
               Do it with Rio.
             </motion.span>
           </h1>
           <motion.p className="p-16 hero-sub" {...up(0.44)}>
-            Rio turns the video into steps, shows you where to click in your own app and checks each step. You do it for real.
+            Rio turns it into steps, shows you where to click in your own app and checks each step. No link? Just type what you want to do.
           </motion.p>
-          <motion.div className="hero-link-demo" {...up(0.5)} aria-label="Illustration: paste a YouTube tutorial link to start a lesson">
-            <span className="hero-demo-url" aria-hidden>youtube.com/watch?v=your-first-donut</span><span className="hero-demo-start" aria-hidden>Start ↗</span>
+          <motion.div className="hero-link-demo" {...up(0.5)} aria-label="Illustration: paste a tutorial link or type a goal to start a lesson">
+            <span className="hero-demo-kind mono-12" aria-hidden>{src.kind}</span>
+            <span className="hero-demo-url" aria-hidden>{typed}<span className="hero-caret" /></span>
+            <span className="hero-demo-start" aria-hidden>Start ↗</span>
           </motion.div>
           <motion.div {...up(0.56)}>
             <Btn label="Try Rio" href={GET_RIO} />

@@ -182,11 +182,16 @@ ul { list-style: none; }
 .hero-l1, .hero-l2 { display: block; }
 .hero-l1 { color: rgba(26, 26, 26, 0.4); }
 .hero-sub { max-width: 390px; margin: 14px 0 26px; }
-.hero-link-demo { display: flex; align-items: center; gap: 12px; width: min(440px, 100%); padding: 8px 8px 8px 18px; margin-bottom: 20px; background: #ffffff9c; border: 1px solid #ffffffa8; border-radius: 14px; backdrop-filter: blur(18px); box-shadow: 0 5px 25px #1a1a1a08; }
-.hero-demo-url { display: block; min-width: 0; overflow: hidden; white-space: nowrap; font-family: var(--mono); font-size: 11px; animation: tutorial-type 7s steps(38, end) infinite; }
+.hero-link-demo { display: flex; align-items: center; gap: 12px; width: min(480px, 100%); padding: 8px 8px 8px 8px; margin-bottom: 20px; background: #ffffff9c; border: 1px solid #ffffffa8; border-radius: 14px; backdrop-filter: blur(18px); box-shadow: 0 5px 25px #1a1a1a08; }
+.hero-demo-url { display: block; flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: clip; font-family: var(--mono); font-size: 11px; }
+.hero-demo-kind { flex-shrink: 0; width: 64px; padding: 5px 0; border-radius: 7px; background: #1a1a1a0d; color: #555; font-size: 9px; text-align: center; text-transform: uppercase; }
+.hero-caret { display: inline-block; width: 1px; height: 12px; margin-left: 1px; vertical-align: -2px; background: var(--ink); animation: caret 1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+.hero-swap { display: inline-block; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .hero-demo-start { flex-shrink: 0; margin-left: auto; padding: 10px 14px; border-radius: 9px; background: var(--ink); color: #fff; font-size: 12px; }
 @keyframes tutorial-type { 0%, 8% { clip-path: inset(0 100% 0 0); } 42%, 100% { clip-path: inset(0); } }
-@media (prefers-reduced-motion: reduce) { .hero-demo-url { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .hero-caret { animation: none; } }
 .hero-bottom { position: absolute; left: 0; right: 0; bottom: 40px; }
 .hero-trust { color: #fff; width: 300px; margin: 0 0 10px var(--pad); }
 .hero-logos .marquee-group { gap: 10px; padding-right: 10px; }
@@ -557,6 +562,7 @@ ul { list-style: none; }
   .hero { min-height: 900px; }
   .hero-content { padding-top: 140px; }
   .hero .h-hero { font-size: 42px; line-height: 46px; }
+  .hero-swap { display: block; white-space: nowrap; }
   .hero-demo-url { font-size: 9px; }
   .footer-bg { opacity: 0.3; }
 }
