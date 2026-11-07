@@ -5,8 +5,8 @@ const { listen } = window.__TAURI__.event;
 let pointerTimer, successTimer;
 const listeners = [];
 const clear = () => { clearTimeout(pointerTimer); clearTimeout(successTimer); $("pointer").hidden = true; $("zone").hidden = true; $("success").hidden = true; };
-const error = (value) => { $("error").textContent = String(value); };
-const call = async (command, args) => { try { $("error").textContent = ""; return await invoke(command, args); } catch (e) { error(e); return null; } };
+const error = (value) => { $("error").textContent = String(value); $("dismiss-error").hidden = !value; };
+const call = async (command, args) => { try { return await invoke(command, args); } catch (e) { error(e); return null; } };
 
 if (location.hash !== "#pill") {
   listeners.push(listen("guide:clear", clear));
@@ -26,6 +26,7 @@ if (location.hash !== "#pill") {
   }));
 } else {
   $("guide").hidden = true; $("pill").hidden = false;
+  $("dismiss-error").onclick = () => error("");
   let expanded = false;
   $("expand").onclick = async () => {
     expanded = !expanded;

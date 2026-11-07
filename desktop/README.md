@@ -100,6 +100,7 @@ Conventions acceptées pour le contrat v1 (sans modifier ses schémas) :
 # Racine du dépôt, environnement Python 3.11 activé
 ruff check engine/platform desktop/tests
 pytest -q engine/platform desktop/tests -m 'not live'
+node --test desktop/tests/frontend.test.cjs # tests UI unitaires, Node 18+ optionnel
 DISPLAY=:0 HCOMPANY_LIVE=1 pytest -q -s desktop/tests -m live
 # Depuis desktop/src-tauri/
 cargo check --locked
@@ -116,6 +117,11 @@ compile Linux et macOS ; Linux CI doit installer `libasound2-dev`.
 de rendu natif sous Xvfb. Il valide le protocole, reçoit une vraie capture, renvoie une
 cible et tente une action sans consentement pour vérifier son rejet. Il n'est jamais
 choisi automatiquement en production et ne simule ni cours ni service cloud.
+Le texte `probe-success` déclenche explicitement un ordre `success` de fixture
+pour tester le rendu du ✓, sans prétendre prouver une opération Blender.
+`HCOMPANY_ENGINE_DIR=desktop/tests/sidecar_fixture` (chemin absolu recommandé),
+avec `HCOMPANY_PROBE_OUTPUT` fixé sur un dossier d'artefacts, permet de vérifier
+le même serveur lancé comme subprocess `python -m engine` et son arrêt réel.
 La compilation seule ne valide pas les permissions, la capture et l'injection macOS.
 
 ## Module vocal à venir

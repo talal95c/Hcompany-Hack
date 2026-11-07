@@ -40,11 +40,12 @@ async def main(port: int, output: Path, sidecar: bool = False) -> None:
         VALIDATOR.validate(value)
         return value
 
-    def command(kind: str, payload: dict) -> dict:
+    def command(kind: str, payload: dict, revision: int | None = None) -> dict:
         return envelope("command", {"schema_version": "1.0", "session_id": session,
                         "command_id": str(uuid.uuid4()), "step_id": "protocol-probe",
                         "generation": 1, "recipient": "desktop", "type": kind,
-                        "deadline_ms": 5000, "expected_scene_revision": None, "payload": payload})
+                        "deadline_ms": 5000, "expected_scene_revision": revision,
+                        "payload": payload})
 
     async def authenticate(connection, request):
         if not hmac.compare_digest(request.headers.get("Authorization", ""), f"Bearer {token}"):
@@ -86,6 +87,11 @@ async def main(port: int, output: Path, sidecar: bool = False) -> None:
                       crop=payload["crop"], ui_revision=payload["ui_revision"])
             elif kind == "user.intent" and payload["text"] == "stop":
                 await socket.send(json.dumps(command("stop", {"reason": "user stop"})))
+            elif kind == "user.intent" and payload["text"] == "probe-success":
+                await socket.send(json.dumps(command("success", {
+                    "text": "Test du rendu vérifié — fixture de protocole uniquement.",
+                }, revision=1)))
+                event("success_sent")
             elif kind == "ping":
                 await socket.send(json.dumps(envelope("pong", payload)))
 
