@@ -23,8 +23,8 @@ const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Fi
 export const GET_RIO = "#/get-rio";
 
 export function Nav() {
-  const links = ["Pricing", "FAQ"];
-  const ids = ["pricing", "faq"];
+  const links = ["Use cases", "Pricing", "FAQ"];
+  const ids = ["use-cases", "pricing", "faq"];
   return (
     <motion.header
       className="nav"
