@@ -1,0 +1,8737 @@
+{
+  "suite": "a11y",
+  "metadata": {
+    "timestamp_utc": "2026-11-07T15:49:42.328439+00:00",
+    "git_commit": "30d723b368be55c90f6077979116fecc8d773e85",
+    "hostname": "devin-box",
+    "cpu": "Intel(R) Xeon(R) Processor",
+    "python": "3.11.18",
+    "calc_version": "LibreOffice 7.3.7.2 30(Build:2)",
+    "system_python": "3.10.12",
+    "platform": "Linux-6.8.0-1060-aws-x86_64-with-glibc2.35"
+  },
+  "configuration": {
+    "iterations": 30,
+    "timeout_seconds": 15,
+    "startup_timeout_seconds": 60,
+    "max_nodes": 1200,
+    "max_depth": 12,
+    "plugin": "gtk3",
+    "restart_each_iteration": false,
+    "display_size": [
+      1600,
+      1000
+    ],
+    "test_value": "424242",
+    "environment": {
+      "GTK_MODULES": "gail:atk-bridge",
+      "NO_AT_BRIDGE": "0",
+      "GNOME_ACCESSIBILITY": "1"
+    }
+  },
+  "summary": {
+    "iterations_requested": 30,
+    "iterations_completed": 30,
+    "failures": 0,
+    "failure_reasons": {},
+    "sessions": 1,
+    "time_to_bus": {
+      "count": 1,
+      "p50_ms": 2203.104,
+      "p95_ms": 2203.104,
+      "max_ms": 2203.104,
+      "min_ms": 2203.104
+    },
+    "time_to_window": {
+      "count": 1,
+      "p50_ms": 2203.105,
+      "p95_ms": 2203.105,
+      "max_ms": 2203.105,
+      "min_ms": 2203.105
+    },
+    "snapshot": {
+      "count": 30,
+      "p50_ms": 332.588,
+      "p95_ms": 437.167,
+      "max_ms": 1791.387,
+      "min_ms": 251.077
+    },
+    "find": {
+      "count": 210,
+      "p50_ms": 53.828,
+      "p95_ms": 82.076,
+      "max_ms": 162.472,
+      "min_ms": 21.153
+    },
+    "read_cell": {
+      "count": 30,
+      "p50_ms": 360.676,
+      "p95_ms": 502.835,
+      "max_ms": 1390.931,
+      "min_ms": 228.395
+    },
+    "find_by_name": {
+      "Align Center": {
+        "count": 30,
+        "p50_ms": 61.969,
+        "p95_ms": 93.462,
+        "max_ms": 96.59,
+        "min_ms": 42.221
+      },
+      "Bold": {
+        "count": 30,
+        "p50_ms": 56.31,
+        "p95_ms": 96.877,
+        "max_ms": 162.472,
+        "min_ms": 37.099
+      },
+      "Chart": {
+        "count": 30,
+        "p50_ms": 46.451,
+        "p95_ms": 74.391,
+        "max_ms": 103.216,
+        "min_ms": 30.885
+      },
+      "Italic": {
+        "count": 30,
+        "p50_ms": 60.834,
+        "p95_ms": 80.429,
+        "max_ms": 80.592,
+        "min_ms": 39.034
+      },
+      "Select Function": {
+        "count": 30,
+        "p50_ms": 32.427,
+        "p95_ms": 41.771,
+        "max_ms": 57.416,
+        "min_ms": 21.153
+      },
+      "Sort Ascending": {
+        "count": 30,
+        "p50_ms": 43.508,
+        "p95_ms": 75.339,
+        "max_ms": 82.076,
+        "min_ms": 30.44
+      },
+      "Underline": {
+        "count": 30,
+        "p50_ms": 61.49,
+        "p95_ms": 119.256,
+        "max_ms": 128.321,
+        "min_ms": 42.396
+      }
+    },
+    "cell_reads_correct": 30,
+    "cell_reads_total": 30,
+    "tree_node_count": {
+      "min": 1200,
+      "max": 1200
+    },
+    "tree_max_depth": 9,
+    "tree_roles_last": {
+      "application": 1,
+      "frame": 1,
+      "panel": 38,
+      "push button": 96,
+      "scroll pane": 2,
+      "root pane": 1,
+      "viewport": 1,
+      "scroll bar": 4,
+      "menu bar": 2,
+      "status bar": 1,
+      "menu": 136,
+      "split pane": 3,
+      "tool bar": 3,
+      "label": 11,
+      "menu item": 507,
+      "separator": 208,
+      "check menu item": 123,
+      "radio menu item": 42,
+      "filler": 1,
+      "document spreadsheet": 1,
+      "toggle button": 16,
+      "table": 1,
+      "page tab list": 1
+    },
+    "truncated_snapshots": 30
+  },
+  "startups": [
+    {
+      "iteration": 0,
+      "time_to_bus_ms": 2203.103785000053,
+      "time_to_window_ms": 2203.1048779999765,
+      "app_name": "soffice",
+      "display": ":1",
+      "plugin": "gtk3",
+      "system_python": "3.10.12",
+      "pid": 15233
+    }
+  ],
+  "discoveries": [
+    {
+      "iteration": 0,
+      "buttons": [
+        {
+          "role": "push button",
+          "name": "Function Wizard",
+          "bounds": [
+            231,
+            133,
+            25,
+            27
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Select Function",
+          "bounds": [
+            256,
+            133,
+            36,
+            27
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Formula",
+          "bounds": [
+            292,
+            133,
+            25,
+            27
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Cancel",
+          "bounds": [
+            57,
+            128,
+            0,
+            0
+          ],
+          "states": [
+            "focusable"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Accept",
+          "bounds": [
+            57,
+            128,
+            0,
+            0
+          ],
+          "states": [
+            "focusable"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Load URL",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "New",
+          "bounds": [
+            61,
+            52,
+            44,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Templates",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Open",
+          "bounds": [
+            105,
+            52,
+            44,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Open Remote",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Save",
+          "bounds": [
+            149,
+            52,
+            44,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Save As...",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Email",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Edit Mode",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "focusable"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Export Directly as PDF",
+          "bounds": [
+            201,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Print Directly (Generic Printer)",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Print",
+          "bounds": [
+            234,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Print Preview",
+          "bounds": [
+            267,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Cut",
+          "bounds": [
+            308,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Copy",
+          "bounds": [
+            341,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Paste",
+          "bounds": [
+            374,
+            52,
+            44,
+            35
+          ],
+          "states": [
+            "focusable",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Clone",
+          "bounds": [
+            426,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Clear",
+          "bounds": [
+            459,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Undo",
+          "bounds": [
+            500,
+            52,
+            44,
+            35
+          ],
+          "states": [
+            "focusable",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Redo",
+          "bounds": [
+            544,
+            52,
+            44,
+            35
+          ],
+          "states": [
+            "focusable",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Find and Replace",
+          "bounds": [
+            596,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Spelling",
+          "bounds": [
+            629,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Auto Spellcheck",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "checked",
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Navigator",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Row",
+          "bounds": [
+            670,
+            52,
+            44,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Insert Rows Above",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Insert Rows Below",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Delete Rows",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Column",
+          "bounds": [
+            714,
+            52,
+            44,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Insert Columns Before",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Insert Columns After",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Delete Columns",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Sort",
+          "bounds": [
+            766,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Sort Ascending",
+          "bounds": [
+            799,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Sort Descending",
+          "bounds": [
+            832,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "AutoFilter",
+          "bounds": [
+            865,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Standard Filter",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Advanced Filter",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Goal Seek",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Image",
+          "bounds": [
+            906,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Gallery",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Chart",
+          "bounds": [
+            939,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Formula Object",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "focusable"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Pivot Table",
+          "bounds": [
+            972,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Insert Row Break",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "focusable"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Symbol",
+          "bounds": [
+            1013,
+            52,
+            44,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Hyperlink",
+          "bounds": [
+            1057,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Comment",
+          "bounds": [
+            1090,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Text Box",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Headers and Footers",
+          "bounds": [
+            1123,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Print Area",
+          "bounds": [
+            1164,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Edit",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Clear",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "focusable"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Freeze Rows and Columns",
+          "bounds": [
+            1197,
+            52,
+            44,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Split Window",
+          "bounds": [
+            1241,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Line",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Basic Shapes",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Draw Functions",
+          "bounds": [
+            1282,
+            52,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Data Sources",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Zoom",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "LibreOffice Help",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "What's This?",
+          "bounds": [
+            57,
+            50,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Styles",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Increase",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Decrease",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Bold",
+          "bounds": [
+            385,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Italic",
+          "bounds": [
+            418,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Underline",
+          "bounds": [
+            451,
+            91,
+            44,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Double Underline",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Strikethrough",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Superscript",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "focusable"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Subscript",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "focusable"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Overline",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "toggle button",
+          "name": "Outline Font Effect",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Font Color",
+          "bounds": [
+            503,
+            91,
+            44,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Background Color",
+          "bounds": [
+            547,
+            91,
+            44,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Align Left",
+          "bounds": [
+            599,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Align Center",
+          "bounds": [
+            632,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Align Right",
+          "bounds": [
+            665,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Justified",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Align Top",
+          "bounds": [
+            706,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Center Vertically",
+          "bounds": [
+            739,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Align Bottom",
+          "bounds": [
+            772,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Wrap Text",
+          "bounds": [
+            813,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Merge and Center Cells",
+          "bounds": [
+            854,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "focusable",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Merge Cells",
+          "bounds": [
+            887,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "focusable",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Unmerge Cells",
+          "bounds": [
+            920,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "focusable",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "General",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "checked",
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Currency",
+          "bounds": [
+            961,
+            91,
+            44,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Percent",
+          "bounds": [
+            1005,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Number",
+          "bounds": [
+            1038,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Date",
+          "bounds": [
+            1071,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Scientific",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Add Decimal Place",
+          "bounds": [
+            1112,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Delete Decimal Place",
+          "bounds": [
+            1145,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Increase",
+          "bounds": [
+            1186,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Decrease",
+          "bounds": [
+            1219,
+            91,
+            33,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Borders (Shift to overwrite)",
+          "bounds": [
+            1260,
+            91,
+            44,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Border Style",
+          "bounds": [
+            1304,
+            91,
+            44,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Border Color",
+          "bounds": [
+            1348,
+            91,
+            44,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Conditional",
+          "bounds": [
+            1400,
+            91,
+            44,
+            35
+          ],
+          "states": [
+            "enabled",
+            "focusable",
+            "sensitive",
+            "showing",
+            "visible"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "View Grid Lines",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "checked",
+            "enabled",
+            "focusable",
+            "sensitive"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Left-To-Right",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "focusable"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Right-To-Left",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "focusable"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Text direction from left to right",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "focusable"
+          ]
+        },
+        {
+          "role": "push button",
+          "name": "Text direction from top to bottom",
+          "bounds": [
+            57,
+            89,
+            0,
+            0
+          ],
+          "states": [
+            "focusable"
+          ]
+        }
+      ],
+      "targets": [
+        "Bold",
+        "Italic",
+        "Underline",
+        "Align Center",
+        "Sort Ascending",
+        "Select Function",
+        "Chart"
+      ]
+    }
+  ],
+  "raw_samples": [
+    {
+      "iteration": 0,
+      "operation": "snapshot",
+      "ipc_ms": 452.46412800008784,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 329.13493900002777
+    },
+    {
+      "iteration": 0,
+      "operation": "find",
+      "ipc_ms": 180.73310099998707,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 37.099292999982936
+    },
+    {
+      "iteration": 0,
+      "operation": "find",
+      "ipc_ms": 164.62535999994543,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 39.16045699997994
+    },
+    {
+      "iteration": 0,
+      "operation": "find",
+      "ipc_ms": 202.73969100003342,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 50.018649999969966
+    },
+    {
+      "iteration": 0,
+      "operation": "find",
+      "ipc_ms": 204.6987609999178,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 52.338841999926444
+    },
+    {
+      "iteration": 0,
+      "operation": "find",
+      "ipc_ms": 166.02543099998002,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 35.085116000004746
+    },
+    {
+      "iteration": 0,
+      "operation": "find",
+      "ipc_ms": 158.00661699995544,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          133,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 21.153421000008166
+    },
+    {
+      "iteration": 0,
+      "operation": "find",
+      "ipc_ms": 179.78990700009945,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 103.21584100006476
+    },
+    {
+      "iteration": 0,
+      "operation": "write_cell",
+      "ipc_ms": 715.7796389999476,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 545.5847389999917
+    },
+    {
+      "iteration": 0,
+      "operation": "read_cell",
+      "ipc_ms": 470.0525150000203,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 312.7040470000111
+    },
+    {
+      "iteration": 1,
+      "operation": "snapshot",
+      "ipc_ms": 523.5912910000025,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 335.08260799999334
+    },
+    {
+      "iteration": 1,
+      "operation": "find",
+      "ipc_ms": 275.73450799991406,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 41.72540799993385
+    },
+    {
+      "iteration": 1,
+      "operation": "find",
+      "ipc_ms": 170.34235900007388,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 41.64584199997989
+    },
+    {
+      "iteration": 1,
+      "operation": "find",
+      "ipc_ms": 207.21629800004848,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 53.27670500003023
+    },
+    {
+      "iteration": 1,
+      "operation": "find",
+      "ipc_ms": 191.3515979999829,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 43.98841199997605
+    },
+    {
+      "iteration": 1,
+      "operation": "find",
+      "ipc_ms": 152.0130970000082,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 34.884808000015255
+    },
+    {
+      "iteration": 1,
+      "operation": "find",
+      "ipc_ms": 161.4527230000249,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 22.62341200002993
+    },
+    {
+      "iteration": 1,
+      "operation": "find",
+      "ipc_ms": 157.3655660000668,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 30.88459699995383
+    },
+    {
+      "iteration": 1,
+      "operation": "write_cell",
+      "ipc_ms": 683.7846590000254,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 546.311922999962
+    },
+    {
+      "iteration": 1,
+      "operation": "read_cell",
+      "ipc_ms": 478.03104500007976,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 305.4848269999866
+    },
+    {
+      "iteration": 2,
+      "operation": "snapshot",
+      "ipc_ms": 396.6026850000617,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 263.4343380000246
+    },
+    {
+      "iteration": 2,
+      "operation": "find",
+      "ipc_ms": 158.66785599996547,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 37.4267999999347
+    },
+    {
+      "iteration": 2,
+      "operation": "find",
+      "ipc_ms": 160.26831099998162,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 39.03353900000184
+    },
+    {
+      "iteration": 2,
+      "operation": "find",
+      "ipc_ms": 164.89109000008284,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 43.85086599995702
+    },
+    {
+      "iteration": 2,
+      "operation": "find",
+      "ipc_ms": 173.683614999959,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 51.1912829999801
+    },
+    {
+      "iteration": 2,
+      "operation": "find",
+      "ipc_ms": 168.83778800001892,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 30.7678130000113
+    },
+    {
+      "iteration": 2,
+      "operation": "find",
+      "ipc_ms": 168.00524100005987,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 30.468479999967713
+    },
+    {
+      "iteration": 2,
+      "operation": "find",
+      "ipc_ms": 251.0660340000186,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 38.274531000070056
+    },
+    {
+      "iteration": 2,
+      "operation": "write_cell",
+      "ipc_ms": 712.7127080000264,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 545.1477929999555
+    },
+    {
+      "iteration": 2,
+      "operation": "read_cell",
+      "ipc_ms": 349.3026360000613,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 228.39499899998827
+    },
+    {
+      "iteration": 3,
+      "operation": "snapshot",
+      "ipc_ms": 379.57354699994994,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 260.06284200002483
+    },
+    {
+      "iteration": 3,
+      "operation": "find",
+      "ipc_ms": 183.43343500009723,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 54.72211500000412
+    },
+    {
+      "iteration": 3,
+      "operation": "find",
+      "ipc_ms": 191.3913150000326,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 52.702638000027946
+    },
+    {
+      "iteration": 3,
+      "operation": "find",
+      "ipc_ms": 162.47565799994845,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 42.39570000004278
+    },
+    {
+      "iteration": 3,
+      "operation": "find",
+      "ipc_ms": 163.61606800001027,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 42.221313000027294
+    },
+    {
+      "iteration": 3,
+      "operation": "find",
+      "ipc_ms": 146.91977299992232,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 30.440334999980223
+    },
+    {
+      "iteration": 3,
+      "operation": "find",
+      "ipc_ms": 154.6162900000354,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 33.943794000038
+    },
+    {
+      "iteration": 3,
+      "operation": "find",
+      "ipc_ms": 151.52112900000247,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 32.35219999999117
+    },
+    {
+      "iteration": 3,
+      "operation": "write_cell",
+      "ipc_ms": 688.2243469999594,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 544.9155290000363
+    },
+    {
+      "iteration": 3,
+      "operation": "read_cell",
+      "ipc_ms": 1733.6269090000087,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 1390.9307119999994
+    },
+    {
+      "iteration": 4,
+      "operation": "snapshot",
+      "ipc_ms": 2205.0912150000386,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 1791.3866679999728
+    },
+    {
+      "iteration": 4,
+      "operation": "find",
+      "ipc_ms": 553.9509279999493,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 162.4715579999929
+    },
+    {
+      "iteration": 4,
+      "operation": "find",
+      "ipc_ms": 247.78782199996385,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 77.37573899999006
+    },
+    {
+      "iteration": 4,
+      "operation": "find",
+      "ipc_ms": 214.50105299993538,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 47.27674000002935
+    },
+    {
+      "iteration": 4,
+      "operation": "find",
+      "ipc_ms": 259.1250390000823,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 65.69436899997072
+    },
+    {
+      "iteration": 4,
+      "operation": "find",
+      "ipc_ms": 163.87711600009425,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 38.59090799994647
+    },
+    {
+      "iteration": 4,
+      "operation": "find",
+      "ipc_ms": 156.1385300000211,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 28.429004000031455
+    },
+    {
+      "iteration": 4,
+      "operation": "find",
+      "ipc_ms": 204.2700209999566,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 38.70502600000236
+    },
+    {
+      "iteration": 4,
+      "operation": "write_cell",
+      "ipc_ms": 684.245297000075,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 546.7738130000726
+    },
+    {
+      "iteration": 4,
+      "operation": "read_cell",
+      "ipc_ms": 424.8868390000098,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 292.64201399996637
+    },
+    {
+      "iteration": 5,
+      "operation": "snapshot",
+      "ipc_ms": 418.90906200001155,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 295.67210400000477
+    },
+    {
+      "iteration": 5,
+      "operation": "find",
+      "ipc_ms": 173.4850089999327,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 50.854779000019334
+    },
+    {
+      "iteration": 5,
+      "operation": "find",
+      "ipc_ms": 195.84455500000786,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 49.384748999955264
+    },
+    {
+      "iteration": 5,
+      "operation": "find",
+      "ipc_ms": 175.09643699997923,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 52.179271999989396
+    },
+    {
+      "iteration": 5,
+      "operation": "find",
+      "ipc_ms": 208.1294600000092,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 66.6788280000219
+    },
+    {
+      "iteration": 5,
+      "operation": "find",
+      "ipc_ms": 165.77292600004512,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 39.77652700007184
+    },
+    {
+      "iteration": 5,
+      "operation": "find",
+      "ipc_ms": 170.45623599994997,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 28.913285000044198
+    },
+    {
+      "iteration": 5,
+      "operation": "find",
+      "ipc_ms": 169.94020399999954,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 42.46537899996383
+    },
+    {
+      "iteration": 5,
+      "operation": "write_cell",
+      "ipc_ms": 661.2775859999829,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 545.6521490000341
+    },
+    {
+      "iteration": 5,
+      "operation": "read_cell",
+      "ipc_ms": 469.3368749999536,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 351.78991600002973
+    },
+    {
+      "iteration": 6,
+      "operation": "snapshot",
+      "ipc_ms": 393.6422689999972,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 251.07683900000666
+    },
+    {
+      "iteration": 6,
+      "operation": "find",
+      "ipc_ms": 239.63337899999715,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 57.34963100007917
+    },
+    {
+      "iteration": 6,
+      "operation": "find",
+      "ipc_ms": 182.89926800002831,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 45.698031000029005
+    },
+    {
+      "iteration": 6,
+      "operation": "find",
+      "ipc_ms": 159.77360400006546,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 44.06961799998044
+    },
+    {
+      "iteration": 6,
+      "operation": "find",
+      "ipc_ms": 194.47396900000058,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 46.298714999920776
+    },
+    {
+      "iteration": 6,
+      "operation": "find",
+      "ipc_ms": 218.80720200010728,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 35.39624699999422
+    },
+    {
+      "iteration": 6,
+      "operation": "find",
+      "ipc_ms": 169.36473500004467,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 28.787942000008115
+    },
+    {
+      "iteration": 6,
+      "operation": "find",
+      "ipc_ms": 154.80587000001833,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 38.80098000001908
+    },
+    {
+      "iteration": 6,
+      "operation": "write_cell",
+      "ipc_ms": 669.9431389999972,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 545.9983350000357
+    },
+    {
+      "iteration": 6,
+      "operation": "read_cell",
+      "ipc_ms": 491.10720900000615,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 335.7419349999873
+    },
+    {
+      "iteration": 7,
+      "operation": "snapshot",
+      "ipc_ms": 476.6399210000145,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 306.2158160000763
+    },
+    {
+      "iteration": 7,
+      "operation": "find",
+      "ipc_ms": 257.42118599998776,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 58.179438000024675
+    },
+    {
+      "iteration": 7,
+      "operation": "find",
+      "ipc_ms": 200.50969299995813,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 60.834454000087135
+    },
+    {
+      "iteration": 7,
+      "operation": "find",
+      "ipc_ms": 218.29452600002242,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 59.128999999984444
+    },
+    {
+      "iteration": 7,
+      "operation": "find",
+      "ipc_ms": 174.90769699998054,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 51.690184000108275
+    },
+    {
+      "iteration": 7,
+      "operation": "find",
+      "ipc_ms": 221.1615390000361,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 53.12522799999897
+    },
+    {
+      "iteration": 7,
+      "operation": "find",
+      "ipc_ms": 215.5062799999996,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 27.566188000037073
+    },
+    {
+      "iteration": 7,
+      "operation": "find",
+      "ipc_ms": 191.50097799990817,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 63.97684700004902
+    },
+    {
+      "iteration": 7,
+      "operation": "write_cell",
+      "ipc_ms": 738.8796469999761,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 545.0009689999433
+    },
+    {
+      "iteration": 7,
+      "operation": "read_cell",
+      "ipc_ms": 446.6530639999746,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 285.10571499998605
+    },
+    {
+      "iteration": 8,
+      "operation": "snapshot",
+      "ipc_ms": 401.69881799999985,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 284.9651770000037
+    },
+    {
+      "iteration": 8,
+      "operation": "find",
+      "ipc_ms": 194.94996499997796,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 54.436786999986
+    },
+    {
+      "iteration": 8,
+      "operation": "find",
+      "ipc_ms": 199.44043099997089,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 63.06164299996908
+    },
+    {
+      "iteration": 8,
+      "operation": "find",
+      "ipc_ms": 264.1559710000365,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 55.95357900006093
+    },
+    {
+      "iteration": 8,
+      "operation": "find",
+      "ipc_ms": 221.87367599997287,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 60.03916000008758
+    },
+    {
+      "iteration": 8,
+      "operation": "find",
+      "ipc_ms": 177.34779199997774,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 40.97846100000879
+    },
+    {
+      "iteration": 8,
+      "operation": "find",
+      "ipc_ms": 195.1495609999938,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 31.09409900002902
+    },
+    {
+      "iteration": 8,
+      "operation": "find",
+      "ipc_ms": 185.51895699999932,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 38.284254000018336
+    },
+    {
+      "iteration": 8,
+      "operation": "write_cell",
+      "ipc_ms": 719.5195680000097,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 545.119064000005
+    },
+    {
+      "iteration": 8,
+      "operation": "read_cell",
+      "ipc_ms": 554.3107210000926,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 368.5461690000693
+    },
+    {
+      "iteration": 9,
+      "operation": "snapshot",
+      "ipc_ms": 592.8395820000105,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 391.4124460000039
+    },
+    {
+      "iteration": 9,
+      "operation": "find",
+      "ipc_ms": 259.1873270000633,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 76.1211409999305
+    },
+    {
+      "iteration": 9,
+      "operation": "find",
+      "ipc_ms": 301.3746600000786,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 80.42880999994395
+    },
+    {
+      "iteration": 9,
+      "operation": "find",
+      "ipc_ms": 229.95824800000264,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 76.5002819999836
+    },
+    {
+      "iteration": 9,
+      "operation": "find",
+      "ipc_ms": 238.34703299996818,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 84.62056900009429
+    },
+    {
+      "iteration": 9,
+      "operation": "find",
+      "ipc_ms": 202.7894139999944,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 54.650084000058996
+    },
+    {
+      "iteration": 9,
+      "operation": "find",
+      "ipc_ms": 164.770352000005,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 33.661187000006976
+    },
+    {
+      "iteration": 9,
+      "operation": "find",
+      "ipc_ms": 224.26117199995588,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 61.09769900001538
+    },
+    {
+      "iteration": 9,
+      "operation": "write_cell",
+      "ipc_ms": 748.458975999938,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 546.4348509999581
+    },
+    {
+      "iteration": 9,
+      "operation": "read_cell",
+      "ipc_ms": 575.4520550000279,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 386.08440600000904
+    },
+    {
+      "iteration": 10,
+      "operation": "snapshot",
+      "ipc_ms": 572.9627879999271,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 398.65210300001763
+    },
+    {
+      "iteration": 10,
+      "operation": "find",
+      "ipc_ms": 244.6529430000055,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 52.151699999967605
+    },
+    {
+      "iteration": 10,
+      "operation": "find",
+      "ipc_ms": 223.14394900001844,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 64.6233030000758
+    },
+    {
+      "iteration": 10,
+      "operation": "find",
+      "ipc_ms": 275.8511429999544,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 64.10133999997925
+    },
+    {
+      "iteration": 10,
+      "operation": "find",
+      "ipc_ms": 214.21913799997583,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 73.52370099999916
+    },
+    {
+      "iteration": 10,
+      "operation": "find",
+      "ipc_ms": 188.3868459999576,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 42.112359999919136
+    },
+    {
+      "iteration": 10,
+      "operation": "find",
+      "ipc_ms": 194.90438200000426,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 57.4161990000448
+    },
+    {
+      "iteration": 10,
+      "operation": "find",
+      "ipc_ms": 213.799932000029,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 44.50399299992114
+    },
+    {
+      "iteration": 10,
+      "operation": "write_cell",
+      "ipc_ms": 671.4179250000143,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 544.8918140000387
+    },
+    {
+      "iteration": 10,
+      "operation": "read_cell",
+      "ipc_ms": 412.41005400001995,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 279.15874099994653
+    },
+    {
+      "iteration": 11,
+      "operation": "snapshot",
+      "ipc_ms": 458.2080779999842,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 316.86953799999173
+    },
+    {
+      "iteration": 11,
+      "operation": "find",
+      "ipc_ms": 169.87836900000275,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 49.150636000035774
+    },
+    {
+      "iteration": 11,
+      "operation": "find",
+      "ipc_ms": 186.63665500002935,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 46.58863700001348
+    },
+    {
+      "iteration": 11,
+      "operation": "find",
+      "ipc_ms": 209.13311200001772,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 69.47656800002733
+    },
+    {
+      "iteration": 11,
+      "operation": "find",
+      "ipc_ms": 186.39086700000007,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 61.969055999952616
+    },
+    {
+      "iteration": 11,
+      "operation": "find",
+      "ipc_ms": 174.78436900000816,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 41.126500000018495
+    },
+    {
+      "iteration": 11,
+      "operation": "find",
+      "ipc_ms": 160.13311200003955,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 25.809184999957324
+    },
+    {
+      "iteration": 11,
+      "operation": "find",
+      "ipc_ms": 219.97426200005066,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 56.09657299999071
+    },
+    {
+      "iteration": 11,
+      "operation": "write_cell",
+      "ipc_ms": 672.7412550000054,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 545.6623059999401
+    },
+    {
+      "iteration": 11,
+      "operation": "read_cell",
+      "ipc_ms": 453.47931300000255,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 292.73782899997514
+    },
+    {
+      "iteration": 12,
+      "operation": "snapshot",
+      "ipc_ms": 473.16882300003726,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 348.16169900000205
+    },
+    {
+      "iteration": 12,
+      "operation": "find",
+      "ipc_ms": 200.0281770000356,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 56.31009399996856
+    },
+    {
+      "iteration": 12,
+      "operation": "find",
+      "ipc_ms": 192.90078300002733,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 59.47066999999606
+    },
+    {
+      "iteration": 12,
+      "operation": "find",
+      "ipc_ms": 212.86727700010033,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 128.32129599996733
+    },
+    {
+      "iteration": 12,
+      "operation": "find",
+      "ipc_ms": 205.84284699998534,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 58.66220899997643
+    },
+    {
+      "iteration": 12,
+      "operation": "find",
+      "ipc_ms": 155.29784299997118,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 36.73899199998232
+    },
+    {
+      "iteration": 12,
+      "operation": "find",
+      "ipc_ms": 151.5454940000609,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 34.03006499991079
+    },
+    {
+      "iteration": 12,
+      "operation": "find",
+      "ipc_ms": 156.32023000000572,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 40.22189099998741
+    },
+    {
+      "iteration": 12,
+      "operation": "write_cell",
+      "ipc_ms": 668.261603000019,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 546.5787800000044
+    },
+    {
+      "iteration": 12,
+      "operation": "read_cell",
+      "ipc_ms": 480.31025700004193,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 345.576522999977
+    },
+    {
+      "iteration": 13,
+      "operation": "snapshot",
+      "ipc_ms": 403.66521800001465,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 284.1094279999652
+    },
+    {
+      "iteration": 13,
+      "operation": "find",
+      "ipc_ms": 170.78084500008117,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 48.921221000000514
+    },
+    {
+      "iteration": 13,
+      "operation": "find",
+      "ipc_ms": 186.05133199991997,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 58.241252000016175
+    },
+    {
+      "iteration": 13,
+      "operation": "find",
+      "ipc_ms": 197.7739419999125,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 71.47953699995924
+    },
+    {
+      "iteration": 13,
+      "operation": "find",
+      "ipc_ms": 197.22600599993712,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 54.950061999988975
+    },
+    {
+      "iteration": 13,
+      "operation": "find",
+      "ipc_ms": 177.32200100010687,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 37.23713800002315
+    },
+    {
+      "iteration": 13,
+      "operation": "find",
+      "ipc_ms": 196.74755199991978,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 36.86229300001287
+    },
+    {
+      "iteration": 13,
+      "operation": "find",
+      "ipc_ms": 209.68891199993323,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 74.39083099995969
+    },
+    {
+      "iteration": 13,
+      "operation": "write_cell",
+      "ipc_ms": 685.325865999971,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 545.5132789999197
+    },
+    {
+      "iteration": 13,
+      "operation": "read_cell",
+      "ipc_ms": 549.3897430000061,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 427.9128219999393
+    },
+    {
+      "iteration": 14,
+      "operation": "snapshot",
+      "ipc_ms": 466.8480450000061,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 332.5881369999024
+    },
+    {
+      "iteration": 14,
+      "operation": "find",
+      "ipc_ms": 171.01082800002132,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 52.86607700008972
+    },
+    {
+      "iteration": 14,
+      "operation": "find",
+      "ipc_ms": 189.36105099999168,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 62.24185899998247
+    },
+    {
+      "iteration": 14,
+      "operation": "find",
+      "ipc_ms": 182.78576000000157,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 65.64585800003897
+    },
+    {
+      "iteration": 14,
+      "operation": "find",
+      "ipc_ms": 184.01287899996532,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 66.74179200001618
+    },
+    {
+      "iteration": 14,
+      "operation": "find",
+      "ipc_ms": 173.44058800006223,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 47.0816700000114
+    },
+    {
+      "iteration": 14,
+      "operation": "find",
+      "ipc_ms": 149.08734200002982,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 36.89707000000908
+    },
+    {
+      "iteration": 14,
+      "operation": "find",
+      "ipc_ms": 270.6899660000772,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 55.91754700003548
+    },
+    {
+      "iteration": 14,
+      "operation": "write_cell",
+      "ipc_ms": 680.1074769999786,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 548.1505790000938
+    },
+    {
+      "iteration": 14,
+      "operation": "read_cell",
+      "ipc_ms": 508.096617000092,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 380.30536899998424
+    },
+    {
+      "iteration": 15,
+      "operation": "snapshot",
+      "ipc_ms": 421.3794910000388,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 297.66100999995615
+    },
+    {
+      "iteration": 15,
+      "operation": "find",
+      "ipc_ms": 178.58050499989986,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 53.499491000025046
+    },
+    {
+      "iteration": 15,
+      "operation": "find",
+      "ipc_ms": 185.69127600005686,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 62.37419999990834
+    },
+    {
+      "iteration": 15,
+      "operation": "find",
+      "ipc_ms": 180.02753600001142,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 53.69661899999301
+    },
+    {
+      "iteration": 15,
+      "operation": "find",
+      "ipc_ms": 191.53587400001015,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 67.19535800004905
+    },
+    {
+      "iteration": 15,
+      "operation": "find",
+      "ipc_ms": 176.70851100001528,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 49.39691699996729
+    },
+    {
+      "iteration": 15,
+      "operation": "find",
+      "ipc_ms": 151.6943029999993,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 32.29983100004574
+    },
+    {
+      "iteration": 15,
+      "operation": "find",
+      "ipc_ms": 158.1729470000255,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 42.70688600001904
+    },
+    {
+      "iteration": 15,
+      "operation": "write_cell",
+      "ipc_ms": 668.8576819999525,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 544.8555330000318
+    },
+    {
+      "iteration": 15,
+      "operation": "read_cell",
+      "ipc_ms": 525.0925889999962,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 360.67591200003335
+    },
+    {
+      "iteration": 16,
+      "operation": "snapshot",
+      "ipc_ms": 535.5307559999574,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 369.5846040000106
+    },
+    {
+      "iteration": 16,
+      "operation": "find",
+      "ipc_ms": 181.5713409999944,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 55.492834999995466
+    },
+    {
+      "iteration": 16,
+      "operation": "find",
+      "ipc_ms": 204.78268699991986,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 57.949014999962856
+    },
+    {
+      "iteration": 16,
+      "operation": "find",
+      "ipc_ms": 219.5635369999991,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 64.40657200005262
+    },
+    {
+      "iteration": 16,
+      "operation": "find",
+      "ipc_ms": 283.842648000018,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 53.04267700000764
+    },
+    {
+      "iteration": 16,
+      "operation": "find",
+      "ipc_ms": 158.27116699995258,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 40.361663999988195
+    },
+    {
+      "iteration": 16,
+      "operation": "find",
+      "ipc_ms": 195.05224900001394,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 28.271150000023226
+    },
+    {
+      "iteration": 16,
+      "operation": "find",
+      "ipc_ms": 173.5959190000358,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 41.09930600009193
+    },
+    {
+      "iteration": 16,
+      "operation": "write_cell",
+      "ipc_ms": 670.3167250000206,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 545.3173470000365
+    },
+    {
+      "iteration": 16,
+      "operation": "read_cell",
+      "ipc_ms": 526.174750999985,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 378.38489899991146
+    },
+    {
+      "iteration": 17,
+      "operation": "snapshot",
+      "ipc_ms": 470.38949399996,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 350.29178299998875
+    },
+    {
+      "iteration": 17,
+      "operation": "find",
+      "ipc_ms": 195.6605609999542,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 70.40247399993405
+    },
+    {
+      "iteration": 17,
+      "operation": "find",
+      "ipc_ms": 173.23360600005344,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 54.90231700002823
+    },
+    {
+      "iteration": 17,
+      "operation": "find",
+      "ipc_ms": 186.53407800002242,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 66.94466099997953
+    },
+    {
+      "iteration": 17,
+      "operation": "find",
+      "ipc_ms": 202.0385029999261,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 71.13240799992582
+    },
+    {
+      "iteration": 17,
+      "operation": "find",
+      "ipc_ms": 176.2460169999258,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 44.08903000000919
+    },
+    {
+      "iteration": 17,
+      "operation": "find",
+      "ipc_ms": 153.13606500001242,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 31.970832999945742
+    },
+    {
+      "iteration": 17,
+      "operation": "find",
+      "ipc_ms": 162.96587199997248,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 45.9295350000275
+    },
+    {
+      "iteration": 17,
+      "operation": "write_cell",
+      "ipc_ms": 687.2431709999773,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 546.9487830000617
+    },
+    {
+      "iteration": 17,
+      "operation": "read_cell",
+      "ipc_ms": 474.7071210000513,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 349.41188699997383
+    },
+    {
+      "iteration": 18,
+      "operation": "snapshot",
+      "ipc_ms": 469.9152910000066,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 339.7482919999675
+    },
+    {
+      "iteration": 18,
+      "operation": "find",
+      "ipc_ms": 229.574745999912,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 59.423140999911084
+    },
+    {
+      "iteration": 18,
+      "operation": "find",
+      "ipc_ms": 174.50736199998573,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 54.023185999994894
+    },
+    {
+      "iteration": 18,
+      "operation": "find",
+      "ipc_ms": 179.17871700001342,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 64.57537599999341
+    },
+    {
+      "iteration": 18,
+      "operation": "find",
+      "ipc_ms": 171.72722500004056,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 55.82651600002464
+    },
+    {
+      "iteration": 18,
+      "operation": "find",
+      "ipc_ms": 175.1654120000694,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 44.95616999997765
+    },
+    {
+      "iteration": 18,
+      "operation": "find",
+      "ipc_ms": 169.78279299996757,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 41.74954100005834
+    },
+    {
+      "iteration": 18,
+      "operation": "find",
+      "ipc_ms": 191.99474200001987,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 55.63554799994108
+    },
+    {
+      "iteration": 18,
+      "operation": "write_cell",
+      "ipc_ms": 704.3671030000951,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 544.9180600001
+    },
+    {
+      "iteration": 18,
+      "operation": "read_cell",
+      "ipc_ms": 518.1429699999853,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 375.9114670000372
+    },
+    {
+      "iteration": 19,
+      "operation": "snapshot",
+      "ipc_ms": 446.1742729999969,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 318.6538410000139
+    },
+    {
+      "iteration": 19,
+      "operation": "find",
+      "ipc_ms": 177.95578999994177,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 53.8281870000219
+    },
+    {
+      "iteration": 19,
+      "operation": "find",
+      "ipc_ms": 208.56460400000287,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 64.12950999992972
+    },
+    {
+      "iteration": 19,
+      "operation": "find",
+      "ipc_ms": 166.49571499999638,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 51.860229999988405
+    },
+    {
+      "iteration": 19,
+      "operation": "find",
+      "ipc_ms": 203.07034200004637,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 64.60334799999146
+    },
+    {
+      "iteration": 19,
+      "operation": "find",
+      "ipc_ms": 251.18157200006408,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 59.68619200007197
+    },
+    {
+      "iteration": 19,
+      "operation": "find",
+      "ipc_ms": 160.93013500005782,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 28.911562999951457
+    },
+    {
+      "iteration": 19,
+      "operation": "find",
+      "ipc_ms": 182.74729500001285,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 60.21943299992927
+    },
+    {
+      "iteration": 19,
+      "operation": "write_cell",
+      "ipc_ms": 667.2793210000236,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 548.6119789999293
+    },
+    {
+      "iteration": 19,
+      "operation": "read_cell",
+      "ipc_ms": 446.98088300003747,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 329.87960999992083
+    },
+    {
+      "iteration": 20,
+      "operation": "snapshot",
+      "ipc_ms": 438.3463149999898,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 319.36907799990877
+    },
+    {
+      "iteration": 20,
+      "operation": "find",
+      "ipc_ms": 224.12814699998762,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 60.65598000009231
+    },
+    {
+      "iteration": 20,
+      "operation": "find",
+      "ipc_ms": 176.3569169999073,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 53.97501300001295
+    },
+    {
+      "iteration": 20,
+      "operation": "find",
+      "ipc_ms": 173.77086100009365,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 59.69057499999053
+    },
+    {
+      "iteration": 20,
+      "operation": "find",
+      "ipc_ms": 172.17864199994892,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 58.24406900001122
+    },
+    {
+      "iteration": 20,
+      "operation": "find",
+      "ipc_ms": 157.69552699998712,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 41.58126699996956
+    },
+    {
+      "iteration": 20,
+      "operation": "find",
+      "ipc_ms": 152.009473000021,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 35.832677000030344
+    },
+    {
+      "iteration": 20,
+      "operation": "find",
+      "ipc_ms": 167.76350700001785,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 55.39604099999451
+    },
+    {
+      "iteration": 20,
+      "operation": "write_cell",
+      "ipc_ms": 687.1251989999791,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 544.738585999994
+    },
+    {
+      "iteration": 20,
+      "operation": "read_cell",
+      "ipc_ms": 458.4925120000207,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 341.2479419999954
+    },
+    {
+      "iteration": 21,
+      "operation": "snapshot",
+      "ipc_ms": 520.2565779999304,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 401.51544599996214
+    },
+    {
+      "iteration": 21,
+      "operation": "find",
+      "ipc_ms": 177.71977099994274,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 52.38531400004831
+    },
+    {
+      "iteration": 21,
+      "operation": "find",
+      "ipc_ms": 196.2400270000444,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 56.90941800003202
+    },
+    {
+      "iteration": 21,
+      "operation": "find",
+      "ipc_ms": 183.95260700003746,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 66.73534200001541
+    },
+    {
+      "iteration": 21,
+      "operation": "find",
+      "ipc_ms": 181.28690699995786,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 57.662988999936715
+    },
+    {
+      "iteration": 21,
+      "operation": "find",
+      "ipc_ms": 160.08802599992578,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 45.30880100003287
+    },
+    {
+      "iteration": 21,
+      "operation": "find",
+      "ipc_ms": 155.0849750000225,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 37.09251200007202
+    },
+    {
+      "iteration": 21,
+      "operation": "find",
+      "ipc_ms": 166.25165199991443,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 44.31761400007872
+    },
+    {
+      "iteration": 21,
+      "operation": "write_cell",
+      "ipc_ms": 660.7466880000175,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 545.9552159999248
+    },
+    {
+      "iteration": 21,
+      "operation": "read_cell",
+      "ipc_ms": 534.3069089999517,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 413.794007999968
+    },
+    {
+      "iteration": 22,
+      "operation": "snapshot",
+      "ipc_ms": 442.3218250000218,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 325.5433980000362
+    },
+    {
+      "iteration": 22,
+      "operation": "find",
+      "ipc_ms": 178.14242500003274,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 61.00137999999333
+    },
+    {
+      "iteration": 22,
+      "operation": "find",
+      "ipc_ms": 232.36844300004122,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 80.59186899993165
+    },
+    {
+      "iteration": 22,
+      "operation": "find",
+      "ipc_ms": 198.47835699999905,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 69.67884600010166
+    },
+    {
+      "iteration": 22,
+      "operation": "find",
+      "ipc_ms": 218.90907500005596,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 96.58964800007652
+    },
+    {
+      "iteration": 22,
+      "operation": "find",
+      "ipc_ms": 183.4664769999108,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 59.73177500004567
+    },
+    {
+      "iteration": 22,
+      "operation": "find",
+      "ipc_ms": 161.25133100001676,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 41.771028999960436
+    },
+    {
+      "iteration": 22,
+      "operation": "find",
+      "ipc_ms": 177.44158200002857,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 47.671465999997054
+    },
+    {
+      "iteration": 22,
+      "operation": "write_cell",
+      "ipc_ms": 660.9990020000396,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 546.0971659999814
+    },
+    {
+      "iteration": 22,
+      "operation": "read_cell",
+      "ipc_ms": 486.6028559999904,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 366.7782329999909
+    },
+    {
+      "iteration": 23,
+      "operation": "snapshot",
+      "ipc_ms": 487.9508410000426,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 367.95500400000947
+    },
+    {
+      "iteration": 23,
+      "operation": "find",
+      "ipc_ms": 183.0167950000714,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 58.834412999999586
+    },
+    {
+      "iteration": 23,
+      "operation": "find",
+      "ipc_ms": 194.472456000085,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 74.25206900006742
+    },
+    {
+      "iteration": 23,
+      "operation": "find",
+      "ipc_ms": 189.36959300003764,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 68.41770300002281
+    },
+    {
+      "iteration": 23,
+      "operation": "find",
+      "ipc_ms": 195.6457969999974,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 72.93964799998776
+    },
+    {
+      "iteration": 23,
+      "operation": "find",
+      "ipc_ms": 170.29627400006575,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 48.70614599997225
+    },
+    {
+      "iteration": 23,
+      "operation": "find",
+      "ipc_ms": 146.52340899999672,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 30.774525000083486
+    },
+    {
+      "iteration": 23,
+      "operation": "find",
+      "ipc_ms": 176.35890100007146,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 57.52907900000537
+    },
+    {
+      "iteration": 23,
+      "operation": "write_cell",
+      "ipc_ms": 669.7466659999236,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 545.4743980000103
+    },
+    {
+      "iteration": 23,
+      "operation": "read_cell",
+      "ipc_ms": 524.6613660000321,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 377.8881639999554
+    },
+    {
+      "iteration": 24,
+      "operation": "snapshot",
+      "ipc_ms": 569.7164839999687,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 437.1667159999788
+    },
+    {
+      "iteration": 24,
+      "operation": "find",
+      "ipc_ms": 194.21725699999115,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 71.63305799997488
+    },
+    {
+      "iteration": 24,
+      "operation": "find",
+      "ipc_ms": 181.12232999999378,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 66.41610600001968
+    },
+    {
+      "iteration": 24,
+      "operation": "find",
+      "ipc_ms": 256.00202900000113,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 119.25597799995558
+    },
+    {
+      "iteration": 24,
+      "operation": "find",
+      "ipc_ms": 185.78132100003586,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 61.691750000022694
+    },
+    {
+      "iteration": 24,
+      "operation": "find",
+      "ipc_ms": 168.7397719999808,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 50.889305000055174
+    },
+    {
+      "iteration": 24,
+      "operation": "find",
+      "ipc_ms": 168.8396100000773,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 34.55210000004172
+    },
+    {
+      "iteration": 24,
+      "operation": "find",
+      "ipc_ms": 162.27455800003554,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 44.19731200005117
+    },
+    {
+      "iteration": 24,
+      "operation": "write_cell",
+      "ipc_ms": 663.1855189999669,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 547.5358639999968
+    },
+    {
+      "iteration": 24,
+      "operation": "read_cell",
+      "ipc_ms": 586.4739009999766,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 430.000525999958
+    },
+    {
+      "iteration": 25,
+      "operation": "snapshot",
+      "ipc_ms": 456.2625040000512,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 326.13360200002717
+    },
+    {
+      "iteration": 25,
+      "operation": "find",
+      "ipc_ms": 178.87000999996872,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 62.136771000041335
+    },
+    {
+      "iteration": 25,
+      "operation": "find",
+      "ipc_ms": 175.51534799997626,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 61.32187800005795
+    },
+    {
+      "iteration": 25,
+      "operation": "find",
+      "ipc_ms": 187.95450599998276,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 61.4895549999801
+    },
+    {
+      "iteration": 25,
+      "operation": "find",
+      "ipc_ms": 223.1337320000648,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 62.16048299995691
+    },
+    {
+      "iteration": 25,
+      "operation": "find",
+      "ipc_ms": 154.8948490000157,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 43.508135000024595
+    },
+    {
+      "iteration": 25,
+      "operation": "find",
+      "ipc_ms": 141.87729200000376,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 32.426752999981545
+    },
+    {
+      "iteration": 25,
+      "operation": "find",
+      "ipc_ms": 158.90099499995358,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 46.45070700007636
+    },
+    {
+      "iteration": 25,
+      "operation": "write_cell",
+      "ipc_ms": 656.4597380000805,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 544.6316750000051
+    },
+    {
+      "iteration": 25,
+      "operation": "read_cell",
+      "ipc_ms": 534.9034590000201,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 408.4931439999764
+    },
+    {
+      "iteration": 26,
+      "operation": "snapshot",
+      "ipc_ms": 491.601021000065,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 377.63100199993005
+    },
+    {
+      "iteration": 26,
+      "operation": "find",
+      "ipc_ms": 191.17349800001193,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 58.12355800003388
+    },
+    {
+      "iteration": 26,
+      "operation": "find",
+      "ipc_ms": 176.84967899992898,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 64.64034999999058
+    },
+    {
+      "iteration": 26,
+      "operation": "find",
+      "ipc_ms": 171.0134659999767,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 58.08248000005278
+    },
+    {
+      "iteration": 26,
+      "operation": "find",
+      "ipc_ms": 197.76914499993836,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 85.48828600009983
+    },
+    {
+      "iteration": 26,
+      "operation": "find",
+      "ipc_ms": 158.34202300004563,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 46.099393000076816
+    },
+    {
+      "iteration": 26,
+      "operation": "find",
+      "ipc_ms": 149.1161789999751,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 39.52620199993362
+    },
+    {
+      "iteration": 26,
+      "operation": "find",
+      "ipc_ms": 159.432766000009,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 47.44877699999961
+    },
+    {
+      "iteration": 26,
+      "operation": "write_cell",
+      "ipc_ms": 659.5228600000382,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 545.9596529999544
+    },
+    {
+      "iteration": 26,
+      "operation": "read_cell",
+      "ipc_ms": 492.90588300004856,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 380.1461250000102
+    },
+    {
+      "iteration": 27,
+      "operation": "snapshot",
+      "ipc_ms": 542.9338259999668,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 400.9638879999784
+    },
+    {
+      "iteration": 27,
+      "operation": "find",
+      "ipc_ms": 213.3617660000482,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 96.87687899997854
+    },
+    {
+      "iteration": 27,
+      "operation": "find",
+      "ipc_ms": 186.04398499996933,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 65.46089699997992
+    },
+    {
+      "iteration": 27,
+      "operation": "find",
+      "ipc_ms": 178.24916300003224,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 58.99783099994238
+    },
+    {
+      "iteration": 27,
+      "operation": "find",
+      "ipc_ms": 198.32036599996172,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 83.87951299994256
+    },
+    {
+      "iteration": 27,
+      "operation": "find",
+      "ipc_ms": 194.05191300006663,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 75.33896400002504
+    },
+    {
+      "iteration": 27,
+      "operation": "find",
+      "ipc_ms": 148.4201649999477,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 33.091487999968194
+    },
+    {
+      "iteration": 27,
+      "operation": "find",
+      "ipc_ms": 161.39605700004722,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 48.40462800007117
+    },
+    {
+      "iteration": 27,
+      "operation": "write_cell",
+      "ipc_ms": 663.503535000018,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 545.1127019999831
+    },
+    {
+      "iteration": 27,
+      "operation": "read_cell",
+      "ipc_ms": 476.0805099999743,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 356.3465559999486
+    },
+    {
+      "iteration": 28,
+      "operation": "snapshot",
+      "ipc_ms": 530.8823530000382,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 400.0979310000048
+    },
+    {
+      "iteration": 28,
+      "operation": "find",
+      "ipc_ms": 190.6608919999826,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 75.20259199998236
+    },
+    {
+      "iteration": 28,
+      "operation": "find",
+      "ipc_ms": 187.92274600002656,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 63.571595999974306
+    },
+    {
+      "iteration": 28,
+      "operation": "find",
+      "ipc_ms": 186.64920699995946,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 64.36814000005597
+    },
+    {
+      "iteration": 28,
+      "operation": "find",
+      "ipc_ms": 213.6262029999898,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 93.46172200002911
+    },
+    {
+      "iteration": 28,
+      "operation": "find",
+      "ipc_ms": 203.37624799992682,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 82.07578799999737
+    },
+    {
+      "iteration": 28,
+      "operation": "find",
+      "ipc_ms": 154.98298900001828,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 38.74785699997574
+    },
+    {
+      "iteration": 28,
+      "operation": "find",
+      "ipc_ms": 190.6238609999491,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 59.92452899999989
+    },
+    {
+      "iteration": 28,
+      "operation": "write_cell",
+      "ipc_ms": 664.7033440000314,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 544.8432069999853
+    },
+    {
+      "iteration": 28,
+      "operation": "read_cell",
+      "ipc_ms": 640.7141839999895,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 502.8352150000046
+    },
+    {
+      "iteration": 29,
+      "operation": "snapshot",
+      "ipc_ms": 536.1395599999241,
+      "max_nodes": 1200,
+      "max_depth": 12,
+      "result": {
+        "node_count": 1200,
+        "max_depth": 9,
+        "roles": {
+          "application": 1,
+          "frame": 1,
+          "panel": 38,
+          "push button": 96,
+          "scroll pane": 2,
+          "root pane": 1,
+          "viewport": 1,
+          "scroll bar": 4,
+          "menu bar": 2,
+          "status bar": 1,
+          "menu": 136,
+          "split pane": 3,
+          "tool bar": 3,
+          "label": 11,
+          "menu item": 507,
+          "separator": 208,
+          "check menu item": 123,
+          "radio menu item": 42,
+          "filler": 1,
+          "document spreadsheet": 1,
+          "toggle button": 16,
+          "table": 1,
+          "page tab list": 1
+        },
+        "truncated": true
+      },
+      "latency_ms": 403.7966079999933
+    },
+    {
+      "iteration": 29,
+      "operation": "find",
+      "ipc_ms": 181.5786399999979,
+      "name": "Bold",
+      "result": {
+        "role": "toggle button",
+        "name": "Bold",
+        "bounds": [
+          385,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 65.23230899995269
+    },
+    {
+      "iteration": 29,
+      "operation": "find",
+      "ipc_ms": 213.13490000000002,
+      "name": "Italic",
+      "result": {
+        "role": "toggle button",
+        "name": "Italic",
+        "bounds": [
+          418,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 76.06625899995834
+    },
+    {
+      "iteration": 29,
+      "operation": "find",
+      "ipc_ms": 210.6346499999745,
+      "name": "Underline",
+      "result": {
+        "role": "push button",
+        "name": "Underline",
+        "bounds": [
+          451,
+          91,
+          44,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 63.666361000059624
+    },
+    {
+      "iteration": 29,
+      "operation": "find",
+      "ipc_ms": 180.26200499991774,
+      "name": "Align Center",
+      "result": {
+        "role": "push button",
+        "name": "Align Center",
+        "bounds": [
+          632,
+          91,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 66.70469600010165
+    },
+    {
+      "iteration": 29,
+      "operation": "find",
+      "ipc_ms": 188.40694000004987,
+      "name": "Sort Ascending",
+      "result": {
+        "role": "push button",
+        "name": "Sort Ascending",
+        "bounds": [
+          799,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 57.70386300002883
+    },
+    {
+      "iteration": 29,
+      "operation": "find",
+      "ipc_ms": 159.3457709999484,
+      "name": "Select Function",
+      "result": {
+        "role": "push button",
+        "name": "Select Function",
+        "bounds": [
+          256,
+          134,
+          36,
+          27
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 40.91191500003788
+    },
+    {
+      "iteration": 29,
+      "operation": "find",
+      "ipc_ms": 181.599007999921,
+      "name": "Chart",
+      "result": {
+        "role": "push button",
+        "name": "Chart",
+        "bounds": [
+          939,
+          52,
+          33,
+          35
+        ],
+        "states": [
+          "enabled",
+          "focusable",
+          "sensitive",
+          "showing",
+          "visible"
+        ]
+      },
+      "latency_ms": 63.47816799996053
+    },
+    {
+      "iteration": 29,
+      "operation": "write_cell",
+      "ipc_ms": 670.8328430000847,
+      "result": {
+        "typed": true
+      },
+      "latency_ms": 546.0804470000085
+    },
+    {
+      "iteration": 29,
+      "operation": "read_cell",
+      "ipc_ms": 607.5622490000114,
+      "result": {
+        "correct": true,
+        "cell": "A1",
+        "role": "table cell"
+      },
+      "latency_ms": 482.54967699995177
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "Feuille vierge, profil et bus privés ; aucune donnée utilisateur ni capture.",
+    "Sonde /usr/bin/python3, pyatspi système ; nouveau client par requête, même Calc entre itérations sans échec.",
+    "Latences AT-SPI après connexion au bus ; ipc_ms inclut création du client et transport JSON.",
+    "Recherche exacte sans menus ni cellules ; noms, rôles, états et rectangles écran conservés dans le JSON.",
+    "À défaut de Sum/AutoSum, Select Function mesure le choix de fonction, pas un équivalent fonctionnel prouvé.",
+    "Snapshot en largeur borné en profondeur/nœuds : pas la taille exhaustive du tableur virtuel.",
+    "Temps vers bus/fenêtre depuis lancement Calc, polling 500 ms et démarrage du client inclus.",
+    "A1 reçoit uniquement 424242 via xdotool ; lecture AT-SPI après Entrée, sans conserver d'autre valeur.",
+    "Timeout RPC AT-SPI 1 500 ms (3 000 ms au démarrage RPC) ; requête subprocess et attente parent bornées.",
+    "Après échec : nouvelle session entre itérations ; trois échecs de démarrage arrêtent la suite."
+  ]
+}

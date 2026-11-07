@@ -24,6 +24,7 @@ from engine.services.errors import (
     error_for_status,
 )
 from engine.services.latency import CallRecord, LatencyRecorder
+from engine.services.profiles import AppProfile, load_profile
 from engine.services.protocols import SttEvent, Transcript, Word
 
 SERVICE = "gladia"
@@ -180,6 +181,7 @@ class GladiaSttClient:
         self,
         *,
         api_key: str | None = None,
+        profile: AppProfile | None = None,
         base_url: str = DEFAULT_BASE_URL,
         recorder: LatencyRecorder | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
@@ -190,6 +192,7 @@ class GladiaSttClient:
         if not key:
             raise ServiceUnavailable(SERVICE, "GLADIA_API_KEY absent")
         self.recorder = recorder or LatencyRecorder()
+        self.profile = profile or load_profile(None)
         self.poll_interval_s = poll_interval_s
         self.file_timeout_s = file_timeout_s
         self._http = httpx.AsyncClient(
@@ -234,11 +237,12 @@ class GladiaSttClient:
         self,
         *,
         language: str = "fr",
-        vocabulary: Sequence[str] = DEFAULT_VOCABULARY,
+        vocabulary: Sequence[str] | None = None,
         endpointing_s: float = 0.3,
         max_without_endpointing_s: float = 8.0,
         sample_rate: int = 16000,
     ) -> dict[str, Any]:
+        vocabulary = self.profile.vocabulary if vocabulary is None else vocabulary
         config: dict[str, Any] = {
             "encoding": "wav/pcm",
             "sample_rate": sample_rate,
@@ -280,13 +284,14 @@ class GladiaSttClient:
         audio: bytes,
         *,
         filename: str,
-        vocabulary: Sequence[str] = DEFAULT_VOCABULARY,
+        vocabulary: Sequence[str] | None = None,
         language: str = "fr",
         content_type: str = "audio/wav",
     ) -> Transcript:
         """Upload → job pré-enregistré → polling ; renvoie texte + timestamps par mot."""
         if not audio:
             raise ValueError("audio vide")
+        vocabulary = self.profile.vocabulary if vocabulary is None else vocabulary
         start = time.perf_counter()
         upload = await self._request(
             "upload", "POST", "/upload", files={"audio": (filename, audio, content_type)}

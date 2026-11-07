@@ -14,10 +14,157 @@ ruff check .
 ```
 
 `live` est ignoré par défaut ; `-m live` ou `BENCH_LIVE=1` l'active.
-Les quatre suites sont disponibles ; `all` les exécute successivement avec leurs clés.
+Les sept suites sont disponibles ; `all` les exécute successivement avec leurs clés.
 Options addon : `--blender /opt/blender/blender`, `--timeout 60`, `--operations 50`.
+
+## Pointeurs Calc
+
+```sh
+python -m bench pointer
+python -m bench pointer --models holo4-27b holo4-35b-a3b --repeats 3
+pytest -q bench/tests -m live -k pointer
+```
+
+Même environnement privé et dépendances que `a11y`/`verify`, clé `HAI_API_KEY`.
+Neuf contrôles exposés par Calc : Gras, Italique, Souligné, alignement horizontal
+centré, tri ascendant, graphique, choix de fonction, retour à la ligne et fusion
+sans centrage. Descriptions françaises/anglaises enregistrées, jamais le seul
+nom accessible. Trois répétitions par défaut : 27 recherches AT-SPI et 27 appels
+Holo, modèle `holo4-27b`. Client de localisation, schéma, thinking désactivé,
+pacing et retries réutilisés de `bench.holo` sans modification.
+
+Capture fraîche de la fenêtre par cible/répétition, utilisée pour les deux
+méthodes ; géométrie et bounds relus avant toute évaluation/clic. Capture PNG
+réduite, origine et dimensions physiques originales conservées : millièmes =
+1000 × (point écran − origine fenêtre) / dimensions originales. Conversion
+inverse et arrondi au pixel pour le clic ; aucune multiplication DPI.
+
+Le hit géométrique seul est auto-référencé pour AT-SPI. Sur les trois contrôles
+de formatage, **chaque méthode clique réellement** avec xdotool ; la lecture
+AT-SPI doit montrer exactement l'inversion attendue sans changement des deux
+autres contrôles. Les états initiaux sont ensuite restaurés et relus. Le taux
+fonctionnel utilise tous ces essais, même un pointeur absent ; les six autres
+contrôles ne sont pas cliqués (pas de prétendue validation fonctionnelle).
+
+`pointer_assets/` conserve captures, SHA-256, géométries, noms et prompts ;
+`pointer-calls.jsonl` conserve chaque point, bounds, preuves avant/après/restaurées,
+requêtes HTTP et latences. Distances p50/p95 en pixels physiques. Latence AT-SPI :
+recherche + conversion, IPC/client système inclus ; Holo : dernière tentative
+HTTP, séparée du mur incluant pacing/retries. Capture et clic hors latence de
+localisation. Miss/clic sans effet = résultat incorrect ; erreur HTTP/parse =
+échec. Les limites du dataset synthétique et de l'auto-référence restent visibles.
+
+## Assertions visuelles Holo
+
+```sh
+python -m bench verify
+python -m bench verify --reuse-assets --models holo4-27b holo4-35b-a3b --repeats 2
+pytest -q bench/tests -m live -k verify
+```
+
+Requiert `HAI_API_KEY` dans l'environnement et les extras `bench,holo`. Même
+dépendances système que `a11y`, plus Blender graphique et ImageMagick. La première
+commande crée vingt scènes réelles (dix Calc, dix Blender), quarante questions
+fermées équilibrées par scène, puis deux répétitions : quatre-vingts appels par
+modèle. Chaque lancement Calc utilise un profil vierge ; A1 est focalisée par son
+rectangle AT-SPI, puis ne reçoit que `424242`. Les boutons Gras/Italique/Souligné
+sont actionnés et leurs états AT-SPI lus avant **et après** capture. Les questions
+portent sur l'état des boutons, pas sur une inférence du style du texte. Blender
+écrit les faits bpy dans une session privée Xvfb ; les captures externes sont
+acquittées avant de passer à la scène suivante. Aucun label n'est produit à l'œil.
+
+`results/verify_assets/manifest.json` conserve faits, versions, questions, labels,
+SHA-256 et dimensions ; les PNG sont réduits à 1280×900 maximum. Les questions Calc
+emploient la région supérieure de la fenêtre en millièmes. `--reuse-assets`
+vérifie intégrité, chemins, labels et équilibre sans relancer d'application.
+Les labels ne sont jamais transmis au modèle. Le client SDK utilise `extra_body`
+pour le schéma JSON et `chat_template_kwargs.enable_thinking=false`, un Pacer
+commun à tous les appels du run, deux secondes initialement et dix tentatives
+maximum avec les cooldowns existants. Une erreur d'authentification arrête le run.
+
+`verify-calls.jsonl` conserve modèle/question/répétition, réponse structurée brute,
+statut, détails des tentatives, waits et durées murales ; aucune clé ni image en
+base64. Seuil de confiance 0,8 : les réponses sous ce seuil deviennent unknown.
+Accuracy sur **tous** les appels ; unknown et erreurs comptent comme incorrects.
+Précision/rappel yes : dénominateur nul représenté par null. Matrices de confusion,
+latences p50/p95, échecs par app, modèle et global dans JSON/Markdown. La latence
+principale inclut pacing et retries ; la dernière tentative HTTP est séparée.
+Les répétitions ne sont pas indépendantes et ce petit dataset contrôlé ne mesure
+ni l'exécution du moteur ni une capacité générale sur les applications. Le test
+live court vérifie le protocole sur deux questions par application, pas un seuil
+de qualité du modèle ; sans clé il est ignoré proprement.
 Installation Blender 4.5.9 LTS : voir `docs/environnement-dev.md`.
 Exécuter depuis la racine (bench n'est pas inclus dans les packages distribués du socle).
+
+## Accessibilité Calc / AT-SPI
+
+```sh
+python -m bench a11y
+python -m bench a11y --iterations 30 --max-nodes 1200 --max-depth 12 --timeout 15
+pytest -q bench/tests -m live -k a11y
+```
+
+Dépendances Ubuntu : `libreoffice-calc`, **`libreoffice-gtk3`**, `at-spi2-core`,
+`python3-pyatspi`, `xvfb`, `dbus-x11`, `xdotool`. Aucun secret cloud nécessaire.
+La sonde utilise `/usr/bin/python3` (pyatspi système, Python 3.10 sur cette VM),
+pas les bindings du venv Python 3.11. Elle émet des lignes JSON validées par
+`a11y_session.parse_response`.
+
+`A11ySession` expose une session réutilisable : contexte async, `launch_calc()`,
+`find_element(name)` → rôle/nom/rectangle `[x,y,largeur,hauteur]` en pixels écran
+et états. `request()` expose également snapshot, découverte des boutons,
+écriture de la seule valeur de test et lecture d'A1. Aucun accès au bureau existant.
+Chaque session lance `dbus-run-session`, un Xvfb sur display alloué par `-displayfd`
+(1600 × 1000), un runtime privé 0700, le lanceur de bus AT-SPI et le registre,
+puis `localc --norestore --nologo` avec un profil neuf. Environnement :
+`GTK_MODULES=gail:atk-bridge`, `SAL_USE_VCLPLUGIN=gtk3`, `NO_AT_BRIDGE=0`,
+`GNOME_ACCESSIBILITY=1`. Le display est propagé à l'activation D-Bus.
+
+Le lancement poll jusqu'à 60 s : apparition sur le bus puis fenêtre exposée.
+Un nouveau client système relit desktop/application à chaque poll et requête ;
+aucun objet AT-SPI de l'application vide au démarrage n'est conservé. Les mesures
+séparent le parcours/recherche/lecture AT-SPI de `ipc_ms` (processus Python,
+connexion bus et transport JSON inclus). Les percentiles nearest-rank viennent
+de `bench.common.statistics`, avec minimum ajouté localement.
+
+Le snapshot parcourt en largeur sous limites de profondeur/nœuds ; la feuille
+virtuelle ne peut pas être énumérée exhaustivement. Les comptes par rôle,
+profondeur et troncature sont conservés à chaque itération. La recherche exacte
+des boutons évite menus et cellules ; les noms réellement découverts, bounds et
+états sont dans le rapport JSON. `Select Function`, si choisi à défaut de Sum,
+désigne le choix de fonction, pas une validation de la commande AutoSum.
+Chaque itération saisit uniquement `424242` via xdotool puis lit A1 via AT-SPI ;
+seul le booléen de comparaison est enregistré, pas d'autres valeurs de cellules.
+Aucune capture d'écran.
+
+Sorties remplacées : `bench/results/a11y.json` et `a11y.md`. Échecs et raisons
+sont conservés, sans les compter parmi les succès. RPC AT-SPI bornés à 1,5 s
+(3 s au démarrage RPC), requêtes subprocess et parent également bornées.
+Après crash/hang : nouvelle session et nouveau profil pour les itérations
+suivantes ; trois échecs de lancement interrompent la suite. Option de diagnostic
+`--restart-each-iteration`, et `--vcl-plugin gen` pour comparaison explicite
+(le plugin gen ne garantit pas de pont AT-SPI). Tous les processus de la session
+sont arrêtés à la sortie ou à l'annulation.
+
+### Relevé conservé et limites de robustesse
+
+Sur LibreOffice 7.3.7.2 / Ubuntu 22.04, le relevé par défaut a terminé **30/30**
+itérations dans une seule instance Calc : zéro échec, 30 lectures A1 correctes,
+210 recherches réussies. Noms exposés : `Bold`, `Italic`, `Underline`,
+`Align Center`, `Sort Ascending`, `Select Function`, `Chart`.
+Snapshot p50/p95 : 332,588 / 437,167 ms ; recherche : 53,828 / 82,076 ms ;
+lecture A1 avec localisation de la table : 360,676 / 502,835 ms.
+Les 30 arbres atteignent la limite de 1 200 nœuds (profondeur observée 9) :
+il s'agit d'une taille tronquée, jamais d'une taille exhaustive.
+
+La première tentative sans `libreoffice-gtk3` ne trouvait pas Calc sur le bus.
+Avec gtk3 mais objets réutilisés au démarrage, l'application était visible avec
+zéro enfant et l'attente de fenêtre expirait. La configuration fonctionnelle
+ci-dessus combine `GNOME_ACCESSIBILITY=1`, attente jusqu'à 60 s et clients courts
+qui rechargent desktop/application. Ce relevé ne permet pas d'attribuer le gain
+à une variable isolée. Aucun abort après snapshot n'a été observé sur ces 30
+itérations ; les redémarrages automatiques n'ont donc pas été nécessaires.
+`gen` et la désactivation Java ne sont pas mesurés ni revendiqués comme correctifs.
 
 ## Méthode
 

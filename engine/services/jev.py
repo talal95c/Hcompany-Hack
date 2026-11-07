@@ -9,7 +9,7 @@ from typing import Any
 
 import httpx
 
-from engine.services._retry import TokenBucket
+from engine.services._retry import TokenBucket, hedged
 from engine.services.errors import (
     InvalidResponse,
     QuotaExceeded,
@@ -18,6 +18,7 @@ from engine.services.errors import (
     error_for_status,
 )
 from engine.services.latency import LatencyRecorder
+from engine.services.profiles import AppProfile, load_profile
 from engine.services.protocols import Intent, JevDecision, JevQuestion
 
 SERVICE = "jev"
@@ -25,46 +26,66 @@ DEFAULT_BASE_URL = "https://api.codiv.ai"
 DEFAULT_MODEL = "openjev-latest"
 DEFAULT_TIMEOUT_S = 0.8
 
-INTENT_QUESTION = JevQuestion(
-    type="choice",
-    instructions=(
-        "The learner is following a Blender tutorial with a voice tutor. Classify what the "
-        "learner's French utterance asks of the tutor."
-    ),
-    criteria={
-        Intent.QUESTION.value: "asks a question, an explanation or a clarification",
-        Intent.FAIS_LE.value: (
-            "asks the tutor to perform the action or step for them (fais-le, vas-y, montre-moi "
-            "en le faisant)"
+
+def intent_question(profile: AppProfile) -> JevQuestion:
+    return JevQuestion(
+        type="choice",
+        instructions=(
+            f"{profile.name}: {profile.jev_context} "
+            f"The learner is following a {profile.name} tutorial with a voice tutor. "
+            "Classify what the "
+            "learner's French utterance asks of the tutor."
         ),
-        Intent.FRUSTRATION.value: "expresses frustration, annoyance or discouragement",
-        Intent.CHUT.value: "asks the tutor to be quiet, stop talking or pause (chut, tais-toi)",
-        Intent.OTHER.value: "anything else: small talk, thinking aloud, unrelated remarks",
-    },
-)
-STUCK_QUESTION = JevQuestion(
-    type="choice",
-    instructions=(
-        "Given the learner's recent activity in Blender, decide whether the learner is stuck "
-        "and needs help, or is still thinking and should be left alone."
-    ),
-    criteria={
-        "stuck": "repeated failed attempts, aimless navigation or a long idle time after errors",
-        "thinking": "recent progress, deliberate exploration or a short pause",
-    },
-)
-DEVIATION_QUESTION = JevQuestion(
-    type="choice",
-    instructions=(
-        "The learner deviated from the expected lesson step. Judge how severe the deviation is "
-        "for the lesson goal."
-    ),
-    criteria={
-        "none": "no real deviation, equivalent result",
-        "minor": "cosmetic or easily recoverable, lesson can continue",
-        "major": "blocks the next steps or breaks the expected scene state",
-    },
-)
+        criteria={
+            Intent.QUESTION.value: "asks a question, an explanation or a clarification",
+            Intent.FAIS_LE.value: (
+                "asks the tutor to perform the action or step for them (fais-le, vas-y, montre-moi "
+                "en le faisant)"
+            ),
+            Intent.FRUSTRATION.value: "expresses frustration, annoyance or discouragement",
+            Intent.CHUT.value: "asks the tutor to be quiet, stop talking or pause (chut, tais-toi)",
+            Intent.OTHER.value: "anything else: small talk, thinking aloud, unrelated remarks",
+        },
+    )
+
+
+def stuck_question(profile: AppProfile) -> JevQuestion:
+    return JevQuestion(
+        type="choice",
+        instructions=(
+            f"{profile.name}: {profile.jev_context} "
+            f"Given the learner's recent activity in {profile.name}, "
+            "decide whether the learner is stuck "
+            "and needs help, or is still thinking and should be left alone."
+        ),
+        criteria={
+            "stuck": (
+                "repeated failed attempts, aimless navigation or a long idle time after errors"
+            ),
+            "thinking": "recent progress, deliberate exploration or a short pause",
+        },
+    )
+
+
+def deviation_question(profile: AppProfile) -> JevQuestion:
+    return JevQuestion(
+        type="choice",
+        instructions=(
+            f"{profile.name}: {profile.jev_context} "
+            "The learner deviated from the expected lesson step. Judge how severe the deviation is "
+            "for the lesson goal."
+        ),
+        criteria={
+            "none": "no real deviation, equivalent result",
+            "minor": "cosmetic or easily recoverable, lesson can continue",
+            "major": "blocks the next steps or breaks the expected document/app state",
+        },
+    )
+
+
+INTENT_QUESTION = intent_question(load_profile(None))
+STUCK_QUESTION = stuck_question(load_profile(None))
+DEVIATION_QUESTION = deviation_question(load_profile(None))
 
 
 class CodivJevClient:
@@ -78,6 +99,7 @@ class CodivJevClient:
         self,
         *,
         api_key: str | None = None,
+        profile: AppProfile | None = None,
         base_url: str = DEFAULT_BASE_URL,
         model: str = DEFAULT_MODEL,
         timeout_s: float = DEFAULT_TIMEOUT_S,
@@ -89,11 +111,13 @@ class CodivJevClient:
         key = api_key or os.environ.get("CODIV_API_KEY")
         if not key:
             raise ServiceUnavailable(SERVICE, "CODIV_API_KEY absent")
+        self.profile = profile or load_profile(None)
         self.model = model
         self.timeout_s = timeout_s
         self.recorder = recorder or LatencyRecorder()
         self.bucket = TokenBucket(rate_per_minute)
         self.speculative_reserve = speculative_reserve
+        self._custom_transport = transport is not None
         self._http = httpx.AsyncClient(
             base_url=base_url,
             http2=transport is None,
@@ -144,10 +168,25 @@ class CodivJevClient:
         }
         op = "decide_speculative" if speculative else "decide"
         with self.recorder.measure(SERVICE, op) as ctx:
+            attempt_number = 0
+
+            async def post():
+                nonlocal attempt_number
+                attempt_number += 1
+                if attempt_number > 1 and not self.bucket.try_acquire():
+                    raise QuotaExceeded(SERVICE, "budget de duplication épuisé")
+                if attempt_number > 1 and not self._custom_transport:
+                    async with httpx.AsyncClient(
+                        base_url=self._http.base_url,
+                        headers=self._http.headers,
+                        http2=True,
+                        timeout=limit,
+                    ) as fresh:
+                        return await fresh.post("/v1/systemone", json=body)
+                return await self._http.post("/v1/systemone", json=body, timeout=limit)
+
             try:
-                resp = await asyncio.wait_for(
-                    self._http.post("/v1/systemone", json=body, timeout=limit), timeout=limit
-                )
+                resp = await asyncio.wait_for(hedged(post, min(0.375, limit / 2)), timeout=limit)
             except (TimeoutError, httpx.TimeoutException) as exc:
                 raise ServiceTimeout(SERVICE, f"décision > {limit * 1000:.0f} ms") from exc
             except httpx.TransportError as exc:
@@ -167,19 +206,31 @@ class CodivJevClient:
             ctx.output_tokens = usage.get("output_tokens") or usage.get("completion_tokens")
             return parse_answers(payload, questions, ctx.request_id)
 
-    async def classify_intent(self, utterance: str, *, context: str = "") -> JevDecision:
+    async def classify_intent(
+        self, utterance: str, *, context: str = "", profile: AppProfile | None = None
+    ) -> JevDecision:
         state: dict[str, Any] = {"utterance": utterance}
         if context:
             state["lesson_context"] = context
-        return (await self.decide(state, {"intent": INTENT_QUESTION}))["intent"]
+        return (await self.decide(state, {"intent": intent_question(profile or self.profile)}))[
+            "intent"
+        ]
 
     async def assess(
-        self, state: Mapping[str, Any], *, include_intent: bool = False
+        self,
+        state: Mapping[str, Any],
+        *,
+        include_intent: bool = False,
+        profile: AppProfile | None = None,
     ) -> dict[str, JevDecision]:
         """Batch blocage + sévérité de déviation (+ intention si un énoncé est présent)."""
-        questions = {"stuck_or_thinking": STUCK_QUESTION, "deviation": DEVIATION_QUESTION}
+        profile = profile or self.profile
+        questions = {
+            "stuck_or_thinking": stuck_question(profile),
+            "deviation": deviation_question(profile),
+        }
         if include_intent:
-            questions["intent"] = INTENT_QUESTION
+            questions["intent"] = intent_question(profile)
         return await self.decide(dict(state), questions)
 
 
