@@ -119,8 +119,19 @@ DISPLAY=:0 HCOMPANY_LIVE=1 pytest -q -s desktop/tests -m live
 cargo check --locked
 cargo clippy --locked --all-targets -- -D warnings
 cargo test --locked
-cargo build --locked
+cargo build --release --locked
 ```
+Pour les recettes et **toute mesure de latence**, lancer
+`sh desktop/run-release.sh` depuis la racine, ou le binaire
+`desktop/src-tauri/target/release/hcompany-desktop` après cette compilation.
+Ne pas utiliser `target/debug` pour annoncer une latence produit : son encodage PNG
+peut dominer la capture. Documenter profil de compilation, pixels, capture→ack et
+attente de quota séparément ; un ack navigateur ne prouve pas le scanout physique.
+
+Les résolutions de fenêtre et les surbrillances AT-SPI sont exécutées dans des tâches
+indépendantes du lecteur WebSocket. Déduplication, génération, arrêt et états restent
+traités dans l'ordre de réception ; une surbrillance lente ne remplace pas un visuel
+plus récent ou un arrêt. Les captures restent sérialisées par le verrou natif.
 Le marqueur live lance les intégrations Rust réelles : capture native PNG, handshake
 WebSocket authentifié et capteur Calc. Sous Linux, la fixture démarre son propre Xvfb
 (affichage libre), bus D-Bus/AT-SPI et Calc avec profil/document jetables. Aucun chemin

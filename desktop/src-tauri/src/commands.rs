@@ -48,40 +48,49 @@ pub async fn receive(app: &AppHandle, state: &Arc<State>, packet: Value) {
             let _ = app.emit("native:error", payload["message"].clone());
         }
         "highlight.rect" => {
-            highlight(app, state, payload, None).await;
+            schedule_highlight(app, state, payload, None);
         }
         "capture.request" => {
-            let resolved = match capture_scope(payload) {
-                Ok(CaptureScope::Window(target)) => crate::discovery::resolve(&state.a11y, &target)
-                    .await
-                    .map(|w| (w.window_bounds, Some(w.app_id))),
-                Ok(CaptureScope::Rect(Some(crop))) => Ok((crop, None)),
-                Ok(CaptureScope::Rect(None)) => crate::native::app_window_rect().map(|r| (r, None)),
-                Err(error) => Err(error),
-            };
-            let (crop, target) = match resolved {
-                Ok(resolved) => resolved,
-                Err(error) => {
-                    let _ = app.emit("native:error", error);
-                    return;
-                }
-            };
-            let request = payload["request_id"].as_str().unwrap().to_owned();
-            let revision = payload["ui_revision"].as_u64().unwrap();
             let app = app.clone();
             let state = state.clone();
+            let payload = payload.clone();
             tauri::async_runtime::spawn(async move {
-                if let Err(error) = crate::bridge::capture_requested(
-                    &app,
-                    &state,
-                    crop,
-                    Some((request, revision)),
-                    target,
-                )
-                .await
-                {
-                    let _ = app.emit("native:error", error);
-                }
+                let resolved = match capture_scope(&payload) {
+                    Ok(CaptureScope::Window(target)) => {
+                        crate::discovery::resolve(&state.a11y, &target)
+                            .await
+                            .map(|w| (w.window_bounds, Some(w.app_id)))
+                    }
+                    Ok(CaptureScope::Rect(Some(crop))) => Ok((crop, None)),
+                    Ok(CaptureScope::Rect(None)) => {
+                        crate::native::app_window_rect().map(|r| (r, None))
+                    }
+                    Err(error) => Err(error),
+                };
+                let (crop, target) = match resolved {
+                    Ok(resolved) => resolved,
+                    Err(error) => {
+                        let _ = app.emit("native:error", error);
+                        return;
+                    }
+                };
+                let request = payload["request_id"].as_str().unwrap().to_owned();
+                let revision = payload["ui_revision"].as_u64().unwrap();
+                let app = app.clone();
+                let state = state.clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Err(error) = crate::bridge::capture_requested(
+                        &app,
+                        &state,
+                        crop,
+                        Some((request, revision)),
+                        target,
+                    )
+                    .await
+                    {
+                        let _ = app.emit("native:error", error);
+                    }
+                });
             });
         }
         "command" => {
@@ -116,7 +125,7 @@ pub async fn receive(app: &AppHandle, state: &Arc<State>, packet: Value) {
                         .as_f64()
                         .unwrap()
                         .min(payload["deadline_ms"].as_f64().unwrap()));
-                    highlight(app, state, &p, Some(&command)).await;
+                    schedule_highlight(app, state, &p, Some(&command));
                 }
                 "pointer" => pointer(
                     app,
@@ -229,8 +238,28 @@ pub async fn highlight_bounds(
     rect
 }
 
-async fn highlight(app: &AppHandle, state: &State, payload: &Value, command: Option<&str>) {
+fn schedule_highlight(app: &AppHandle, state: &Arc<State>, payload: &Value, command: Option<&str>) {
+    let revision = state.guide.reserve();
+    let app = app.clone();
+    let state = state.clone();
+    let payload = payload.clone();
+    let command = command.map(str::to_owned);
+    tauri::async_runtime::spawn(async move {
+        highlight(&app, &state, &payload, command.as_deref(), revision).await;
+    });
+}
+
+async fn highlight(
+    app: &AppHandle,
+    state: &State,
+    payload: &Value,
+    command: Option<&str>,
+    revision: u64,
+) {
     let rect = highlight_bounds(&state.a11y, payload).await;
+    if !state.connected.load(Ordering::SeqCst) || !state.guide.pending_current(revision) {
+        return;
+    }
     let Some(rect) = rect.filter(|r| r.valid()) else {
         return;
     };
@@ -267,7 +296,7 @@ async fn highlight(app: &AppHandle, state: &State, payload: &Value, command: Opt
     if let Some(command) = command {
         event["command_id"] = json!(command);
     }
-    guide::show(app, "guide:highlight", event, duration);
+    guide::show_if_current(app, "guide:highlight", event, duration, revision);
 }
 
 fn pointer(app: &AppHandle, state: &State, payload: &Value, budget: f64, command: &str) {
