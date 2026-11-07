@@ -1,9 +1,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod a11y;
 mod audio;
 mod bridge;
 mod commands;
 mod coordinates;
+mod discovery;
 mod guide;
 mod input;
 mod native;
@@ -27,6 +29,7 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 use tokio::sync::{mpsc, watch};
 
 fn main() {
+    std::thread::spawn(protocol::warm);
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
@@ -73,12 +76,14 @@ fn main() {
                 lifecycle,
                 frontend,
                 guide: guide::Visibility::default(),
-                connected: AtomicBool::new(false),
-                stopped: AtomicBool::new(true),
+                connected: Arc::new(AtomicBool::new(false)),
+                stopped: Arc::new(AtomicBool::new(true)),
                 shutdown_done: AtomicBool::new(false),
-                consent: Mutex::new(None),
+                consent: Arc::new(Mutex::new(None)),
                 captures: Mutex::new(HashMap::new()),
-                input_lock: Mutex::new(()),
+                input_lock: Arc::new(tokio::sync::Mutex::new(())),
+                a11y: a11y::Service::default(),
+                focus: discovery::Tracker::default(),
                 capture_lock: tokio::sync::Mutex::new(()),
                 generation: AtomicU64::new(0),
                 revision: AtomicU64::new(0),

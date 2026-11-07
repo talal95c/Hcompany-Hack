@@ -1,12 +1,31 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Rect {
     pub x: f64,
     pub y: f64,
     pub width: f64,
     pub height: f64,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ScreenRect {
+    pub x: f64,
+    pub y: f64,
+    pub w: f64,
+    pub h: f64,
+}
+impl ScreenRect {
+    pub fn rect(self) -> Rect {
+        Rect {
+            x: self.x,
+            y: self.y,
+            width: self.w,
+            height: self.h,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -19,6 +38,42 @@ pub struct Monitor {
 }
 
 impl Rect {
+    pub fn screen(self) -> ScreenRect {
+        ScreenRect {
+            x: self.x,
+            y: self.y,
+            w: self.width,
+            h: self.height,
+        }
+    }
+    #[cfg(any(test, target_os = "linux", target_os = "macos"))]
+    pub fn logical_to_physical(self, scale: f64) -> Option<Self> {
+        if !scale.is_finite() || scale <= 0.0 || !self.valid() {
+            return None;
+        }
+        let rect = Self {
+            x: self.x * scale,
+            y: self.y * scale,
+            width: self.width * scale,
+            height: self.height * scale,
+        };
+        rect.valid().then_some(rect)
+    }
+
+    #[cfg(any(test, target_os = "linux"))]
+    pub fn atspi_screen(x: i32, y: i32, width: i32, height: i32) -> Option<Self> {
+        if x == i32::MIN || y == i32::MIN {
+            return None;
+        }
+        let rect = Self {
+            x: x.into(),
+            y: y.into(),
+            width: width.into(),
+            height: height.into(),
+        };
+        rect.logical_to_physical(1.0)
+    }
+
     pub fn valid(&self) -> bool {
         [self.x, self.y, self.width, self.height]
             .iter()
@@ -29,6 +84,33 @@ impl Rect {
 }
 
 impl Monitor {
+    #[cfg(any(test, target_os = "macos"))]
+    pub fn ax_rect(&self, logical: Rect) -> Option<Rect> {
+        let relative = Rect {
+            x: logical.x - self.logical_x,
+            y: logical.y - self.logical_y,
+            ..logical
+        }
+        .logical_to_physical(self.scale)?;
+        let physical = Rect {
+            x: self.physical.x + relative.x,
+            y: self.physical.y + relative.y,
+            ..relative
+        };
+        physical.valid().then_some(physical)
+    }
+    pub fn overlay_rect(&self, rect: Rect) -> Result<Rect, String> {
+        if !self.contains(rect) {
+            return Err("Zone hors moniteur".into());
+        }
+        Ok(Rect {
+            x: (rect.x - self.physical.x) / self.scale,
+            y: (rect.y - self.physical.y) / self.scale,
+            width: rect.width / self.scale,
+            height: rect.height / self.scale,
+        })
+    }
+
     pub fn contains(&self, crop: Rect) -> bool {
         let p = self.physical;
         p.valid()
@@ -61,9 +143,107 @@ impl Monitor {
     }
 }
 
+#[cfg(any(test, target_os = "macos"))]
+pub fn ax_rect(monitors: &[Monitor], logical: Rect) -> Option<Rect> {
+    if !logical.valid() {
+        return None;
+    }
+    let screens = monitors
+        .iter()
+        .filter(|m| m.scale.is_finite() && m.scale > 0. && m.physical.valid());
+    let screen = screens
+        .clone()
+        .find(|m| {
+            logical.x >= m.logical_x
+                && logical.y >= m.logical_y
+                && logical.x < m.logical_x + m.physical.width / m.scale
+                && logical.y < m.logical_y + m.physical.height / m.scale
+        })
+        .or_else(|| {
+            screens.clone().find(|m| {
+                logical.x + logical.width > m.logical_x
+                    && logical.y + logical.height > m.logical_y
+                    && logical.x < m.logical_x + m.physical.width / m.scale
+                    && logical.y < m.logical_y + m.physical.height / m.scale
+            })
+        })?;
+    screen.ax_rect(logical)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn ax_monitor_selection_prefers_origin_on_mixed_scale_screens() {
+        let main = Monitor {
+            id: "main".into(),
+            physical: Rect {
+                x: 0.,
+                y: 0.,
+                width: 2880.,
+                height: 1800.,
+            },
+            logical_x: 0.,
+            logical_y: 0.,
+            scale: 2.,
+        };
+        let other = Monitor {
+            id: "left".into(),
+            physical: Rect {
+                x: -1920.,
+                y: 0.,
+                width: 1920.,
+                height: 1080.,
+            },
+            logical_x: -1920.,
+            logical_y: 0.,
+            scale: 1.,
+        };
+        let monitors = [main, other];
+        let crossing = Rect {
+            x: -100.,
+            y: 10.,
+            width: 200.,
+            height: 100.,
+        };
+        assert_eq!(ax_rect(&monitors, crossing), Some(crossing));
+        assert_eq!(
+            ax_rect(
+                &monitors,
+                Rect {
+                    x: 100.,
+                    y: -20.,
+                    ..crossing
+                }
+            ),
+            Some(Rect {
+                x: 200.,
+                y: -40.,
+                width: 400.,
+                height: 200.
+            })
+        );
+        assert!(ax_rect(&[], crossing).is_none());
+        assert!(ax_rect(
+            &monitors,
+            Rect {
+                x: 5000.,
+                ..crossing
+            }
+        )
+        .is_none());
+    }
+    #[test]
+    fn accessibility_coordinates() {
+        assert!(Rect::atspi_screen(i32::MIN, 0, 10, 10).is_none());
+        assert!(Rect::atspi_screen(0, 0, 0, 10).is_none());
+        let r = Rect::atspi_screen(-100, 20, 50, 30).unwrap();
+        assert_eq!(r.x, -100.);
+        let p = r.logical_to_physical(2.).unwrap();
+        assert_eq!((p.x, p.y, p.width, p.height), (-200., 40., 100., 60.));
+        assert!(r.logical_to_physical(f64::NAN).is_none());
+        assert!(r.logical_to_physical(0.).is_none());
+    }
 
     #[test]
     fn retina_negative_origin() {
@@ -85,10 +265,31 @@ mod tests {
             width: 400.,
             height: 200.,
         };
+        assert_eq!(
+            m.ax_rect(Rect {
+                x: -1340.,
+                y: 100.,
+                width: 200.,
+                height: 100.
+            }),
+            Some(crop)
+        );
+        assert!(Monitor {
+            scale: 0.,
+            ..m.clone()
+        }
+        .ax_rect(crop)
+        .is_none());
         assert_eq!(m.point(crop, 500., 500.).unwrap(), (-1240., 150.));
         assert_eq!(m.point(crop, 1000., 1000.).unwrap(), (-1140.5, 199.5));
         assert!(m.point(crop, f64::NAN, 0.).is_err());
         assert!(m.point(Rect { x: -10., ..crop }, 0., 0.).is_err());
         assert!(m.point(crop, -1., 0.).is_err());
+        let css = m.overlay_rect(crop).unwrap();
+        assert_eq!(
+            (css.x, css.y, css.width, css.height),
+            (100., 100., 200., 100.)
+        );
+        assert!(m.overlay_rect(Rect { x: -10., ..crop }).is_err());
     }
 }

@@ -1,0 +1,9 @@
+{
+  "id": "generic",
+  "name": "Application",
+  "vocabulary": [],
+  "docs_domains": [],
+  "jev_context": "The learner is using a desktop application to complete a guided lesson.",
+  "answer_fields": {},
+  "default_sensor": "auto"
+}

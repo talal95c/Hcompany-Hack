@@ -3,6 +3,7 @@ import copy
 import hashlib
 import json
 import shutil
+import sys
 from pathlib import Path
 
 import pytest
@@ -13,9 +14,10 @@ from .conftest import AGENT_EXTRA_INSTALLED, AGENT_EXTRA_REASON, FIXTURES, call,
 if AGENT_EXTRA_INSTALLED:
     import httpx
 
-    from agent.catalog import AgentError, Catalog
+    from agent.catalog import VALIDATOR, AgentError, Catalog, lesson_app
     from agent.server import create_server
     from agent.skill_export import artifact, export, publish
+    from agent.skill_export import main as export_main
 else:
     pytest.skip(AGENT_EXTRA_REASON, allow_module_level=True)
 
@@ -232,7 +234,7 @@ def test_version_exports_and_empty_catalog(tmp_path):
 async def test_publish_errors_leave_catalog_unchanged(tmp_path):
     catalog = Catalog(FIXTURES, tmp_path)
     before = catalog.scan()
-    skill = artifact(catalog.get(**ARGS))
+    skill = artifact(catalog.get("proven", 1, "5.2.3"))
     for status in [401, 403, 500]:
         with pytest.raises(AgentError, match="publisher_not_available"):
             await publish(
@@ -246,7 +248,7 @@ async def test_publish_errors_leave_catalog_unchanged(tmp_path):
 
 
 async def test_publish_idempotent_and_create(tmp_path):
-    skill = artifact(Catalog(FIXTURES, tmp_path).get(**ARGS))
+    skill = artifact(Catalog(FIXTURES, tmp_path).get("proven", 1, "5.2.3"))
     requests = []
 
     def handler(request):
@@ -266,7 +268,7 @@ async def test_publish_idempotent_and_create(tmp_path):
 
 
 def skill_revision(tmp_path, revision):
-    record = copy.deepcopy(Catalog(FIXTURES, tmp_path).get(**ARGS))
+    record = copy.deepcopy(Catalog(FIXTURES, tmp_path).get("proven", 1, "5.2.3"))
     record["lesson"]["revision"] = revision
     record["fingerprint"] = hashlib.sha256(json.dumps(record["lesson"]).encode()).hexdigest()
     return artifact(record)
@@ -293,7 +295,15 @@ async def test_publish_older_revision_patched(tmp_path):
 
 @pytest.mark.parametrize(
     "case",
-    ["newer", "same_revision", "wrong_lesson", "wrong_version", "invalid_metadata", "missing_etag"],
+    [
+        "newer",
+        "same_revision",
+        "wrong_lesson",
+        "wrong_version",
+        "wrong_app",
+        "invalid_metadata",
+        "missing_etag",
+    ],
 )
 async def test_publish_conflicting_revision_refused(tmp_path, case):
     incoming = skill_revision(tmp_path, 2)
@@ -304,6 +314,8 @@ async def test_publish_conflicting_revision_refused(tmp_path, case):
         remote["body"] = remote["body"].replace('"lesson_id": "proven"', '"lesson_id": "other"')
     if case == "wrong_version":
         remote["body"] = remote["body"].replace('"5.2.3"', '"4.5.9"')
+    if case == "wrong_app":
+        remote["body"] = remote["body"].replace('"id": "blender"', '"id": "other-app"')
     if case == "invalid_metadata":
         remote["body"] = "not an exported lesson"
     if case == "missing_etag":
@@ -349,3 +361,197 @@ def test_local_exports_keep_revision_files_immutable(tmp_path):
     assert first != second
     assert first.read_bytes() == original
     assert json.loads(first.read_text())["name"] == json.loads(second.read_text())["name"]
+
+
+async def test_multi_app_mcp(transport, tmp_path):
+    async with connect(transport, FIXTURES, tmp_path / "state") as session:
+        apps = decoded(await call(session, "list_apps"))
+        assert apps["apps"] == [
+            {
+                "app": "blender",
+                "name": "Blender",
+                "sensors": ["addon"],
+                "versions": {"5.2.3": 1, "4.5.9": 1},
+                "lesson_count": 2,
+            },
+            {
+                "app": "libreoffice-calc",
+                "name": "LibreOffice Calc",
+                "sensors": ["accessibility"],
+                "versions": {"24.2": 1},
+                "lesson_count": 1,
+            },
+        ]
+        args = {
+            "lesson_id": "calc-value",
+            "revision": 1,
+            "app_id": "libreoffice-calc",
+            "app_version": "24.2",
+        }
+        record = decoded(await call(session, "get_procedure", args))
+        VALIDATOR.validate(record["lesson"])
+        assert set(record["proof_manifest"]) == {"proof/value.json", "proof/manifest.json"}
+        found = decoded(
+            await call(
+                session,
+                "find_procedure",
+                {
+                    "query": "CELL_INPUT",
+                    "app_id": "libreoffice-calc",
+                    "app_version": "24.2",
+                },
+            )
+        )
+        assert [item["lesson_id"] for item in found] == ["calc-value"]
+        assert found[0]["app"] == record["lesson"]["app"]
+        assert len(decoded(await call(session, "find_procedure", {"query": ""}))) == 3
+        for override in [{"app_version": "0"}, {"app_id": "blender"}]:
+            assert (await call(session, "get_procedure", {**args, **override})).isError
+        assert (
+            decoded(
+                await call(
+                    session,
+                    "find_procedure",
+                    {
+                        "query": "",
+                        "app_id": "libreoffice-calc",
+                        "app_version": "0",
+                    },
+                )
+            )
+            == []
+        )
+        assert (
+            await call(
+                session,
+                "find_procedure",
+                {
+                    "query": "",
+                    "app_id": "libreoffice-calc",
+                    "blender_version": "5.2.3",
+                },
+            )
+        ).isError
+        assert (
+            await call(
+                session,
+                "get_procedure",
+                {
+                    "lesson_id": "calc-value",
+                    "revision": 1,
+                },
+            )
+        ).isError
+        assert "engine_protocol_unavailable" in str(
+            await call(
+                session,
+                "run_procedure",
+                {
+                    **args,
+                    "session_id": "session",
+                    "consent_token": "consent",
+                },
+            )
+        )
+
+
+def test_identity_per_app_and_ambiguous_lookup(tmp_path):
+    for directory, app_id in [("one", "libreoffice-calc"), ("two", "other-app")]:
+        shutil.copytree(FIXTURES / "calc", tmp_path / directory)
+        path = tmp_path / directory / "lesson.json"
+        lesson = json.loads(path.read_text())
+        lesson["app"]["id"] = app_id
+        path.write_text(json.dumps(lesson))
+    catalog = Catalog(tmp_path, tmp_path / "state")
+    assert len(catalog.scan()[0]) == 2
+    with pytest.raises(AgentError, match="ambiguous"):
+        catalog.get("calc-value", 1, "24.2")
+    assert (
+        lesson_app(catalog.get("calc-value", 1, "24.2", "other-app")["lesson"])["id"] == "other-app"
+    )
+    shutil.copytree(tmp_path / "one", tmp_path / "duplicate")
+    accepted, rejected = catalog.scan()
+    assert len(accepted) == 1
+    assert len(rejected) == 2
+    assert all(
+        item["app_id"] == "libreoffice-calc"
+        and item["app_version"] == "24.2"
+        and item["reason"] == "duplicate_revision"
+        for item in rejected
+    )
+
+
+@pytest.mark.parametrize(
+    "app_id,lesson_id,version,name",
+    [
+        ("blender", "proven", "5.2.3", "Blender"),
+        ("libreoffice-calc", "calc-value", "24.2", "LibreOffice Calc"),
+    ],
+)
+def test_multi_app_skill_export(tmp_path, app_id, lesson_id, version, name):
+    catalog = Catalog(FIXTURES, tmp_path / "state")
+    record = catalog.get(lesson_id, 1, version, app_id)
+    skill = artifact(record)
+    identity = [lesson_id, version] if app_id == "blender" else [app_id, lesson_id, version]
+    assert (
+        skill["name"]
+        == app_id + "-lesson-" + hashlib.sha256(json.dumps(identity).encode()).hexdigest()[:32]
+    )
+    assert skill["compatibility"] == f"{name} {version}"
+    context = json.loads(skill["body"].split("```json\n")[1].split("\n```")[0])
+    assert context["execution_context"]["app"] == lesson_app(record["lesson"])
+    assert ("blender_version" in context["execution_context"]) == (app_id == "blender")
+    path, changed = export(catalog, lesson_id, 1, version, tmp_path / "export", app_id)
+    assert changed and json.loads(path.read_text()) == skill
+
+
+async def test_publish_generic_revision_and_legacy_metadata(tmp_path):
+    catalog = Catalog(FIXTURES, tmp_path)
+    for lesson_id, version in [("calc-value", "24.2"), ("proven", "5.2.3")]:
+        record = copy.deepcopy(catalog.get(lesson_id, 1, version))
+        older = artifact(record)
+        if lesson_id == "proven":
+            context = json.loads(older["body"].split("```json\n")[1].split("\n```")[0])
+            del context["execution_context"]["app"]
+            older["body"] = "# Test\n\n```json\n" + json.dumps(context) + "\n```\n"
+        record["lesson"]["revision"] = 2
+        newer = artifact(record)
+        requests = []
+
+        def handler(request):
+            requests.append(request.method)
+            return httpx.Response(
+                200, json=older if request.method == "GET" else newer, headers={"ETag": '"1"'}
+            )
+
+        assert await publish(newer, "unit-key", transport=httpx.MockTransport(handler)) == newer
+        assert requests == ["GET", "PATCH"]
+
+
+@pytest.mark.parametrize(
+    "flags,lesson_id",
+    [
+        (["--app-id", "libreoffice-calc", "--app-version", "24.2"], "calc-value"),
+        (["--blender-version", "5.2.3"], "proven"),
+        (["5.2.3"], "proven"),
+    ],
+)
+def test_export_cli(tmp_path, monkeypatch, capsys, flags, lesson_id):
+    monkeypatch.setenv("AGENT_LESSONS_DIR", str(FIXTURES))
+    monkeypatch.setenv("AGENT_STATE_DIR", str(tmp_path / "state"))
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "skill_export",
+            lesson_id,
+            "1",
+            *flags,
+            "--output",
+            str(tmp_path / "export"),
+        ],
+    )
+    export_main()
+    result = json.loads(capsys.readouterr().out)
+    assert result["changed"] is True
+    assert Path(result["file"]).is_file()

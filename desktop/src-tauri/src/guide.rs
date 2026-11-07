@@ -76,6 +76,12 @@ pub fn clear(app: &AppHandle) {
 }
 
 pub fn show(app: &AppHandle, event: &'static str, payload: Value, duration_ms: f64) {
+    let Ok(duration) = Duration::try_from_secs_f64(duration_ms / 1000.) else {
+        return;
+    };
+    let Some(expiry) = tokio::time::Instant::now().checked_add(duration) else {
+        return;
+    };
     let handle = app.clone();
     // Serialize visibility and expiry on the event loop, not WebKit's repaint timers.
     let _ = app.run_on_main_thread(move || {
@@ -86,7 +92,7 @@ pub fn show(app: &AppHandle, event: &'static str, payload: Value, duration_ms: f
         raise_pill(&handle);
         let _ = handle.emit_to("guide", event, payload);
         tauri::async_runtime::spawn(async move {
-            tokio::time::sleep(Duration::from_secs_f64(duration_ms / 1000.)).await;
+            tokio::time::sleep_until(expiry).await;
             let app = handle.clone();
             let _ = handle.run_on_main_thread(move || {
                 if app.state::<Arc<State>>().guide.current(revision) {

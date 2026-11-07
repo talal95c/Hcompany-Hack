@@ -4,7 +4,7 @@ import pytest
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    config.addinivalue_line("markers", "live: requires real local Blender")
+    config.addinivalue_line("markers", "live: nécessite les applications ou services réels")
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:

@@ -8,10 +8,13 @@ class ServiceError(Exception):
 
     kind = "error"
 
-    def __init__(self, service: str, message: str, *, request_id: str | None = None) -> None:
+    def __init__(
+        self, service: str, message: str, *, request_id: str | None = None, retry_after: float = 0
+    ) -> None:
         super().__init__(f"{service}: {message}")
         self.service = service
         self.request_id = request_id
+        self.retry_after = retry_after
 
 
 class ServiceTimeout(ServiceError):

@@ -17,22 +17,11 @@ from engine.services.errors import (
     error_for_status,
 )
 from engine.services.latency import LatencyRecorder
+from engine.services.profiles import AppProfile, load_profile
 from engine.services.protocols import SearchResult, SearchSource
 
 SERVICE = "linkup"
 DEFAULT_BASE_URL = "https://api.linkup.so/v1"
-BLENDER_DOCS_DOMAINS = ("docs.blender.org",)
-
-BLENDER_ANSWER_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "properties": {
-        "answer": {"type": "string", "description": "Short answer for a Blender learner"},
-        "menu_path": {"type": "string", "description": "Menu path, e.g. 3D Viewport > Add"},
-        "shortcut": {"type": "string", "description": "Keyboard shortcut if any"},
-        "blender_version": {"type": "string", "description": "Version the doc refers to"},
-    },
-    "required": ["answer"],
-}
 
 
 class LinkupSearchClient:
@@ -42,6 +31,7 @@ class LinkupSearchClient:
         self,
         *,
         api_key: str | None = None,
+        profile: AppProfile | None = None,
         base_url: str = DEFAULT_BASE_URL,
         timeout_s: float = 30.0,
         recorder: LatencyRecorder | None = None,
@@ -50,6 +40,7 @@ class LinkupSearchClient:
         key = api_key or os.environ.get("LINKUP_API_KEY")
         if not key:
             raise ServiceUnavailable(SERVICE, "LINKUP_API_KEY absent")
+        self.profile = profile or load_profile(None)
         self.recorder = recorder or LatencyRecorder()
         self._http = httpx.AsyncClient(
             base_url=base_url,
@@ -72,18 +63,23 @@ class LinkupSearchClient:
         query: str,
         *,
         schema: Mapping[str, Any] | None = None,
-        domains: Sequence[str] = BLENDER_DOCS_DOMAINS,
+        domains: Sequence[str] | None = None,
+        profile: AppProfile | None = None,
         depth: str = "standard",
     ) -> SearchResult:
         if not query.strip():
             raise ValueError("requête vide")
         if depth not in ("standard", "deep"):
             raise ValueError("depth doit valoir standard ou deep")
+        profile = profile or self.profile
+        domains = profile.docs_domains if domains is None else domains
         body: dict[str, Any] = {
             "q": query.strip(),
             "depth": depth,
             "outputType": "structured",
-            "structuredOutputSchema": json.dumps(dict(schema or BLENDER_ANSWER_SCHEMA)),
+            "structuredOutputSchema": json.dumps(
+                dict(profile.answer_schema() if schema is None else schema)
+            ),
             "includeSources": True,
         }
         if domains:
