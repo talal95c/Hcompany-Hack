@@ -1,4 +1,5 @@
 mod agent;
+mod autopilot;
 mod app_icons;
 mod audio_out;
 mod ax;
@@ -655,8 +656,25 @@ fn setup_windows(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .position(pos.x, pos.y)
         .inner_size(size.width, size.height)
         .build()?;
+    #[cfg(not(target_os = "linux"))]
     overlay.set_ignore_cursor_events(true)?;
     panel::make_panel(&overlay, false, panel::LEVEL_OVERLAY);
+    let notch = WebviewWindowBuilder::new(app, "notch", WebviewUrl::App("notch.html".into()))
+        .title("Rio · Autopilot")
+        .transparent(true)
+        .decorations(false)
+        .shadow(false)
+        .resizable(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .focused(false)
+        .visible(false)
+        .visible_on_all_workspaces(true)
+        .content_protected(true)
+        .position(pos.x + (size.width - 460.0) / 2.0, pos.y)
+        .inner_size(460.0, 190.0)
+        .build()?;
+    panel::make_panel(&notch, false, panel::LEVEL_OVERLAY);
     if let Some(bar) = app.get_webview_window("main") {
         panel::make_panel(&bar, true, panel::LEVEL_BAR);
     }
@@ -676,9 +694,13 @@ pub fn run() {
             tauri_plugin_global_shortcut::Builder::new()
                 .with_shortcuts(["alt+shift+space"])
                 .expect("valid shortcut")
-                .with_handler(|app, _shortcut, event| {
+                .with_handler(|app, shortcut, event| {
                     if event.state == tauri_plugin_global_shortcut::ShortcutState::Pressed {
-                        tray::toggle_bar(app);
+                        if shortcut.matches(tauri_plugin_global_shortcut::Modifiers::empty(), tauri_plugin_global_shortcut::Code::Escape) {
+                            autopilot::escape(app);
+                        } else {
+                            tray::toggle_bar(app);
+                        }
                     }
                 })
                 .build(),
@@ -699,6 +721,7 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             setup_windows(app)?;
+            autopilot::setup(app.handle());
             tray::setup(app)?;
             let handle = app.handle().clone();
             clicks::watch(move |c| on_user_click(&handle, c));
@@ -714,6 +737,10 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            autopilot::autopilot_accept,
+            autopilot::autopilot_stop,
+            autopilot::autopilot_decline,
+            autopilot::autopilot_view,
             skills::skills_list,
             skills::skill_decline,
             skills::skill_propose_now,

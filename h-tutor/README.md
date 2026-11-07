@@ -50,7 +50,29 @@ Les dates et `muted_until` sont des secondes Unix, `duration_s` est mesurée.
   `name` et, lorsqu'il existe, `bundle_id`.
 - `skill_propose_now({skillId})` propose immédiatement un skill déjà réussi,
   même en sourdine (demande explicite), et réinitialise le délai de l'app.
-  Aucune UI ni exécution automatique n'est ajoutée dans ce bloc.
+  Cette commande ne lance pas d'exécution automatique.
+
+### Notch « Rio le fait pour toi »
+
+La fenêtre native `notch` affiche les propositions en haut-centre, sans prendre
+le focus. Le contrôleur Rust décide des états `hidden`, `expanded`, `compact`.
+Après 15 s sans réponse, « Pas maintenant » ou Échap, il enregistre un refus.
+Échap est enregistré globalement uniquement pendant l'affichage de la notch.
+
+- `autopilot_accept({skillId})` prend le verrou exclusif et émet
+  `autopilot:started {skill_id, title, total}`. Le pilote n'est pas encore
+  implémenté : la notch attend, sans prétendre exécuter la tâche.
+- `autopilot:progress {skill_id, index, total, label}` actualise la progression
+  (index entre 0 et total). `autopilot:done {skill_id, outcome, message?}` termine
+  l'affichage après 3 s ; seul `completed` affiche « Fait ✓ ».
+- `autopilot_stop()` positionne le drapeau `autopilot::stop_requested()`, libère
+  le verrou et émet `autopilot:done` avec `stopped`. Le futur pilote doit consulter
+  ce drapeau avant chaque action et après chaque attente.
+- `autopilot_decline()` refuse la proposition affichée ; `autopilot_view()`
+  fournit son état initial au front, ensuite relayé par `autopilot:view`.
+
+Le front ne décide ni du délai, ni de la fin, ni de l'acquisition du verrou.
+Les actions n'injectent encore aucune entrée sur le bureau.
 
 ```
 Bar (React)                Rust (src-tauri)                          H Models API

@@ -41,7 +41,7 @@ pub struct Skill {
     pub declines: u32,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Proposal {
     pub skill_id: String,
     pub title: String,
