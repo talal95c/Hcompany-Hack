@@ -430,7 +430,7 @@ p { margin: 0; }
 .dicta { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 0 2px; overflow: hidden; }
 .wave { flex: none; display: flex; align-items: center; gap: 3px; }
 .wave--lg { gap: 4px; }
-.wave__bar { width: 3px; min-height: 3px; border-radius: 999px; background: linear-gradient(#fff, rgba(255, 255, 255, 0.6)); }
+.wave__bar { width: 3px; border-radius: 999px; background: var(--text); }
 .wave--lg .wave__bar { width: 4px; }
 .dicta__text {
   margin: 0;
@@ -442,9 +442,10 @@ p { margin: 0; }
   line-height: 1.35;
   color: var(--text);
   user-select: text;
+  position: relative;
 }
 .dicta__text span, .dicta-inline__text span { display: inline-block; margin-right: 0.26em; }
-.dicta__text--hint { font-family: inherit; font-size: 12px; line-height: 23px; }
+.t-hint { color: var(--faint); }
+.dicta__text .t-hint { font-family: "Geist Variable", sans-serif; font-size: 12px; line-height: 23px; }
 .dicta-inline { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 12px; }
-.dicta-inline__text { margin: 0; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; font-size: 15px; letter-spacing: -0.01em; }
-.dicta-inline__text--hint { color: var(--faint); }
+.dicta-inline__text { position: relative; margin: 0; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; font-size: 15px; letter-spacing: -0.01em; }

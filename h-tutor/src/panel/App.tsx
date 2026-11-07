@@ -400,11 +400,7 @@ export default function App() {
                 transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
               >
                 <Wave level={level} done={voiceText.final} size="sm" />
-                {voiceText.text ? (
-                  <Transcript text={tail(voiceText.text, 44)} className="dicta-inline__text" />
-                ) : (
-                  <p className="dicta-inline__text dicta-inline__text--hint shimmer">Je t'écoute…</p>
-                )}
+                <Transcript text={tail(voiceText.text, 44)} placeholder="Je t'écoute…" className="dicta-inline__text" />
               </motion.div>
             ) : (
               <input
@@ -593,15 +589,11 @@ export default function App() {
                 className="dicta"
                 initial={{ opacity: 0, height: 0, filter: "blur(6px)" }}
                 animate={{ opacity: 1, height: "auto", filter: "blur(0px)" }}
-                exit={{ opacity: 0, height: 0, filter: "blur(6px)" }}
-                transition={{ duration: 0.32, ease: [0.23, 1, 0.32, 1] }}
+                exit={{ opacity: 0, height: 0, filter: "blur(6px)", transition: { duration: 0.2, ease: [0.23, 1, 0.32, 1] } }}
+                transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
               >
                 <Wave level={level} done={voiceText.final} size="lg" />
-                {voiceText.text ? (
-                  <Transcript text={tail(voiceText.text, 140)} className="dicta__text" />
-                ) : (
-                  <p className="dicta__text dicta__text--hint shimmer">Je t'écoute…</p>
-                )}
+                <Transcript text={tail(voiceText.text, 140)} placeholder="Je t'écoute…" className="dicta__text" />
               </motion.div>
             ) : (
               asking && (
@@ -610,8 +602,8 @@ export default function App() {
                   className="ask"
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
+                  exit={{ opacity: 0, height: 0, transition: { duration: 0.16, ease: [0.23, 1, 0.32, 1] } }}
+                  transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                   onSubmit={(e) => {
                     e.preventDefault();
                     askQuestion(question);
