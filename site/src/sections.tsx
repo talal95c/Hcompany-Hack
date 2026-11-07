@@ -16,18 +16,12 @@ import {
   Ticker,
 } from "./ui";
 
-const LOGOS = [
-  "FIkeNB0CMpKHgxqL0a3aPHKlAyQ.png",
-  "nJbNnh8E8FlHfzjwzNY6HTfjGnE.png",
-  "3EwtMm1CTn3V13Xu2ufZVUnW4.png",
-  "C7otSLQhZagCjkAC4M6MX1Ns.png",
-  "PNxA5d1umCQiNSezotkgCnArwqU.png",
-];
+const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Finder", "Figma", "VS Code"];
 
 /* ---------------- Nav ---------------- */
 
 export function Nav() {
-  const links = ["Works", "Services", "Insights", "Pricing", "Company"];
+  const links = ["Use cases", "How it works", "Library", "Pricing", "About"];
   const ids = ["works", "services", "insights", "pricing", "company"];
   return (
     <motion.header
@@ -46,7 +40,7 @@ export function Nav() {
           </a>
         ))}
       </nav>
-      <Btn label="Hire Team" variant="light" size="sm" href="#contact" className="nav-cta" />
+      <Btn label="Get Rio" variant="light" size="sm" href="#contact" className="nav-cta" />
     </motion.header>
   );
 }
@@ -74,17 +68,17 @@ export function Hero() {
         <div className="hero-content">
           <h1 className="h-hero">
             <motion.span className="hero-l1" {...up(0.2)}>
-              Scale your ideas.
+              Learn any software.
             </motion.span>
             <motion.span className="hero-l2" {...up(0.32)}>
-              Build with AI.
+              Live, on your screen.
             </motion.span>
           </h1>
           <motion.p className="p-16 hero-sub" {...up(0.44)}>
-            Deploy custom neural agents, LLMs, and automation in one seamless flow.
+            Rio watches your screen, breaks any task into steps and shows you exactly where to click. You do it, Rio checks it.
           </motion.p>
           <motion.div {...up(0.56)}>
-            <Btn label="Start Build" href="#contact" />
+            <Btn label="Try Rio" href="#contact" />
           </motion.div>
         </div>
         <motion.a href="#services" className="brain-card" {...up(0.7)}>
@@ -94,19 +88,19 @@ export function Hero() {
           </div>
           <div className="brain-meta">
             <div>
-              <p className="brain-title">Digital Brain</p>
-              <p className="p-12 brain-sub">// Model v4.0.2</p>
+              <p className="brain-title">Holo vision</p>
+              <p className="p-12 brain-sub">// Powered by H Company</p>
             </div>
             <Icon name="arrowRightLight" size={26} className="brain-arrow" />
           </div>
         </motion.a>
         <motion.div className="hero-bottom" {...up(0.85)}>
           <p className="p-14 hero-trust">
-            +2,400 active deployments and 8,200 brands trust our high-performance architecture.
+            Works on top of the apps you already use, from 3D to spreadsheets.
           </p>
           <Marquee duration={28} className="hero-logos">
-            {LOGOS.map((l) => (
-              <img key={l} src={asset(l)} alt="" />
+            {APPS.map((l) => (
+              <span key={l} className="app-logo">{l}</span>
             ))}
           </Marquee>
         </motion.div>
@@ -150,10 +144,10 @@ export function About() {
       <div className="about-card">
         <ScrollRevealText
           className="h-reveal about-title"
-          text="Automate the manual, accelerate the future. Our custom AI solutions deliver measurable growth and operational excellence."
+          text="Stop watching tutorials. Start doing. Rio turns any goal into guided steps on your own screen."
         />
         <Reveal as="p" className="p-16 about-sub">
-          Empowering teams with intelligent tools that turn complex data into actionable business outcomes daily.
+          Type or say what you want to learn. Rio plans the milestones from what it sees and coaches you through each one, in real time.
         </Reveal>
         <div className="bento">
           <Reveal className="bento-dark" delay={0}>
@@ -161,9 +155,9 @@ export function About() {
               <Icon name="trendUp" size={30} />
             </span>
             <p className="stat-num">
-              <CountUp to={45} prefix="$" suffix="M" />
+              <CountUp to={100} suffix="%" />
             </p>
-            <p className="p-14 bento-foot">Revenue generated for our clients through AI-led optimizations.</p>
+            <p className="p-14 bento-foot">Hands-on: you make every click yourself, Rio only points the way.</p>
           </Reveal>
           <div className="bento-col">
             <Reveal className="bento-dashed" delay={0.08}>
@@ -173,14 +167,14 @@ export function About() {
                 ))}
               </div>
               <p className="p-14 agents">
-                <strong>15,400</strong> active agents
+                Ask out loud: <strong>“where is it?”</strong>
               </p>
             </Reveal>
             <Reveal className="bento-small" delay={0.16}>
               <p className="stat-num stat-dark">
-                <CountUp to={5} suffix="x" />
+                <CountUp to={4} />
               </p>
-              <p className="p-14 muted-6">Faster speed to market.</p>
+              <p className="p-14 muted-6">Steps: ask, plan, do, save.</p>
             </Reveal>
           </div>
           <Reveal className="bento-grey" delay={0.24}>
@@ -191,20 +185,20 @@ export function About() {
               </span>
             </div>
             <div>
-              <h4 className="h4-20">Inference speed</h4>
-              <p className="p-14 muted-6">Real-time processing for enterprise-grade deployments.</p>
+              <h4 className="h4-20">Click detection</h4>
+              <p className="p-14 muted-6">Rio sees your real click and moves on. No “next” button.</p>
             </div>
           </Reveal>
           <Reveal className="bento-white" delay={0.32}>
             <div className="bento-quote-top">
               <Icon name="quotes" size={40} />
-              <img src={asset("C7otSLQhZagCjkAC4M6MX1Ns.png")} alt="Cigna" className="bento-logo" />
+              <img src={asset("rio-mark-black.svg")} alt="Rio" className="bento-mark" />
             </div>
             <div>
               <p className="bento-quote">
-                The custom LLM they built for us reduced our support tickets by 80% while increasing user satisfaction.
+                Holo looks at the screen, a ghost cursor shows the way, and the learner does the clicking.
               </p>
-              <p className="p-14 muted-6 bento-cite">CTO, Cigna</p>
+              <p className="p-14 muted-6 bento-cite">How Rio teaches</p>
             </div>
           </Reveal>
         </div>
@@ -217,26 +211,26 @@ export function About() {
 /* ---------------- Works ---------------- */
 
 const WORKS = [
-  { tag: "Healthcare AI", logo: "yV2zGDqTwUzGafOnvA53MLQkM.png", img: "sZxYLpvH56E3RznKPcnAPYlPvo.jpg", s: ["$45M+", "700%", "41x", "84"] },
-  { tag: "Healthcare", logo: "CLpXi6HupcG6YYxVylXG8rj7eo4.png", img: "4GMiBYbu9SI4dXo9ENcqlNA.jpg", s: ["$62M+", "450%", "32x", "91"] },
-  { tag: "Healthcare", logo: "RlGLod5QkyznR4SBy9PQw3raa80.png", img: "0g3E5eja3ueYAXkITtsy9quyYo.jpg", s: ["$82M+", "340%", "19x", "56"] },
-  { tag: "Retail & Logistics", logo: "3ICxPpL7nA6WiDyreZSZlU70E8.png", img: "ZK0k9kMGgE21P7r3puSMYZ8548.jpg", s: ["$59M+", "215%", "73x", "28"] },
-  { tag: "Cybersecurity", logo: "qA80rXn5OyEhaPlYKJ8gIEE6Ds.png", img: "LYQLqywSoqlHG7KLRJM70MIk.png", s: ["$94M+", "120%", "66x", "12"] },
+  { tag: "3D", app: "Blender", img: "sZxYLpvH56E3RznKPcnAPYlPvo.jpg", s: ["First donut", "Beginner", "Voice on", "Ghost cursor"] },
+  { tag: "3D", app: "Blender", img: "4GMiBYbu9SI4dXo9ENcqlNA.jpg", s: ["Basics & render", "Beginner", "Voice on", "Ghost cursor"] },
+  { tag: "Spreadsheets", app: "LibreOffice Calc", img: "0g3E5eja3ueYAXkITtsy9quyYo.jpg", s: ["Budget chart", "Beginner", "Voice on", "Ghost cursor"] },
+  { tag: "Developer tools", app: "Docker", img: "ZK0k9kMGgE21P7r3puSMYZ8548.jpg", s: ["Run a container", "Intermediate", "Voice on", "Ghost cursor"] },
+  { tag: "Any desktop app", app: "Your app", img: "LYQLqywSoqlHG7KLRJM70MIk.png", s: ["Typed goal", "Any level", "Voice on", "Ghost cursor"] },
 ];
-const STAT_LABELS = ["Funds raised", "Social growth", "ATH ROI", "Partnerships"];
+const STAT_LABELS = ["Lesson", "Level", "Questions", "Guidance"];
 
 export function Works() {
   return (
     <div className="works-wrap" id="works">
       <section className="works">
-        <BigMarquee word="Our Works" />
+        <BigMarquee word="Use cases" />
         <div className="works-grid">
           {WORKS.map((w, i) => (
             <div className="work-cell" key={i}>
               <Reveal className="work-card" delay={(i % 3) * 0.08}>
                 <div className="work-top">
                   <span className="tag">{w.tag}</span>
-                  <img className="work-logo" src={asset(w.logo)} alt="" />
+                  <span className="work-logo work-app">{w.app}</span>
                   <img className="work-img" src={asset(w.img)} alt="" />
                 </div>
                 <div className="work-stats">
@@ -260,24 +254,9 @@ export function Works() {
 /* ---------------- Capabilities ---------------- */
 
 const CAPS = [
-  {
-    n: "001",
-    title: "Autonomous Agent Architecture Labs",
-    body: "Architecting robust server environments and local LLM integrations to ensure data remains secure and local.",
-    img: "WTuFQeqWgOcQVCks16yKxgDaefI.png",
-  },
-  {
-    n: "002",
-    title: "Autonomous Agentic Workflows",
-    body: "Multi-step agents that plan, call your tools and hand off to humans only when judgement is required.",
-    img: "liXydHdt7Kdt6VKUzzjSZwFJ4FA.png",
-  },
-  {
-    n: "003",
-    title: "Data Pipelines & RAG Systems",
-    body: "Retrieval pipelines that keep every answer grounded in your own documents, versioned and auditable.",
-    img: "WTuFQeqWgOcQVCks16yKxgDaefI.png",
-  },
+  { n: "001", title: "Sees your screen", body: "Holo by H Company reads the current screenshot and locates the exact button, menu or field for the next step.", img: "WTuFQeqWgOcQVCks16yKxgDaefI.png" },
+  { n: "002", title: "Plans the milestones", body: "Type a goal or pick a tutorial: Rio breaks it into milestones, each with a success check it can verify on screen.", img: "liXydHdt7Kdt6VKUzzjSZwFJ4FA.png" },
+  { n: "003", title: "Checks your work", body: "A step completes when Rio sees the result, so you only move on when it is really done.", img: "WTuFQeqWgOcQVCks16yKxgDaefI.png" },
 ];
 
 export function Capabilities() {
@@ -286,17 +265,17 @@ export function Capabilities() {
     <section className="caps" id="services">
       <div className="caps-left">
         <div>
-          <Label text="CAPABILITIES" pillFirst className="w-500" />
+          <Label text="HOW IT WORKS" pillFirst className="w-500" />
           <Reveal as="p" className="p-16 caps-sub">
-            We bridge the gap between abstract machine learning and practical business utility through bespoke engineering.
+            Rio pairs a vision model that reads your screen with a coach that never takes the mouse from you.
           </Reveal>
         </div>
         <div>
           <Reveal as="h2" className="h2-54 caps-title">
-            Tailored Intelligence for Modern Enterprises.
+            A coach that sees what you see.
           </Reveal>
           <Reveal delay={0.1}>
-            <Btn label="Start Build" variant="ghost" href="#contact" />
+            <Btn label="Try Rio" variant="ghost" href="#contact" />
           </Reveal>
         </div>
       </div>
@@ -361,23 +340,23 @@ export function Vision() {
         <section className="vision" id="company">
           <Reveal className="vision-left">
             <div className="portrait">
-              <img src={asset("jnIpVvHAXWiAGa8gLEmWtRuDwQ.png")} alt="Alexander Vacca" />
+              <img src={asset("jnIpVvHAXWiAGa8gLEmWtRuDwQ.png")} alt="The Rio team" />
               <Corner className="c-tl" />
               <Corner className="c-tr" />
               <Corner className="c-br" />
               <Corner className="c-bl" />
             </div>
-            <p className="mono-12 portrait-name">ALEXANDER VACCA</p>
-            <p className="p-12 muted-w7">Founder &amp; Lead Engineer</p>
+            <p className="mono-12 portrait-name">THE RIO TEAM</p>
+            <p className="p-12 muted-w7">Built at the H Company hackathon</p>
           </Reveal>
           <div className="vision-right">
             <Label text="OUR VISION" className="w-500" />
             <ScrollRevealText
               className="h-reveal h-reveal-tight vision-title"
-              text="We believe that AI should not just automate tasks, but amplify the creative and strategic potential of every human."
+              text="We believe software should teach itself: every app, every task, learned by doing instead of watching."
             />
             <Reveal as="p" className="p-16 vision-sub">
-              By merging technical rigor with intuitive design, we build systems that don't just solve problems—they create entirely new opportunities for growth.
+              Video tutorials go stale and never match your screen. Rio reads the real interface, adapts when menus move, and keeps you in control of every click.
             </Reveal>
           </div>
         </section>
@@ -386,7 +365,7 @@ export function Vision() {
       <section className="engineering">
         <div className="eng-row">
           <Reveal as="p" className="mono-12l eng-text">
-            ENGINEERING SYSTEMS THAT SCALE WITH YOUR AMBITION. WE LEVERAGE INDUSTRY-LEADING MODELS TO DEPLOY CUSTOM NEURAL SOLUTIONS TAILORED TO YOUR STACK.
+            BUILT ON H COMPANY'S HOLO MODELS, GLADIA LIVE SPEECH-TO-TEXT AND A LOCAL GRADIUM VOICE. RIO'S OWN WINDOWS ARE NEVER CAPTURED.
           </Reveal>
           <Reveal className="models" delay={0.1}>
             {models.map((m) => (
@@ -396,7 +375,7 @@ export function Vision() {
             ))}
           </Reveal>
           <Reveal delay={0.2}>
-            <Btn label="Digital Brain v4.0.2" variant="ghost" href="#top" />
+            <Btn label="See it in action" variant="ghost" href="#top" />
           </Reveal>
         </div>
         <div className="features">
@@ -412,7 +391,7 @@ export function Vision() {
               <span className="sparkle s1" />
               <span className="sparkle s2" />
             </div>
-            <p className="p-15 feat-text">Semantic vector search for hyper-accurate retrieval</p>
+            <p className="p-15 feat-text">A ghost cursor that points to your next click</p>
           </Reveal>
           <Reveal className="feature" delay={0.08}>
             <div className="feat-icon feat-orbit">
@@ -420,7 +399,7 @@ export function Vision() {
               <span className="orbit-ring r2" />
               <span className="orbit-dot" />
             </div>
-            <p className="p-15 feat-text">Unified data lakes for expansive model context.</p>
+            <p className="p-15 feat-text">Milestone graphs, not brittle click scripts.</p>
           </Reveal>
           <Reveal className="feature" delay={0.16}>
             <div className="feat-icon feat-bars">
@@ -430,7 +409,7 @@ export function Vision() {
                 </span>
               ))}
             </div>
-            <p className="p-15 feat-text">Token-optimized flows for high speed processing</p>
+            <p className="p-15 feat-text">Ask “show me again” and Rio repeats the step</p>
           </Reveal>
           <Reveal className="feature" delay={0.24}>
             <div className="feat-icon feat-langs">
@@ -441,7 +420,7 @@ export function Vision() {
                 ))}
               </Marquee>
             </div>
-            <p className="p-15 feat-text">Global LLM deployment. Support for 95+ languages.</p>
+            <p className="p-15 feat-text">A multilingual voice that runs on your machine.</p>
           </Reveal>
         </div>
       </section>
@@ -452,10 +431,10 @@ export function Vision() {
 /* ---------------- Experiences (testimonials) ---------------- */
 
 const TESTI = [
-  { name: "MARCUS CHENG", role: "Head of AI, Aetna", avatar: "w2hyXovpoCcfHZkjR4Hmr53RA5o.jpg", logo: "3EwtMm1CTn3V13Xu2ufZVUnW4.png", q: "The custom agentic workflows they built reduced our manual data entry by 90%, saving us hundreds of hours weekly." },
-  { name: "DAVID ROSSI", role: "Lead Dev, Cigna", avatar: "rLkyXpp1TSaADDj0EYjy9c8uw.jpg", logo: "yV2zGDqTwUzGafOnvA53MLQkM.png", q: "Their team didn't just provide tools; they provided a roadmap for AI integration that actually makes sense for ROI." },
-  { name: "SARAH JENKINS", role: "CTO, Anthem Group", avatar: "IIK9uqdpvVqpPgAHuhf8s9r4Ee4.jpg", logo: "RlGLod5QkyznR4SBy9PQw3raa80.png", q: "A game-changer for our R&D. The neural infrastructure is robust, secure, and perfectly tailored to our niche stack." },
-  { name: "ELENA VANCE", role: "VP Eng, UnitedHealth", avatar: "QHChEEbpWFuUCrhS6zqN5BK4Rr0.jpg", logo: "qA80rXn5OyEhaPlYKJ8gIEE6Ds.png", q: "Incredible technical depth. They handled our complex RAG implementation with ease and delivered ahead of schedule." },
+  { name: "THE BEGINNER", role: "Blender, first donut", avatar: "w2hyXovpoCcfHZkjR4Hmr53RA5o.jpg", app: "Blender", q: "Rio pointed at the exact menu every time. I finished my first donut without pausing a single video." },
+  { name: "THE ANALYST", role: "LibreOffice Calc, budget chart", avatar: "rLkyXpp1TSaADDj0EYjy9c8uw.jpg", app: "Calc", q: "I asked “where is it?” out loud and the cursor jumped to the chart wizard. That is how I want to learn." },
+  { name: "THE DEVELOPER", role: "Docker, first container", avatar: "IIK9uqdpvVqpPgAHuhf8s9r4Ee4.jpg", app: "Docker", q: "No copy-pasting commands I don't understand. Each step was checked on my screen before moving on." },
+  { name: "THE SWITCHER", role: "macOS, Finder basics", avatar: "QHChEEbpWFuUCrhS6zqN5BK4Rr0.jpg", app: "Finder", q: "New laptop, new system. Rio sat next to me for the basics and I never felt lost." },
 ];
 const STEP = 301;
 
@@ -479,10 +458,10 @@ export function Experiences() {
   const cards = [...TESTI, ...TESTI, ...TESTI, ...TESTI];
   return (
     <section className="exp">
-      <BigMarquee word="Experiences" />
+      <BigMarquee word="Stories" />
       <div className="exp-head">
         <Reveal as="p" className="p-16 exp-sub">
-          Empowering global enterprises through bespoke neural architectures and autonomous agentic workflows.
+          What learning feels like when the tutorial is your own screen.
         </Reveal>
         <Reveal className="exp-ctrl" delay={0.1}>
           <button type="button" aria-label="Previous" onClick={() => setIdx((i) => i - 1)}>
@@ -505,7 +484,7 @@ export function Experiences() {
               <div className="t-overlay" />
               <div className="t-pill">
                 <img className="t-avatar" src={asset(t.avatar)} alt="" />
-                <img className="t-logo" src={asset(t.logo)} alt="" />
+                <span className="t-app">{t.app}</span>
               </div>
               <div className="t-quote">
                 <svg viewBox="0 0 24 24" width={24} height={24} className="t-mark" aria-hidden>
@@ -557,11 +536,11 @@ export function Video() {
       />
       <div className="video-top">
         <Reveal as="p" className="p-16 video-sub">
-          Exploring the intersection of human creativity and machine logic to redefine what's possible in the digital age.
+          From goal to done in one flow: ask, follow the ghost cursor, click, repeat.
         </Reveal>
         <Reveal className="watch-pill" delay={0.1}>
           <Icon name="timer" size={24} />
-          <span className="p-14">2mins watch</span>
+          <span className="p-14">Live demo</span>
         </Reveal>
       </div>
       <button type="button" className={`play ${playing ? "is-playing" : ""}`} aria-label="Play video" onClick={() => setPlaying((p) => !p)}>
@@ -572,7 +551,7 @@ export function Video() {
       </button>
       <div className="video-bottom">
         <Reveal as="h2" className="h2-54 video-title">
-          Intelligence by Design.
+          Learning by Doing.
         </Reveal>
         <PillLogo size="lg" light />
       </div>
@@ -583,17 +562,17 @@ export function Video() {
 /* ---------------- Process + Team ---------------- */
 
 const STEPS = [
-  { t: "Comprehensive Strategic Audit", tag: "Audit", d: "We perform a deep-layer analysis of your current technical stack and fragmented data silos to identify high-impact AI opportunities that align with your core business objectives and ROI targets." },
-  { t: "Custom Architecture Design", tag: "Design", d: "We blueprint the models, retrieval layers and integrations your use case needs, choosing every component for accuracy, latency and total cost of ownership." },
-  { t: "Rapid Prototype Development", tag: "Build", d: "Working prototypes ship in weeks, not quarters, tested against your real data so stakeholders can judge impact before the full rollout." },
-  { t: "Enterprise Scale Deployment", tag: "Scale", d: "We harden, monitor and scale the system across your organisation, with observability, access control and continuous evaluation built in." },
+  { t: "Say or type your goal", tag: "Ask", d: "Press ⌥⇧Space over any app and describe what you want to learn, or pick a ready-made tutorial from the library." },
+  { t: "Rio plans the milestones", tag: "Plan", d: "Holo reads your screen and breaks the goal into milestones, each with a success check it can verify visually." },
+  { t: "Follow the ghost cursor", tag: "Do", d: "A ghost cursor shows where to click. You make the click yourself; Rio sees it and moves to the next step." },
+  { t: "Save it as a tutorial", tag: "Share", d: "At the end, the path you actually took is saved back to the library, so the next learner gets there faster." },
 ];
 
 const TEAM = [
-  { name: "SARAH JENKINS", role: "Head of Machine Learning", img: "OrsgMbvM0AZiEvhgHFZUJM2g.png", bio: "Our focus remains on the ethical deployment of large-scale models. We don't just optimize for performance; we ensure every neural architecture we build is interpretable, secure, and ready for enterprise-grade scrutiny." },
-  { name: "MARCUS CHENG", role: "Principal Design Director", img: "BbqpJjnldDFDulJFBarqs7wJpFk.png", bio: "AI shouldn't feel like a black box. My goal is to design intuitive interfaces that make complex data actionable, ensuring that the human-machine collaboration is seamless, visually stunning, and highly efficient for users." },
-  { name: "ELENA VANCE", role: "Lead Cognitive Scientist", img: "8k7FcfFSjgocOslFu94p0ih1UY.png", bio: "We study the cognitive friction between AI output and human decision-making. By applying behavioral science to our agentic workflows, we create tools that naturally align with how your best employees actually think and work." },
-  { name: "DAVID ROSSI", role: "Infrastructure Architect", img: "FnCj7jgTvcpKSt0CUVIqbyiS9o.png", bio: "Latency is the enemy of adoption. I architect the backbone of our solutions to ensure that even the most complex RAG systems deliver sub-second responses, maintaining 99.9% uptime across distributed global compute clusters." },
+  { name: "HOLO VISION", role: "Sees and locates", img: "OrsgMbvM0AZiEvhgHFZUJM2g.png", bio: "Holo by H Company looks at each screenshot and returns the exact spot to click, so Rio points instead of guessing." },
+  { name: "MILESTONE PLANNER", role: "Plans and checks", img: "BbqpJjnldDFDulJFBarqs7wJpFk.png", bio: "Every goal becomes a graph of milestones with a visual success check. Rio moves on only when the result is on screen." },
+  { name: "GLADIA LIVE", role: "Listens", img: "8k7FcfFSjgocOslFu94p0ih1UY.png", bio: "Ask out loud during a lesson. Gladia transcribes you live, and Rio answers, points, skips or repeats the step." },
+  { name: "GRADIUM VOICE", role: "Speaks", img: "FnCj7jgTvcpKSt0CUVIqbyiS9o.png", bio: "Rio answers out loud with a multilingual voice that runs locally on your machine, fast enough to keep up with you." },
 ];
 
 export function Process() {
@@ -601,9 +580,9 @@ export function Process() {
   return (
     <div className="process-wrap">
       <section className="process">
-        <Label text="OUR PROCESS" />
+        <Label text="THE FLOW" />
         <Reveal as="h2" className="h2-54 process-title">
-          From raw data to refined intelligence. Our iterative deployment cycle.
+          From a goal to real skills. Four steps, on your own screen.
         </Reveal>
         <div className="process-grid">
           <Reveal className="process-art">
@@ -664,22 +643,22 @@ export function Process() {
         </div>
         <div className="process-foot">
           <Reveal as="p" className="mono-12l process-note">
-            WE DON'T JUST SHIP CODE; WE SHIP COMPETITIVE ADVANTAGES. EVERY STEP IS DESIGNED TO ENSURE YOUR AI INFRASTRUCTURE IS FUTURE-PROOF AND SCALABLE.
+            NO AUTOPILOT. YOU KEEP THE MOUSE, RIO KEEPS YOU ON TRACK. EVERY STEP IS CHECKED ON SCREEN BEFORE YOU MOVE ON.
           </Reveal>
           <Reveal delay={0.1}>
-            <Btn label="Build Now" variant="ghost" href="#contact" />
+            <Btn label="Try Rio" variant="ghost" href="#contact" />
           </Reveal>
         </div>
 
         <Reveal as="h2" className="h-collective">
-          We are a collective of engineers, designers, and researchers dedicated to the frontier of AI.
+          We are building the coach that sits next to everyone who opens new software.
         </Reveal>
         <div className="story">
           <Reveal as="p" className="p-16">
-            Bridging the gap between academic research and commercial deployment with precision engineering.
+            Born at the H Company hackathon, built on Holo computer-use models and real-time voice.
           </Reveal>
           <Reveal delay={0.1}>
-            <Btn label="Our Story" variant="ghost" href="#company" />
+            <Btn label="How it works" variant="ghost" href="#services" />
           </Reveal>
         </div>
         <div className="team">
@@ -725,10 +704,10 @@ export function Process() {
 /* ---------------- Pricing ---------------- */
 
 const PLANS = [
-  { name: "Core", price: 495, tagline: "Automate your repetitive tasks.", f: ["3 Automation Flows", "Standard RAG Support", "1 Admin Seat", "Discord Support"] },
-  { name: "Growth", price: 1250, tagline: "Advanced agentic workflows.", f: ["10 Automation Flows", "Vector DB Hosting", "5 Admin Seats", "Priority Email"] },
-  { name: "Pro", price: 2900, tagline: "Custom neural architecture.", f: ["Unlimited Flows", "Custom Fine-Tuning", "15 Admin Seats", "24/7 Slack Connect"], dark: true },
-  { name: "Scale", price: 7500, tagline: "Enterprise infrastructure.", f: ["Full Neural Stack", "On-Premise LLMs", "Unlimited Seats", "Dedicated Engineer"] },
+  { name: "Learner", price: 0, tagline: "One app at a time.", f: ["Tutorial library", "Typed goals", "Ghost cursor", "Community support"] },
+  { name: "Pro", price: 12, tagline: "Unlimited live coaching.", f: ["Unlimited goals", "Voice questions", "Save as tutorial", "Priority support"] },
+  { name: "Team", price: 29, tagline: "Onboard a whole team.", f: ["Shared library", "Session journals", "Admin seats", "Slack support"], dark: true },
+  { name: "Enterprise", price: -1, tagline: "Your apps, your rules.", f: ["Custom tutorials", "SSO & admin", "Data controls", "Dedicated success"] },
 ];
 
 function Price({ value }: { value: number }) {
@@ -742,7 +721,7 @@ function Price({ value }: { value: number }) {
         transition={{ duration: 0.45, ease: EASE }}
         className="price-val"
       >
-        ${value.toLocaleString("en-US")}
+        {value < 0 ? "Custom" : `$${value.toLocaleString("en-US")}`}
       </motion.span>
     </AnimatePresence>
   );
@@ -768,7 +747,7 @@ export function Pricing() {
           </button>
         </Reveal>
         <Reveal as="p" className="p-16 pricing-sub">
-          Flexible intelligence tiers designed to scale alongside your business. No hidden costs, just high-performance results.
+          Simple plans for early access. Prices are indicative and will be confirmed at launch.
         </Reveal>
       </div>
       <Reveal className="plans">
@@ -778,10 +757,10 @@ export function Pricing() {
             <div className="plan-top">
               <h6 className="plan-name">{p.name}</h6>
               <p className="plan-price">
-                <Price value={annual ? p.price : Math.round(p.price / 0.8 / 5) * 5} />
-                <span className="p-14l plan-mo">/mo</span>
+                <Price value={annual || p.price <= 0 ? p.price : Math.round(p.price / 0.8)} />
+                {p.price >= 0 && <span className="p-14l plan-mo">/mo</span>}
               </p>
-              <p className="p-14l">USD Billed {annual ? "Annually" : "Monthly"}</p>
+              <p className="p-14l">{p.price < 0 ? "Talk to us" : p.price === 0 ? "Free forever" : `USD per seat, billed ${annual ? "annually" : "monthly"}`}</p>
             </div>
             <div className="plan-band">
               <p className="plan-tag">{p.tagline}</p>
@@ -805,19 +784,19 @@ export function Pricing() {
 /* ---------------- FAQ + Insights ---------------- */
 
 const FAQ = [
-  { q: "How do you ensure our data remains secure?", a: "We utilize SOC2-compliant local vector databases and on-premise LLM hosting to ensure your proprietary data never leaves your infrastructure." },
-  { q: "What is the typical deployment timeline?", a: "A focused pilot ships in four to six weeks; enterprise-wide rollouts typically take one to three months depending on integrations." },
-  { q: "Can we integrate with our existing CRM?", a: "Yes. We connect to Salesforce, HubSpot, Dynamics and custom CRMs through their APIs, so agents read and write where your teams already work." },
-  { q: "Do you provide model fine-tuning?", a: "We fine-tune open and commercial models on your domain data, with evaluation suites that prove the gain before anything reaches production." },
-  { q: "How do you calculate ROI for automation?", a: "We baseline hours, error rates and cycle times before launch, then track the same metrics live so every dollar saved is measured, not estimated." },
-  { q: "Do we own the custom code you build?", a: "Yes. All code, prompts, pipelines and fine-tuned weights built for you are transferred to your organisation at handover." },
-  { q: "What models do you specialize in?", a: "GPT, Claude, Gemini, Llama and Mistral families, plus smaller task-specific models when latency or cost matters most." },
+  { q: "Does Rio click for me?", a: "No. Rio points with a ghost cursor and you make every click. Learning sticks because you do it yourself." },
+  { q: "Which apps does Rio work with?", a: "Any desktop app. Tutorials ship for Blender, LibreOffice Calc, Docker and Finder, and you can type a goal for anything else." },
+  { q: "What does Rio see on my screen?", a: "A screenshot of your main display when it plans or checks a step. Rio's own windows are excluded from captures." },
+  { q: "Can I ask questions out loud?", a: "Yes. Click the mic and ask “where is it?”, “I'm done” or “show me again”: Rio answers out loud, points, skips or repeats." },
+  { q: "What if the menus have changed?", a: "Tutorials are graphs of milestones, not click scripts. Rio finds the current path on screen, so outdated hints don't break the lesson." },
+  { q: "Which AI models power Rio?", a: "Holo by H Company for vision and planning, Gladia for live speech-to-text and Gradium for the local voice." },
+  { q: "Which platforms are supported?", a: "macOS first: Rio lives in the menu bar and floats over full-screen apps. More platforms are on the roadmap." },
 ];
 
 const ARTICLES = [
-  { cat: "Transformation", title: "The Sovereign Cloud: Why On-Premise AI is the Future of Data Privacy", body: "Explore how federated learning and private hosting are allowing firms to innovate without risking security.", author: "Frank Joel", img: "862JbA3xEJjbdSDVyKEwOZ0f2g.jpeg" },
-  { cat: "Architecture", title: "The Architecture of Autonomy: Scaling AI Within Legacy Frameworks", body: "A comprehensive guide on integrating custom machine learning models into complex enterprise environments.", author: "Damilola Manuel", img: "YKAEpvQFebP2OETEJDVNip8UTg.jpeg", flip: true },
-  { cat: "Privacy", title: "Human-Centric Automation: Designing AI That Empowers Your Workforce", body: "Why the most successful AI implementations focus on augmenting human talent rather than simply replacing it.", author: "Deborah Reachie", img: "egDVD5dc2AvUIZKG0seuGXtH0.jpeg" },
+  { cat: "Blender", title: "Your first donut in Blender, step by step", body: "From the default cube to a finished render, guided milestone by milestone.", author: "Rio library", img: "862JbA3xEJjbdSDVyKEwOZ0f2g.jpeg" },
+  { cat: "Docker", title: "Run your first container without memorising commands", body: "Pull an image, start it and check it is running, with every step verified on screen.", author: "Rio library", img: "YKAEpvQFebP2OETEJDVNip8UTg.jpeg", flip: true },
+  { cat: "Learning", title: "Why learning by doing beats watching tutorials", body: "Videos never match your screen. Guided practice on the real interface does.", author: "Rio team", img: "egDVD5dc2AvUIZKG0seuGXtH0.jpeg" },
 ];
 
 export function FaqInsights() {
@@ -828,17 +807,17 @@ export function FaqInsights() {
         <div className="faq">
           <div className="faq-left">
             <div>
-              <Label text="COMMON QUERIES" pillFirst light={false} className="w-500" />
+              <Label text="FAQ" pillFirst light={false} className="w-500" />
               <Reveal as="p" className="p-16 faq-sub">
-                Find answers to technical specifications, deployment timelines, and our data security protocols.
+                How Rio sees, guides and respects your screen.
               </Reveal>
             </div>
             <div>
               <Reveal as="h2" className="h2-54 faq-title">
-                Everything you need to know about our AI.
+                Everything you need to know about Rio.
               </Reveal>
               <Reveal delay={0.1}>
-                <Btn label="Contact Support" href="#contact" />
+                <Btn label="Contact us" href="#contact" />
               </Reveal>
             </div>
           </div>
@@ -875,13 +854,13 @@ export function FaqInsights() {
           </div>
         </div>
 
-        <BigMarquee word="Insights" star="#ffffff" />
+        <BigMarquee word="Library" star="#ffffff" />
         <div className="insights-head">
           <Reveal as="p" className="p-16">
-            A curated repository of technical frameworks, model benchmarks, and strategic guides for leaders navigating the integration of custom neural architectures.
+            Ready-made tutorials and guides to get productive in new software, fast. Every lesson runs live on your own screen.
           </Reveal>
           <Reveal delay={0.1}>
-            <Btn label="All articles" href="#insights" />
+            <Btn label="Browse library" href="#insights" />
           </Reveal>
         </div>
         <div className="articles">
@@ -920,8 +899,8 @@ export function FaqInsights() {
 
 export function Footer() {
   const cols = [
-    { h: "Quick Links", l: ["Home", "Digital Brain", "Projects", "Articles"] },
-    { h: "Company", l: ["About Us", "Contact Us", "Book A Call", "More Templates"] },
+    { h: "Product", l: ["Home", "How it works", "Library", "Pricing"] },
+    { h: "Company", l: ["About", "Contact", "H Company", "Careers"] },
     { h: "Policies", l: ["Terms & Conditions", "Privacy Policy"] },
   ];
   const socials = [
@@ -936,12 +915,12 @@ export function Footer() {
       <div className="footer-inner">
         <div className="footer-left">
           <PillLogo size="md" light />
-          <img className="footer-logo" src={asset("8AjRJ3fmfVsGAO1xyzDT2NbfkE8.png")} alt="Spartan" />
+          <p className="footer-wordmark">Rio</p>
           <p className="p-15 footer-text">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam ac ultrices massa. Vivamus faucibus egestas nulla
+            Rio is your live software coach. Tell it what you want to learn and it shows you the way, on your own screen.
           </p>
           <form className="subscribe" onSubmit={(e) => e.preventDefault()}>
-            <input type="email" name="Email" placeholder="jane@framer.com" aria-label="Email" />
+            <input type="email" name="Email" placeholder="you@company.com" aria-label="Email" />
             <button type="submit" className="btn btn-light btn-sm">
               <span className="btn-box">
                 <svg viewBox="0 0 30 15" width={30} height={15} className="px-arrow" aria-hidden>
@@ -981,7 +960,7 @@ export function Footer() {
           ))}
         </div>
       </div>
-      <img className="footer-word" src={asset("8AjRJ3fmfVsGAO1xyzDT2NbfkE8.png")} alt="" />
+      <p className="footer-word" aria-hidden>rio</p>
     </footer>
   );
 }

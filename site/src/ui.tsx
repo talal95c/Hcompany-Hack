@@ -84,7 +84,7 @@ export function Asterisk({ size, color }: { size: number; color: string }) {
 }
 
 export function PillLogo({ size = "md", light = false }: { size?: "sm" | "md" | "lg"; light?: boolean }) {
-  return <span className={`pill-logo pill-${size}${light ? " pill-light" : ""}`} aria-hidden />;
+  return <img className={`rio-mark mark-${size}`} src={asset(light ? "rio-mark-white.svg" : "rio-mark-black.svg")} alt="" aria-hidden />;
 }
 
 /* ---------- Buttons ---------- */
@@ -271,9 +271,9 @@ export function BigMarquee({ word, star = "#f0f0f0", reverse = false }: { word: 
   );
 }
 
-export function Ticker({ brand = "//SPARTAN" }: { brand?: string }) {
+export function Ticker({ brand = "//RIO" }: { brand?: string }) {
   const msg =
-    "We are officially expanding our neural compute clusters to three new global regions, providing sub-50ms inference speeds for our enterprise partners across EMEA, APAC, and North America.";
+    "Rio is in early access: Blender, LibreOffice Calc, Docker and Finder tutorials are live, and any desktop app works with a typed goal.";
   return (
     <Marquee duration={40} className="ticker">
       <span className="ticker-brand">{brand}</span>

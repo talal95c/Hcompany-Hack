@@ -484,3 +484,18 @@ ul { list-style: none; }
   .footer-word { bottom: -40px; }
   .cap-iso { width: 200px; height: 200px; margin-left: -100px; bottom: 40px; }
 }
+
+/* ---------- Rio brand ---------- */
+.rio-mark { display: block; flex: none; height: auto; }
+.mark-sm { width: 22px; }
+.mark-md { width: 34px; }
+.mark-lg { width: 96px; }
+.nav-logo { width: 60px; height: 34px; align-items: center; justify-content: center; }
+.app-logo { display: inline-flex; align-items: center; height: 57px; padding: 0 30px; color: #fff; font-size: 24px; font-weight: 600; letter-spacing: -0.6px; white-space: nowrap; }
+.work-app { width: auto; height: auto; filter: none; font-size: 30px; line-height: 36px; font-weight: 600; letter-spacing: -1px; color: rgba(26, 26, 26, 0.55); }
+.bento-mark { width: 34px; height: auto; }
+.t-app { font-family: var(--mono); font-size: 11px; text-transform: uppercase; padding: 0 6px 0 10px; color: rgba(26, 26, 26, 0.7); }
+.t-card:hover .t-app { color: rgba(255, 255, 255, 0.8); }
+.footer-wordmark { font-size: 44px; line-height: 44px; font-weight: 700; letter-spacing: -1.5px; }
+.footer-word { position: absolute; left: -10px; bottom: -150px; font-size: 520px; line-height: 1; font-weight: 800; letter-spacing: -30px; color: #fff; white-space: nowrap; pointer-events: none; }
+@media (max-width: 700px) { .footer-word { font-size: 220px; bottom: -60px; letter-spacing: -10px; } }

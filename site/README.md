@@ -1,6 +1,6 @@
 # site
 
-Recréation en React/Vite de la landing [spartanai.framer.website](https://spartanai.framer.website/) (template Framer « Spartan » de Delani), capturée avec REA (`rea analyze-web-bundle`) et un relevé des styles calculés du site d'origine.
+Landing de **Rio** (textes produit en anglais), construite en React/Vite sur la mise en page de la landing [spartanai.framer.website](https://spartanai.framer.website/) (template Framer « Spartan » de Delani), capturée avec REA (`rea analyze-web-bundle`) et un relevé des styles calculés du site d'origine.
 
 ```bash
 npm install
