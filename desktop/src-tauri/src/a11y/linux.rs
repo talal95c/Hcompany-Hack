@@ -8,12 +8,27 @@ use atspi::zbus::fdo::PropertiesProxy;
 use atspi::zbus::{self, proxy::CacheProperties};
 use atspi::{AccessibilityConnection, CoordType, Interface, Role, State as NativeState, StateSet};
 use futures_util::{stream, FutureExt, StreamExt};
-use std::{collections::HashSet, future::Future};
+use std::{
+    collections::{HashMap, HashSet},
+    future::Future,
+};
 use tokio::sync::OnceCell;
 
 #[derive(Default)]
 pub struct Sensor {
     connection: OnceCell<AccessibilityConnection>,
+    geometry: Mutex<Geometry>,
+}
+
+type ObjectKey = (String, String);
+#[derive(Default)]
+struct Geometry {
+    windows: HashMap<ObjectKey, (f64, f64)>,
+    owners: HashMap<ObjectKey, ObjectKey>,
+}
+
+fn object_key(handle: &Handle) -> ObjectKey {
+    (handle.bus.clone(), handle.path.clone())
 }
 
 struct Observation {
@@ -86,6 +101,20 @@ macro_rules! proxy {
 }
 
 impl Sensor {
+    fn inherit_geometry(&self, parent: &Handle, child: &Handle) {
+        let mut geometry = self.geometry.lock().unwrap();
+        let child = object_key(child);
+        let owner = if geometry.windows.contains_key(&child) {
+            Some(child.clone())
+        } else {
+            geometry.owners.get(&object_key(parent)).cloned()
+        };
+        if let Some(owner) = owner {
+            geometry.owners.insert(child, owner);
+        } else {
+            geometry.owners.remove(&child);
+        }
+    }
     async fn scoped_children(
         &self,
         parent: &Handle,
@@ -105,6 +134,9 @@ impl Sensor {
             .into_iter()
             .map(handle)
             .collect::<Result<Vec<_>, _>>()?;
+        for child in &children {
+            self.inherit_geometry(parent, child);
+        }
         let results = stream::iter(children)
             .map(|h| async move {
                 let accessible = proxy!(AccessibleProxy, conn, &h);
@@ -155,6 +187,14 @@ impl Sensor {
             .map(|c| c.connection())
     }
     async fn read(&self, h: &Handle, expand: bool) -> Result<Observation, Error> {
+        let origin = {
+            let geometry = self.geometry.lock().unwrap();
+            geometry
+                .owners
+                .get(&object_key(h))
+                .and_then(|owner| geometry.windows.get(owner))
+                .copied()
+        };
         let conn = self.connection().await?;
         let a = proxy!(AccessibleProxy, conn, h);
         let properties = proxy!(PropertiesProxy, conn, h);
@@ -199,7 +239,7 @@ impl Sensor {
                 .is_some_and(|interfaces| interfaces.contains(Interface::Component))
             {
                 let component = proxy!(ComponentProxy, conn, h);
-                call(component.get_extents(CoordType::Screen))
+                call(component.get_extents(CoordType::Window))
                     .await
                     .map(Some)
             } else {
@@ -245,8 +285,15 @@ impl Sensor {
             .try_into()
             .map_err(|_| Error::StaleRef)?;
         let count = count.max(0) as usize;
-        let bounds =
-            extents?.and_then(|(x, y, w, h)| crate::coordinates::Rect::atspi_screen(x, y, w, h));
+        let bounds = extents?.and_then(|(x, y, w, h)| {
+            let rect = crate::coordinates::Rect::atspi_screen(x, y, w, h)?;
+            let (x, y) = origin?;
+            Some(crate::coordinates::Rect {
+                x: x + rect.x,
+                y: y + rect.y,
+                ..rect
+            })
+        });
         let attributes = if matches!(role, Role::Entry | Role::Text) {
             call(a.get_attributes()).await?
         } else {
@@ -311,6 +358,12 @@ impl Sensor {
         };
         let (value, children) = tokio::join!(value, children);
         let mut reasons = Vec::new();
+        if interfaces.contains(Interface::Component)
+            && origin.is_none()
+            && role != Role::Application
+        {
+            reasons.push((Reason::ChildReadError, node.role.clone()));
+        }
         match value {
             Ok(value) => node.value = value,
             Err(error) => reasons.push((
@@ -377,11 +430,24 @@ impl Sensor {
         let component = proxy!(ComponentProxy, conn, h);
         let table = proxy!(TableProxy, conn, h);
         let b = node.bounds;
+        let (origin_x, origin_y) = {
+            let geometry = self.geometry.lock().unwrap();
+            geometry
+                .owners
+                .get(&object_key(h))
+                .and_then(|owner| geometry.windows.get(owner))
+                .copied()
+        }
+        .ok_or(Error::StaleRef)?;
         let mut corners = Vec::new();
         for (x, y) in [(b.x + 1., b.y + 1.), (b.x + b.w - 2., b.y + b.h - 2.)] {
             let cell = handle(
-                call(component.get_accessible_at_point(x as i32, y as i32, CoordType::Screen))
-                    .await?,
+                call(component.get_accessible_at_point(
+                    (x - origin_x) as i32,
+                    (y - origin_y) as i32,
+                    CoordType::Window,
+                ))
+                .await?,
             )?;
             let cell_a = proxy!(AccessibleProxy, conn, &cell);
             let index = call(cell_a.get_index_in_parent()).await?;
@@ -574,6 +640,7 @@ impl AccessibilitySensor for Sensor {
                     return Err(Error::StaleRef);
                 }
                 let h = handle(object)?;
+                self.inherit_geometry(parent, &h);
                 let cell = proxy!(AccessibleProxy, conn, &h);
                 if index < 0 || call(cell.get_index_in_parent()).await? != index {
                     return Err(Error::StaleRef);
@@ -773,10 +840,44 @@ impl AccessibilitySensor for Sensor {
                     .and_then(|p| p.file_name().map(|v| v.to_string_lossy().into_owned()))
                     .unwrap_or_default();
                 let mut focused = call(a.get_state()).await?.contains(NativeState::Active);
+                let mut matched = Vec::new();
                 for object in call(a.get_children()).await? {
                     let child = handle(object)?;
                     let frame = proxy!(AccessibleProxy, conn.connection(), &child);
                     focused |= call(frame.get_state()).await?.contains(NativeState::Active);
+                    let component = proxy!(ComponentProxy, conn.connection(), &child);
+                    let (screen, local) = tokio::join!(
+                        call(component.get_extents(CoordType::Screen)),
+                        call(component.get_extents(CoordType::Window))
+                    );
+                    let (Ok((sx, sy, _, _)), Ok((wx, wy, _, _))) = (screen, local) else {
+                        continue;
+                    };
+                    let candidates: Vec<_> = windows
+                        .iter()
+                        .filter(|w| {
+                            w.pid == pid
+                                && w.window_bounds.x == (sx as f64 - wx as f64)
+                                && w.window_bounds.y == (sy as f64 - wy as f64)
+                        })
+                        .collect();
+                    if std::env::var_os("RIO_A11Y_TRACE").is_some() {
+                        eprintln!("a11y coordinate_frame pid={pid} screen_origin=({sx},{sy}) window_origin=({wx},{wy}) candidates={} native={:?}", candidates.len(), windows.iter().map(|w| (w.pid,w.window_bounds)).collect::<Vec<_>>());
+                    }
+                    if candidates.len() == 1 {
+                        matched.push((object_key(&child), candidates[0].window_bounds));
+                    }
+                }
+                {
+                    let mut geometry = self.geometry.lock().unwrap();
+                    geometry.windows.retain(|(bus, _), _| bus != &h.bus);
+                    if geometry.owners.len() > 16_384 {
+                        geometry.owners.clear();
+                    }
+                    for (key, bounds) in matched {
+                        geometry.windows.insert(key.clone(), (bounds.x, bounds.y));
+                        geometry.owners.insert(key.clone(), key);
+                    }
                 }
                 let window = windows.iter().find(|w| w.pid == pid);
                 apps.push(App {
@@ -903,11 +1004,12 @@ impl AccessibilitySensor for Sensor {
                         child_parent = Some(tree.nodes.len());
                         tree.nodes.push(RawNode {
                             node,
-                            handle: h,
+                            handle: h.clone(),
                             parent,
                         });
                     }
                     for child in observation.children {
+                        self.inherit_geometry(&h, &child);
                         if next.len() >= 8192 {
                             tree.record(Reason::NodeCap, "unknown");
                             break;
@@ -923,6 +1025,13 @@ impl AccessibilitySensor for Sensor {
                 );
                 level = next;
                 depth_index += 1;
+            }
+            if std::env::var_os("RIO_A11Y_TRACE").is_some() {
+                eprintln!(
+                    "a11y coordinate_snapshot nodes={} reasons={:?}",
+                    tree.nodes.len(),
+                    tree.reasons
+                );
             }
             Ok(tree)
         })
@@ -1033,6 +1142,37 @@ impl AccessibilitySensor for Sensor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn geometry_is_inherited_only_from_identified_native_window() {
+        let sensor = Sensor::default();
+        let handle = |path: &str| Handle {
+            bus: "app".into(),
+            path: path.into(),
+        };
+        let frame = handle("frame");
+        let cell = handle("cell");
+        let other = handle("unknown");
+        {
+            let mut geometry = sensor.geometry.lock().unwrap();
+            geometry.windows.insert(object_key(&frame), (200., 119.));
+            geometry
+                .owners
+                .insert(object_key(&frame), object_key(&frame));
+        }
+        sensor.inherit_geometry(&frame, &cell);
+        {
+            let geometry = sensor.geometry.lock().unwrap();
+            let owner = geometry.owners.get(&object_key(&cell)).unwrap();
+            assert_eq!(geometry.windows[owner], (200., 119.));
+        }
+        sensor.inherit_geometry(&other, &cell);
+        assert!(!sensor
+            .geometry
+            .lock()
+            .unwrap()
+            .owners
+            .contains_key(&object_key(&cell)));
+    }
     #[tokio::test]
     async fn individual_calls_bound_hangs_and_preserve_errors() {
         assert_eq!(call(async { Ok::<_, Error>(7) }).await, Ok(7));

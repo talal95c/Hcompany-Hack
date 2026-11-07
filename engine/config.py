@@ -31,6 +31,7 @@ class EngineConfig:
     a11y_poll_s: float = 0.25
     a11y_timeout_s: float = 1.5
     vision_poll_s: float = 2.0
+    cloud_vision_preload: bool = False
 
     def __post_init__(self) -> None:
         if any(not 0 <= p <= 65535 for p in (self.port, self.addon_port, self.debug_port)):
@@ -53,6 +54,7 @@ class EngineConfig:
             session_token=token,
             lesson=Path(os.environ["ENGINE_LESSON"]) if os.getenv("ENGINE_LESSON") else None,
             holo_model=os.getenv("ENGINE_HOLO_MODEL", "holo4-27b"),
+            cloud_vision_preload=os.getenv("ENGINE_CLOUD_VISION_PRELOAD", "0") == "1",
             stt_vocabulary=tuple(
                 v.strip() for v in os.getenv("ENGINE_STT_VOCABULARY", "").split(",") if v.strip()
             ),
