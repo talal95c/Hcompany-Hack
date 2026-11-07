@@ -1,0 +1,152 @@
+{
+  "schema": "hcompany-data-sources/0.1",
+  "counted_at": "2026-11-07",
+  "note": "Volumes comptés via les API Hugging Face et GitHub à la révision indiquée. Rien n'est téléchargé dans git : data/raw/<id>/.",
+  "sources": [
+    {
+      "id": "ui-map",
+      "kind": "internal",
+      "location": "prep/ui_map ; cache ~/.cache/hcompany-prep/ui_maps/<blender_version>.json",
+      "apps": ["blender"],
+      "graph_role": ["menu", "element", "operator", "renamed_in_version"],
+      "reliability": "exact",
+      "priority": "high"
+    },
+    {
+      "id": "lesson-proofs",
+      "kind": "internal",
+      "location": "lessons/*/proof/*.json, lessons/*/lesson.json",
+      "apps": ["blender"],
+      "graph_role": ["step", "operator", "check", "state_before_after", "skill"],
+      "reliability": "exact",
+      "priority": "high"
+    },
+    {
+      "id": "addon-events",
+      "kind": "internal",
+      "location": "flux addon -> engine (operators, mode, sélection, rectangles des zones)",
+      "apps": ["blender"],
+      "graph_role": ["observed_success", "area", "enrichment"],
+      "reliability": "exact when the step check passes",
+      "priority": "high",
+      "privacy": "local par défaut"
+    },
+    {
+      "id": "holo-target-cache",
+      "kind": "internal",
+      "location": "engine/cache (TargetCache, mémoire seulement)",
+      "apps": ["blender"],
+      "graph_role": ["description_to_observed_position"],
+      "reliability": "observation, à confirmer par un check",
+      "priority": "high"
+    },
+    {
+      "id": "groundcua",
+      "kind": "public",
+      "url": "https://huggingface.co/datasets/ServiceNow/GroundCUA",
+      "revision": "5d6845b0116029d46ec762e734701c5b8ce207c3",
+      "license": "MIT",
+      "fields": ["image_path", "bbox", "text", "category", "id"],
+      "counts": {
+        "Blender": 399,
+        "LibreOffice Calc": 757,
+        "Gnumeric": 691,
+        "OnlyOffice Spreadsheet": 689,
+        "Metabase": 352,
+        "GnuCash": 659,
+        "Frappe Books": 1000
+      },
+      "counts_unit": "fichiers d'annotation (1 par capture)",
+      "apps_total": 87,
+      "graph_role": ["element", "element_type", "spatial_neighbor"],
+      "reliability": "annotation humaine",
+      "priority": "medium"
+    },
+    {
+      "id": "screenspot-pro",
+      "kind": "public",
+      "url": "https://huggingface.co/datasets/likaixin/ScreenSpot-Pro",
+      "revision": "210e78d3844251110bff86c95835ebd37a6930fa",
+      "license": "MIT",
+      "fields": ["img_filename", "bbox", "instruction", "application", "platform", "img_size", "ui_type"],
+      "counts": {
+        "blender_windows": 71,
+        "excel_macos": 64,
+        "word_macos": 84,
+        "powerpoint_windows": 82,
+        "photoshop_windows": 51
+      },
+      "counts_unit": "cibles annotées",
+      "graph_role": ["intent_phrase_to_element", "benchmark"],
+      "reliability": "annotation humaine",
+      "priority": "medium"
+    },
+    {
+      "id": "spider2-v",
+      "kind": "public",
+      "url": "https://github.com/xlang-ai/Spider2-V",
+      "revision": "c2a3a6c2f5d7604464f162c6550b60db3eee04e8",
+      "license": "Apache-2.0",
+      "counts": {
+        "excel (LibreOffice Calc, .xlsx)": 62,
+        "bigquery": 40,
+        "dbt": 40,
+        "snowflake": 44,
+        "metabase": 48,
+        "superset": 33,
+        "airbyte": 48,
+        "airflow": 38,
+        "dagster": 40,
+        "jupyter": 44,
+        "servicenow": 58
+      },
+      "counts_unit": "tâches",
+      "graph_role": ["task", "tutorial_steps", "expected_file", "verifier"],
+      "reliability": "tâches vérifiées par script",
+      "priority": "medium"
+    },
+    {
+      "id": "osworld",
+      "kind": "public",
+      "url": "https://github.com/xlang-ai/OSWorld",
+      "revision": "8903ebeb0efdf74331bd7dc37ed91ccbbff22317",
+      "license": "Apache-2.0",
+      "counts": {"libreoffice_calc": 47, "libreoffice_writer": 23, "multi_apps": 102},
+      "counts_unit": "tâches",
+      "graph_role": ["task", "verifier"],
+      "reliability": "tâches vérifiées par script",
+      "priority": "medium"
+    },
+    {
+      "id": "windows-agent-arena",
+      "kind": "public",
+      "url": "https://github.com/microsoft/WindowsAgentArena",
+      "revision": "eb220c4dcf64babefc1bfc287edda91ab04132ed",
+      "license": "MIT",
+      "counts": {"libreoffice_calc": 24},
+      "counts_unit": "tâches",
+      "graph_role": ["task", "verifier"],
+      "reliability": "tâches vérifiées par script",
+      "priority": "low"
+    },
+    {
+      "id": "agentnet",
+      "kind": "public",
+      "url": "https://huggingface.co/datasets/xlangai/AgentNet",
+      "revision": "d76ee50a63fad81cfdbe576416757d7c2091ed50",
+      "license": "MIT",
+      "volume": "agentnet_win_mac_18k.jsonl ≈ 1,4 Go ; agentnet_ubuntu_5k.jsonl ≈ 282 Mo",
+      "graph_role": ["action_sequence"],
+      "reliability": "trajectoires humaines",
+      "priority": "low"
+    },
+    {
+      "id": "realcua",
+      "kind": "public-on-request",
+      "url": "https://data.fig.inc/realcua",
+      "access": "sur demande (https://info.fig.inc/data)",
+      "graph_role": ["accessibility_tree", "action_sequence"],
+      "priority": "low"
+    }
+  ]
+}

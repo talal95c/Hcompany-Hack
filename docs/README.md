@@ -31,6 +31,7 @@
 - [0008-skill-mcp](decisions/0008-skill-mcp.md)
 - [0009-addon-capteur](decisions/0009-addon-capteur.md)
 - [0010-cibles-descriptives](decisions/0010-cibles-descriptives.md)
+- [0011-accessibilite-native](decisions/0011-accessibilite-native.md) (proposition historique de sidecar)
 
 ## workflows
 - [01-preparer-un-tuto](workflows/01-preparer-un-tuto.md)
@@ -51,6 +52,7 @@
 - [tests-et-jalons](tests-et-jalons.md)
 - [equipe-et-workflow](equipe-et-workflow.md)
 - [glossaire](glossaire.md)
+- [Données pour le graphe relationnel](../data/README.md)
 
 ## Plans des dossiers
 - [contracts](../contracts/README.md)

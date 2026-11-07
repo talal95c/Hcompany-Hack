@@ -3,6 +3,9 @@
 ## Responsabilité
 App Tauri v2 et cycle du sidecar.
 
+> Le front principal est désormais [`h-tutor/`](../h-tutor/README.md). `desktop/` reste
+> le client branché sur l'engine Python, en attendant que h-tutor y soit raccordé.
+
 ## Entrées
 ordres engine et entrées utilisateur.
 

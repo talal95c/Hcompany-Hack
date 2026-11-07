@@ -1,6 +1,6 @@
 # Accessibilité native — capteur générique
 
-Statut : contrats disponibles, implémentation native à venir. [ADR 0011](../decisions/0011-multi-app.md) · [architecture multi-app](multi-app.md) · [explication produit](../extension-apps-natives.md).
+Statut : contrats v2 et backends natifs présents dans `desktop/src-tauri/src/a11y/`. Le routeur multi-app du moteur reste à intégrer. [ADR 0011](../decisions/0011-multi-app.md) · [architecture multi-app](multi-app.md) · [explication produit](../extension-apps-natives.md).
 
 ## Problème et brique retenue
 L'[add-on Blender](addon.md) fournit l'état bpy. Pour une app métier, Excel ou Finder, l'OS peut exposer un arbre : rôle, nom, valeur, états, rectangle. Ce capteur complète la vision sans remplacer l'état spécialisé.
@@ -14,7 +14,7 @@ Le point d'intégration est un trait Rust `AccessibilitySensor` dans `desktop/sr
 | `engine/` | router le capteur par app, résoudre les cibles et décider des secours |
 | `engine/checks/` | checks déterministes sur arbre frais, pass/fail/unknown |
 | `prep/ui_map/` | préparer rôles, noms et chemins descriptifs, pas des refs persistées |
-| `agent/` | ne proposer que les leçons prouvées pour l'app ; couverture multi-app à implémenter |
+| `agent/` | ne proposer que les leçons prouvées, filtrées par application et version |
 | `bench/` | mesurer succès, latence, taille des arbres et fréquence du secours vision |
 
 Le protocole réel est `a11y.request` engine → desktop avec `op: snapshot|find|get|action`, puis `a11y.result` desktop → engine. `app.focus` annonce l'app active. Le [contrat WebSocket](../contrats/ws-desktop.md) précise les payloads fermés. La [leçon v2](../contrats/lecon.md) possède déjà `app` ; ce n'est plus un ajout futur au schéma.
@@ -34,3 +34,6 @@ Canevas et interfaces dessinées sur mesure peuvent être absents. Ne pas suppos
 
 ## Validation attendue
 Fixtures nominales, vides et erreurs ; refs périmées, ambiguïté, timeout, reconnexion, arrêt et absence de valeurs dans les logs. Recette Mac : Excel (valeur de cellule et bouton du ruban), Finder, Photoshop (couverture du canevas), refus puis accord de permission. Mesures dans `bench/results/` ; ni build Linux ni validation JSON ne prouvent le fonctionnement macOS.
+
+## Proposition de sidecar conservée
+La [proposition historique agent-desktop](../decisions/0011-accessibilite-native.md) décrit une autre intégration possible, par CLI JSON ou MCP. Elle reste une alternative, pas un remplacement des contrats v2 ni du trait Rust retenu par l'[ADR multi-app](../decisions/0011-multi-app.md). Les observations d'une fenêtre GTK par cet outil ne prouvent ni nos backends ni la couverture Excel/Photoshop sur Mac. Voir les [backends natifs et leurs limites](../../desktop/src-tauri/src/a11y/README.md).

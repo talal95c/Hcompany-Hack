@@ -1,0 +1,81 @@
+{
+  "id": "blender-first-donut",
+  "version": 2,
+  "title": "Make your first donut",
+  "app": {
+    "name": "Blender",
+    "bundle_id": "org.blenderfoundation.blender",
+    "min_version": "4.0"
+  },
+  "goal": "Model a donut and give it a realistic golden-brown material",
+  "source": "authored",
+  "start": "clear",
+  "milestones": [
+    {
+      "id": "clear",
+      "goal": "Start from an empty scene: delete every mesh object",
+      "done_when": "No mesh object is left: the outliner lists only the Camera and the Light (no Cube, Cone or other mesh) and the viewport shows no object",
+      "hints": [
+        "Click a mesh in the viewport or the outliner to select it",
+        "Press X, then choose Delete",
+        "Repeat for each mesh (or press A to select all, then X)"
+      ],
+      "teach": "Every new Blender scene starts with a cube, a camera and a light; we start clean for the donut.",
+      "next": [
+        "torus"
+      ]
+    },
+    {
+      "id": "torus",
+      "goal": "Add a torus",
+      "done_when": "A ring-shaped object is in the viewport and 'Torus' is listed in the outliner",
+      "hints": [
+        "Add menu in the top bar of the viewport",
+        "Hover Mesh: its submenu opens without clicking",
+        "Click Torus"
+      ],
+      "teach": "A torus is a ready-made ring mesh: the perfect starting shape for a donut.",
+      "next": [
+        "smooth",
+        "material"
+      ]
+    },
+    {
+      "id": "smooth",
+      "goal": "Smooth the donut with a Subdivision Surface modifier",
+      "done_when": "The Modifier properties tab shows a Subdivision modifier on the Torus",
+      "hints": [
+        "Properties panel on the right: wrench icon (Modifier Properties)",
+        "Add Modifier > Generate > Subdivision Surface"
+      ],
+      "teach": "Subdivision adds geometry and rounds the shape without changing the model you edit.",
+      "optional": true
+    },
+    {
+      "id": "material",
+      "goal": "Create a new material for the torus",
+      "done_when": "The Material properties tab shows a material slot with a Principled BSDF surface",
+      "hints": [
+        "Select the torus",
+        "Properties panel: red sphere icon (Material Properties)",
+        "Click New"
+      ],
+      "requires": [
+        "torus"
+      ],
+      "next": [
+        "color"
+      ]
+    },
+    {
+      "id": "color",
+      "goal": "Make the base color golden brown",
+      "done_when": "The Base Color swatch of the material is a warm golden-brown and the donut looks brown in the viewport",
+      "hints": [
+        "Click the Base Color swatch",
+        "Pick an orange-brown in the color wheel and lower the brightness"
+      ],
+      "teach": "Base Color is the surface's own color before lighting and reflections."
+    }
+  ]
+}

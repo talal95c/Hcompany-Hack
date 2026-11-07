@@ -1,6 +1,6 @@
-# Au-delà de Blender : Excel, Finder, apps métier
+# Rio au-delà de Blender : Excel, Finder, apps métier
 
-Statut : contrats v2 disponibles ; capteurs génériques et routeur à implémenter. [Spécification native](architecture/accessibilite-native.md) · [architecture multi-app](architecture/multi-app.md) · [ADR 0011](decisions/0011-multi-app.md).
+Statut : contrats v2 et capteurs natifs disponibles dans desktop ; intégration du routeur multi-app à poursuivre. [Spécification native](architecture/accessibilite-native.md) · [architecture multi-app](architecture/multi-app.md) · [ADR 0011](decisions/0011-multi-app.md).
 
 ## L'idée
 Pour Blender, notre add-on lit l'état du logiciel. Pour les autres apps, l'OS expose souvent une description destinée aux lecteurs d'écran : l'arbre d'accessibilité. Notre desktop le lit via un trait Rust et des backends natifs. Un outil comme `agent-desktop` reste une option d'intégration, pas la brique imposée.
@@ -28,4 +28,7 @@ Les valeurs privées ne sont pas journalisées ni envoyées au cloud par défaut
 - Latence, taux de réussite et fréquence des secours, à mesurer dans `bench/`.
 - Tests de reconnexion, refs périmées et arrêt prioritaire avant une démo réelle.
 
-La suite : implémenter le trait, tester les backends et le routeur, puis prouver une leçon par application/version. Le contrat disponible ne signifie pas une fonctionnalité déjà livrée.
+La suite : intégrer le routeur, valider les backends sur chaque OS et prouver une leçon par application/version. Des contrats et capteurs disponibles ne signifient pas une recette produit complète réussie.
+
+## Proposition initiale
+La [proposition de sidecar agent-desktop](decisions/0011-accessibilite-native.md) est conservée comme alternative historique. Le choix actuel est le trait Rust et les backends natifs de desktop : pas de décision dans un outil externe, pas d'accès natif depuis engine. Les essais Mac Excel, Finder et Photoshop restent nécessaires avant toute promesse de couverture.
