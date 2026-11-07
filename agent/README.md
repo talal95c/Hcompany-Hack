@@ -63,11 +63,18 @@ jsonschema, enveloppes MCP validées par le SDK. Doubles runner uniquement unita
 
 ## Export et publication H réels
 
-Identité déterministe par leçon × révision × version Blender. Contenu : objectif,
+Identité distante déterministe par leçon × version Blender. Chaque révision de
+leçon publiée crée une révision distante de cette même Skill. Fichier local
+distinct par leçon × révision × version (`-rN.json`), toujours immuable.
+Contenu : objectif,
 préconditions, étapes, checks, cibles descriptives sans coordonnées, limites de
 preuve, contexte, empreinte. Export identique sans réécriture ; mutation d'une
-même révision refusée. Publication GET puis POST ; contenu distant identique =
-aucune écriture, contenu différent = refus plutôt qu'écrasement. Échec distant :
+même révision refusée. Publication GET puis POST si absente ; contenu distant
+identique = aucune écriture ; révision de leçon distante plus ancienne = PATCH
+avec `If-Match` utilisant l'ETag lu. Révision plus récente, conflit à révision
+égale, autre identité/version, métadonnées invalides ou ETag absent = refus.
+Une concurrence produisant HTTP 412 est refusée, sans écriture aveugle ni reprise.
+Échec distant :
 catalogue local inchangé.
 
 Documentation officielle consultée :
@@ -75,16 +82,22 @@ Documentation officielle consultée :
 - https://hub.hcompany.ai/agents-api/skills/create
 - https://hub.hcompany.ai/agents-api/skills/patch
 - https://hub.hcompany.ai/agents-api/skills/list-revisions
+- https://hub.hcompany.ai/agents-api/skills/delete
 
 Agents API distincte de Models API. Base européenne :
 `https://agp.eu.hcompany.ai/api/v2`, Bearer `HAI_API_KEY`.
 `POST /skills` crée avec `name`, `description`, `body` Markdown,
 `compatibility` optionnel ; réponse 201. `GET /skills/{name}` lit.
 `PATCH /skills/{name}` crée une nouvelle révision avec `If-Match` possible.
-L'export immuable n'utilise pas PATCH : une nouvelle révision locale donne une
-nouvelle identité distante. Test live : création réelle d'une Skill privée
-explicitement marquée « Integration fixture only », puis lecture idempotente ;
-aucun agent attaché, aucune action bureau.
+`GET /skills/{name}/revisions` liste l'historique ; `DELETE /skills/{name}`
+supprime la Skill et ses révisions (204). Test live : nom unique par exécution,
+création réelle d'une Skill privée marquée « Integration fixture only »,
+PATCH depuis la révision de leçon 1 vers 2, vérification des deux révisions
+distantes, republication idempotente sans troisième révision, puis suppression
+dans un bloc de nettoyage et vérification de son absence. Aucun agent attaché,
+aucune action bureau. Les numéros locaux sont embarqués dans le contenu ; les
+numéros distants suivent l'ordre des publications réussies, pas nécessairement
+les numéros locaux si certaines révisions n'ont pas été publiées.
 
 ## Mesures et vérification
 
@@ -102,7 +115,25 @@ Durées internes stdio : list 15,199 ms ; find 11,865 ms ; get 6,717 ms ;
 run refusé 7,019 ms ; report 0,248 ms.
 H authentifié : `GET https://api.hcompany.ai/v1/models` **200**, 239,142 ms ;
 `GET https://agp.eu.hcompany.ai/api/v2/skills` **200**, 660,691 ms ;
-publication GET+POST et réponse : 736,374 ms.
+publication initiale GET+POST et réponse : 736,374 ms.
+
+Recette live révisions (nom unique, nettoyé) :
+
+| Requête | HTTP | Durée mesurée |
+|---|---:|---:|
+| GET Models | 200 | 258,001 ms |
+| GET Skill absente | 404 | 519,287 ms |
+| POST Skill révision 1 | 201 | 221,707 ms |
+| GET avant PATCH | 200 | 521,764 ms |
+| PATCH vers leçon révision 2 | 200 | 254,293 ms |
+| GET Skill courante | 200 | 524,777 ms |
+| GET historique (deux révisions) | 200 | 223,893 ms |
+| GET republication idempotente | 200 | 524,851 ms |
+| GET historique après no-op | 200 | 207,292 ms |
+| DELETE nettoyage | 204 | 246,410 ms |
+
+Durées complètes publisher : création 745,980 ms ; mise à jour 781,830 ms ;
+no-op 534,112 ms. Aucun troisième numéro de révision créé par le no-op.
 Exécution bureau : non mesurée (est.), fonctionnalité bloquée.
 
 ```sh
@@ -116,4 +147,6 @@ pytest -q
 Tests : chaque outil via `ClientSession` stdio et HTTP, catalogue vide, erreurs,
 consentement absent, concurrence, annulation, refus sans checks, triage,
 export idempotent, échec distant. Mesures reproductibles avec `--capture=tee-sys`.
+Publication : création, PATCH protégé, no-op, conflits de version/révision,
+échec de PATCH et fichiers locaux distincts couverts par MockTransport.
 Pas de recette visuelle ni d'exécution Blender/desktop revendiquée.

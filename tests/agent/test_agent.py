@@ -1,4 +1,6 @@
 import asyncio
+import copy
+import hashlib
 import json
 import shutil
 from pathlib import Path
@@ -256,3 +258,89 @@ async def test_publish_idempotent_and_create(tmp_path):
         )
         == skill
     )
+
+
+def skill_revision(tmp_path, revision):
+    record = copy.deepcopy(Catalog(FIXTURES, tmp_path).get(**ARGS))
+    record["lesson"]["revision"] = revision
+    record["fingerprint"] = hashlib.sha256(json.dumps(record["lesson"]).encode()).hexdigest()
+    return artifact(record)
+
+
+async def test_publish_older_revision_patched(tmp_path):
+    older = skill_revision(tmp_path, 1)
+    newer = skill_revision(tmp_path, 2)
+    assert older["name"] == newer["name"]
+    requests = []
+
+    def handler(request):
+        requests.append(request.method)
+        if request.method == "GET":
+            return httpx.Response(200, json=older, headers={"ETag": '"1"'})
+        assert request.method == "PATCH"
+        assert request.headers["If-Match"] == '"1"'
+        assert json.loads(request.content) == {k: v for k, v in newer.items() if k != "name"}
+        return httpx.Response(200, json=newer, headers={"ETag": '"2"'})
+
+    assert await publish(newer, "unit-key", transport=httpx.MockTransport(handler)) == newer
+    assert requests == ["GET", "PATCH"]
+
+
+@pytest.mark.parametrize(
+    "case",
+    ["newer", "same_revision", "wrong_lesson", "wrong_version", "invalid_metadata", "missing_etag"],
+)
+async def test_publish_conflicting_revision_refused(tmp_path, case):
+    incoming = skill_revision(tmp_path, 2)
+    remote = skill_revision(tmp_path, 3 if case == "newer" else 2 if case == "same_revision" else 1)
+    if case == "same_revision":
+        remote["description"] = "conflicting content"
+    if case == "wrong_lesson":
+        remote["body"] = remote["body"].replace('"lesson_id": "proven"', '"lesson_id": "other"')
+    if case == "wrong_version":
+        remote["body"] = remote["body"].replace('"5.2.3"', '"4.5.9"')
+    if case == "invalid_metadata":
+        remote["body"] = "not an exported lesson"
+    if case == "missing_etag":
+        remote = skill_revision(tmp_path, 1)
+    requests = []
+
+    def handler(request):
+        requests.append(request.method)
+        return httpx.Response(200, json=remote)
+
+    with pytest.raises(AgentError, match="revision"):
+        await publish(incoming, "unit-key", transport=httpx.MockTransport(handler))
+    assert requests == ["GET"]
+
+
+@pytest.mark.parametrize("status", [409, 412, 503])
+async def test_publish_failed_patch_preserves_catalog(tmp_path, status):
+    catalog = Catalog(FIXTURES, tmp_path)
+    before = catalog.scan()
+    older, newer = skill_revision(tmp_path, 1), skill_revision(tmp_path, 2)
+
+    def handler(request):
+        if request.method == "GET":
+            return httpx.Response(200, json=older, headers={"ETag": '"1"'})
+        return httpx.Response(status)
+
+    with pytest.raises(AgentError, match=f"publish_failed: HTTP {status}"):
+        await publish(newer, "unit-key", transport=httpx.MockTransport(handler))
+    assert catalog.scan() == before
+
+
+def test_local_exports_keep_revision_files_immutable(tmp_path):
+    root = tmp_path / "lessons"
+    shutil.copytree(FIXTURES / "proven", root / "one")
+    catalog = Catalog(root, tmp_path / "state")
+    first, _ = export(catalog, **ARGS, output=tmp_path / "export")
+    original = first.read_bytes()
+    lesson_path = root / "one/lesson.json"
+    lesson = json.loads(lesson_path.read_text())
+    lesson["revision"] = 2
+    lesson_path.write_text(json.dumps(lesson))
+    second, _ = export(catalog, "proven", 2, "5.2.3", tmp_path / "export")
+    assert first != second
+    assert first.read_bytes() == original
+    assert json.loads(first.read_text())["name"] == json.loads(second.read_text())["name"]

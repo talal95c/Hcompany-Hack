@@ -1,34 +1,61 @@
+import copy
+import hashlib
+import json
+import logging
 import os
-import time
+from uuid import uuid4
 
 import httpx
 import pytest
 from conftest import FIXTURES
 
-from agent.catalog import Catalog
-from agent.skill_export import AGENTS_URL, artifact, publish
+from agent.catalog import VALIDATOR, Catalog
+from agent.skill_export import AGENTS_URL, artifact, measured_request, publish
 
 
 @pytest.mark.live
 @pytest.mark.skipif(not os.getenv("HAI_API_KEY"), reason="HAI_API_KEY required for live calls")
-async def test_authenticated_skill_publish(tmp_path):
+async def test_authenticated_skill_publish(tmp_path, caplog):
     key = os.environ["HAI_API_KEY"]
+    caplog.set_level(logging.INFO, logger="agent.skill_export")
+    record = copy.deepcopy(Catalog(FIXTURES, tmp_path).get("proven", 1, "5.2.3"))
+    record["lesson"]["lesson_id"] = "integration-" + uuid4().hex
+
+    def revision(number):
+        record["lesson"]["revision"] = number
+        VALIDATOR.validate(record["lesson"])
+        record["fingerprint"] = hashlib.sha256(json.dumps(record["lesson"]).encode()).hexdigest()
+        skill = artifact(record)
+        skill["description"] = "Integration fixture only — not a validated Blender lesson"
+        return skill
+
+    first = revision(1)
+    second = revision(2)
+    assert first["name"] == second["name"]
+    endpoint = AGENTS_URL + "/skills/" + first["name"]
     async with httpx.AsyncClient(headers={"Authorization": "Bearer " + key}, timeout=30) as client:
-        for url in ["https://api.hcompany.ai/v1/models", AGENTS_URL + "/skills"]:
-            start = time.perf_counter()
-            response = await client.get(url)
-            print(
-                f"H API GET {url} HTTP {response.status_code} "
-                f"latency_ms={(time.perf_counter() - start) * 1000:.3f}"
-            )
+        try:
+            response = await measured_request(client, "GET", "https://api.hcompany.ai/v1/models")
             assert response.status_code == 200
-    record = Catalog(FIXTURES, tmp_path).get("proven", 1, "5.2.3")
-    skill = artifact(record)
-    # A private integration fixture, never presented as a real Blender proof.
-    skill["description"] = "Integration fixture only — not a validated Blender lesson"
-    start = time.perf_counter()
-    result = await publish(skill, key)
-    print(f"H API publish latency_ms={(time.perf_counter() - start) * 1000:.3f}")
-    assert result["name"] == skill["name"]
-    assert result["body"] == skill["body"]
-    assert await publish(skill, key) == result
+            assert (await publish(first, key))["body"] == first["body"]
+            updated = await publish(second, key)
+            assert updated["body"] == second["body"]
+            current = await measured_request(client, "GET", endpoint)
+            assert current.status_code == 200
+            assert current.json()["body"] == second["body"]
+            revisions = await measured_request(client, "GET", endpoint + "/revisions")
+            assert revisions.status_code == 200
+            assert {item["number"] for item in revisions.json()["items"]} == {1, 2}
+            assert revisions.json()["total"] == 2
+            assert await publish(second, key) == updated
+            after = await measured_request(client, "GET", endpoint + "/revisions")
+            assert after.status_code == 200
+            assert after.json()["total"] == 2
+        finally:
+            deleted = await measured_request(client, "DELETE", endpoint)
+            for entry in caplog.records:
+                if entry.name == "agent.skill_export":
+                    print(entry.getMessage())
+            assert deleted.status_code in {204, 404}
+        absent = await measured_request(client, "GET", endpoint)
+        assert absent.status_code == 404

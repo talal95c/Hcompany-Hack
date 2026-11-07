@@ -21,7 +21,7 @@ AGENTS_URL = "https://agp.eu.hcompany.ai/api/v2"
 
 def artifact(record: dict[str, Any]) -> dict[str, str]:
     lesson = record["lesson"]
-    identity = json.dumps([lesson["lesson_id"], lesson["revision"], lesson["blender_version"]])
+    identity = json.dumps([lesson["lesson_id"], lesson["blender_version"]])
     name = "blender-lesson-" + hashlib.sha256(identity.encode()).hexdigest()[:32]
     context = {
         "objective": lesson["title"],
@@ -69,7 +69,7 @@ def export(
     record = catalog.get(lesson_id, revision, blender_version)
     skill = artifact(record)
     output.mkdir(parents=True, exist_ok=True)
-    path = output / (skill["name"] + ".json")
+    path = output / (skill["name"] + f"-r{revision}.json")
     serialized = json.dumps(skill, ensure_ascii=False, indent=2) + "\n"
     if path.exists():
         if path.read_text() == serialized:
@@ -80,6 +80,48 @@ def export(
     return path, True
 
 
+def revision_context(skill: dict[str, Any]) -> dict[str, Any]:
+    try:
+        body = skill["body"]
+        context = json.loads(body.split("\n\n```json\n", 1)[1].removesuffix("\n```\n"))
+        if (
+            not isinstance(context["lesson_id"], str)
+            or not context["lesson_id"]
+            or type(context["revision"]) is not int
+            or context["revision"] < 1
+            or not isinstance(context["fingerprint"], str)
+            or len(context["fingerprint"]) != 64
+            or any(c not in "0123456789abcdef" for c in context["fingerprint"])
+            or not isinstance(context["execution_context"]["blender_version"], str)
+        ):
+            raise ValueError
+        return context
+    except (KeyError, IndexError, TypeError, ValueError, AttributeError) as error:
+        raise AgentError("invalid_skill_revision_metadata") from error
+
+
+async def measured_request(
+    client: httpx.AsyncClient, method: str, endpoint: str, **kwargs: Any
+) -> httpx.Response:
+    start = time.perf_counter()
+    try:
+        response = await client.request(method, endpoint, **kwargs)
+        LOG.info(
+            "h_api method=%s status=%s latency_ms=%.3f",
+            method,
+            response.status_code,
+            (time.perf_counter() - start) * 1000,
+        )
+        return response
+    except httpx.HTTPError:
+        LOG.info(
+            "h_api method=%s network_error latency_ms=%.3f",
+            method,
+            (time.perf_counter() - start) * 1000,
+        )
+        raise
+
+
 async def publish(
     skill: dict[str, str],
     key: str,
@@ -88,6 +130,7 @@ async def publish(
 ) -> dict[str, Any]:
     if not key:
         raise AgentError("publisher_not_available: HAI_API_KEY missing")
+    incoming = revision_context(skill)
     start = time.perf_counter()
     try:
         async with httpx.AsyncClient(
@@ -97,13 +140,32 @@ async def publish(
             transport=transport,
         ) as client:
             endpoint = "skills/" + quote(skill["name"], safe="/")
-            current = await client.get(endpoint)
+            current = await measured_request(client, "GET", endpoint)
             if current.status_code == 404:
-                response = await client.post("skills", json=skill)
+                response = await measured_request(client, "POST", "skills", json=skill)
             elif current.is_success:
-                if all(current.json().get(k) == v for k, v in skill.items()):
-                    return current.json()
-                raise AgentError("immutable_remote_revision_conflict")
+                remote = current.json()
+                previous = revision_context(remote)
+                if all(remote.get(k) == v for k, v in skill.items()):
+                    return remote
+                if (
+                    remote.get("name") != skill["name"]
+                    or previous["lesson_id"] != incoming["lesson_id"]
+                    or previous["execution_context"]["blender_version"]
+                    != incoming["execution_context"]["blender_version"]
+                    or previous["revision"] >= incoming["revision"]
+                ):
+                    raise AgentError("remote_revision_conflict")
+                etag = current.headers.get("etag")
+                if not etag or etag == "*":
+                    raise AgentError("remote_revision_conflict: missing revision ETag")
+                response = await measured_request(
+                    client,
+                    "PATCH",
+                    endpoint,
+                    headers={"If-Match": etag},
+                    json={k: v for k, v in skill.items() if k != "name"},
+                )
             else:
                 raise AgentError(f"publisher_not_available: HTTP {current.status_code}")
             if not response.is_success:
