@@ -34,11 +34,12 @@ struct Controller {
     view: View,
     active: Option<String>,
     generation: u64,
+    declining: bool,
 }
 
 impl Controller {
     fn accept(&mut self, skill: &skills::Skill, stop: &AtomicBool) -> Result<(), String> {
-        if self.active.is_some() {
+        if self.active.is_some() || self.declining {
             return Err("Rio exécute déjà une tâche".into());
         }
         stop.store(false, Ordering::SeqCst);
@@ -65,6 +66,21 @@ impl Controller {
             message: Some("Arrêté".into()),
         })
     }
+
+    fn begin_decline(&mut self, expected: Option<u64>) -> Option<(String, u64)> {
+        if self.declining
+            || expected.is_some_and(|generation| generation != self.generation)
+            || !matches!(self.view.phase, Phase::Expanded)
+        {
+            return None;
+        }
+        self.declining = true;
+        Some((self.view.skill_id.clone(), self.generation))
+    }
+}
+
+pub(crate) fn dispatch_shortcut(action: impl FnOnce() + Send + 'static) {
+    std::thread::spawn(action);
 }
 
 static CONTROL: Mutex<Option<Controller>> = Mutex::new(None);
@@ -210,6 +226,7 @@ fn hide(app: &AppHandle, expected: Option<u64>) {
             return;
         }
         control.generation += 1;
+        control.declining = false;
         control.view.phase = Phase::Hidden;
         (control.view.clone(), control.generation)
     };
@@ -227,8 +244,9 @@ fn hide(app: &AppHandle, expected: Option<u64>) {
         if let Some(window) = app.get_webview_window("notch") {
             let w = window.clone();
             let _ = window.run_on_main_thread(move || {
-                let guard = CONTROL.lock().unwrap();
-                if guard.as_ref().is_some_and(|c| c.generation == generation) {
+                let current = CONTROL.lock().unwrap().as_ref()
+                    .is_some_and(|c| c.generation == generation);
+                if current {
                     let _ = w.hide();
                 }
             });
@@ -242,14 +260,8 @@ fn decline_current(app: &AppHandle, expected: Option<u64>) -> Result<(), String>
         let Some(control) = guard.as_mut() else {
             return Ok(());
         };
-        if expected.is_some_and(|generation| generation != control.generation) {
-            return Ok(());
-        }
-        if !matches!(control.view.phase, Phase::Expanded) {
-            return Ok(());
-        }
-        control.view.phase = Phase::Hidden;
-        (control.view.skill_id.clone(), control.generation)
+        let Some(decline) = control.begin_decline(expected) else { return Ok(()) };
+        decline
     };
     let result = skills::decline(&id);
     hide(app, Some(generation));
@@ -558,6 +570,45 @@ impl Drop for CaptureMask {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn autopilot_decline_is_idempotent_across_timeout_and_escape() {
+        let mut controller = Controller {
+            view: View { phase: Phase::Expanded, skill_id: "test".into(), ..Default::default() },
+            generation: 7,
+            ..Default::default()
+        };
+        assert!(controller.begin_decline(Some(6)).is_none());
+        assert_eq!(controller.begin_decline(Some(7)), Some(("test".into(), 7)));
+        assert!(controller.begin_decline(None).is_none());
+        assert!(controller.begin_decline(Some(7)).is_none());
+        assert!(matches!(controller.view.phase, Phase::Expanded));
+        controller.declining = false;
+        controller.view.phase = Phase::Hidden;
+        controller.generation += 1;
+        assert!(controller.begin_decline(None).is_none());
+        controller.view.phase = Phase::Expanded;
+        assert!(controller.begin_decline(Some(7)).is_none());
+        assert!(controller.begin_decline(Some(8)).is_some());
+    }
+
+    #[test]
+    fn autopilot_shortcut_callback_returns_before_unregister_waits_for_its_event_thread() {
+        let (request, requests) = std::sync::mpsc::channel();
+        let (reply, replies) = std::sync::mpsc::channel();
+        let (done, completion) = std::sync::mpsc::channel();
+        let event_thread = std::thread::spawn(move || {
+            dispatch_shortcut(move || {
+                request.send(()).unwrap();
+                replies.recv_timeout(Duration::from_secs(2)).unwrap();
+                done.send(()).unwrap();
+            });
+            requests.recv_timeout(Duration::from_secs(2)).unwrap();
+            reply.send(()).unwrap();
+        });
+        completion.recv_timeout(Duration::from_secs(3)).unwrap();
+        event_thread.join().unwrap();
+    }
 
     #[test]
     fn autopilot_surface_leaves_transparent_margins_and_corners_click_through() {

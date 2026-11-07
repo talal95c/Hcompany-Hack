@@ -712,11 +712,13 @@ pub fn run() {
                 .expect("valid shortcut")
                 .with_handler(|app, shortcut, event| {
                     if event.state == tauri_plugin_global_shortcut::ShortcutState::Pressed {
-                        if shortcut.matches(tauri_plugin_global_shortcut::Modifiers::empty(), tauri_plugin_global_shortcut::Code::Escape) {
-                            autopilot::escape(app);
-                        } else {
-                            tray::toggle_bar(app);
-                        }
+                        let escape = shortcut.matches(tauri_plugin_global_shortcut::Modifiers::empty(), tauri_plugin_global_shortcut::Code::Escape);
+                        if escape { autopilot::request_stop(); }
+                        let app = app.clone();
+                        autopilot::dispatch_shortcut(move || {
+                            if escape { autopilot::escape(&app); }
+                            else { tray::toggle_bar(&app); }
+                        });
                     }
                 })
                 .build(),

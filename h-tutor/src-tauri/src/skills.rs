@@ -268,9 +268,8 @@ pub fn skill_propose_now(app: AppHandle, skill_id: String) -> Result<(), String>
     if !skill.runs.iter().any(|r| r.outcome == "completed") {
         return Err("Ce skill n'a pas encore réussi".into());
     }
-    let mut guard = PROPOSALS.lock().unwrap();
     emit(&app, &skill)?;
-    guard
+    PROPOSALS.lock().unwrap()
         .get_or_insert_with(HashMap::new)
         .insert(app_key(&skill.app), now());
     Ok(())
@@ -305,16 +304,20 @@ pub fn spawn(app: AppHandle) {
                     continue;
                 };
                 let Ok(skills) = list() else { continue };
-                let mut guard = PROPOSALS.lock().unwrap();
-                let last = guard.get_or_insert_with(HashMap::new);
                 let time = now();
-                if let Some(skill) = skills.iter().find(|s| {
-                    !s.app.name.trim().is_empty()
-                        && s.app.name.eq_ignore_ascii_case(&name)
-                        && ready(s, last, time, cooldown)
-                }) && emit(&app, skill).is_ok()
+                let candidate = {
+                    let mut guard = PROPOSALS.lock().unwrap();
+                    let last = guard.get_or_insert_with(HashMap::new);
+                    skills.iter().find(|s| {
+                        !s.app.name.trim().is_empty()
+                            && s.app.name.eq_ignore_ascii_case(&name)
+                            && ready(s, last, time, cooldown)
+                    })
+                };
+                if let Some(skill) = candidate && emit(&app, skill).is_ok()
                 {
-                    last.insert(app_key(&skill.app), time);
+                    PROPOSALS.lock().unwrap().get_or_insert_with(HashMap::new)
+                        .insert(app_key(&skill.app), time);
                 }
             }
         })

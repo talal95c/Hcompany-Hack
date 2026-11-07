@@ -63,15 +63,15 @@ async fn drive<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failu
         }
         let step = match result {
             Ok(step) => step,
-            Err(_) => {
+            Err(error) => {
                 failures += 1;
                 journal::event(
                     "rio_holo_failure",
-                    serde_json::json!({ "consecutive": failures }),
+                    serde_json::json!({ "consecutive": failures, "error": error }),
                 );
                 if failures >= limits.failures {
                     return Err(Failure::Failed(
-                        "Holo ne répond pas correctement après plusieurs essais".into(),
+                        format!("Impossible de vérifier la réussite après plusieurs essais : {error}"),
                     ));
                 }
                 driver.pause().await;
@@ -402,6 +402,23 @@ mod tests {
             kind: "done".into(),
             ..Default::default()
         })
+    }
+
+    #[tokio::test]
+    async fn autopilot_negative_acceptance_checks_fail_instead_of_completing() {
+        let mut fake = Fake {
+            steps: [
+                action(148.0, "create"),
+                action(148.0, "create"),
+                Err("Le texte exact attendu n'est pas visible ; création impossible".into()),
+                Err("Le texte exact attendu n'est pas visible ; création impossible".into()),
+                Err("Le texte exact attendu n'est pas visible ; création impossible".into()),
+            ].into(),
+            ..Default::default()
+        };
+        assert!(matches!(drive(&mut fake, Limits::default()).await,
+            Err(Failure::Failed(message)) if message.contains("impossible")));
+        assert_eq!(fake.executed, 2);
     }
 
     #[tokio::test]

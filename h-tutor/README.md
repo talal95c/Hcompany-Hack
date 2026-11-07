@@ -28,7 +28,7 @@ On first use, macOS asks for **Screen Recording** permission (System Settings �
 A tutorial is a **graph of milestones** (`tutorials/*.json`), not a click script: each milestone has an imperative `goal`, a screen-checkable `done_when`, optional `hints` (known path, may be outdated), `teach`, and graph edges (`next`, `requires`, `optional`). Holo finds the clicks live.
 
 - **Two entries, one harness**: pick a tutorial from the library, or type a goal and Holo plans the milestones from your screen first.
-- **Harness**: each milestone runs as its own Holo task (fresh conversation, `Task:` + success criterion + hints). A `<progress>` block with the overall goal and milestone states is re-injected before every screenshot. Holo calls `answer` when the success criterion is visible; the harness moves to the next milestone on the same screenshot.
+- **Harness**: each milestone runs as its own Holo task (fresh conversation, `Task:` + success criterion + hints). A `<progress>` block with the overall goal and milestone states is re-injected before every screenshot. `answer` reports an explicit `success`, `blocked` or `unknown` outcome. Success alone is insufficient: a separate Holo acceptance check on a freshly captured screenshot must explicitly confirm the full `done_when` before the milestone is closed, in both tutor and Rio modes. Missing, negative, ambiguous or malformed checks fail closed. Quoted exact-text criteria are also compared verbatim against the check's visual transcription; the existing AX helper only exposes interactive elements on macOS, not a complete OCR/text tree on Linux. Checks and their fresh screenshots are journaled as `milestone_check` / `milestone_check_failed`.
 - **Sessions** are journaled in `sessions/<timestamp>-<slug>/`: `session.json` (outcome), `tutorial.json`, `events.jsonl` (milestones, steps with reasoning and latency, learner events, questions) and `shots/` (with `-marked` copies showing where Holo pointed).
 - **Save as tutorial** at the end of a run writes it back to the library with the path actually taken as each milestone's hints.
 
@@ -64,6 +64,11 @@ La fenêtre native `notch` affiche les propositions en haut-centre, sans prendre
 le focus. Le contrôleur Rust décide des états `hidden`, `expanded`, `compact`.
 Après 15 s sans réponse, « Pas maintenant » ou Échap, il enregistre un refus.
 Échap est enregistré globalement uniquement pendant l'affichage de la notch.
+Les callbacks de raccourcis retournent avant toute opération native : le traitement
+est déporté hors du thread d'événements pour éviter l'attente circulaire X11 lors
+du désenregistrement d'Échap. Un refus concurrent avec le timer n'est enregistré
+qu'une fois ; aucun verrou de contrôleur/proposition n'entoure les appels Tauri
+ou l'écriture du refus.
 
 - `autopilot_accept({skillId})` prend le verrou exclusif et émet
   `autopilot:started {skill_id, title, total}`, puis lance un script éligible ou le pilote voie A.
