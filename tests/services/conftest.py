@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +13,11 @@ from referencing import Registry, Resource
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
-RESULTS = Path(__file__).resolve().parent / "results"
+RESULTS = (
+    Path(__file__).resolve().parent / "results"
+    if os.getenv("HCOMPANY_WRITE_RESULTS") == "1"
+    else Path(tempfile.mkdtemp(prefix="hcompany-services-"))
+)
 _SCHEMAS = {
     p.stem.removesuffix(".schema"): json.loads(p.read_text())
     for p in (ROOT / "contracts").glob("*.schema.json")
@@ -26,7 +31,18 @@ _REGISTRY = Registry().with_resources(
 # `pip install -e .`) les modules de test du dossier ne sont pas collectés.
 SERVICE_DEPS = ("httpx", "h2", "websockets", "openai")
 MISSING_DEPS = [m for m in SERVICE_DEPS if importlib.util.find_spec(m) is None]
-collect_ignore = ["test_services_unit.py", "test_services_live.py"] if MISSING_DEPS else []
+collect_ignore = (
+    ["test_services_unit.py", "test_services_live.py", "test_verify_live.py"]
+    if MISSING_DEPS
+    else []
+)
+
+
+@pytest.fixture(autouse=True)
+def pace_live_holo(request, monkeypatch):
+    if request.node.get_closest_marker("live") is None or MISSING_DEPS:
+        return
+    monkeypatch.setenv("HCOMPANY_ATTEMPT_LOG", str(RESULTS / "attempts.jsonl"))
 
 
 def pytest_report_header(config: pytest.Config) -> str | None:

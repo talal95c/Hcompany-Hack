@@ -13,6 +13,7 @@ from engine.services.holo import HoloCloudClient
 from engine.services.jev import CodivJevClient
 from engine.services.latency import LatencyRecorder
 from engine.services.linkup import LinkupSearchClient
+from engine.services.profiles import load_profile
 from engine.services.protocols import HoloAction, Intent
 
 from .conftest import FIXTURES, RESULTS, contract_example, require_env, validate_contract
@@ -108,7 +109,7 @@ async def test_holo_locates_blender_elements_and_acts() -> None:
     rec.write_bench(
         RESULTS / "holo.json",
         extra={
-            "model": "holo4-35b-a3b",
+            "model": holo.model,
             "fixture": SCREENSHOT.name,
             "locate_hit_rate": round(hits / len(results), 3),
             "locate_results": results,
@@ -210,8 +211,10 @@ async def test_gladia_file_and_live_transcription() -> None:
     with wave.open(str(AUDIO)) as w:
         sample_rate, pcm = w.getframerate(), w.readframes(w.getnframes())
     async with GladiaSttClient(recorder=rec) as stt:
-        files = [await stt.transcribe_file(audio, filename=AUDIO.name,
-                                          vocabulary=["tore", "Blender"]) for _ in range(3)]
+        files = [
+            await stt.transcribe_file(audio, filename=AUDIO.name, vocabulary=["tore", "Blender"])
+            for _ in range(3)
+        ]
         live_runs = []
         for _ in range(2):
             live_runs.append(await _stream(stt, pcm, sample_rate))
@@ -241,8 +244,9 @@ async def test_gladia_file_and_live_transcription() -> None:
 async def _stream(
     stt: GladiaSttClient, pcm: bytes, sample_rate: int
 ) -> tuple[list[str], list[str]]:
-    session = await stt.open_live(sample_rate=sample_rate, endpointing_s=0.3,
-                                  vocabulary=["tore", "Blender"])
+    session = await stt.open_live(
+        sample_rate=sample_rate, endpointing_s=0.3, vocabulary=["tore", "Blender"]
+    )
     step = sample_rate * 2 // 10
     chunks = [pcm[i : i + step] for i in range(0, len(pcm), step)] + [b"\x00\x00" * sample_rate]
 
@@ -289,7 +293,7 @@ async def test_linkup_returns_blender_docs() -> None:
         "Blender 4.5 Subdivision Surface modifier levels viewport",
     ]
     rows = []
-    async with LinkupSearchClient(recorder=rec) as lk:
+    async with LinkupSearchClient(recorder=rec, profile=load_profile("blender")) as lk:
         for q in queries:
             res = await lk.search(q)
             rows.append(
