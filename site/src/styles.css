@@ -23,6 +23,35 @@
 .usecase-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 24px; }
 .usecase-chips .tag { font-size: 9px; padding: 0 9px; height: 28px; }
 .usecases-note { margin: 28px var(--pad) 0; color: #888; font-size: 10px; }
+
+/* For teams: the console, shown as the search Rio runs in a workspace */
+.teams { padding: 120px 0 40px; scroll-margin-top: 100px; }
+.teams-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; align-items: center; margin: 38px var(--pad) 0; }
+.teams-sub { color: #666; max-width: 480px; margin-top: 24px; }
+.teams-points { list-style: none; margin: 40px 0 0; padding: 0; display: grid; gap: 22px; max-width: 520px; }
+.teams-points li { display: grid; grid-template-columns: 34px 1fr; gap: 12px; padding-top: 22px; border-top: 1px solid #1a1a1a14; }
+.teams-n { color: #999; padding-top: 4px; }
+.teams-points h3 { font-size: 20px; font-weight: 500; letter-spacing: -.5px; line-height: 1.25; }
+.teams-points .p-14l { color: #666; margin-top: 6px; }
+.teams-cta { margin-top: 36px; }
+.teams-demo { background: var(--mist); border: 1px solid #1a1a1a12; border-radius: 24px; padding: 22px; }
+.teams-demo-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 54px; padding: 0 12px 0 20px; background: var(--ink); color: #fff; border-radius: 16px; font-size: 15px; }
+.teams-demo-q { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.teams-demo-k { font-family: var(--mono); font-size: 11px; padding: 4px 8px; border-radius: 6px; background: #ffffff1f; }
+.teams-demo-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.teams-demo-list li { background: #fff; border: 1px solid #1a1a1a0f; border-radius: 14px; padding: 14px 18px; }
+.teams-demo-list li.on { box-shadow: inset 3px 0 0 #e98548; }
+.teams-demo-title { font-size: 15px; font-weight: 500; }
+.teams-demo-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin-top: 6px; font-family: var(--mono); font-size: 10px; text-transform: uppercase; color: #888; }
+.teams-demo-note { margin-top: 14px; color: #999; font-size: 10px; text-transform: uppercase; }
+@media (max-width: 900px) {
+  .teams-grid { grid-template-columns: 1fr; gap: 40px; }
+}
+@media (max-width: 700px) {
+  .teams { padding-top: 76px; }
+  .teams .h2-54 { font-size: 40px; line-height: 1.06; }
+  .teams-grid { margin-top: 28px; }
+}
 @media (max-width: 900px) {
   .usecases-grid { grid-template-columns: 1fr; }
   .usecases-head { flex-direction: column; align-items: flex-start; }
@@ -426,7 +455,7 @@ ul { list-style: none; }
 
 .footer { position: fixed; z-index: 1; left: 0; right: 0; bottom: 0; height: 100vh; overflow: hidden; color: #fff; background: #1f2a1d; }
 .footer-bg { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% + 240px); object-fit: cover; }
-.footer-inner { position: absolute; left: var(--pad); right: var(--pad); bottom: 290px; display: flex; justify-content: space-between; align-items: flex-start; }
+.footer-inner { position: absolute; left: var(--pad); right: var(--pad); bottom: 380px; display: flex; justify-content: space-between; align-items: flex-start; }
 .footer-left { width: 400px; }
 .footer-left > .pill-logo { margin-bottom: 14px; }
 .footer-logo { width: 155px; height: 42px; object-fit: contain; }
@@ -436,6 +465,7 @@ ul { list-style: none; }
 .subscribe input::placeholder { color: rgba(255, 255, 255, 0.7); }
 .subscribe .btn { gap: 20px; padding-right: 23px; }
 .footer-left > .mono-12 { margin-top: 30px; }
+.footer-ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
 .socials { display: flex; gap: 10px; margin-top: 10px; }
 .socials a { width: 34px; height: 34px; border-radius: 6px; background: rgba(255, 255, 255, 0.1); display: grid; place-items: center; transition: background-color 0.3s; }
 .socials a:hover { background: rgba(255, 255, 255, 0.25); }

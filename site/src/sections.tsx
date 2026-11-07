@@ -15,6 +15,7 @@ import {
   ScrollRevealText,
   Ticker,
 } from "./ui";
+import { APP_URL } from "./Teams";
 
 const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Finder", "Figma", "VS Code"];
 
@@ -23,8 +24,8 @@ const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Fi
 export const GET_RIO = "#/get-rio";
 
 export function Nav() {
-  const links = ["Use cases", "Pricing", "FAQ"];
-  const ids = ["use-cases", "pricing", "faq"];
+  const links = ["Use cases", "Teams", "Pricing", "FAQ"];
+  const ids = ["use-cases", "teams", "pricing", "faq"];
   return (
     <motion.header
       className="nav"
@@ -698,7 +699,7 @@ export function Process() {
 const PLANS = [
   { name: "Learner", price: 0, tagline: "One app at a time.", f: ["Tutorial library", "Typed goals", "Ghost cursor", "Community support"] },
   { name: "Pro", price: 12, tagline: "Unlimited live coaching.", f: ["Unlimited goals", "Voice questions", "Save as tutorial", "Priority support"] },
-  { name: "Team", price: 29, tagline: "Onboard a whole team.", f: ["Shared library", "Session journals", "Admin seats", "Slack support"], dark: true },
+  { name: "Team", price: 29, tagline: "Onboard a whole team.", f: ["Team library", "Internal docs search", "Invites & admin", "Usage insights"], dark: true },
   { name: "Enterprise", price: -1, tagline: "Your apps, your rules.", f: ["Custom tutorials", "SSO & admin", "Data controls", "Dedicated success"] },
 ];
 
@@ -779,6 +780,7 @@ const FAQ = [
   { q: "Can I use any YouTube tutorial?", a: "Paste a YouTube tutorial link and Rio turns it into a step-by-step lesson in your app. Blender is our starting point. A lesson needs to be checked against the app and version you use; not every video can become a verified lesson. You stay in control of the clicks." },
   { q: "Does Rio click for me?", a: "No. Rio points with a ghost cursor and you make every click. Learning sticks because you do it yourself." },
   { q: "Which apps does Rio work with?", a: "Any desktop app. Tutorials ship for Blender, LibreOffice Calc, Docker and Finder, and you can type a goal for anything else." },
+  { q: "Can Rio learn our internal tools?", a: "Yes, on a team workspace. Add the Markdown guides of your in-house apps in the console: Rio turns them into procedures and finds them when someone asks. Your notes stay in your workspace." },
   { q: "What does Rio see on my screen?", a: "A screenshot of your main display when it plans or checks a step. Rio's own windows are excluded from captures." },
   { q: "Can I ask questions out loud?", a: "Yes. Click the mic and ask “where is it?”, “I'm done” or “show me again”: Rio answers out loud, points, skips or repeats." },
   { q: "What if the menus have changed?", a: "Tutorials are graphs of milestones, not click scripts. Rio finds the current path on screen, so outdated hints don't break the lesson." },
@@ -851,15 +853,9 @@ export function FaqInsights() {
 
 export function Footer() {
   const cols = [
-    { h: "Product", l: ["Home", "How it works", "Library", "Pricing"] },
-    { h: "Company", l: ["About", "Contact", "H Company", "Careers"] },
-    { h: "Policies", l: ["Terms & Conditions", "Privacy Policy"] },
-  ];
-  const socials = [
-    { n: "xLogo" as const, href: "https://x.com" },
-    { n: "linkedin" as const, href: "https://www.linkedin.com" },
-    { n: "youtube" as const, href: "https://youtube.com" },
-    { n: "instagram" as const, href: "https://instagram.com" },
+    { h: "Product", l: [["Use cases", "#use-cases"], ["For teams", "#teams"], ["Pricing", "#pricing"], ["FAQ", "#faq"]] },
+    { h: "Get started", l: [["Get Rio", GET_RIO], ["Team console", APP_URL]] },
+    { h: "Built with", l: [["H Company", "https://www.hcompany.ai"], ["Gladia", "https://www.gladia.io"], ["Gradium", "https://gradium.ai"]] },
   ];
   return (
     <footer className="footer" id="contact">
@@ -871,40 +867,17 @@ export function Footer() {
           <p className="p-15 footer-text">
             Rio is your live software coach. Tell it what you want to learn and it shows you the way, on your own screen.
           </p>
-          <form className="subscribe" onSubmit={(e) => e.preventDefault()}>
-            <input type="email" name="Email" placeholder="you@company.com" aria-label="Email" />
-            <button type="submit" className="btn btn-light btn-sm">
-              <span className="btn-box">
-                <svg viewBox="0 0 30 15" width={30} height={15} className="px-arrow" aria-hidden>
-                  {[1, 4].map((dx) =>
-                    [[0, 0], [1, 1], [2, 2], [1, 3], [0, 4]].map(([x, y]) => (
-                      <rect key={`${dx}${x}${y}`} x={(x + dx) * 3} y={y * 3} width={3} height={3} fill="currentColor" />
-                    )),
-                  )}
-                </svg>
-              </span>
-              <span className="btn-label">
-                <span className="btn-label-inner" data-label="Subscribe">
-                  Subscribe
-                </span>
-              </span>
-            </button>
-          </form>
-          <p className="mono-12">Follow Us:</p>
-          <div className="socials">
-            {socials.map((s) => (
-              <a key={s.n} href={s.href} aria-label={s.n}>
-                <Icon name={s.n} size={20} />
-              </a>
-            ))}
+          <div className="footer-ctas">
+            <Btn label="Get Rio" variant="light" size="sm" href={GET_RIO} />
+            <Btn label="Team console" variant="ghost" size="sm" href={APP_URL} />
           </div>
         </div>
         <div className="footer-cols">
           {cols.map((c) => (
             <div key={c.h} className="footer-col">
               <p className="mono-16w">{c.h}</p>
-              {c.l.map((l) => (
-                <a key={l} href="#top" className="p-14l footer-link">
+              {c.l.map(([l, href]) => (
+                <a key={l} href={href} className="p-14l footer-link" {...(href.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})}>
                   {l}
                 </a>
               ))}
