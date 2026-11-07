@@ -10,6 +10,35 @@ pub struct Holo {
     fresh: reqwest::Client,
 }
 
+/// Why a streamed request failed: over quota (with the server's wait), or
+/// anything else.
+#[derive(Debug)]
+enum Failure {
+    RateLimited(Option<std::time::Duration>),
+    Other(String),
+}
+
+impl From<String> for Failure {
+    fn from(e: String) -> Self {
+        Failure::Other(e)
+    }
+}
+
+impl std::fmt::Display for Failure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Failure::RateLimited(_) => write!(f, "Holo 429 Too Many Requests (rate limit)"),
+            Failure::Other(e) => f.write_str(e),
+        }
+    }
+}
+
+/// Waits honored on a 429 before giving up (the account's tier allows a
+/// fixed number of requests per minute: 30 on tier 1 for holo4-27b).
+const RATE_LIMIT_RETRIES: u32 = 4;
+const RATE_LIMIT_WAIT: std::time::Duration = std::time::Duration::from_secs(5);
+const RATE_LIMIT_WAIT_MAX: std::time::Duration = std::time::Duration::from_secs(20);
+
 /// Shown in the bar while Holo is retried or hedged, so a slow answer is
 /// never silent.
 const SLOW: &str = "Holo is slow to answer, trying again…";
@@ -203,21 +232,35 @@ impl Holo {
         let base = env_or("HAI_BASE_URL", "https://api.hcompany.ai/v1");
         let url = format!("{}/chat/completions", base.trim_end_matches('/'));
         let started = std::time::Instant::now();
-        let mut last = String::new();
-        for attempt in 1..=2 {
-            if attempt > 1 {
-                crate::emit_status(SLOW);
-            }
-            match self.stream_once(&url, &key, &body, on_reasoning, attempt > 1).await {
+        let (mut failures, mut rate_limited) = (0, 0);
+        loop {
+            match self.stream_once(&url, &key, &body, on_reasoning, failures > 0).await {
                 Ok((message, usage)) => return Ok((message, started.elapsed().as_millis(), usage)),
+                // Over the account's requests-per-minute quota: wait as told
+                // and try again, instead of failing the learner's step.
+                Err(Failure::RateLimited(wait)) if rate_limited < RATE_LIMIT_RETRIES => {
+                    rate_limited += 1;
+                    let wait = wait.unwrap_or(RATE_LIMIT_WAIT).min(RATE_LIMIT_WAIT_MAX);
+                    eprintln!("[holo] rate limited, waiting {} s", wait.as_secs());
+                    crate::journal::event(
+                        "holo_rate_limited",
+                        json!({ "wait_s": wait.as_secs(), "retry": rate_limited }),
+                    );
+                    crate::emit_status("Holo is busy, waiting a few seconds…");
+                    tokio::time::sleep(wait).await;
+                }
                 Err(e) => {
-                    eprintln!("[holo] stream attempt {attempt}/2 failed: {e}");
-                    crate::journal::event("holo_retry", json!({ "attempt": attempt, "error": e, "stream": true }));
-                    last = e;
+                    failures += 1;
+                    let e = e.to_string();
+                    eprintln!("[holo] stream attempt {failures}/2 failed: {e}");
+                    crate::journal::event("holo_retry", json!({ "attempt": failures, "error": e, "stream": true }));
+                    if failures == 2 {
+                        return Err(format!("Can't reach Holo: {e}"));
+                    }
+                    crate::emit_status(SLOW);
                 }
             }
         }
-        Err(format!("Can't reach Holo: {last}"))
     }
 
     async fn stream_once(
@@ -227,14 +270,23 @@ impl Holo {
         body: &Value,
         on_reasoning: &(dyn Fn(&str) + Sync),
         fresh: bool,
-    ) -> Result<(Value, Value), String> {
+    ) -> Result<(Value, Value), Failure> {
         use futures_util::StreamExt;
         let res = self.hedged_response(url, key, body, fresh).await?;
         let status = res.status();
+        if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            let wait = res
+                .headers()
+                .get(reqwest::header::RETRY_AFTER)
+                .and_then(|v| v.to_str().ok())
+                .and_then(|v| v.trim().parse::<u64>().ok())
+                .map(std::time::Duration::from_secs);
+            return Err(Failure::RateLimited(wait));
+        }
         if !status.is_success() {
             let text = res.text().await.unwrap_or_default();
             let detail: String = text.chars().take(300).collect();
-            return Err(format!("Holo {status}: {detail}"));
+            return Err(format!("Holo {status}: {detail}").into());
         }
         let mut stream = res.bytes_stream();
         let mut sse = Sse::default();
@@ -242,9 +294,9 @@ impl Holo {
         loop {
             let limit = if flowing { STALL_GAP } else { STALL_FIRST };
             let chunk = match tokio::time::timeout(limit, stream.next()).await {
-                Err(_) => return Err(format!("stream stalled (no data for {} s)", limit.as_secs())),
+                Err(_) => return Err(format!("stream stalled (no data for {} s)", limit.as_secs()).into()),
                 Ok(None) => break,
-                Ok(Some(Err(e))) => return Err(describe(&e)),
+                Ok(Some(Err(e))) => return Err(describe(&e).into()),
                 Ok(Some(Ok(bytes))) => bytes,
             };
             flowing = true;
@@ -252,7 +304,7 @@ impl Holo {
                 break;
             }
         }
-        sse.finish()
+        Ok(sse.finish()?)
     }
 
     /// Like `hedged`, but returns the response as soon as its headers
@@ -490,6 +542,40 @@ impl Sse {
 
 #[cfg(test)]
 mod tests {
+    /// A 429 is reported as a rate limit with the server's wait, so the
+    /// caller waits instead of failing the step.
+    #[test]
+    fn rate_limit_carries_the_server_wait() {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        std::thread::spawn(move || {
+            if let Some(Ok(mut conn)) = listener.incoming().next() {
+                let mut buf = [0u8; 65536];
+                let _ = conn.read(&mut buf);
+                let body = r#"{"error":{"code":"rate_limit_exceeded"}}"#;
+                let _ = write!(
+                    conn,
+                    "HTTP/1.1 429 Too Many Requests\r\nRetry-After: 3\r\nContent-Type: application/json\r\n\
+                     Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+            }
+        });
+        let holo = super::Holo::new();
+        let r = tauri::async_runtime::block_on(holo.stream_once(
+            &format!("http://127.0.0.1:{port}/v1/chat/completions"),
+            "test",
+            &serde_json::json!({ "model": "x" }),
+            &|_| {},
+            false,
+        ));
+        match r {
+            Err(super::Failure::RateLimited(wait)) => assert_eq!(wait, Some(std::time::Duration::from_secs(3))),
+            other => panic!("{other:?}"),
+        }
+    }
+
     #[test]
     fn sse_keeps_a_character_split_across_chunks() {
         let line = "data: {\"choices\":[{\"delta\":{\"content\":\"café\"},\"finish_reason\":\"stop\"}]}\n".as_bytes();
