@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Compare, Footer, Hero, Nav, Pricing } from "./sections";
+import { Footer, Hero, Nav, Pricing } from "./sections";
 import { GhostCursor } from "./cursor";
 import { Intro } from "./Intro";
 import { Tour } from "./Tour";
@@ -16,7 +16,6 @@ export default function App() {
           <main className="page">
             <Hero />
             <Pricing />
-            <Compare />
           </main>
           <Footer />
           {phase === "done" && <Tour />}

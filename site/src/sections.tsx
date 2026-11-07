@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useScroll, useTransform } from "motion/react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { RioArrow } from "./cursor";
 import {
   asset,
   Asterisk,
@@ -53,23 +54,9 @@ export function Hero() {
     animate: { opacity: 1, y: 0, filter: "blur(0px)" },
     transition: { duration: 1, ease: EASE, delay: d },
   });
-  const wrap = useRef<HTMLElement>(null);
-  const { scrollYProgress: t } = useScroll({ target: wrap, offset: ["start start", "end end"] });
-  const scale = useTransform(t, [0, 0.82], [1, 11], { ease: (v) => v * v * v });
-  const rotateX = useTransform(t, [0, 0.35, 0.8], [0, 9, 0]);
-  const rotateY = useTransform(t, [0, 0.35, 0.8], [0, -6, 0]);
-  const radius = useTransform(t, [0, 0.3], [20, 4]);
-  const textOpacity = useTransform(t, [0, 0.2], [1, 0]);
-  const textY = useTransform(t, [0, 0.25], [0, -160]);
-  const textBlur = useTransform(t, [0, 0.22], ["blur(0px)", "blur(10px)"]);
-  const bottomOpacity = useTransform(t, [0, 0.12], [1, 0]);
-  const flash = useTransform(t, [0.55, 0.85, 1], [0, 1, 1]);
-  const white = useTransform(t, [0.82, 0.97], [0, 1]);
   return (
-    <section className="hero-scroll" ref={wrap}>
-    <div className="hero" id="top">
-      <div className="hero-stage">
-      <motion.div className="hero-card" style={{ scale, rotateX, rotateY, borderRadius: radius }}>
+    <section className="hero" id="top">
+      <div className="hero-card">
         <motion.img
           className="hero-bg"
           src={asset("PXNhr4LbXoJRWLAHfzNTYjvdR5Y.png")}
@@ -79,8 +66,10 @@ export function Hero() {
           transition={{ duration: 1.6, ease: EASE }}
         />
         <div className="hero-shade" />
-        <div className="tv-screen" aria-hidden />
-        <motion.div className="hero-content" style={{ opacity: textOpacity, y: textY, filter: textBlur }}>
+        <div className="tv-screen" aria-hidden>
+          <span className="tv-cursor"><RioArrow size={20} /></span>
+        </div>
+        <div className="hero-content">
           <h1 className="h-hero">
             <motion.span className="hero-l1" {...up(0.2)}>
               Learn any software.
@@ -93,10 +82,10 @@ export function Hero() {
             Rio watches your screen, breaks any task into steps and shows you exactly where to click. You do it, Rio checks it.
           </motion.p>
           <motion.div {...up(0.56)}>
-            <Btn label="Try Rio" href="#pricing" />
+            <Btn label="Try Rio" href="#contact" />
           </motion.div>
-        </motion.div>
-        <motion.div className="hero-bottom" style={{ opacity: bottomOpacity }}>
+        </div>
+        <motion.div className="hero-bottom" {...up(0.85)}>
           <p className="p-14 hero-trust">
             Works on top of the apps you already use, from 3D to spreadsheets.
           </p>
@@ -106,11 +95,7 @@ export function Hero() {
             ))}
           </Marquee>
         </motion.div>
-      </motion.div>
       </div>
-      <motion.div className="hero-flash" style={{ opacity: flash }} aria-hidden />
-      <motion.div className="hero-white" style={{ opacity: white }} aria-hidden />
-    </div>
     </section>
   );
 }
@@ -770,70 +755,6 @@ export function FaqInsights() {
         </div>
 
       </div>
-    </section>
-  );
-}
-
-/* ---------------- Compare ---------------- */
-
-const COMPARE_COLS = ["Rio", "Video tutorials", "Docs & forums", "A human tutor"];
-const COMPARE_ROWS: { f: string; v: (0 | 1 | 2)[] }[] = [
-  { f: "Matches your exact screen", v: [2, 0, 0, 2] },
-  { f: "Points to the next click", v: [2, 0, 0, 2] },
-  { f: "Checks each step is done", v: [2, 0, 0, 2] },
-  { f: "Answers questions out loud", v: [2, 0, 1, 2] },
-  { f: "Adapts when menus change", v: [2, 0, 1, 2] },
-  { f: "Available any time", v: [2, 2, 2, 0] },
-];
-
-function Mark({ v }: { v: 0 | 1 | 2 }) {
-  if (v === 2)
-    return (
-      <svg viewBox="0 0 20 20" width={18} height={18} className="cmp-yes" aria-label="Yes">
-        <path d="M4 10.5 L8.2 14.5 L16 6" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  if (v === 1) return <span className="cmp-part" aria-label="Partly">Partly</span>;
-  return <span className="cmp-no" aria-label="No">—</span>;
-}
-
-export function Compare() {
-  return (
-    <section className="compare" id="compare">
-      <div className="compare-head">
-        <Label text="COMPARE" />
-        <Reveal as="h2" className="h2-54 compare-title">Why learn with Rio.</Reveal>
-        <Reveal as="p" className="p-16 muted-6 compare-sub" delay={0.1}>
-          The guidance of a tutor sitting next to you, available whenever you open new software.
-        </Reveal>
-      </div>
-      <Reveal className="cmp" y={40}>
-        <div className="cmp-row cmp-top">
-          <span />
-          {COMPARE_COLS.map((c, i) => (
-            <span key={c} className={i === 0 ? "cmp-rio" : ""}>
-              {i === 0 ? <><PillLogo size="sm" light /> Rio</> : c}
-            </span>
-          ))}
-        </div>
-        {COMPARE_ROWS.map((r, ri) => (
-          <motion.div
-            key={r.f}
-            className="cmp-row"
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-10% 0px" }}
-            transition={{ duration: 0.6, ease: EASE, delay: ri * 0.07 }}
-          >
-            <span className="cmp-f">{r.f}</span>
-            {r.v.map((v, i) => (
-              <span key={i} className={i === 0 ? "cmp-rio" : ""}>
-                <Mark v={v} />
-              </span>
-            ))}
-          </motion.div>
-        ))}
-      </Reveal>
     </section>
   );
 }
