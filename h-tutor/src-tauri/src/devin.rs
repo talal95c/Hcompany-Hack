@@ -68,6 +68,8 @@ pub fn parse_output(value: Value) -> Result<Output, String> {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Compiled {
     pub graph_version: u32,
+    #[serde(default)]
+    pub graph_fingerprint: String,
     pub session_id: String,
     pub url: String,
     pub status: String,
@@ -84,9 +86,10 @@ pub fn hash(script: &str) -> String {
 }
 
 impl Compiled {
-    pub fn eligible(&self, version: u32, os: &str) -> bool {
+    pub fn eligible(&self, graph: &crate::tutorial::Tutorial, os: &str) -> bool {
         self.status == "completed"
-            && self.graph_version == version
+            && self.graph_version == graph.version
+            && self.graph_fingerprint == skills::structural_fingerprint(graph)
             && self.output.tested
             && self.target_os == os
             && self.output.test_platform == os
@@ -97,12 +100,16 @@ impl Compiled {
 }
 
 pub fn selected(skill: &Skill) -> Option<Compiled> {
+    selected_for(skill, std::env::consts::OS)
+}
+
+fn selected_for(skill: &Skill, os: &str) -> Option<Compiled> {
     skill
         .compiled
         .iter()
         .rev()
         .filter_map(|v| serde_json::from_value::<Compiled>(v.clone()).ok())
-        .find(|c| c.eligible(skill.graph.version, std::env::consts::OS))
+        .find(|c| c.eligible(&skill.graph, os))
 }
 
 pub fn mode(skill: &Skill) -> &'static str {
@@ -348,6 +355,7 @@ async fn compile_inner(skill: Skill, app: Option<&AppHandle>) -> Result<Compiled
         .inspect_err(|_| emit(app, id, "failed", None))?;
     let mut artifact = Compiled {
         graph_version: skill.graph.version,
+        graph_fingerprint: skills::structural_fingerprint(&skill.graph),
         session_id: session.session_id.clone(),
         url: session.url.clone(),
         status: "running".into(),
@@ -442,10 +450,7 @@ pub async fn skill_compile(app: AppHandle, skill_id: String) -> Result<(), Strin
 pub fn auto_compile(skill: &Skill) {
     if std::env::var("RIO_AUTO_COMPILE").is_ok_and(|v| v == "0")
         || Client::from_env().is_err()
-        || skill
-            .compiled
-            .iter()
-            .any(|v| v["graph_version"] == skill.graph.version && v["status"] == "completed")
+        || selected_for(skill, target_os(skill)).is_some()
     {
         return;
     }
@@ -503,8 +508,16 @@ mod tests {
     #[test]
     fn devin_eligibility_checks_version_platform_test_and_hash() {
         let output = output();
+        let graph: crate::tutorial::Tutorial = serde_json::from_value(json!({
+            "id":"test", "version":1, "title":"Projet", "goal":"Créer Projet",
+            "app":{"name":"Fichiers"}, "milestones":[
+                {"id":"folder", "goal":"Créer Projet", "done_when":"Projet existe"}
+            ]
+        }))
+        .unwrap();
         let c = Compiled {
             graph_version: 1,
+            graph_fingerprint: skills::structural_fingerprint(&graph),
             session_id: "test".into(),
             url: "https://app.devin.ai/sessions/test".into(),
             status: "completed".into(),
@@ -514,21 +527,41 @@ mod tests {
             acus_consumed: 0.0,
             output,
         };
-        assert!(c.eligible(1, "linux"));
-        assert!(!c.eligible(2, "linux"));
-        assert!(!c.eligible(1, "macos"));
+        assert!(c.eligible(&graph, "linux"));
+        let mut changed = graph.clone();
+        changed.version += 1;
+        assert!(!c.eligible(&changed, "linux"));
+        changed = graph.clone();
+        changed.milestones[0].done_when = "Autre preuve".into();
+        assert!(!c.eligible(&changed, "linux"));
+        assert!(!c.eligible(&graph, "macos"));
         let mut bad = c.clone();
         bad.output.tested = false;
-        assert!(!bad.eligible(1, "linux"));
+        assert!(!bad.eligible(&graph, "linux"));
         bad = c.clone();
         bad.output.script.push(' ');
-        assert!(!bad.eligible(1, "linux"));
+        assert!(!bad.eligible(&graph, "linux"));
         bad = c.clone();
         bad.output.test_platform = "macos".into();
-        assert!(!bad.eligible(1, "linux"));
+        assert!(!bad.eligible(&graph, "linux"));
         bad = c.clone();
         bad.status = "running".into();
-        assert!(!bad.eligible(1, "linux"));
+        assert!(!bad.eligible(&graph, "linux"));
+        let mut legacy = serde_json::to_value(&c).unwrap();
+        legacy.as_object_mut().unwrap().remove("graph_fingerprint");
+        let legacy: Compiled = serde_json::from_value(legacy).unwrap();
+        assert!(!legacy.eligible(&graph, "linux"));
+
+        let mut skill: Skill = serde_json::from_value(json!({
+            "tutorial_id":"test", "title":"Projet", "goal":"Créer Projet",
+            "app":{"name":"Fichiers"}, "graph":graph, "runs":[], "compiled":[c], "declines":0
+        }))
+        .unwrap();
+        assert!(selected_for(&skill, "linux").is_some());
+        skill.graph.milestones[0].done_when = "Autre preuve".into();
+        assert!(selected_for(&skill, "linux").is_none());
+        skill.compiled.clear();
+        assert!(selected_for(&skill, "linux").is_none());
     }
 
     #[test]
@@ -579,6 +612,7 @@ mod tests {
         )
         .unwrap();
         let start = std::time::Instant::now();
+        let graph = skill.graph.clone();
         let artifact = compile(skill, None).await.unwrap();
         println!(
             "LIVE url={} duration_s={:.3} acus={} language={} tested={} platform={} eligible={}",
@@ -588,7 +622,7 @@ mod tests {
             artifact.output.language,
             artifact.output.tested,
             artifact.output.test_platform,
-            artifact.eligible(1, std::env::consts::OS)
+            artifact.eligible(&graph, std::env::consts::OS)
         );
     }
 }

@@ -150,10 +150,14 @@ et l'exécution de chaque test `done_when` sur la plateforme cible.
 - `RIO_COMPILE_TIMEOUT_SECONDS` : délai maximal, 1800 par défaut ; polling toutes les 30 s.
 - `autopilot:compile {skill_id, status, url?}` : création, suivi et issue.
 - `compiled[]` conserve la session, les paramètres, les preuves, l'ACU retourné,
-  le SHA-256 et la version du graph, avec écritures atomiques.
+  le SHA-256, la version et l'empreinte structurelle du graphe, avec écritures atomiques.
 
 Seuls les artefacts terminés, `tested: true`, sur l'OS courant et la version
-courante, dont le hash recalculé correspond, sont proposés en mode `script`.
+courante, dont le hash recalculé et l'empreinte structurelle correspondent, sont
+proposés en mode `script`. Une copie modifiée sans incrément manuel de version
+invalide aussi le script. Les anciens artefacts sans empreinte restent lisibles
+mais doivent être recompilés ; un artefact terminé mais inéligible ne bloque pas
+la compilation automatique après une réussite.
 Une session Devin `waiting_for_user` n'est acceptée que si elle a fourni sa sortie
 structurée ; une attente sans sortie, une approbation ou une erreur ne suffit pas.
 La notch affiche « Script testé par Devin » ; le front ne sélectionne pas le mode.

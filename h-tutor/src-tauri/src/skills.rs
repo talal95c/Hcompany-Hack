@@ -101,7 +101,7 @@ fn write(root: &Path, skill: &Skill) -> Result<(), String> {
     result.map_err(|e: std::io::Error| e.to_string())
 }
 
-fn structural_fingerprint(graph: &Tutorial) -> String {
+pub(crate) fn structural_fingerprint(graph: &Tutorial) -> String {
     let milestones: Vec<_> = graph
         .milestones
         .iter()
@@ -417,7 +417,9 @@ mod tests {
         let mut first = record_at(&root, graph(), run("completed")).unwrap();
         let script = "echo exemple";
         first.compiled.push(serde_json::json!({
-            "graph_version": first.graph.version, "session_id": "test", "url": "",
+            "graph_version": first.graph.version,
+            "graph_fingerprint": structural_fingerprint(&first.graph),
+            "session_id": "test", "url": "",
             "status": "completed", "date": 100, "sha256": crate::devin::hash(script),
             "target_os": std::env::consts::OS, "acus_consumed": 0,
             "language": "bash", "script": script, "params": [],
@@ -444,6 +446,10 @@ mod tests {
         }
         let mut changed = first.graph.clone();
         changed.milestones[0].done_when = "Nouvelle preuve obligatoire".into();
+        let mut edited = first.clone();
+        edited.graph = changed.clone();
+        assert_eq!(edited.graph.version, first.graph.version);
+        assert!(crate::devin::selected(&edited).is_none());
         let saved = record_at(&root, changed, run("completed")).unwrap();
         assert_eq!(saved.graph.version, first.graph.version + 1);
         assert!(crate::devin::selected(&saved).is_none());

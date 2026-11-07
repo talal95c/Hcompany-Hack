@@ -82,14 +82,15 @@ pub async fn run(artifact: &devin::Compiled) -> Result<(), Failure> {
         .kill_on_drop(true);
     #[cfg(unix)]
     command.process_group(0);
-    journal::event(
-        "script_start",
-        serde_json::json!({ "sha256": artifact.sha256, "language": artifact.output.language }),
-    );
+    let started = std::time::Instant::now();
     let mut child = command
         .spawn()
         .map_err(|e| Failure::Failed(format!("Script impossible à démarrer : {e}")))?;
     let pid = child.id();
+    journal::event(
+        "script_start",
+        serde_json::json!({ "sha256": artifact.sha256, "language": artifact.output.language, "pid": pid }),
+    );
     let result = tokio::select! {
         _ = wait_stop() => { kill_process(&mut child, pid).await; Err(Failure::Stopped) },
         result = tokio::time::timeout(Duration::from_secs(std::env::var("RIO_SCRIPT_TIMEOUT_SECONDS").ok().and_then(|v| v.parse().ok()).unwrap_or(300)), child.wait()) => match result {
@@ -99,6 +100,13 @@ pub async fn run(artifact: &devin::Compiled) -> Result<(), Failure> {
             Err(_) => { kill_process(&mut child, pid).await; Err(Failure::TimedOut) },
         }
     };
+    journal::event(
+        "script_end",
+        serde_json::json!({
+            "pid": pid, "duration_ms": started.elapsed().as_millis(),
+            "outcome": match &result { Ok(()) => "completed", Err(Failure::Stopped) => "stopped", Err(_) => "failed" },
+        }),
+    );
     if let Err(error) = &result {
         journal::event(
             "script_failure",
@@ -136,6 +144,8 @@ pub fn default_params(artifact: &devin::Compiled) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(target_os = "linux")]
+    use tokio::io::{AsyncBufReadExt, BufReader};
     #[test]
     fn script_default_params_are_not_shell_expanded_here() {
         let mut o = devin::Output {
@@ -155,6 +165,7 @@ mod tests {
         });
         let c = devin::Compiled {
             graph_version: 1,
+            graph_fingerprint: String::new(),
             session_id: "s".into(),
             url: "u".into(),
             status: "completed".into(),
@@ -165,5 +176,40 @@ mod tests {
             output: o,
         };
         assert_eq!(default_params(&c), ["--path", "$HOME/Projet"]);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[tokio::test]
+    async fn script_stop_kills_the_process_group() {
+        let mut child = Command::new("bash")
+            .args(["-c", "sleep 60 & printf '%s\\n' \"$!\"; wait"])
+            .stdout(std::process::Stdio::piped())
+            .process_group(0)
+            .kill_on_drop(true)
+            .spawn()
+            .unwrap();
+        let pid = child.id().unwrap();
+        let mut lines = BufReader::new(child.stdout.take().unwrap()).lines();
+        let descendant: i32 = tokio::time::timeout(Duration::from_secs(2), lines.next_line())
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap()
+            .parse()
+            .unwrap();
+        assert_eq!(unsafe { libc::getpgid(descendant) }, pid as i32);
+        kill_process(&mut child, Some(pid)).await;
+        assert!(child.try_wait().unwrap().is_some());
+        tokio::time::timeout(Duration::from_secs(2), async {
+            loop {
+                let state = std::fs::read_to_string(format!("/proc/{descendant}/stat"));
+                if state.is_err() || state.unwrap().split_whitespace().nth(2) == Some("Z") {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("Le descendant du script doit être terminé");
     }
 }
