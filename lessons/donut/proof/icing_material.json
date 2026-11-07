@@ -1,0 +1,435 @@
+{
+  "step_id": "icing_material",
+  "blender_version": "4.5.9 LTS",
+  "ui_path_verified": false,
+  "before": {
+    "mode": "OBJECT",
+    "objects": [
+      {
+        "type": "MESH",
+        "vertices": 576,
+        "edges": 1152,
+        "faces": 576,
+        "smooth_faces": 576,
+        "bounds": [
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            -0.44999998807907104,
+            0.44999998807907104
+          ]
+        ],
+        "materials": [
+          [
+            [
+              0.6499999761581421,
+              0.36000001430511475,
+              0.15000000596046448,
+              1.0
+            ]
+          ]
+        ],
+        "provenance": {
+          "primitive": "torus",
+          "major_segments": 48,
+          "minor_segments": 12,
+          "major_radius": 1.0,
+          "minor_radius": 0.45
+        },
+        "modifiers": [
+          {
+            "type": "SUBSURF",
+            "levels": 2
+          }
+        ]
+      },
+      {
+        "type": "MESH",
+        "vertices": 336,
+        "edges": 624,
+        "faces": 288,
+        "smooth_faces": 288,
+        "bounds": [
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            0.0,
+            0.44999998807907104
+          ]
+        ],
+        "materials": [],
+        "provenance": null,
+        "modifiers": [
+          {
+            "type": "SUBSURF",
+            "levels": 2
+          },
+          {
+            "type": "SOLIDIFY",
+            "thickness": 0.03500000014901161
+          }
+        ]
+      }
+    ]
+  },
+  "after": {
+    "mode": "OBJECT",
+    "objects": [
+      {
+        "type": "MESH",
+        "vertices": 576,
+        "edges": 1152,
+        "faces": 576,
+        "smooth_faces": 576,
+        "bounds": [
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            -0.44999998807907104,
+            0.44999998807907104
+          ]
+        ],
+        "materials": [
+          [
+            [
+              0.6499999761581421,
+              0.36000001430511475,
+              0.15000000596046448,
+              1.0
+            ]
+          ]
+        ],
+        "provenance": {
+          "primitive": "torus",
+          "major_segments": 48,
+          "minor_segments": 12,
+          "major_radius": 1.0,
+          "minor_radius": 0.45
+        },
+        "modifiers": [
+          {
+            "type": "SUBSURF",
+            "levels": 2
+          }
+        ]
+      },
+      {
+        "type": "MESH",
+        "vertices": 336,
+        "edges": 624,
+        "faces": 288,
+        "smooth_faces": 288,
+        "bounds": [
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            0.0,
+            0.44999998807907104
+          ]
+        ],
+        "materials": [
+          [
+            [
+              0.800000011920929,
+              0.1599999964237213,
+              0.36000001430511475,
+              1.0
+            ]
+          ]
+        ],
+        "provenance": null,
+        "modifiers": [
+          {
+            "type": "SUBSURF",
+            "levels": 2
+          },
+          {
+            "type": "SOLIDIFY",
+            "thickness": 0.03500000014901161
+          }
+        ]
+      }
+    ]
+  },
+  "actions": [
+    {
+      "kind": "property",
+      "target": "icing",
+      "path": "material.base_color",
+      "value": [
+        0.8,
+        0.16,
+        0.36,
+        1.0
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "name": "object_exists",
+      "params": {
+        "type": "MESH",
+        "primitive": "torus"
+      }
+    },
+    {
+      "name": "material_color",
+      "params": {
+        "target": "icing",
+        "rgba": [
+          0.8,
+          0.16,
+          0.36,
+          1.0
+        ],
+        "tolerance": 0.01
+      }
+    }
+  ],
+  "before_checks": [
+    "pass",
+    "fail"
+  ],
+  "after_checks": [
+    "pass",
+    "pass"
+  ],
+  "known_errors": [
+    "fail"
+  ],
+  "error_proofs": [
+    {
+      "code": "beige_icing",
+      "check": {
+        "name": "material_color",
+        "params": {
+          "target": "icing",
+          "rgba": [
+            0.65,
+            0.36,
+            0.15,
+            1
+          ],
+          "tolerance": 0.01
+        }
+      },
+      "actions": [
+        {
+          "kind": "property",
+          "target": "icing",
+          "path": "material.base_color",
+          "value": [
+            0.65,
+            0.36,
+            0.15,
+            1
+          ]
+        }
+      ],
+      "before": {
+        "mode": "OBJECT",
+        "objects": [
+          {
+            "type": "MESH",
+            "vertices": 576,
+            "edges": 1152,
+            "faces": 576,
+            "smooth_faces": 576,
+            "bounds": [
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                -0.44999998807907104,
+                0.44999998807907104
+              ]
+            ],
+            "materials": [
+              [
+                [
+                  0.6499999761581421,
+                  0.36000001430511475,
+                  0.15000000596046448,
+                  1.0
+                ]
+              ]
+            ],
+            "provenance": {
+              "primitive": "torus",
+              "major_segments": 48,
+              "minor_segments": 12,
+              "major_radius": 1.0,
+              "minor_radius": 0.45
+            },
+            "modifiers": [
+              {
+                "type": "SUBSURF",
+                "levels": 2
+              }
+            ]
+          },
+          {
+            "type": "MESH",
+            "vertices": 336,
+            "edges": 624,
+            "faces": 288,
+            "smooth_faces": 288,
+            "bounds": [
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                0.0,
+                0.44999998807907104
+              ]
+            ],
+            "materials": [],
+            "provenance": null,
+            "modifiers": [
+              {
+                "type": "SUBSURF",
+                "levels": 2
+              },
+              {
+                "type": "SOLIDIFY",
+                "thickness": 0.03500000014901161
+              }
+            ]
+          }
+        ]
+      },
+      "after": {
+        "mode": "OBJECT",
+        "objects": [
+          {
+            "type": "MESH",
+            "vertices": 576,
+            "edges": 1152,
+            "faces": 576,
+            "smooth_faces": 576,
+            "bounds": [
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                -0.44999998807907104,
+                0.44999998807907104
+              ]
+            ],
+            "materials": [
+              [
+                [
+                  0.6499999761581421,
+                  0.36000001430511475,
+                  0.15000000596046448,
+                  1.0
+                ]
+              ]
+            ],
+            "provenance": {
+              "primitive": "torus",
+              "major_segments": 48,
+              "minor_segments": 12,
+              "major_radius": 1.0,
+              "minor_radius": 0.45
+            },
+            "modifiers": [
+              {
+                "type": "SUBSURF",
+                "levels": 2
+              }
+            ]
+          },
+          {
+            "type": "MESH",
+            "vertices": 336,
+            "edges": 624,
+            "faces": 288,
+            "smooth_faces": 288,
+            "bounds": [
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                0.0,
+                0.44999998807907104
+              ]
+            ],
+            "materials": [
+              [
+                [
+                  0.6499999761581421,
+                  0.36000001430511475,
+                  0.15000000596046448,
+                  1.0
+                ]
+              ]
+            ],
+            "provenance": null,
+            "modifiers": [
+              {
+                "type": "SUBSURF",
+                "levels": 2
+              },
+              {
+                "type": "SOLIDIFY",
+                "thickness": 0.03500000014901161
+              }
+            ]
+          }
+        ]
+      },
+      "on_mistake": "pass",
+      "step_checks_on_mistake": [
+        "pass",
+        "fail"
+      ],
+      "on_correct_path": "fail"
+    }
+  ],
+  "seconds": 1.1624802169999953
+}

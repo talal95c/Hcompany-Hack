@@ -1,0 +1,221 @@
+{
+  "step_id": "add_subdivision",
+  "blender_version": "4.5.9 LTS",
+  "ui_path_verified": false,
+  "before": {
+    "mode": "OBJECT",
+    "objects": [
+      {
+        "type": "MESH",
+        "vertices": 576,
+        "edges": 1152,
+        "faces": 576,
+        "smooth_faces": 0,
+        "bounds": [
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            -0.44999998807907104,
+            0.44999998807907104
+          ]
+        ],
+        "materials": [],
+        "provenance": {
+          "primitive": "torus",
+          "major_segments": 48,
+          "minor_segments": 12,
+          "major_radius": 1.0,
+          "minor_radius": 0.45
+        },
+        "modifiers": []
+      }
+    ]
+  },
+  "after": {
+    "mode": "OBJECT",
+    "objects": [
+      {
+        "type": "MESH",
+        "vertices": 576,
+        "edges": 1152,
+        "faces": 576,
+        "smooth_faces": 0,
+        "bounds": [
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            -1.4500000476837158,
+            1.4500000476837158
+          ],
+          [
+            -0.44999998807907104,
+            0.44999998807907104
+          ]
+        ],
+        "materials": [],
+        "provenance": {
+          "primitive": "torus",
+          "major_segments": 48,
+          "minor_segments": 12,
+          "major_radius": 1.0,
+          "minor_radius": 0.45
+        },
+        "modifiers": [
+          {
+            "type": "SUBSURF",
+            "levels": 2
+          }
+        ]
+      }
+    ]
+  },
+  "actions": [
+    {
+      "kind": "operator",
+      "idname": "OBJECT_OT_subdivision_set",
+      "properties": {
+        "level": 2
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "object_exists",
+      "params": {
+        "type": "MESH",
+        "primitive": "torus"
+      }
+    },
+    {
+      "name": "modifier",
+      "params": {
+        "target": "torus",
+        "type": "SUBSURF",
+        "levels": 2
+      }
+    }
+  ],
+  "before_checks": [
+    "pass",
+    "fail"
+  ],
+  "after_checks": [
+    "pass",
+    "pass"
+  ],
+  "known_errors": [
+    "fail"
+  ],
+  "error_proofs": [
+    {
+      "code": "subdivision_level_one",
+      "check": {
+        "name": "modifier",
+        "params": {
+          "target": "torus",
+          "type": "SUBSURF",
+          "levels": 1
+        }
+      },
+      "actions": [
+        {
+          "kind": "operator",
+          "idname": "OBJECT_OT_subdivision_set",
+          "properties": {
+            "level": 1
+          }
+        }
+      ],
+      "before": {
+        "mode": "OBJECT",
+        "objects": [
+          {
+            "type": "MESH",
+            "vertices": 576,
+            "edges": 1152,
+            "faces": 576,
+            "smooth_faces": 0,
+            "bounds": [
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                -0.44999998807907104,
+                0.44999998807907104
+              ]
+            ],
+            "materials": [],
+            "provenance": {
+              "primitive": "torus",
+              "major_segments": 48,
+              "minor_segments": 12,
+              "major_radius": 1.0,
+              "minor_radius": 0.45
+            },
+            "modifiers": []
+          }
+        ]
+      },
+      "after": {
+        "mode": "OBJECT",
+        "objects": [
+          {
+            "type": "MESH",
+            "vertices": 576,
+            "edges": 1152,
+            "faces": 576,
+            "smooth_faces": 0,
+            "bounds": [
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                -1.4500000476837158,
+                1.4500000476837158
+              ],
+              [
+                -0.44999998807907104,
+                0.44999998807907104
+              ]
+            ],
+            "materials": [],
+            "provenance": {
+              "primitive": "torus",
+              "major_segments": 48,
+              "minor_segments": 12,
+              "major_radius": 1.0,
+              "minor_radius": 0.45
+            },
+            "modifiers": [
+              {
+                "type": "SUBSURF",
+                "levels": 1
+              }
+            ]
+          }
+        ]
+      },
+      "on_mistake": "pass",
+      "step_checks_on_mistake": [
+        "pass",
+        "fail"
+      ],
+      "on_correct_path": "fail"
+    }
+  ],
+  "seconds": 0.027243686000019807
+}

@@ -1,0 +1,24 @@
+{
+  "lesson_id": "mini-cube",
+  "blender_version": "4.5.9 LTS",
+  "ui_path_verified": false,
+  "seconds": 0.02482089300002599,
+  "negative_cases": {
+    "empty_scene": "fail",
+    "cube_instead_of_torus": "unknown",
+    "known_error_cube": "pass",
+    "renamed_cube": "unknown",
+    "untracked_mesh": "unknown",
+    "wrong_subdivision": "fail",
+    "broken_topology": "unknown"
+  },
+  "sha256": {
+    "lesson.json": "1119ffde122522e66f67b24ffae2c56c933523a330716b75b2587d832f330cb7",
+    "steps.json": "7c82254cf57591cc6b6c0afc0caff9425507c84396ef57b80b38dac0201818b6",
+    "SOURCE.md": "1c0dff77ab9bd0efe5bc1d9439c55aace4691a3b5ed98ee8bacdefaed808a1eb",
+    "proof/add_cube.json": "038e32e7e4faf936785622f2e8488ff4ee2787aabe9e07232849c64f75eaf3e6",
+    "proof/add_bevel.json": "36e70a1c033bdea107d1207e95e55c2ecb8cb41c0eb99005855c08cce4a9e90f",
+    "proof/shade_smooth.json": "93935a3da5aa41db2b162233eb0939e9e84a89da0686aad80505ae69d5fa3b4e"
+  },
+  "blender_wall_seconds": 0.35914185799998677
+}
