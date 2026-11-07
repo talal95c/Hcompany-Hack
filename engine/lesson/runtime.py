@@ -9,20 +9,38 @@ import time
 from dataclasses import asdict, replace
 from uuid import UUID, uuid4
 
+from engine.adapters import (
+    DEFAULT_PLUGIN_APP,
+    PLUGINS,
+    AccessibilityAdapter,
+    HoloAssertVerifier,
+    Rect,
+    SensorRouter,
+    VisionAdapter,
+    load_profile,
+)
 from engine.bus import EventBus, Topic
 from engine.bus.servers import AddonServer, DesktopServer, EventBuffer, Seen
 from engine.bus.validation import validate
 from engine.cache import AudioCache, Preloader, TargetCache, TargetContext
-from engine.checks import SceneState, evaluate, require_check
+from engine.checks import evaluate, namespace, require_check
 from engine.checks.lesson_steps import evaluate_verification
 from engine.config import EngineConfig
 from engine.debug.server import DebugServer
 from engine.fallback import Fallback
-from engine.interfaces import Clock, HoloClient, JevClient, SearchClient, SttClient, SystemClock
+from engine.interfaces import (
+    Clock,
+    HoloClient,
+    HoloVerifier,
+    JevClient,
+    SearchClient,
+    SearchHit,
+    SttClient,
+    SystemClock,
+)
 from engine.learner import LearnerMemory
-from engine.lesson import Session, load_lesson, load_verification
+from engine.lesson import Session, lesson_app, load_lesson, load_verification
 from engine.lesson.live_audio import LiveUtterance
-from engine.platform.targets import AddonTargetAdapter
 from engine.policy import HelpContext, HelpPolicy
 
 
@@ -66,7 +84,7 @@ class EngineRuntime:
         self, config: EngineConfig, *, lesson: dict | None = None,
         clock: Clock | None = None, holo: HoloClient | None = None,
         jev: JevClient | None = None, stt: SttClient | None = None,
-        search: SearchClient | None = None,
+        search: SearchClient | None = None, verifier: HoloVerifier | None = None,
     ):
         self.search = search
         self.config, self.clock, self.stt = config, clock or SystemClock(), stt
@@ -79,18 +97,21 @@ class EngineRuntime:
             lesson = load_lesson(config.lesson)
         self.verification = load_verification(config.lesson, lesson) if config.lesson else {}
         self.session = Session(config.session_id, lesson) if lesson else None
+        self.app = lesson_app(lesson) if lesson else dict(DEFAULT_PLUGIN_APP)
+        self.profile = load_profile(self.app)
         if lesson:
             validate("lesson", lesson)
             for step in lesson["steps"]:
-                require_check(step["check"]["name"])
-                for error in step.get("known_errors", []):
-                    require_check(error["check"]["name"])
+                for check in [step["check"]] + [e["check"] for e in step.get("known_errors", [])]:
+                    require_check(check["name"])
+                    if namespace(check["name"]) not in {None, self.app["id"]}:
+                        raise ValueError(f"Check {check['name']} hors de l'application "
+                                         + self.app["id"])
         self.policy = HelpPolicy(config, self.bus, clock=self.clock, holo=holo, jev=jev,
                                  fallback=self.fallback, targets=self.targets, audio=self.audio,
-                                 debug=self.record)
+                                 debug=self.record, app_context=self.profile.service_context())
         if self.session:
             self.policy.set_step(self.session.step, self.session.generation)
-        self.state = SceneState()
         self.buffer = EventBuffer()
         self.addon = AddonServer(config, self.receive, self.resync, self.addon_disconnected,
                                  self.debug.record)
@@ -98,9 +119,7 @@ class EngineRuntime:
                                      self.debug.record)
         self.tasks: set[asyncio.Task] = set()
         self.lock = asyncio.Lock()
-        self.regions: list[dict] = []
         self.ui_revision = 0
-        self.blender_version = ""
         self.permissions = {"screen": False, "accessibility": False, "microphone": False}
         self.capture: dict | None = None
         self.capture_ids = Seen()
@@ -114,10 +133,88 @@ class EngineRuntime:
         self.last_desktop_state = None
         self.render_pending = {}
         self.pointer_request = None
-        self.app_adapter = AddonTargetAdapter(self)
+        self.router = SensorRouter(self.app["sensor"])
+        plugin = PLUGINS.get(self.app["id"])
+        self.plugin = plugin(self, self.profile) if plugin else None
+        if verifier is None and callable(getattr(getattr(holo, "client", None), "_complete", None)):
+            verifier = HoloAssertVerifier(holo.client, app_context=self.profile.jev_context)
+        self.a11y = AccessibilityAdapter(self.app, self.profile, self.desktop_send,
+                                         timeout_s=config.a11y_timeout_s, metric=self.metric)
+        self.vision = VisionAdapter(self.app, self.profile, self.capture_window, verifier,
+                                    timeout_s=config.holo_timeout_s, metric=self.metric)
+        self.adapter = None
+        self.window_requests: dict[str, asyncio.Future] = {}
+        self.select_adapter()
         self.connection_epoch = 0
         self.commands = self.bus.subscribe(Topic.COMMAND)
         self.diagnostics = self.bus.subscribe(Topic.DEBUG)
+
+    @property
+    def state(self):
+        adapter = self.adapter or self.primary
+        return adapter.snapshot() if adapter else self.a11y.snapshot()
+
+    @property
+    def primary(self):
+        """Capteur nominal de la leçon, même indisponible (pour l'état et l'aide)."""
+        if self.app["sensor"] in {"addon", "auto"} and self.plugin:
+            return self.plugin
+        return self.vision if self.app["sensor"] == "vision" else self.a11y
+
+    @property
+    def regions(self) -> list[dict]:
+        return self.plugin.regions if self.plugin else []
+
+    @regions.setter
+    def regions(self, value: list[dict]) -> None:
+        if self.plugin:
+            self.plugin.regions = value
+
+    def available_sensors(self) -> dict[str, bool]:
+        return {"addon": bool(self.plugin and self.plugin.available()),
+                "accessibility": self.a11y.available(), "vision": self.vision.available()}
+
+    def select_adapter(self) -> None:
+        route = self.router.choose(self.available_sensors())
+        adapter = {"addon": self.plugin, "accessibility": self.a11y,
+                   "vision": self.vision}.get(route.sensor)
+        if adapter is not self.adapter:
+            self.adapter = adapter
+            self.debug.record({"kind": "sensor", "sensor": route.sensor, "reason": route.reason})
+            if hasattr(self, "help_context"):
+                self.invalidate_capture()
+
+    def app_version(self) -> str:
+        if self.plugin and self.adapter is self.plugin:
+            return self.plugin.version
+        return self.app["version"]
+
+    def app_ready(self) -> bool:
+        adapter = self.adapter
+        if adapter is None:
+            return False
+        if adapter is self.plugin:
+            return self.plugin.version == self.app["version"]
+        return adapter.available()
+
+    async def desktop_send(self, kind: str, payload: dict) -> None:
+        if not self.desktop.clients:
+            raise ConnectionError("Desktop absent")
+        await self.desktop.send(kind, payload)
+
+    def vocabulary(self) -> tuple[str, ...]:
+        return tuple(dict.fromkeys(self.config.stt_vocabulary + self.profile.vocabulary))
+
+    async def docs_search(self, query: str, *, depth: str = "standard") -> list[SearchHit]:
+        """Recherche documentaire restreinte aux domaines du profil d'application."""
+        if not self.search:
+            return []
+        domains = self.profile.docs_domains
+        try:
+            return await self.search.search(query, depth=depth, domains=domains)
+        except TypeError:
+            scoped = " ".join(f"site:{d}" for d in domains)
+            return await self.search.search(f"{query} {scoped}".strip(), depth=depth)
 
     def record(self, event: dict) -> None:
         self.debug.record(event)
@@ -144,6 +241,7 @@ class EngineRuntime:
             self.spawn(self.forward_commands())
             self.spawn(self.forward_diagnostics())
             self.spawn(self.timer())
+            self.spawn(self.observe_app())
         except BaseException:
             await self.close()
             raise
@@ -163,7 +261,8 @@ class EngineRuntime:
 
     async def resync(self) -> None:
         self.connection_epoch += 1
-        self.state.complete = False
+        if self.plugin:
+            self.plugin.state.complete = False
         self.ui_revision += 1
         self.invalidate_native()
         self.targets.invalidate()
@@ -195,12 +294,19 @@ class EngineRuntime:
                 self.session.transition("PAUSED")
 
     async def addon_disconnected(self) -> None:
-        self.state.complete = False
+        if self.plugin:
+            self.plugin.state.complete = False
         self.invalidate_native()
         self.pause()
         await self.send_state()
 
     async def desktop_disconnected(self) -> None:
+        self.a11y.disconnect()
+        self.vision.disconnect()
+        for future in self.window_requests.values():
+            if not future.done():
+                future.cancel()
+        self.select_adapter()
         self.invalidate_native()
         self.permissions = dict.fromkeys(self.permissions, False)
         self.utterances.clear()
@@ -227,25 +333,22 @@ class EngineRuntime:
                 if event["type"] == "command.result":
                     self.debug.record({"kind": "addon_result", **event["payload"]})
                 await self.bus.publish(Topic.EVENT, event)
-                if event["type"] == "hello":
-                    self.blender_version = event["payload"]["blender_version"]
-                    if (self.session
-                            and self.blender_version != self.session.lesson["blender_version"]):
+                plugin = self.plugin
+                if plugin:
+                    plugin.apply(event)
+                if event["type"] == "hello" and plugin:
+                    self.select_adapter()
+                    if self.session and plugin.version != self.app["version"]:
                         self.invalidate_native()
                         await self.error(
-                            "blender_version_mismatch", "Version Blender incompatible : "
-                            + self.blender_version + " ; version prouvée requise : "
-                            + self.session.lesson["blender_version"],
+                            plugin.mismatch_code, plugin.describe_version()
+                            + " ; version prouvée requise : " + self.app["version"],
                         )
                 if event["type"] == "regions.changed":
-                    self.regions = event["payload"]["regions"]
                     self.ui_revision = event["payload"]["ui_revision"]
                     self.invalidate_capture()
                 if event["type"] == "operator.executed":
                     self.invalidate_capture()
-                if "base_revision" in event and event["base_revision"] <= self.state.revision + 1:
-                    self.state.revision = event["scene_revision"] - 1
-                self.state.apply(event)
                 await self.evaluate(event)
 
     async def tick(self) -> None:
@@ -258,17 +361,55 @@ class EngineRuntime:
             await asyncio.sleep(0.1)
             await self.tick()
 
+    async def observe_app(self) -> None:
+        while True:
+            await self.observe_once()
+            await asyncio.sleep(self.config.vision_poll_s if self.adapter is self.vision
+                                else self.config.a11y_poll_s)
+
+    async def observe_once(self) -> None:
+        """Relit l'application via le capteur générique actif puis évalue l'étape."""
+        self.select_adapter()
+        adapter, session = self.adapter, self.session
+        if (not session or adapter is None or adapter is self.plugin
+                or session.status in {"COMPLETE", "ACTING"}):
+            return
+        generation, received = session.generation, time.perf_counter()
+        try:
+            await adapter.refresh(session.step)
+        except (ConnectionError, RuntimeError):
+            return
+        self.metric("refresh", (time.perf_counter() - received) * 1000)
+        if (adapter is self.a11y and adapter.last_error
+                and self.router.report_error("accessibility", adapter.last_error)):
+            self.debug.record({"kind": "sensor_fallback", "from": "accessibility",
+                               "code": adapter.last_error})
+            self.select_adapter()
+            return
+        if generation != session.generation or adapter is not self.adapter:
+            return
+        async with self.lock:
+            await self.evaluate({"type": "heartbeat", "payload": {}, "received_at": received})
+
+    async def request_refresh(self) -> None:
+        if self.plugin and self.adapter is self.plugin:
+            await self.addon.send(self.make_command("request_snapshot", {}))
+        else:
+            self.spawn(self.observe_once())
+
     async def evaluate(self, event: dict) -> None:
         session = self.session
         if not session or session.status in {"COMPLETE", "ACTING"}:
             return
-        if self.blender_version != session.lesson["blender_version"]:
+        self.select_adapter()
+        if not self.app_ready():
             self.pause()
-            self.debug.record({"kind": "version_mismatch", "actual": self.blender_version,
-                               "required": session.lesson["blender_version"]})
+            self.debug.record({"kind": "version_mismatch", "actual": self.app_version(),
+                               "required": self.app["version"],
+                               "sensor": getattr(self.adapter, "sensor", None)})
             return
         if session.status == "READY":
-            if not session.observe(self.state.mode):
+            if not session.observe(self.adapter.facts()):
                 return
         if session.status == "PAUSED":
             if not self.state.recent:
@@ -280,8 +421,9 @@ class EngineRuntime:
         generation = session.generation
         check = session.step["check"]
         result = evaluate(check["name"], self.state, check["params"])
-        result = evaluate_verification(
-            self.verification.get(session.step_id, {}).get("checks", []), self.state, result)
+        if self.adapter is self.plugin:
+            result = evaluate_verification(
+                self.verification.get(session.step_id, {}).get("checks", []), self.state, result)
         self.debug.record({"kind": "check", **asdict(result)})
         await self.bus.publish(Topic.CHECK, result)
         checked_at = time.perf_counter()
@@ -317,7 +459,7 @@ class EngineRuntime:
             self.max_help = 0
             if session.status != "COMPLETE":
                 self.policy.set_step(session.step, session.generation)
-                session.observe(self.state.mode)
+                session.observe(self.adapter.facts())
         elif result.status == "unknown":
             session.transition("PAUSED")
         elif decision and decision.kind == "help":
@@ -331,20 +473,15 @@ class EngineRuntime:
         self.debug.record({"kind": "latency", "stage": stage, "latency_ms": latency_ms})
 
     def context(self) -> HelpContext:
-        context = self.help_context
         step = self.session.step if self.session else {}
-        help_spec = step.get("help", {})
-        context = replace(context, menu_id=help_spec.get("menu_id"),
-                          reveal_target=self.reveal_target,
-                          shortcut_hint=getattr(self.app_adapter, "shortcut_hint", None),
-                          safe_demo=help_spec.get("safe_demo", False),
-                          checkpoint_id=help_spec.get("checkpoint_id"))
-        target = step.get("target", {})
-        region = next((r for r in self.regions if
-                       r.get("area_type", target.get("area_type")) == target.get("area_type")
-                       and r.get("region_type", r.get("type")) == target.get("region_type")), None)
-        if region:
-            context = replace(context, area_id=region["area_id"], region_id=region["region_id"])
+        adapter = self.adapter or self.primary
+        context = replace(self.help_context, reveal_target=self.reveal_target,
+                          shortcut_hint=adapter.shortcut_hint if adapter else None,
+                          checkpoint_id=step.get("help", {}).get("checkpoint_id"),
+                          app=None if adapter is self.plugin else self.app["id"])
+        if adapter and step:
+            context = replace(context, zone=adapter.zone(step), reveal=adapter.reveal(step),
+                              demo=adapter.replay(step), demo_undo=adapter.undo_replay(step))
         return context
 
     async def send_state(self, connection=None, *, force: bool = False,
@@ -416,14 +553,17 @@ class EngineRuntime:
             return
         generation = self.session.generation
         try:
-            reveal = getattr(self.app_adapter, "reveal_target", None)
-            crop = await reveal(self.session.step, self.context()) if reveal else None
+            adapter = self.adapter or self.primary
+            reveal = adapter.reveal_target(self.session.step) if adapter else None
+            crop = await reveal() if reveal else None
             if generation != self.session.generation:
                 return
             if crop and crop["width"] * crop["height"] > 1_048_576:
                 raise ValueError("Région trop grande")
             request = {"request_id": str(uuid4()), "crop": crop,
                        "ui_revision": self.ui_revision, "generation": generation}
+            if adapter is not None and adapter.window_scope:
+                request.update(crop=None, scope="window", app=self.app["id"])
             self.pointer_request = {**request, "at": time.monotonic(),
                                     "epoch": self.policy.capture_epoch}
             await self.send_state(force=True)
@@ -432,6 +572,32 @@ class EngineRuntime:
         except (TimeoutError, ConnectionError, ValueError, KeyError, StopIteration):
             self.pointer_request = None
             await self.error("target_unavailable", "Dévoilez la cible ; pointage indisponible")
+
+    async def capture_window(self) -> tuple[dict, bytes] | None:
+        """Capture fraîche de la fenêtre de l'application (preuve visuelle, jamais réutilisée)."""
+        if not self.permissions["screen"] or not self.desktop.clients:
+            return None
+        if len(self.window_requests) >= 8:
+            return None
+        request_id = str(uuid4())
+        future = asyncio.get_running_loop().create_future()
+        self.window_requests[request_id] = future
+        start = time.perf_counter()
+        try:
+            await self.desktop.send("capture.request", {
+                "request_id": request_id, "crop": None, "ui_revision": self.ui_revision,
+                "generation": self.session.generation if self.session else 0,
+                "scope": "window", "app": self.app["id"],
+            })
+            frame = await asyncio.wait_for(future, 3)
+            self.metric("capture.window", (time.perf_counter() - start) * 1000)
+            return frame
+        except (TimeoutError, asyncio.CancelledError, ConnectionError):
+            if asyncio.current_task() and asyncio.current_task().cancelling():
+                raise
+            return None
+        finally:
+            self.window_requests.pop(request_id, None)
 
     async def forward_diagnostics(self) -> None:
         while True:
@@ -445,8 +611,21 @@ class EngineRuntime:
             await self.send_state(connection)
         elif kind == "ping":
             await self.desktop.send("pong", payload, connection, message["message_id"])
+        elif kind == "app.focus":
+            changed = self.a11y.on_focus(payload)
+            self.vision.on_focus(payload)
+            if changed:
+                self.ui_revision += 1
+                self.router.recover("accessibility")
+                self.invalidate_capture()
+            self.select_adapter()
+        elif kind == "a11y.result":
+            self.a11y.resolve(payload)
         elif kind == "permissions":
             self.permissions = payload.copy()
+            self.a11y.permission = payload["accessibility"]
+            self.vision.permission = payload["screen"]
+            self.select_adapter()
             if not payload["screen"] or not payload["accessibility"]:
                 self.invalidate_native()
         elif kind == "user.intent":
@@ -475,7 +654,7 @@ class EngineRuntime:
             token = intent["consent_token"]
             UUID(token)
             if (payload["source"] != "bouton" or intent["intent"] != "fais-le" or not self.session
-                    or self.blender_version != self.session.lesson["blender_version"]):
+                    or not self.app_ready()):
                 raise ValueError
             if token in self.consent_tokens or len(self.consent_tokens.items) >= 4096:
                 raise ValueError
@@ -518,7 +697,7 @@ class EngineRuntime:
             if consent == self.consent and self.session.status == "ACTING":
                 self.session.transition("CHECKING")
                 self.session.transition("PAUSED")
-                await self.addon.send(self.make_command("request_snapshot", {}))
+                await self.request_refresh()
             return result
         except (TimeoutError, ConnectionError):
             self.consent = None
@@ -533,6 +712,12 @@ class EngineRuntime:
         image = decode_capture(payload)
         if payload["ui_revision"] != self.ui_revision:
             raise ValueError("Capture périmée")
+        window = self.window_requests.get(payload.get("request_id", ""))
+        if window is not None:
+            self.capture_ids.add(payload["capture_id"])
+            if not window.done():
+                window.set_result((payload, image))
+            return
         if (payload.get("request_id") or (self.session and self.session.status != "ACTING"
                 and self.policy.level == 2 and self.session.step.get("help", {}).get("menu_id"))):
             request = self.pointer_request
@@ -548,7 +733,8 @@ class EngineRuntime:
         if self.session:
             crop = payload["crop"]
             target = TargetContext(
-                self.blender_version, (crop["width"], crop["height"]), payload["scale"],
+                self.app["id"], self.app_version(), (crop["width"], crop["height"]),
+                payload["scale"],
                 self.session.step["target"]["description"], (crop["x"], crop["y"]),
                 payload["monitor_id"], self.session.lesson.get("language", "fr"),
                 self.ui_revision, True,
@@ -558,7 +744,8 @@ class EngineRuntime:
                                         capture_id=payload["capture_id"], image_png=image,
                                         capture_epoch=self.policy.capture_epoch,
                                         require_visible=bool(self.pointer_request
-                                            and self.pointer_request["crop"] is None))
+                                            and self.pointer_request["crop"] is None),
+                                        **self.target_hint(Rect.from_dict(crop)))
             if (self.policy.level == 2 and self.session.status != "COMPLETE"
                     and not self.policy.muted):
                 await self.policy.intent("aide", self.context())
@@ -579,6 +766,21 @@ class EngineRuntime:
                 await self.preloader.start(generation, next_target, payload["capture_id"],
                                            localize, self.targets,
                                            timeout_s=self.config.holo_timeout_s)
+
+    def target_hint(self, frame: Rect) -> dict:
+        """Zone attendue et point exact (a11y) exprimés en millièmes de la capture."""
+        adapter = self.adapter
+        hint = adapter.expected_rect(self.session.step) if adapter and self.session else None
+        if not hint or not hint.rect or not frame.valid:
+            return {}
+        fields: dict = {"expected_rect": tuple(round(v, 3) for v in (
+            *hint.rect.milli(frame).__dict__.values(),))}
+        point = hint.rect.point_milli(frame) if hint.exact else None
+        if point:
+            fields["pointer"] = point
+            if hint.ref and hint.snapshot_id:
+                fields["pointer_ref"] = (hint.ref, hint.snapshot_id)
+        return fields
 
     async def audio_message(self, kind: str, payload: dict, connection) -> None:
         key = payload["utterance_id"]
@@ -614,7 +816,7 @@ class EngineRuntime:
                         await self.error("stt_live_failed", "Transcription interrompue", connection)
 
                     stream = LiveUtterance(self.stt, payload["sample_rate"], on_event, on_error,
-                                           vocabulary=self.config.stt_vocabulary)
+                                           vocabulary=self.vocabulary())
                     self.live_utterances[key] = stream
                     utterance["sample_rate"] = payload["sample_rate"]
                 stream = self.live_utterances[key]

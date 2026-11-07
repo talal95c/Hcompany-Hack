@@ -32,6 +32,16 @@ class Transcript:
 
 
 @dataclass(frozen=True)
+class VerifyResult:
+    """Verdict oui/non de Holo sur une capture fraîche ; answer None = incertain."""
+
+    answer: bool | None
+    confidence: float | None
+    latency_ms: float
+    detail: str = ""
+
+
+@dataclass(frozen=True)
 class SearchHit:
     title: str
     url: str
@@ -43,6 +53,13 @@ class HoloClient(Protocol):
     async def localize(
         self, image_png: bytes, description: str, *, timeout_s: float
     ) -> LocalizeResult | None: ...
+
+
+@runtime_checkable
+class HoloVerifier(Protocol):
+    async def verify(
+        self, image_png: bytes, assertion: str, *, timeout_s: float
+    ) -> VerifyResult: ...
 
 
 @runtime_checkable

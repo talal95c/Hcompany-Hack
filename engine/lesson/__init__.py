@@ -3,6 +3,7 @@
 import hashlib
 import json
 import re
+from collections.abc import Mapping
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
@@ -20,6 +21,15 @@ TRANSITIONS = {
     "PAUSED": {"OBSERVING"},
     "COMPLETE": set(),
 }
+
+
+def lesson_app(lesson: dict) -> dict:
+    """`lesson.app` v2 ; une leçon v1 est projetée sans être réécrite (même preuve)."""
+    if "app" in lesson:
+        return dict(lesson["app"])
+    # Compatibilité v1 : blender_version désigne l'application servie par l'add-on.
+    return {"id": "blender", "name": "Blender", "version": lesson["blender_version"],
+            "sensor": "addon"}
 
 
 def _artifact(root: Path, reference: str) -> Path:
@@ -110,13 +120,24 @@ class Session:
             raise ValueError(f"Transition interdite : {self.status} → {target}")
         self.status = target
 
-    def observe(self, mode: str | None) -> bool:
-        if mode and mode.startswith("EDIT_"):
-            mode = "EDIT"
-        if self.status == "READY" and mode == self.step["preconditions"]["mode"]:
-            self.transition("OBSERVING")
-            return True
-        return False
+    def observe(self, facts: Mapping[str, str | None]) -> bool:
+        """Démarre l'étape si chaque précondition est confirmée par le capteur actif."""
+        if self.status != "READY":
+            return False
+        # Seules les préconditions lues par le capteur sont vérifiables ; les autres décrivent.
+        for key, expected in self.step["preconditions"].items():
+            if key not in facts:
+                continue
+            actual = facts[key]
+            if actual is None or not isinstance(expected, str):
+                return False
+            if key == "window_title":
+                if expected.casefold() not in actual.casefold():
+                    return False
+            elif actual != expected:
+                return False
+        self.transition("OBSERVING")
+        return True
 
     def accept(self, generation: int) -> bool:
         return generation == self.generation

@@ -4,15 +4,24 @@ import asyncio
 import math
 from collections.abc import Awaitable, Callable
 from dataclasses import asdict, dataclass
+from typing import Any
 from uuid import uuid4
 
+from engine.adapters.base import Command
 from engine.bus import EventBus, Topic
 from engine.bus.validation import validate
 from engine.cache import AudioCache, TargetCache, TargetContext, TargetEntry
-from engine.checks import CheckResult, SceneState, evaluate, progress_signature
+from engine.checks import CheckResult, evaluate, progress_signature
 from engine.config import EngineConfig
 from engine.fallback import Fallback
-from engine.interfaces import Clock, HoloClient, JevClient, JevDecision, SystemClock
+from engine.interfaces import (
+    Clock,
+    HoloClient,
+    JevClient,
+    JevDecision,
+    LocalizeResult,
+    SystemClock,
+)
 
 
 @dataclass(frozen=True)
@@ -27,18 +36,29 @@ class Decision:
 
 @dataclass(frozen=True)
 class HelpContext:
-    area_id: str | None = None
-    region_id: str | None = None
-    menu_id: str | None = None
+    """Aide préparée par l'adaptateur actif ; la policy ne connaît aucune application."""
+
+    zone: tuple[Command, ...] = ()
+    reveal: tuple[Command, ...] = ()
     target: TargetContext | None = None
     capture_id: str | None = None
     image_png: bytes | None = None
-    safe_demo: bool = False
+    demo: tuple[Command, ...] = ()
+    demo_undo: tuple[Command, ...] = ()
     checkpoint_id: str | None = None
     capture_epoch: int = 0
     reveal_target: Callable[[], Awaitable[None]] | None = None
     require_visible: bool = False
     shortcut_hint: str | None = None
+    pointer: tuple[int, int] | None = None
+    pointer_ref: tuple[str, str] | None = None
+    app: str | None = None
+    expected_rect: tuple[float, float, float, float] | None = None
+
+
+def inside(rect: tuple[float, float, float, float], x: float, y: float) -> bool:
+    left, top, width, height = rect
+    return left <= x <= left + width and top <= y <= top + height
 
 
 class HelpPolicy:
@@ -47,6 +67,7 @@ class HelpPolicy:
         jev: JevClient | None = None, holo: HoloClient | None = None,
         fallback: Fallback | None = None, targets: TargetCache | None = None,
         audio: AudioCache | None = None, debug: Callable[[dict], None] | None = None,
+        app_context: dict | None = None,
     ):
         self.config, self.bus = config, bus
         self.clock = clock or SystemClock()
@@ -73,6 +94,7 @@ class HelpPolicy:
         self.capture_epoch = 0
         self.intervention_epoch = 0
         self.localization: asyncio.Task | None = None
+        self.app_context = app_context
 
     def cancel_intervention(self, *, invalidate_capture: bool = False) -> None:
         self.intervention_epoch += 1
@@ -101,18 +123,21 @@ class HelpPolicy:
         self.debug({**asdict(decision), "kind": "decision", "decision": kind})
         return decision
 
-    async def _command(self, kind: str, payload: dict, *, revision: int = 0) -> None:
+    async def _command(self, kind: str, payload: dict, *, revision: int = 0,
+                       recipient: str = "desktop") -> None:
         assert self.step is not None
         command = {
             "schema_version": "1.0", "session_id": self.config.session_id,
             "command_id": str(uuid4()), "step_id": self.step["id"],
-            "generation": self.generation,
-            "recipient": "addon" if kind in {"highlight", "open_menu", "replay", "undo_demo"}
-            else "desktop", "type": kind, "deadline_ms": 1000,
-            "expected_scene_revision": max(0, revision), "payload": payload,
+            "generation": self.generation, "recipient": recipient, "type": kind,
+            "deadline_ms": 1000, "expected_scene_revision": max(0, revision), "payload": payload,
         }
         validate("commands", command)
         await self.bus.publish(Topic.COMMAND, command)
+
+    async def _emit(self, commands: tuple[Command, ...], *, revision: int = 0) -> None:
+        for recipient, kind, payload in commands:
+            await self._command(kind, payload, revision=revision, recipient=recipient)
 
     async def intent(self, text: str, context: HelpContext | None = None) -> Decision | None:
         text = text.strip().casefold()
@@ -133,7 +158,8 @@ class HelpPolicy:
             generation = self.generation
             answer = await self.fallback.call(
                 "jev_intent", lambda: self.jev.decide(
-                    {"utterance": text, "instruction": self.step["instruction"]},
+                    {"utterance": text, "instruction": self.step["instruction"],
+                     **({"app": self.app_context} if self.app_context else {})},
                     timeout_s=self.config.jev_timeout_s), self.config.jev_timeout_s,
                 lambda: JevDecision("other", None, 0))
             if generation != self.generation or self.muted:
@@ -147,7 +173,7 @@ class HelpPolicy:
         return None
 
     async def process(
-        self, state: SceneState, result: CheckResult, *, event_type: str = "heartbeat",
+        self, state: Any, result: CheckResult, *, event_type: str = "heartbeat",
         undo_count: int = 1, context: HelpContext | None = None,
     ) -> Decision | None:
         async with self.lock:
@@ -202,7 +228,7 @@ class HelpPolicy:
                 self.debug({"kind": "deferred", "reason": reason})
                 return None
             ambiguous = result.status == "unknown" or len(errors) > 1 or (
-                reason == "no_progress" and bool(state.objects)
+                reason == "no_progress" and state.has_content
             )
             if ambiguous and self.jev:
                 ambiguity_key = (signature, reason, tuple(sorted(active_codes)))
@@ -214,10 +240,12 @@ class HelpPolicy:
                     return JevDecision("intervene", "Règle locale", 0)
 
                 async def decide() -> JevDecision:
-                    answer = await self.jev.decide(
-                        {"check_status": result.status, "reason": reason,
-                         "known_errors": sorted(active_codes)}, timeout_s=self.config.jev_timeout_s
-                    )
+                    jev_context = {"check_status": result.status, "reason": reason,
+                                   "known_errors": sorted(active_codes)}
+                    if self.app_context:
+                        jev_context["app"] = self.app_context
+                    answer = await self.jev.decide(jev_context,
+                                                   timeout_s=self.config.jev_timeout_s)
                     if answer.action not in {"intervene", "wait"} | {
                         "error_code:" + code for code in active_codes
                     }:
@@ -271,23 +299,11 @@ class HelpPolicy:
             self.level = 1
         elif next_level == 2:
             if context.reveal_target:
-                if context.area_id and context.region_id:
-                    await self._command("highlight", {
-                        "area_id": context.area_id, "region_id": context.region_id,
-                        "color": "#ffcc00", "duration_ms": 3000,
-                    }, revision=revision)
+                await self._emit(context.zone, revision=revision)
                 self.level = 2
                 await context.reveal_target()
-            elif context.area_id and context.region_id:
-                await self._command("highlight", {
-                    "area_id": context.area_id, "region_id": context.region_id,
-                    "color": "#ffcc00", "duration_ms": 3000,
-                }, revision=revision)
-                if context.menu_id:
-                    await self._command("open_menu", {
-                        "menu_id": context.menu_id, "area_id": context.area_id,
-                        "region_id": context.region_id,
-                    }, revision=revision)
+            elif context.zone:
+                await self._emit(context.zone + context.reveal, revision=revision)
                 self.level = 2
         elif next_level == 3:
             if context.target and context.capture_epoch != self.capture_epoch:
@@ -295,6 +311,9 @@ class HelpPolicy:
             entry = self.targets.get_target(context.target) if context.target else None
             result = entry.result if entry else None
             capture_id = entry.capture_id if entry else context.capture_id
+            exact = bool(not result and context.pointer and capture_id)
+            if exact:
+                result = LocalizeResult(context.pointer[0], context.pointer[1], 1.0, 0, True)
             if not result and self.holo and context.image_png and context.target:
                 async def localize():
                     result = await self.holo.localize(
@@ -327,24 +346,27 @@ class HelpPolicy:
                            or (result.confidence is not None and (
                                not math.isfinite(result.confidence) or result.confidence < 0.5))
                            or (context.require_visible and (result.target_visible is not True
-                               or result.confidence is None))):
+                               or result.confidence is None))
+                           or (context.expected_rect is not None
+                               and not inside(context.expected_rect, result.x, result.y))):
+                if result and context.expected_rect is not None:
+                    self.debug({"kind": "point_rejected", "x": result.x, "y": result.y})
                 result = None
             if result and capture_id and context.target and context.target.visible:
-                if not entry:
+                if not entry and not exact:
                     self.targets.put_target(TargetEntry(context.target, result, capture_id))
-                await self._command("pointer", {
-                    "capture_id": capture_id, "ui_revision": context.target.ui_revision,
-                    "x": result.x, "y": result.y,
-                }, revision=revision)
+                payload = {"capture_id": capture_id, "ui_revision": context.target.ui_revision,
+                           "x": result.x, "y": result.y}
+                if context.app:
+                    payload["app"] = context.app
+                if exact and context.pointer_ref:
+                    payload["ref"], payload["snapshot_id"] = context.pointer_ref
+                await self._command("pointer", payload, revision=revision)
                 self.level = 3
             else:
                 self.debug({"kind": "holo_unavailable", "message": "Cible non localisée"})
                 if context.image_png:
-                    if context.area_id and context.region_id:
-                        await self._command("highlight", {
-                            "area_id": context.area_id, "region_id": context.region_id,
-                            "color": "#ffcc00", "duration_ms": 3000,
-                        }, revision=revision)
+                    await self._emit(context.zone, revision=revision)
                     await self._command("say", {
                         "text": ("Utilisez " + context.shortcut_hint + " : "
                                  if context.shortcut_hint else "Recherche de commandes : ")
@@ -356,10 +378,8 @@ class HelpPolicy:
                     "message": "Cible non visible ; utilisez la recherche",
                     "retryable": True,
                 })
-        elif self.level == 3 and context.safe_demo and context.checkpoint_id:
-            await self._command("replay", {
-                "procedure_ref": self.step["procedure_ref"], "params": {},
-            }, revision=revision)
+        elif self.level == 3 and context.demo and context.checkpoint_id:
+            await self._emit(context.demo, revision=revision)
             # L'orchestrateur attend l'acquittement et vérifie avant finish_demo.
             self.level = 4
             self.demo_checkpoint = context.checkpoint_id
@@ -369,7 +389,7 @@ class HelpPolicy:
         self, context: HelpContext, *, generation: int, acknowledged: bool,
     ) -> None:
         if (generation == self.generation and acknowledged and self.level == 4
-                and context.safe_demo and context.checkpoint_id
+                and context.demo and context.checkpoint_id
                 and context.checkpoint_id == self.demo_checkpoint):
-            await self._command("undo_demo", {"checkpoint_id": context.checkpoint_id})
+            await self._emit(context.demo_undo)
             self.demo_checkpoint = None

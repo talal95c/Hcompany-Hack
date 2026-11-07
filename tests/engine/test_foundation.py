@@ -66,8 +66,8 @@ def lesson_path():
 def test_lesson(tmp_path):
     lesson = load_lesson(lesson_path())
     session = Session("s1", lesson)
-    assert not session.observe("invalide")
-    assert session.observe(session.step["preconditions"]["mode"])
+    assert not session.observe({"mode": "invalide"})
+    assert session.observe({"mode": session.step["preconditions"]["mode"]})
     with pytest.raises(ValueError):
         session.transition("COMPLETE")
     session.transition("CHECKING")

@@ -1,0 +1,9 @@
+{
+  "id": "blender",
+  "name": "Blender",
+  "vocabulary": ["Blender", "maillage", "modificateur", "subdivision", "tore", "viewport", "Shift+A", "F3", "Ctrl+Z", "mode édition", "mode objet"],
+  "jev_context": "Logiciel 3D Blender : l'apprenant suit un tutoriel de modélisation (objets, modificateurs, matériaux).",
+  "docs_domains": ["docs.blender.org"],
+  "shortcut_hint": "F3",
+  "process_names": ["blender"]
+}

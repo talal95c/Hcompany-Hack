@@ -119,18 +119,23 @@ def test_help_context_selects_editor_not_just_window_region(tmp_path):
         {"area_id": "viewport", "area_type": "VIEW_3D", "region_id": "second",
          "type": "WINDOW"},
     ]
-    assert runtime.context().area_id == "viewport"
-    assert runtime.context().region_id == "second"
+    assert [c[2]["area_id"] for c in runtime.context().zone] == ["viewport"]
+    assert [c[2]["region_id"] for c in runtime.context().zone] == ["second"]
     runtime.regions.clear()
-    assert runtime.context().area_id is None
+    assert runtime.context().zone == ()
 
 
 def test_blender_edit_mesh_mode_matches_lesson_edit_precondition():
     session = Session("mode", load_lesson(ROOT / "lessons/donut/lesson.json"))
     session.index = 4
-    assert not session.observe(None)
-    assert not session.observe("OBJECT")
-    assert session.observe("EDIT_MESH")
+    def facts(mode):
+        state = SceneState()
+        state.mode = mode
+        return state.facts()
+
+    assert not session.observe(facts(None))
+    assert not session.observe(facts("OBJECT"))
+    assert session.observe(facts("EDIT_MESH"))
     assert session.status == "OBSERVING"
 
 

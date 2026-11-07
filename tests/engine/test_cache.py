@@ -8,11 +8,11 @@ from engine.interfaces import LocalizeResult
 
 
 def context():
-    return TargetContext("4.5.9", (800, 600), 2, "Tore", (0, 0), "main", "fr", 1, True)
+    return TargetContext("blender", "4.5.9", (800, 600), 2, "Tore", (0, 0), "main", "fr", 1, True)
 
 
 @pytest.mark.parametrize("changes", [
-    {"blender_version": "5.0.0"}, {"region_size": (801, 600)}, {"ui_scale": 1},
+    {"app_version": "5.0.0"}, {"app_id": "libreoffice-calc"}, {"region_size": (801, 600)}, {"ui_scale": 1},
     {"target": "Cube"}, {"origin": (1, 0)}, {"monitor_id": "other"},
     {"language": "en"}, {"ui_revision": 2}, {"visible": False}, {"menu_context": "other"},
 ])
