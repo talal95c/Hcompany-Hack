@@ -152,7 +152,7 @@ def test_router_order_fallback_and_recovery():
     assert router.choose({}).sensor is None
     a11y = SensorRouter("accessibility")
     assert a11y.choose({"addon": True, "vision": True}).sensor == "vision"
-    assert not a11y.report_error("accessibility", "AMBIGUOUS_TARGET")
+    assert a11y.report_error("accessibility", "AMBIGUOUS_TARGET")
     assert a11y.report_error("accessibility", "PERMISSION_DENIED")
     assert a11y.choose({"accessibility": True, "vision": True}).sensor == "vision"
     a11y.recover("accessibility")
@@ -239,10 +239,15 @@ async def test_accessibility_adapter_requests_zone_and_errors():
     assert adapter.available()
     state = await adapter.refresh(step)
     assert {p["op"] for p in sent} == {"find"} and len(sent) == 2
-    assert evaluate("element_value", state, step["check"]["params"]).status == "pass"
+    assert not state.complete
+    assert evaluate("element_value", state, step["check"]["params"]).status == "unknown"
     assert adapter.last_error == "TIMEOUT"
     known = step["known_errors"][0]["check"]
     assert evaluate(known["name"], state, known["params"]).status == "unknown"
+    assert adapter.zone(step) == () and adapter.expected_rect(step) is None
+    step = {**step, "known_errors": []}
+    await adapter.refresh(step)
+    assert adapter.last_error is None and adapter.state.complete
     (zone,) = adapter.zone(step)
     assert zone[:2] == ("desktop", "highlight.rect") and zone[2]["ref"] == "r1"
     hint = adapter.expected_rect(step)

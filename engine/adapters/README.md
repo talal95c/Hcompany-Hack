@@ -12,7 +12,8 @@ préconditions (`facts`), zone (`zone`), dévoilement (`reveal`/`reveal_target`)
 | `VisionAdapter` | `vision` | capture fenêtre (`capture.request` scope `window`) + `HoloVerifier` | `visual_assert`, `window_title` |
 
 - `router.py` : ordre `auto` = addon → accessibilité → vision ; `accessibility` replie vers
-  la vision sur `APP_NOT_FOUND`, `PERMISSION_DENIED` ou `TIMEOUT`, jusqu'au prochain
+  la vision sur `APP_NOT_FOUND`, `PERMISSION_DENIED`, `TIMEOUT`, `AMBIGUOUS_TARGET`
+  ou arbre incomplet ; `STALE_REF` refait une seule résolution avant ce repli, jusqu'au prochain
   `app.focus`. Un check exact lu en vision reste `unknown` : aucun ✓ inventé.
 - `profiles/*.json` : vocabulaire STT, contexte Jev, domaines de documentation et noms de
   processus par `lesson.app.id` ; une application inconnue reçoit un profil neutre.

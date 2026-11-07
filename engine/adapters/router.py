@@ -10,7 +10,10 @@ ORDER = {
     "vision": ("vision",),
 }
 # Erreurs a11y qui rendent l'arbre inexploitable pour la fenêtre : on bascule en vision.
-FALLBACK_ERRORS = frozenset({"APP_NOT_FOUND", "PERMISSION_DENIED", "TIMEOUT"})
+FALLBACK_ERRORS = frozenset({
+    "APP_NOT_FOUND", "PERMISSION_DENIED", "TIMEOUT", "STALE_REF",
+    "AMBIGUOUS_TARGET", "INCOMPLETE_TREE",
+})
 
 
 @dataclass(frozen=True)

@@ -114,10 +114,13 @@ class AccessibilityAdapter:
         query = query_for(target)
         if query is None:
             return Lookup((), False, None, "NO_QUERY")
-        try:
-            result = await self.request("find", query=query)
-        except TimeoutError:
-            return Lookup((), False, None, "TIMEOUT")
+        for _ in range(2):
+            try:
+                result = await self.request("find", query=query)
+            except TimeoutError:
+                return Lookup((), False, None, "TIMEOUT")
+            if result.get("error", {}).get("code") != "STALE_REF":
+                break
         error = result.get("error", {}).get("code")
         return Lookup(tuple(result["nodes"]), result["complete"], result["snapshot_id"], error)
 
@@ -127,14 +130,15 @@ class AccessibilityAdapter:
         lookups = dict(zip(targets, await asyncio.gather(
             *(self.find(t) for t in targets.values())))) if focused else {}
         errors = [lookup.error for lookup in lookups.values() if lookup.error]
-        self.last_error = errors[0] if errors else None
+        self.last_error = errors[0] if errors else (
+            "INCOMPLETE_TREE" if any(not lookup.complete for lookup in lookups.values()) else None)
         state = self.state
         state.lookups = lookups
         state.window_title = self.focus["window_title"] if focused else None
         state.revision = max(state.revision, state.latest_revision) + 1
         state.latest_revision = state.revision
-        # Une erreur de cible reste un unknown local au check ; seule la fenêtre est requise.
-        state.complete = focused
+        state.complete = focused and all(
+            lookup.complete and not lookup.error for lookup in lookups.values())
         return state
 
     def target_lookup(self, step: dict) -> Lookup | None:
@@ -143,7 +147,8 @@ class AccessibilityAdapter:
 
     def expected_rect(self, step: dict) -> TargetHint | None:
         found = self.target_lookup(step)
-        node = found.unique if found and self.state.recent else None
+        node = found.unique if (found and found.complete and not found.error
+                                and self.state.recent) else None
         window = self.window
         if not node or not window:
             return None

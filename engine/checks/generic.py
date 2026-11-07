@@ -136,7 +136,7 @@ def _evaluate(name: str, state: AppState, params: dict) -> bool | None:
             return None
         return verdict.answer if verdict.confidence >= params.get("min_confidence", 0.8) else None
     found = lookup(state, params["target"])
-    if found is None or found.error:
+    if found is None or found.error or not found.complete:
         return None
     if name == "element_exists":
         if found.nodes:
