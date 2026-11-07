@@ -58,4 +58,4 @@ pytest -q
 Le générateur régénère aussi le brouillon Calc. La session et les prérequis
 natifs sont décrits dans [la leçon de tableur](../tableur-somme/README.md).
 Les tests natifs couvrent les deux applications ; les contrôles de preuves
-complètes ne s'appliquent pas au brouillon Calc en attente du fournisseur cloud.
+complètes s'appliquent aux révisions marquées `proven`, sans promouvoir les brouillons.

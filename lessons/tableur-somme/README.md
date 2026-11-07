@@ -6,10 +6,11 @@ les valeurs et le gras, assertion Holo sur capture fraîche pour la monnaie.
 Le générateur écrit un brouillon ; seul un parcours complet réussi le promeut
 en `proven`. Les droits de la source originale sont décrits dans [SOURCE](SOURCE.md).
 
-**État actuel : brouillon.** Les quatre étapes natives ont des preuves partielles,
-mais aucun manifeste complet n'est publié. Le fournisseur Holo est indisponible ;
-une preuve complète devra être rejouée après sa reprise. Les captures conservées
-sont des essais de diagnostic, pas une preuve exportable.
+**État actuel : prouvée.** Les cinq étapes et toutes leurs erreurs connues ont
+été rejouées dans l'application réelle. Le manifeste complet empreinte chaque
+preuve, chaque capture originale et chaque image agrandie réellement envoyée.
+La disponibilité cloud reste intermittente : les tentatives bornées sont mesurées,
+et une réponse absente ou insuffisamment confiante reste `unknown`.
 
 ## Parcours
 
@@ -108,8 +109,9 @@ le pilote natif reste compatible Python 3.10. Le transport Holo existant est
 réutilisé avec `holo4-27b` et `enable_thinking=false` ; il n'exposait pas encore
 d'API publique d'assertion visuelle, d'où l'adaptateur de test dédié.
 
-Les appels Holo sont espacés d'au moins 2,5 s entre départs. Le budget du
-processus est 420 s, celui d'une tentative cloud 20 s. Au maximum trois tentatives
+Les appels Holo sont espacés d'au moins 2,5 s après chaque réponse, y compris
+entre deux assertions distinctes. Le budget du processus est 420 s,
+celui d'une tentative cloud 12 s. Au maximum cinq tentatives
 sur timeout ou quota/429 respectent Retry-After (secondes ou date HTTP) ; si ce
 délai dépasse le budget global de 120 s, aucune tentative anticipée n'est faite.
 Chaque tentative et la durée totale sont enregistrées. Après épuisement : `unknown`.

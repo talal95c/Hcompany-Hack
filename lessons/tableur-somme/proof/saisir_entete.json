@@ -515,21 +515,23 @@
   "before_results": [
     {
       "status": "fail",
-      "seconds": 0.018275671999845144,
+      "seconds": 0.02143264899996211,
       "read_seconds": [
-        0.018271317999960957
+        0.021428086000014446
       ],
-      "visual": null
+      "visual": null,
+      "observed": null
     }
   ],
   "after_results": [
     {
       "status": "pass",
-      "seconds": 0.022661255999992136,
+      "seconds": 0.019732303000182583,
       "read_seconds": [
-        0.022655426000028456
+        0.01972629500005496
       ],
-      "visual": null
+      "visual": null,
+      "observed": null
     }
   ],
   "known_errors": [
@@ -1043,35 +1045,41 @@
       "on_mistake": "pass",
       "mistake_result": {
         "status": "pass",
-        "seconds": 0.023826134000046295,
+        "seconds": 0.02209470399975544,
         "read_seconds": [
-          0.023820528999976887
+          0.02208709500018813
         ],
-        "visual": null
+        "visual": null,
+        "observed": null
       },
+      "artifact_before": [],
+      "artifact_on_mistake": [],
       "step_checks_on_mistake": [
         "fail"
       ],
       "step_check_results": [
         {
           "status": "fail",
-          "seconds": 0.030387520999966,
+          "seconds": 0.022450459000083356,
           "read_seconds": [
-            0.030385070999955133
+            0.02244774900009361
           ],
-          "visual": null
+          "visual": null,
+          "observed": null
         }
       ],
       "on_correct_path": "fail",
       "correct_result": {
         "status": "fail",
-        "seconds": 0.01980553399994278,
+        "seconds": 0.02177492600003461,
         "read_seconds": [
-          0.01980306800010112
+          0.02177293400018243
         ],
-        "visual": null
+        "visual": null,
+        "observed": null
       }
     }
   ],
-  "seconds": 8.235323431000097
+  "seconds": 8.350289513000007,
+  "artifact_results": []
 }

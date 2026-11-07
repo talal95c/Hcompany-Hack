@@ -531,37 +531,41 @@
   "before_results": [
     {
       "status": "fail",
-      "seconds": 0.03440948299999036,
+      "seconds": 0.035416195999914635,
       "read_seconds": [
-        0.034405425999921135
+        0.035411587999988114
       ],
-      "visual": null
+      "visual": null,
+      "observed": null
     },
     {
       "status": "pass",
-      "seconds": 0.019086429000026328,
+      "seconds": 0.02131083500034947,
       "read_seconds": [
-        0.019084634000137157
+        0.02130851000038092
       ],
-      "visual": null
+      "visual": null,
+      "observed": null
     }
   ],
   "after_results": [
     {
       "status": "pass",
-      "seconds": 0.03594003899979725,
+      "seconds": 0.04020900800014715,
       "read_seconds": [
-        0.035934950999944704
+        0.04020279400037907
       ],
-      "visual": null
+      "visual": null,
+      "observed": null
     },
     {
       "status": "pass",
-      "seconds": 0.020008576999998695,
+      "seconds": 0.025864822999665193,
       "read_seconds": [
-        0.020006654000098933
+        0.025861641000119562
       ],
-      "visual": null
+      "visual": null,
+      "observed": null
     }
   ],
   "known_errors": [
@@ -1085,12 +1089,15 @@
       "on_mistake": "pass",
       "mistake_result": {
         "status": "pass",
-        "seconds": 0.037749801000018124,
+        "seconds": 0.03936067299991919,
         "read_seconds": [
-          0.03774571600001764
+          0.039353789999950095
         ],
-        "visual": null
+        "visual": null,
+        "observed": null
       },
+      "artifact_before": [],
+      "artifact_on_mistake": [],
       "step_checks_on_mistake": [
         "fail",
         "pass"
@@ -1098,31 +1105,35 @@
       "step_check_results": [
         {
           "status": "fail",
-          "seconds": 0.03534774100012328,
+          "seconds": 0.038093091000064305,
           "read_seconds": [
-            0.03534562000004371
+            0.03808963700021195
           ],
-          "visual": null
+          "visual": null,
+          "observed": null
         },
         {
           "status": "pass",
-          "seconds": 0.018565698999964297,
+          "seconds": 0.023028623999834963,
           "read_seconds": [
-            0.018563970999821322
+            0.023026542000025074
           ],
-          "visual": null
+          "visual": null,
+          "observed": null
         }
       ],
       "on_correct_path": "fail",
       "correct_result": {
         "status": "fail",
-        "seconds": 0.0322434610000073,
+        "seconds": 0.04319704699992144,
         "read_seconds": [
-          0.032241229000192106
+          0.04319382999983645
         ],
-        "visual": null
+        "visual": null,
+        "observed": null
       }
     }
   ],
-  "seconds": 20.0463896199999
+  "seconds": 20.005014662999656,
+  "artifact_results": []
 }

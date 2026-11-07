@@ -321,17 +321,20 @@ async def test_holo_timeout_remains_unknown(tmp_path, monkeypatch):
 
         async def _complete(self, operation, timeout, **kwargs):
             assert operation == "visual_assert"
-            assert timeout == 20
+            assert timeout == 12
             raise ServiceTimeout("holo", "simulated timeout")
 
     monkeypatch.setattr(holo_assert, "HoloCloudClient", TimeoutClient)
-    monkeypatch.setattr(holo_assert.asyncio, "sleep", AsyncMock())
+    pause = AsyncMock()
+    monkeypatch.setattr(holo_assert.asyncio, "sleep", pause)
     image = tmp_path / "sent.png"
     image.write_bytes(png_header(1137, 600))
     result = await holo_assert.evaluate_image({"image": str(image), "assertion": "Visible ?"})
     assert result["error"] == "timeout"
     assert result["seconds"] > 0
-    assert len(result["attempts"]) == 3
+    assert len(result["attempts"]) == 5
+    assert pause.await_count == 4
+    assert all(call.args == (2.5,) for call in pause.await_args_list)
     assert Evaluator.visual_status(result, {}) == "unknown"
 
 

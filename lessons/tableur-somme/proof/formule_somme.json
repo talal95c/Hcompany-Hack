@@ -510,21 +510,23 @@
   "before_results": [
     {
       "status": "fail",
-      "seconds": 0.03040939300012724,
+      "seconds": 0.018202585000381077,
       "read_seconds": [
-        0.030405216999952245
+        0.01819877199977782
       ],
-      "visual": null
+      "visual": null,
+      "observed": null
     }
   ],
   "after_results": [
     {
       "status": "pass",
-      "seconds": 0.024730244000011226,
+      "seconds": 0.021865613000045414,
       "read_seconds": [
-        0.024724152000089816
+        0.021859630000108154
       ],
-      "visual": null
+      "visual": null,
+      "observed": null
     }
   ],
   "known_errors": [
@@ -1034,33 +1036,38 @@
       "on_mistake": "pass",
       "mistake_result": {
         "status": "pass",
-        "seconds": 0.062201742000070226,
+        "seconds": 0.17748028400001203,
         "read_seconds": [
-          0.062193944000000556
+          0.1774727960000746
         ],
-        "visual": null
+        "visual": null,
+        "observed": null
       },
+      "artifact_before": [],
+      "artifact_on_mistake": [],
       "step_checks_on_mistake": [
         "fail"
       ],
       "step_check_results": [
         {
           "status": "fail",
-          "seconds": 0.03407930799994574,
+          "seconds": 0.17062898100039092,
           "read_seconds": [
-            0.03407581100009338
+            0.1706243789999462
           ],
-          "visual": null
+          "visual": null,
+          "observed": null
         }
       ],
       "on_correct_path": "fail",
       "correct_result": {
         "status": "fail",
-        "seconds": 0.025508677000061653,
+        "seconds": 0.020391752000250563,
         "read_seconds": [
-          0.025506373000098392
+          0.0203893490001974
         ],
-        "visual": null
+        "visual": null,
+        "observed": null
       }
     },
     {
@@ -1565,35 +1572,41 @@
       "on_mistake": "pass",
       "mistake_result": {
         "status": "pass",
-        "seconds": 0.027986734000023716,
+        "seconds": 0.02484226700016734,
         "read_seconds": [
-          0.027981429000192293
+          0.02483548099962718
         ],
-        "visual": null
+        "visual": null,
+        "observed": null
       },
+      "artifact_before": [],
+      "artifact_on_mistake": [],
       "step_checks_on_mistake": [
         "fail"
       ],
       "step_check_results": [
         {
           "status": "fail",
-          "seconds": 0.02469879000000219,
+          "seconds": 0.023061594999944646,
           "read_seconds": [
-            0.024695757000017693
+            0.023059200000261626
           ],
-          "visual": null
+          "visual": null,
+          "observed": null
         }
       ],
       "on_correct_path": "fail",
       "correct_result": {
         "status": "fail",
-        "seconds": 0.019359734999852662,
+        "seconds": 0.02126251499976206,
         "read_seconds": [
-          0.01935809499991592
+          0.02126060000000507
         ],
-        "visual": null
+        "visual": null,
+        "observed": null
       }
     }
   ],
-  "seconds": 27.093877451000026
+  "seconds": 29.024647925999943,
+  "artifact_results": []
 }

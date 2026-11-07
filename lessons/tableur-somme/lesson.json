@@ -10,7 +10,7 @@
     "version": "7.3.7",
     "sensor": "auto"
   },
-  "status": "draft",
+  "status": "proven",
   "source": {
     "uri": "authored://lessons/tableur-somme/SOURCE.md",
     "sha256": "909275255b665fa84d050a58732f31940996d711dbc8399e20a60427b6d0b99b"
@@ -100,10 +100,10 @@
       ],
       "procedure_ref": "tableur-somme/saisir_entete",
       "proof": {
-        "status": "draft",
+        "status": "proven",
         "method": "accessibility",
         "evidence_ref": "proof/saisir_entete.json",
-        "ui_path_verified": false
+        "ui_path_verified": true
       }
     },
     {
@@ -183,10 +183,10 @@
       ],
       "procedure_ref": "tableur-somme/saisir_valeurs",
       "proof": {
-        "status": "draft",
+        "status": "proven",
         "method": "accessibility",
         "evidence_ref": "proof/saisir_valeurs.json",
-        "ui_path_verified": false
+        "ui_path_verified": true
       }
     },
     {
@@ -292,10 +292,10 @@
       ],
       "procedure_ref": "tableur-somme/formule_somme",
       "proof": {
-        "status": "draft",
+        "status": "proven",
         "method": "accessibility",
         "evidence_ref": "proof/formule_somme.json",
-        "ui_path_verified": false
+        "ui_path_verified": true
       }
     },
     {
@@ -373,10 +373,10 @@
       ],
       "procedure_ref": "tableur-somme/entete_gras",
       "proof": {
-        "status": "draft",
+        "status": "proven",
         "method": "accessibility",
         "evidence_ref": "proof/entete_gras.json",
-        "ui_path_verified": false
+        "ui_path_verified": true
       }
     },
     {
@@ -436,16 +436,16 @@
       ],
       "procedure_ref": "tableur-somme/format_monetaire",
       "proof": {
-        "status": "draft",
-        "method": "accessibility",
+        "status": "proven",
+        "method": "visual",
         "evidence_ref": "proof/format_monetaire.json",
-        "ui_path_verified": false
+        "ui_path_verified": true
       }
     }
   ],
   "proof": {
     "method": "per_step",
     "evidence_ref": "proof/manifest.json",
-    "ui_path_verified": false
+    "ui_path_verified": true
   }
 }

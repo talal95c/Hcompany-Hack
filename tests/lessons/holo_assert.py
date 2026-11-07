@@ -18,7 +18,7 @@ async def assert_image(request):
     encoded = base64.b64encode(Path(request["image"]).read_bytes()).decode("ascii")
     async with HoloCloudClient(model="holo4-27b") as client:
         response = await client._complete(
-            "visual_assert", 20,
+            "visual_assert", 12,
             messages=[{
                 "role": "system", "content": "Read only the supplied screenshot. Answer the "
                 "closed question as JSON with exactly answer (boolean) and confidence "
@@ -56,13 +56,13 @@ async def assert_image(request):
 async def evaluate_image(request):
     start = time.perf_counter()
     attempts = []
-    for index in range(3):
+    for index in range(5):
         clock = time.perf_counter()
         retry_after = None
         try:
-            result = await asyncio.wait_for(assert_image(request), timeout=20)
+            result = await asyncio.wait_for(assert_image(request), timeout=12)
             attempts.append({"seconds": time.perf_counter() - clock,
-                             "error": result.get("error")})
+                             "error": result.get("error"), "request_id": result.get("request_id")})
             return {**result, "attempts": attempts, "seconds": time.perf_counter() - start}
         except (TimeoutError, ServiceError) as exc:
             timeout = isinstance(exc, (ServiceTimeout, asyncio.TimeoutError))
@@ -79,8 +79,8 @@ async def evaluate_image(request):
             retryable = (timeout or isinstance(exc, QuotaExceeded)
                          or result["http_status"] == 429)
             delay = retry_delay(retry_after)
-            if (not retryable or index == 2
-                    or time.perf_counter() - start + delay + 20 > 120):
+            if (not retryable or index == 4
+                    or time.perf_counter() - start + delay + 12 > 120):
                 break
             await asyncio.sleep(delay)
     return {**result, "attempts": attempts, "seconds": time.perf_counter() - start}

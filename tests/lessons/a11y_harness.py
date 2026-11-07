@@ -247,6 +247,8 @@ class Driver:
         except subprocess.TimeoutExpired:
             return {**metadata, "answer": None, "confidence": 0, "error": "timeout",
                     "seconds": time.perf_counter() - clock}
+        finally:
+            self.last_request = time.monotonic()
         if process.returncode:
             return {**metadata, "answer": None, "confidence": 0, "error": "unavailable",
                     "seconds": time.perf_counter() - clock}
