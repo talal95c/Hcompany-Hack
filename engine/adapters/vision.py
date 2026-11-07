@@ -1,5 +1,6 @@
 """Adaptateur vision seule : capture de la fenêtre et Holo (verdicts et localisation)."""
 
+import base64
 import json
 import math
 import time
@@ -49,14 +50,15 @@ class HoloAssertVerifier:
 
     async def verify(self, image_png: bytes, assertion: str, *, timeout_s: float,
                      ) -> VerifyResult:
-        from engine.services.holo import _png_data_url
-
+        if not image_png.startswith(b"\x89PNG\r\n\x1a\n"):
+            raise ValueError("Capture PNG requise")
+        image_url = "data:image/png;base64," + base64.b64encode(image_png).decode()
         start = time.perf_counter()
         system = VERIFY_PROMPT + (" Application: " + self.app_context if self.app_context else "")
         response = await self.client._complete(
             "verify", timeout_s,
             messages=[{"role": "system", "content": system}, {"role": "user", "content": [
-                {"type": "image_url", "image_url": {"url": _png_data_url(image_png)}},
+                {"type": "image_url", "image_url": {"url": image_url}},
                 {"type": "text", "text": assertion},
             ]}],
             max_tokens=16, logprobs=True,

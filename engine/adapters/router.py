@@ -37,7 +37,8 @@ class SensorRouter:
 
     def report_error(self, sensor: str, code: str) -> bool:
         """Mémorise une panne de capteur ; True si un repli est désormais possible."""
-        if sensor == "accessibility" and code in FALLBACK_ERRORS:
+        if (sensor == "accessibility" and code in FALLBACK_ERRORS
+                and sensor in ORDER[self.requested]):
             self.degraded.add(sensor)
             return "vision" in ORDER[self.requested]
         return False

@@ -12,7 +12,8 @@ def context():
 
 
 @pytest.mark.parametrize("changes", [
-    {"app_version": "5.0.0"}, {"app_id": "libreoffice-calc"}, {"region_size": (801, 600)}, {"ui_scale": 1},
+    {"app_version": "5.0.0"}, {"app_id": "libreoffice-calc"}, {"region_size": (801, 600)},
+    {"ui_scale": 1},
     {"target": "Cube"}, {"origin": (1, 0)}, {"monitor_id": "other"},
     {"language": "en"}, {"ui_revision": 2}, {"visible": False}, {"menu_context": "other"},
 ])

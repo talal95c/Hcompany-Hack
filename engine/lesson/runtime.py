@@ -3,6 +3,7 @@
 import asyncio
 import base64
 import binascii
+import inspect
 import json
 import struct
 import time
@@ -210,11 +211,10 @@ class EngineRuntime:
         if not self.search:
             return []
         domains = self.profile.docs_domains
-        try:
+        if "domains" in inspect.signature(self.search.search).parameters:
             return await self.search.search(query, depth=depth, domains=domains)
-        except TypeError:
-            scoped = " ".join(f"site:{d}" for d in domains)
-            return await self.search.search(f"{query} {scoped}".strip(), depth=depth)
+        scoped = " OR ".join(f"site:{d}" for d in domains)
+        return await self.search.search(f"{query} {scoped}".strip(), depth=depth)
 
     def record(self, event: dict) -> None:
         self.debug.record(event)
