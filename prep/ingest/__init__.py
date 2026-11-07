@@ -1,5 +1,7 @@
 """Ingestion bornée et transcription Gladia v2."""
 
+from __future__ import annotations
+
 import asyncio
 import hashlib
 import json
@@ -8,9 +10,11 @@ import os
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-import httpx
+if TYPE_CHECKING:
+    import httpx
 
 LOGGER = logging.getLogger(__name__)
 DEFAULT_VOCABULARY = (
@@ -110,6 +114,8 @@ async def ingest(
     transcription_timeout: float = 120,
     poll_interval: float = 1,
 ) -> Transcript:
+    import httpx
+
     work_dir = Path(work_dir)
     work_dir.mkdir(parents=True, exist_ok=True)
     if client is None:

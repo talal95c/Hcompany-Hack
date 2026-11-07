@@ -1,3 +1,5 @@
+# ruff: noqa: E402
+
 import asyncio
 import copy
 import json
@@ -6,9 +8,10 @@ import os
 import shutil
 from pathlib import Path
 
-import httpx
 import jsonschema
 import pytest
+
+httpx = pytest.importorskip("httpx", reason="Installer l'extra prep pour ces tests")
 
 from prep.docs_search import docs_search
 from prep.prover import prove_lesson

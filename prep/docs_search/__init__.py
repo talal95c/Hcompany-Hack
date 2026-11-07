@@ -1,14 +1,20 @@
 """Recherche documentaire éditeur avec Linkup."""
 
+from __future__ import annotations
+
 import logging
 import os
 import time
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-import httpx
+if TYPE_CHECKING:
+    import httpx
 
 
 async def docs_search(query: str, *, client: httpx.AsyncClient | None = None) -> list[dict]:
+    import httpx
+
     key = os.environ.get("LINKUP_API_KEY")
     if not key:
         raise RuntimeError("Clé Linkup absente")

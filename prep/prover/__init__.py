@@ -9,13 +9,18 @@ from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Protocol
 
-import httpx
-
 from prep.docs_search import docs_search
 from prep.prover.planner import Mode, next_mode
 from prep.prover.procedures import CHECK_LIBRARY, PROCEDURE_LIBRARY
 from prep.repair import write_repair_request
 from prep.ui_map import step_signature
+
+try:
+    from httpx import HTTPError
+except ModuleNotFoundError:
+    HTTP_ERRORS = ()
+else:
+    HTTP_ERRORS = (HTTPError,)
 
 
 class Sandbox(Protocol):
@@ -199,7 +204,7 @@ async def prove_lesson(
                         status = "proven"
                     else:
                         status = "failed"
-                except (TimeoutError, RuntimeError, ValueError, OSError, httpx.HTTPError) as exc:
+                except (TimeoutError, RuntimeError, ValueError, OSError, *HTTP_ERRORS) as exc:
                     evidence["error"] = str(exc)
                     status = "failed"
         evidence["status"] = status

@@ -1,3 +1,5 @@
+# ruff: noqa: E402
+
 import asyncio
 import json
 import logging
@@ -8,6 +10,9 @@ from pathlib import Path
 
 import jsonschema
 import pytest
+
+pytest.importorskip("httpx", reason="Installer l'extra prep pour ces tests")
+pytest.importorskip("openai", reason="Installer l'extra prep pour ces tests")
 
 from prep.compile import HoloCompiler
 from prep.compile.compiler import SCHEMA

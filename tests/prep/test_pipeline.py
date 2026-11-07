@@ -1,3 +1,5 @@
+# ruff: noqa: E402
+
 import asyncio
 import copy
 import hashlib
@@ -5,9 +7,12 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-import httpx
 import jsonschema
 import pytest
+
+httpx = pytest.importorskip("httpx", reason="Installer l'extra prep pour ces tests")
+pytest.importorskip("openai", reason="Installer l'extra prep pour ces tests")
+
 from openai import RateLimitError
 from test_preparation import StubSandbox, lesson, ui_map
 
