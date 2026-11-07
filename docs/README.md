@@ -47,6 +47,7 @@
 - [tests-et-jalons](tests-et-jalons.md)
 - [equipe-et-workflow](equipe-et-workflow.md)
 - [glossaire](glossaire.md)
+- [Données pour le graphe relationnel](../data/README.md)
 
 ## Plans des dossiers
 - [contracts](../contracts/README.md)
