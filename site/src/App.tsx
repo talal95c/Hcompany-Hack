@@ -1,35 +1,22 @@
-import { useEffect, useState } from "react";
-import { FaqInsights, Footer, GET_RIO, Hero, Nav, Pricing } from "./sections";
-import { GetRio } from "./GetRio";
-import { UseCases } from "./usecases/UseCases";
+import { useEffect } from "react";
+import { FaqInsights, Footer, Hero, Nav, Pricing } from "./sections";
 import { Teams } from "./Teams";
+import { UseCases } from "./usecases/UseCases";
 
 export default function App() {
-  const [hash, setHash] = useState(location.hash);
   useEffect(() => {
-    const f = () => setHash(location.hash);
-    addEventListener("hashchange", f);
-    return () => removeEventListener("hashchange", f);
+    // The install guide moved to the app; old links land on the page.
+    if (location.hash === "#/get-rio") location.replace(`${location.pathname}#top`);
   }, []);
-  const getRio = hash === GET_RIO;
-  useEffect(() => {
-    if (!getRio && hash.length > 1) document.getElementById(hash.slice(1))?.scrollIntoView();
-  }, [getRio, hash]);
   return (
     <>
       <Nav />
       <main className="page">
-        {getRio ? (
-          <GetRio />
-        ) : (
-          <>
-            <Hero />
-            <UseCases />
-            <Teams />
-            <Pricing />
-            <FaqInsights />
-          </>
-        )}
+        <Hero />
+        <UseCases />
+        <Teams />
+        <Pricing />
+        <FaqInsights />
       </main>
       <Footer />
     </>

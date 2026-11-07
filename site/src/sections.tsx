@@ -21,7 +21,6 @@ const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Fi
 
 /* ---------------- Nav ---------------- */
 
-export const GET_RIO = "#/get-rio";
 
 export function Nav() {
   const links = [
@@ -69,8 +68,7 @@ export function Nav() {
         ))}
       </nav>
       <div className="nav-right">
-        <a href={APP_URL} className="nav-login">Log in</a>
-        <Btn label="Get Rio" size="sm" href={GET_RIO} className="nav-cta" />
+        <Btn label="Go to app" size="sm" href={APP_URL} className="nav-cta" />
         <button type="button" className="nav-menu" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           <span />
           <span />
@@ -88,7 +86,6 @@ export function Nav() {
             {links.map(([l, href]) => (
               <a key={l} href={href} onClick={() => setOpen(false)}>{l}</a>
             ))}
-            <a href={APP_URL} className="nav-sheet-login">Log in to the team console</a>
           </motion.div>
         )}
       </AnimatePresence>
@@ -186,7 +183,7 @@ export function Hero() {
             <span className="hero-demo-start" aria-hidden>Start ↗</span>
           </motion.div>
           <motion.div {...up(0.56)}>
-            <Btn label="Try Rio" href={GET_RIO} />
+            <Btn label="Try Rio" href={APP_URL} />
           </motion.div>
         </div>
         <motion.div className="hero-bottom" {...up(0.85)}>
@@ -956,7 +953,7 @@ export function FaqInsights() {
 export function Footer() {
   const cols = [
     { h: "Product", l: [["Use cases", "#use-cases"], ["For teams", "#teams"], ["Pricing", "#pricing"], ["FAQ", "#faq"]] },
-    { h: "Get started", l: [["Get Rio", GET_RIO], ["Team console", APP_URL]] },
+    { h: "Get started", l: [["Go to app", APP_URL], ["Install the Mac app", `${APP_URL}/get-rio`]] },
     { h: "Built with", l: [["H Company", "https://www.hcompany.ai"], ["Gladia", "https://www.gladia.io"], ["Gradium", "https://gradium.ai"]] },
   ];
   return (
@@ -970,8 +967,7 @@ export function Footer() {
             Rio is your live software coach. Tell it what you want to learn and it shows you the way, on your own screen.
           </p>
           <div className="footer-ctas">
-            <Btn label="Get Rio" variant="light" size="sm" href={GET_RIO} />
-            <Btn label="Team console" variant="ghost" size="sm" href={APP_URL} />
+            <Btn label="Go to app" variant="light" size="sm" href={APP_URL} />
           </div>
         </div>
         <div className="footer-cols">
