@@ -10,8 +10,10 @@ const MARKS = [
   { id: "top", at: 0 },
   { id: "features", at: 0.29 },
   { id: "pricing", at: 0.57 },
-  { id: "try", at: 0.86 },
+  { id: "try", at: 0.88 },
 ];
+const STEP_MS = 1300;
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 // [fade-in start, fully in, fully in until, faded out]
 const WINDOWS: [number, number, number, number][] = [
   [-1, 0, 0.07, 0.15],
@@ -85,7 +87,7 @@ export function Story() {
       draw();
     };
     const tick = () => {
-      cur = calm ? target : cur + (target - cur) * 0.14;
+      cur = calm ? target : cur + (target - cur) * 0.22;
       if (Math.abs(target - cur) < 0.05) cur = target;
       if (Math.round(cur) !== shown) {
         shown = Math.round(cur);
@@ -100,15 +102,94 @@ export function Story() {
       paintLayers(p);
       if (!raf) raf = requestAnimationFrame(tick);
     };
+    // One gesture = one step: the video plays to the next stop, then rests.
+    let tween = 0;
+    let busyUntil = 0;
+    let acc = 0;
+    let touchY = 0;
+    const bounds = () => {
+      const el = wrap.current!;
+      const top = el.getBoundingClientRect().top + scrollY;
+      return { top, span: el.offsetHeight - innerHeight };
+    };
+    const inside = () => {
+      const { top, span } = bounds();
+      return scrollY >= top - 2 && scrollY <= top + span + 2;
+    };
+    const step = (dir: 1 | -1) => {
+      const { top, span } = bounds();
+      const p = (scrollY - top) / span;
+      const stops = MARKS.map((m) => m.at);
+      const next = dir > 0 ? stops.find((s) => s > p + 0.01) : [...stops].reverse().find((s) => s < p - 0.01);
+      if (next === undefined) return false;
+      const from = scrollY;
+      const to = top + next * span;
+      const t0 = performance.now();
+      const dur = calm ? 0 : STEP_MS;
+      cancelAnimationFrame(tween);
+      busyUntil = t0 + dur + 350;
+      const run = (now: number) => {
+        const k = dur ? Math.min((now - t0) / dur, 1) : 1;
+        scrollTo({ top: from + (to - from) * easeInOut(k), behavior: "instant" });
+        if (k < 1) tween = requestAnimationFrame(run);
+      };
+      tween = requestAnimationFrame(run);
+      return true;
+    };
+    const tryStep = (dir: 1 | -1, e: Event) => {
+      if (!inside()) return;
+      if (performance.now() < busyUntil) return e.preventDefault();
+      if (step(dir)) e.preventDefault();
+    };
+    const onWheel = (e: WheelEvent) => {
+      if (!inside() || e.ctrlKey) return;
+      if (performance.now() < busyUntil) {
+        acc = 0;
+        return e.preventDefault();
+      }
+      acc += e.deltaY;
+      if (Math.abs(acc) < 24) return e.preventDefault();
+      const dir = acc > 0 ? 1 : -1;
+      acc = 0;
+      tryStep(dir, e);
+    };
+    const onTouchStart = (e: TouchEvent) => {
+      touchY = e.touches[0].clientY;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      const dy = touchY - e.touches[0].clientY;
+      if (Math.abs(dy) < 30) {
+        if (inside() && performance.now() < busyUntil) e.preventDefault();
+        return;
+      }
+      touchY = e.touches[0].clientY;
+      tryStep(dy > 0 ? 1 : -1, e);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.closest?.("input, textarea")) return;
+      const down = ["ArrowDown", "PageDown", " "].includes(e.key);
+      const up = ["ArrowUp", "PageUp"].includes(e.key);
+      if (down || up) tryStep(down ? 1 : -1, e);
+    };
+
     size();
     onScroll();
     cur = target;
     addEventListener("resize", size);
     addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("wheel", onWheel, { passive: false });
+    addEventListener("touchstart", onTouchStart, { passive: true });
+    addEventListener("touchmove", onTouchMove, { passive: false });
+    addEventListener("keydown", onKey);
     return () => {
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(tween);
       removeEventListener("resize", size);
       removeEventListener("scroll", onScroll);
+      removeEventListener("wheel", onWheel);
+      removeEventListener("touchstart", onTouchStart);
+      removeEventListener("touchmove", onTouchMove);
+      removeEventListener("keydown", onKey);
     };
   }, []);
 
