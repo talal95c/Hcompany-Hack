@@ -300,6 +300,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .auth__panel { padding: 28px; border-radius: 20px; border: 1px solid var(--line); background: var(--paper); box-shadow: var(--shadow-up); display: flex; flex-direction: column; gap: 14px; }
 .auth__panel h1 { margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -0.025em; text-align: center; }
 .auth__panel p.sub { margin: -6px 0 4px; color: var(--dim); text-align: center; }
+.auth__google { gap: 10px; }
+.auth__or { display: flex; align-items: center; gap: 10px; color: var(--faint); font-size: 12px; }
+.auth__or::before, .auth__or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .auth__switch { margin-top: 16px; text-align: center; color: var(--dim); font-size: 13.5px; }
 .auth__switch button { border: 0; background: none; color: var(--text); cursor: pointer; padding: 0; text-decoration: underline; text-underline-offset: 3px; }
 

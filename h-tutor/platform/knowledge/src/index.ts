@@ -13,10 +13,12 @@
 import { norm } from "./core/inventory.ts";
 import type { Successor, Where } from "./core/inventory.ts";
 import { type IngestBody, ingest, listSources, removeSource } from "./ingest.ts";
+import { semantic, syncVectors } from "./vectors.ts";
 import { type Claim, type Grounding, type Lookup, type PathStep, type Skill, path, resolve } from "./core/retarget.ts";
 
 export interface Env {
   DB: D1Database;
+  AI?: Ai;
   HAI_API_KEY?: string;
   HOLO_INGEST_MODEL?: string;
 }
@@ -196,10 +198,16 @@ const tokens = (q: string) =>
     .filter((t) => t.length > 2 && !STOP.has(t));
 const stem = (t: string) => t.replace(/(ing|ed|es|s)$/, "").slice(0, Math.max(4, t.length - 3)) || t;
 
+/** Below this cosine, Qwen3's nearest skill is only the least unrelated one (calibrated with scripts/eval.ts). */
+const MIN_COS = 0.5;
+
 async function search(env: Env, apps: Apps, url: URL) {
   const p = (k: string) => url.searchParams.get(k);
   const sets = [p("q") ?? "", p("alt") ?? ""].map(tokens).filter((t) => t.length);
-  if (!sets.length) return { results: [] };
+  const q = (p("q") ?? "").trim();
+  if (!q) return { results: [] };
+  // fts: ReStep's words search · vec: Qwen3 embeddings · hybrid (default): both, fused by rank
+  const mode = (p("mode") ?? (env.AI ? "hybrid" : "fts")) as "fts" | "vec" | "hybrid";
   const targets = await apps.match(p("app"));
   if (!targets.length) return { results: [] };
   const { versions } = await apps.all();
@@ -207,7 +215,7 @@ async function search(env: Env, apps: Apps, url: URL) {
   const all = [...new Set(sets.flat())];
   const fts = all.map((t) => `"${t.replace(/"/g, "")}"`).join(" OR ");
   const ws = p("workspace");
-  const { results } = await env.DB.prepare(
+  const { results } = !sets.length || mode === "vec" ? { results: [] as { skill_id: string; app: string; intent: string; body: string; rank: number }[] } : await env.DB.prepare(
     `select skill_id, app, intent, body, bm25(skill_search, 0, 0, 0, 3.0, 1.0) as rank from skill_search
      where skill_search match ? and app in (${targets.map(() => "?").join(",")}) and (workspace is null or workspace = ?)
      order by rank limit 40`,
@@ -223,12 +231,31 @@ async function search(env: Env, apps: Apps, url: URL) {
       return { ...r, cover, score: Math.round(-r.rank * 100) / 100 };
     })
     .filter((r) => r.cover >= 0.5)
-    .filter((r, i, all) => all.findIndex((x) => x.skill_id === r.skill_id) === i)
-    .slice(0, limit);
+    .filter((r, i, all) => all.findIndex((x) => x.skill_id === r.skill_id) === i);
+
+  // Meaning: any language, any wording. Below MIN_COS a neighbour is just the closest of unrelated things.
+  const minCos = Number(p("min_cos") ?? MIN_COS); // calibration (scripts/eval.ts)
+  // If Workers AI fails, the words search still answers.
+  const near = mode === "fts" ? [] : (await semantic(env, targets.map((a) => a.id), ws, q, 20).catch(() => [])).filter((r) => r.cos >= minCos);
+  // Reciprocal rank fusion: a skill both searches find rises; either one alone still counts.
+  const fused = new Map<string, { skill_id: string; app: string; score: number; cos: number | null; words: boolean }>();
+  const add = (id: string, app: string, rank: number, cos: number | null, words: boolean) => {
+    const f = fused.get(id) ?? { skill_id: id, app, score: 0, cos: null, words: false };
+    f.score += 1 / (60 + rank);
+    if (cos != null) f.cos = cos;
+    f.words ||= words;
+    fused.set(id, f);
+  };
+  scored.forEach((r, i) => add(r.skill_id, r.app, i, null, true));
+  near.forEach((r, i) => add(r.id, r.app, i, r.cos, false));
+  const ranked = [...fused.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((f) => ({ ...f, score: Math.round(f.score * 10000) / 100 }));
 
   const out = [];
   for (const app of targets) {
-    const mine = scored.filter((r) => r.app === app.id);
+    const mine = ranked.filter((r) => r.app === app.id);
     if (!mine.length) continue;
     const version = resolveVersion(app, versions.get(app.id) ?? [], p("version") || p("app"));
     const { skills, claims, L } = await load(env.DB, app, [...new Set(mine.map((r) => r.skill_id))], apps.ws);
@@ -243,6 +270,7 @@ async function search(env: Env, apps: Apps, url: URL) {
         id: s.id,
         intent: s.name,
         score: r.score,
+        match: { words: r.words, cos: r.cos == null ? null : Math.round(r.cos * 1000) / 1000 },
         version,
         proof: s.proofs[version.id] ?? null,
         steps: path(L, g, s, claims, version.id).map(compact),
@@ -510,7 +538,9 @@ export default {
       const body = (await req.json()) as IngestBody;
       if (!body.workspace || !body.app?.trim() || !body.text) return json({ error: "workspace, app and text are required" }, 400);
       try {
-        return json(await ingest(env, body));
+        const r = await ingest(env, body);
+        await syncVectors(env, { workspace: body.workspace }).catch(() => {}); // the new skills become searchable by meaning
+        return json(r);
       } catch (e) {
         return json({ error: e instanceof Error ? e.message : String(e) }, 422);
       }
@@ -518,8 +548,12 @@ export default {
     const del = url.pathname.match(/^\/sources\/(.+)$/);
     if (req.method === "DELETE" && del) {
       if (!apps.ws) return json({ error: "workspace required" }, 400);
-      return (await removeSource(env.DB, apps.ws, decodeURIComponent(del[1]))) ? json({ ok: true }) : json({ error: "unknown source" }, 404);
+      const ok = await removeSource(env.DB, apps.ws, decodeURIComponent(del[1]));
+      if (ok) await syncVectors(env, { workspace: apps.ws }).catch(() => {});
+      return ok ? json({ ok: true }) : json({ error: "unknown source" }, 404);
     }
+    // Embeds what changed (after an import: `curl -X POST .../vectors/sync`).
+    if (req.method === "POST" && url.pathname === "/vectors/sync") return json(await syncVectors(env, { app: url.searchParams.get("app") ?? undefined }));
     if (req.method !== "GET") return json({ error: "method not allowed" }, 405);
     try {
       if (url.pathname === "/health") return json({ ok: true });

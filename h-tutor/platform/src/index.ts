@@ -9,7 +9,7 @@
 // organization's own tutorials live here, in D1.
 
 import { Hono, type Context } from "hono";
-import { createAuth } from "./auth.ts";
+import { createAuth, googleEnabled } from "./auth.ts";
 import { type TutorialRow, advance, advancePending, kindOf, youtubeThumbnail } from "./ingest.ts";
 import { type RioTutorial, type SearchHit, search, summaryOf, tutorialsAsKb } from "./kb.ts";
 
@@ -19,6 +19,8 @@ export interface Env {
   ASSETS: Fetcher;
   BETTER_AUTH_SECRET?: string;
   BETTER_AUTH_URL?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
   HAI_API_KEY?: string;
   GLADIA_API_KEY?: string;
   LINKUP_API_KEY?: string;
@@ -125,6 +127,8 @@ function logUsage(c: C, e: { kind: string; tutorialId?: string | null; tutorialT
 // ------------------------------------------------------------------ auth
 
 app.get("/v1/health", (c) => c.json({ ok: true }));
+// Which sign-in methods the console shows (public, no secrets).
+app.get("/api/providers", (c) => c.json({ google: googleEnabled(c.env) }));
 app.on(["GET", "POST"], "/api/auth/*", (c) => createAuth(c.env).handler(c.req.raw));
 
 // ------------------------------------------------------------------ Rio app API (/v1, bearer token)
