@@ -75,3 +75,23 @@ Bold, relit la cellule et contrôle leurs rectangles dans la fenêtre. Il ne dé
 aucune action. Il affiche les raisons internes, les cinq latences, leur médiane et le
 p95 (rang supérieur, donc maximum sur cinq mesures). La profondeur par défaut de 32
 permet d'observer les conteneurs imbriqués du panneau latéral de l'application de recette.
+
+## Fenêtres et contrôle ciblé
+
+Le module `discovery` associe les fenêtres natives aux PID et noms AT-SPI. Sous X11,
+la fenêtre active est lue via EWMH (focus X11 en secours sans gestionnaire de fenêtres),
+les fenêtres visibles sont classées du premier plan vers l'arrière-plan. Les titres
+ne sont jamais journalisés. Un sondage lié à chaque connexion publie `app.focus`
+seulement lors d'un changement et conserve la dernière application externe lorsque
+le panneau du guide prend le focus. Le consentement mémorise cette identité ; chaque
+action vérifie le PID cible et le focus natif frais, y compris avant l'appel sémantique.
+
+`capture.request` avec `scope=window` résout la fenêtre de `app`, réutilise le chemin
+PNG et renseigne `capture.result.app` avec l'identifiant exécutable. Les régions
+ordinaires restent limitées à 1 Mpx ; les fenêtres entières à 16 Mpx et à un seul
+moniteur. Sans scope et avec `crop=null`, la sélection historique est conservée.
+
+`highlight.rect` accepte le message WS et le destinataire de commande desktop. Un
+couple ref/snapshot encore retenu est relu ; sinon le rectangle fourni sert de secours.
+L'overlay convertit les pixels physiques en CSS selon le moniteur et son facteur
+d'échelle, puis affiche un contour arrondi et un libellé texte jusqu'à expiration.

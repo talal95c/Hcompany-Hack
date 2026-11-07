@@ -42,6 +42,7 @@ pub struct State {
     pub captures: Mutex<HashMap<String, Capture>>,
     pub input_lock: tokio::sync::Mutex<()>,
     pub a11y: crate::a11y::Service,
+    pub focus: crate::discovery::Tracker,
     pub capture_lock: tokio::sync::Mutex<()>,
     pub generation: AtomicU64,
     pub revision: AtomicU64,

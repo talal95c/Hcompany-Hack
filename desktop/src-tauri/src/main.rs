@@ -5,6 +5,7 @@ mod audio;
 mod bridge;
 mod commands;
 mod coordinates;
+mod discovery;
 mod guide;
 mod input;
 mod native;
@@ -81,6 +82,7 @@ fn main() {
                 captures: Mutex::new(HashMap::new()),
                 input_lock: tokio::sync::Mutex::new(()),
                 a11y: a11y::Service::default(),
+                focus: discovery::Tracker::default(),
                 capture_lock: tokio::sync::Mutex::new(()),
                 generation: AtomicU64::new(0),
                 revision: AtomicU64::new(0),

@@ -36,6 +36,7 @@ pub enum Error {
     AppNotFound,
     PermissionDenied,
     Timeout,
+    FocusLost,
 }
 impl Error {
     fn code(self) -> &'static str {
@@ -43,7 +44,7 @@ impl Error {
             Self::StaleRef => "STALE_REF",
             Self::AmbiguousTarget => "AMBIGUOUS_TARGET",
             Self::AppNotFound => "APP_NOT_FOUND",
-            Self::PermissionDenied => "PERMISSION_DENIED",
+            Self::PermissionDenied | Self::FocusLost => "PERMISSION_DENIED",
             Self::Timeout => "TIMEOUT",
         }
     }
@@ -54,6 +55,17 @@ impl Error {
             Self::AppNotFound => "Application introuvable.",
             Self::PermissionDenied => "Accès ou action non autorisé.",
             Self::Timeout => "Délai dépassé.",
+            Self::FocusLost => "focus lost",
+        }
+    }
+}
+
+impl Error {
+    fn guard(message: String) -> Self {
+        if message == "focus lost" {
+            Self::FocusLost
+        } else {
+            Self::PermissionDenied
         }
     }
 }
@@ -322,6 +334,52 @@ impl Default for Service {
     }
 }
 impl Service {
+    pub async fn highlight_bounds(
+        &self,
+        reference: &str,
+        snapshot: &str,
+        requested_app: Option<&str>,
+    ) -> Result<crate::coordinates::Rect, Error> {
+        let (epoch, app) = {
+            let mut store = self.store.lock().unwrap();
+            store.prune();
+            let retained = store
+                .snapshots
+                .iter()
+                .find(|s| s.id == snapshot)
+                .ok_or(Error::StaleRef)?;
+            (store.epoch, retained.app.clone())
+        };
+        if let Some(requested) = requested_app {
+            let actual = self.resolve_app(requested).await?;
+            if actual.handle.bus != app.bus || actual.handle.path != app.path {
+                return Err(Error::StaleRef);
+            }
+        }
+        let handle = {
+            let mut store = self.store.lock().unwrap();
+            let (id, _, handle) = store.get(reference, &app)?;
+            if id != snapshot {
+                return Err(Error::StaleRef);
+            }
+            handle
+        };
+        let node = self.sensor.refresh(&handle).await?;
+        let mut store = self.store.lock().unwrap();
+        if store.epoch != epoch {
+            return Err(Error::StaleRef);
+        }
+        store.get(reference, &app)?;
+        Ok(crate::coordinates::Rect {
+            x: node.bounds.x,
+            y: node.bounds.y,
+            width: node.bounds.w,
+            height: node.bounds.h,
+        })
+    }
+    pub async fn applications(&self) -> Result<Vec<App>, Error> {
+        self.sensor.apps().await
+    }
     pub fn clear(&self) {
         let mut store = self.store.lock().unwrap();
         store.snapshots.clear();
@@ -356,7 +414,11 @@ impl Service {
             }
         }
     }
+    #[cfg(test)]
     async fn resolve(&self, requested: &str) -> Result<Handle, Error> {
+        Ok(self.resolve_app(requested).await?.handle)
+    }
+    async fn resolve_app(&self, requested: &str) -> Result<App, Error> {
         let apps = self.sensor.apps().await?;
         apps.into_iter()
             .find(|a| {
@@ -368,7 +430,6 @@ impl Service {
                         || a.pid.to_string() == requested
                 }
             })
-            .map(|a| a.handle)
             .ok_or(Error::AppNotFound)
     }
     async fn execute(&self, state: Option<&State>, r: Request) -> Result<Value, Error> {
@@ -379,12 +440,16 @@ impl Service {
                     state.ok_or(Error::PermissionDenied)?,
                     r.consent_token.as_deref().unwrap_or(""),
                 )
-                .map_err(|_| Error::PermissionDenied)?,
+                .map_err(Error::guard)?,
             )
         } else {
             None
         };
-        let app = self.resolve(&r.app).await?;
+        let resolved = self.resolve_app(&r.app).await?;
+        if let Some(guard) = &guard {
+            guard.require_pid(resolved.pid).map_err(Error::guard)?;
+        }
+        let app = resolved.handle;
         if r.op == "get" || r.op == "action" {
             let (id, old, handle) = self
                 .store
@@ -455,7 +520,7 @@ impl Service {
         value: Option<&'a str>,
         guard: &'a input::ActionGuard<'a>,
     ) -> Result<Node, Error> {
-        guard.check().map_err(|_| Error::PermissionDenied)?;
+        guard.check().map_err(Error::guard)?;
         self.sensor.refresh(handle).await?.allow_action(action)?;
         self.sensor.action(handle, action, value, guard).await?;
         let mut node = self.sensor.refresh(handle).await?;

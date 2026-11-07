@@ -564,7 +564,7 @@ impl AccessibilitySensor for Sensor {
             let ok = match action {
                 "focus" | "scroll_into_view" => {
                     let c = proxy!(ComponentProxy, conn, h);
-                    guard.check().map_err(|_| Error::PermissionDenied)?;
+                    guard.check().map_err(Error::guard)?;
                     if action == "focus" {
                         c.grab_focus().await
                     } else {
@@ -573,7 +573,7 @@ impl AccessibilitySensor for Sensor {
                 }
                 "set_value" if interfaces.contains(Interface::EditableText) => {
                     let e = proxy!(EditableTextProxy, conn, h);
-                    guard.check().map_err(|_| Error::PermissionDenied)?;
+                    guard.check().map_err(Error::guard)?;
                     e.set_text_contents(value.ok_or(Error::PermissionDenied)?)
                         .await
                 }
@@ -583,14 +583,14 @@ impl AccessibilitySensor for Sensor {
                         .and_then(|v| v.parse::<f64>().ok())
                         .filter(|v| v.is_finite())
                         .ok_or(Error::PermissionDenied)?;
-                    guard.check().map_err(|_| Error::PermissionDenied)?;
+                    guard.check().map_err(Error::guard)?;
                     v.set_current_value(number).await.map(|()| true)
                 }
                 "select" => {
                     let parent = handle(a.parent().await.map_err(|_| Error::StaleRef)?)?;
                     let selection = proxy!(SelectionProxy, conn, &parent);
                     let index = a.get_index_in_parent().await.map_err(|_| Error::StaleRef)?;
-                    guard.check().map_err(|_| Error::PermissionDenied)?;
+                    guard.check().map_err(Error::guard)?;
                     selection.select_child(index).await
                 }
                 "press" | "toggle" | "expand" | "collapse" => {
@@ -621,7 +621,7 @@ impl AccessibilitySensor for Sensor {
                         }
                     }
                     let index = selected.ok_or(Error::PermissionDenied)?;
-                    guard.check().map_err(|_| Error::PermissionDenied)?;
+                    guard.check().map_err(Error::guard)?;
                     actions.do_action(index).await
                 }
                 _ => return Err(Error::PermissionDenied),

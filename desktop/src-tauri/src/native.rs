@@ -186,60 +186,6 @@ pub fn capture(crop: Rect, _monitor: &Monitor) -> Result<Vec<u8>, String> {
     Ok(output.into_inner())
 }
 
-#[cfg(target_os = "linux")]
-pub fn blender_focused() -> bool {
-    use x11rb::{
-        connection::Connection,
-        protocol::xproto::{AtomEnum, ConnectionExt},
-    };
-    let result = (|| -> Result<bool, String> {
-        let (conn, screen) = connection()?;
-        let atom = |name: &[u8]| {
-            conn.intern_atom(false, name)
-                .map_err(|e| e.to_string())?
-                .reply()
-                .map(|v| v.atom)
-                .map_err(|e| e.to_string())
-        };
-        let root = conn.setup().roots[screen].root;
-        let active = conn
-            .get_property(
-                false,
-                root,
-                atom(b"_NET_ACTIVE_WINDOW")?,
-                AtomEnum::WINDOW,
-                0,
-                1,
-            )
-            .map_err(|e| e.to_string())?
-            .reply()
-            .map_err(|e| e.to_string())?;
-        let Some(window) = active.value32().and_then(|mut v| v.next()) else {
-            return Ok(false);
-        };
-        let pid = conn
-            .get_property(
-                false,
-                window,
-                atom(b"_NET_WM_PID")?,
-                AtomEnum::CARDINAL,
-                0,
-                1,
-            )
-            .map_err(|e| e.to_string())?
-            .reply()
-            .map_err(|e| e.to_string())?;
-        let Some(pid) = pid.value32().and_then(|mut v| v.next()) else {
-            return Ok(false);
-        };
-        let path = std::fs::read_link(format!("/proc/{pid}/exe")).map_err(|e| e.to_string())?;
-        Ok(path
-            .file_name()
-            .is_some_and(|s| s == "blender" || s == "blender-bin"))
-    })();
-    result.unwrap_or(false)
-}
-
 #[cfg(test)]
 mod live_tests {
     use super::*;
@@ -315,17 +261,6 @@ pub fn capture(crop: Rect, monitor: &Monitor) -> Result<Vec<u8>, String> {
     Ok(output.into_inner())
 }
 
-#[cfg(target_os = "windows")]
-pub fn blender_focused() -> bool {
-    xcap::Window::all().is_ok_and(|windows| {
-        windows.iter().any(|w| {
-            w.is_focused().unwrap_or(false)
-                && w.app_name()
-                    .is_ok_and(|n| n.eq_ignore_ascii_case("blender"))
-        })
-    })
-}
-
 #[cfg(target_os = "macos")]
 pub fn mac_call(args: &[&str]) -> Result<Vec<u8>, String> {
     use std::os::unix::fs::PermissionsExt;
@@ -369,9 +304,4 @@ pub fn capture(crop: Rect, monitor: &Monitor) -> Result<Vec<u8>, String> {
         &crop.width.to_string(),
         &crop.height.to_string(),
     ])
-}
-
-#[cfg(target_os = "macos")]
-pub fn blender_focused() -> bool {
-    mac_call(&["focus"]).is_ok_and(|v| v == b"true")
 }

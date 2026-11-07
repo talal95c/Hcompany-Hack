@@ -12,6 +12,7 @@ use crate::{native, State};
 pub struct Consent {
     pub token: String,
     pub until: Instant,
+    pub target: crate::discovery::Target,
 }
 
 #[derive(Debug, Deserialize)]
@@ -24,14 +25,19 @@ pub enum Action {
     Scroll { amount: i32 },
 }
 
-pub fn grant(state: &State) -> String {
+pub fn grant(state: &State) -> Result<String, String> {
+    let target = state
+        .focus
+        .target()
+        .ok_or("Aucune application cible observée")?;
     let token = uuid::Uuid::new_v4().to_string();
     state.stopped.store(false, Ordering::SeqCst);
     *state.consent.lock().unwrap() = Some(Consent {
         token: token.clone(),
         until: Instant::now() + Duration::from_secs(60),
+        target,
     });
-    token
+    Ok(token)
 }
 
 pub fn stop(state: &State) {
@@ -43,9 +49,9 @@ pub fn stop(state: &State) {
 
 pub fn perform(state: &State, payload: &Value) -> Result<(), String> {
     let _guard = guard(state, payload["consent_token"].as_str().unwrap_or(""))?;
-    if !native::permissions().accessibility || !native::blender_focused() {
+    if !native::permissions().accessibility {
         stop(state);
-        return Err("Blender must have focus and Accessibility permission".into());
+        return Err("Accessibility permission required".into());
     }
     let id = payload["capture_id"].as_str().ok_or("missing capture")?;
     let capture = state
@@ -78,9 +84,6 @@ pub fn perform(state: &State, payload: &Value) -> Result<(), String> {
             };
             move_to(x, y)?;
             _guard.check()?;
-            if state.stopped.load(Ordering::SeqCst) || !native::blender_focused() {
-                return Err("stopped or focus lost".into());
-            }
             enigo
                 .button(button, Direction::Click)
                 .map_err(|e| e.to_string())?;
@@ -98,7 +101,7 @@ pub fn perform(state: &State, payload: &Value) -> Result<(), String> {
                     .chars()
                     .all(|c| c.is_alphanumeric() || " _-.".contains(c))
             {
-                return Err("text must be a simple Blender label, not code or a secret".into());
+                return Err("text must be a simple application label, not code or a secret".into());
             }
             enigo.text(&text).map_err(|e| e.to_string())?;
         }
@@ -120,11 +123,25 @@ pub struct ActionGuard<'a> {
     stopped: &'a std::sync::atomic::AtomicBool,
     connected: &'a std::sync::atomic::AtomicBool,
     token: &'a str,
+    focus_check: fn(&crate::discovery::Target) -> bool,
     _lock: tokio::sync::MutexGuard<'a, ()>,
 }
 
 impl ActionGuard<'_> {
     pub fn check(&self) -> Result<(), String> {
+        let consent = self.consent.lock().unwrap();
+        check_consent(
+            consent.as_ref(),
+            self.token,
+            self.stopped.load(Ordering::SeqCst),
+            self.connected.load(Ordering::SeqCst),
+            Instant::now(),
+        )?;
+        let target = consent.as_ref().ok_or("consent missing")?.target.clone();
+        drop(consent);
+        if !(self.focus_check)(&target) {
+            return Err("focus lost".into());
+        }
         check_consent(
             self.consent.lock().unwrap().as_ref(),
             self.token,
@@ -132,6 +149,20 @@ impl ActionGuard<'_> {
             self.connected.load(Ordering::SeqCst),
             Instant::now(),
         )
+    }
+    pub fn require_pid(&self, pid: u32) -> Result<(), String> {
+        self.check()?;
+        if self
+            .consent
+            .lock()
+            .unwrap()
+            .as_ref()
+            .is_some_and(|c| c.target.pid == pid)
+        {
+            Ok(())
+        } else {
+            Err("focus lost".into())
+        }
     }
 }
 
@@ -156,6 +187,7 @@ pub fn guard<'a>(state: &'a State, token: &'a str) -> Result<ActionGuard<'a>, St
         &state.connected,
         &state.input_lock,
         token,
+        crate::discovery::target_focused,
     )
 }
 
@@ -165,12 +197,14 @@ pub fn guard_parts<'a>(
     connected: &'a std::sync::atomic::AtomicBool,
     lock: &'a tokio::sync::Mutex<()>,
     token: &'a str,
+    focus_check: fn(&crate::discovery::Target) -> bool,
 ) -> Result<ActionGuard<'a>, String> {
     let guard = ActionGuard {
         consent,
         stopped,
         connected,
         token,
+        focus_check,
         _lock: lock.try_lock().map_err(|_| "desktop busy")?,
     };
     guard.check()?;
@@ -198,11 +232,37 @@ fn allowed_key(key: &str) -> Result<Key, String> {
 mod tests {
     use super::*;
     #[test]
+    fn focus_loss_and_different_target_refuse_guarded_actions() {
+        let consent = std::sync::Mutex::new(Some(Consent {
+            token: "token".into(),
+            until: Instant::now() + Duration::from_secs(60),
+            target: crate::discovery::Target {
+                app_id: "editor".into(),
+                name: "Editor".into(),
+                pid: 42,
+            },
+        }));
+        let stopped = std::sync::atomic::AtomicBool::new(false);
+        let connected = std::sync::atomic::AtomicBool::new(true);
+        let lock = tokio::sync::Mutex::new(());
+        assert!(
+            matches!(guard_parts(&consent,&stopped,&connected,&lock,"token",|_|false),Err(e) if e=="focus lost")
+        );
+        let guard = guard_parts(&consent, &stopped, &connected, &lock, "token", |_| true).unwrap();
+        assert!(guard.require_pid(42).is_ok());
+        assert_eq!(guard.require_pid(43).unwrap_err(), "focus lost");
+    }
+    #[test]
     fn action_guards_reject_missing_expired_stopped_and_busy() {
         let now = Instant::now();
         let consent = Consent {
             token: "token".into(),
             until: now + Duration::from_secs(1),
+            target: crate::discovery::Target {
+                app_id: "editor".into(),
+                name: "Editor".into(),
+                pid: 42,
+            },
         };
         assert!(check_consent(None, "token", false, true, now).is_err());
         assert!(check_consent(Some(&consent), "wrong", false, true, now).is_err());

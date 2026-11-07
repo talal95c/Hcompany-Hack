@@ -1,12 +1,31 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Rect {
     pub x: f64,
     pub y: f64,
     pub width: f64,
     pub height: f64,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ScreenRect {
+    pub x: f64,
+    pub y: f64,
+    pub w: f64,
+    pub h: f64,
+}
+impl ScreenRect {
+    pub fn rect(self) -> Rect {
+        Rect {
+            x: self.x,
+            y: self.y,
+            width: self.w,
+            height: self.h,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -19,6 +38,14 @@ pub struct Monitor {
 }
 
 impl Rect {
+    pub fn screen(self) -> ScreenRect {
+        ScreenRect {
+            x: self.x,
+            y: self.y,
+            w: self.width,
+            h: self.height,
+        }
+    }
     pub fn logical_to_physical(self, scale: f64) -> Option<Self> {
         if !scale.is_finite() || scale <= 0.0 || !self.valid() {
             return None;
@@ -55,6 +82,18 @@ impl Rect {
 }
 
 impl Monitor {
+    pub fn overlay_rect(&self, rect: Rect) -> Result<Rect, String> {
+        if !self.contains(rect) {
+            return Err("Zone hors moniteur".into());
+        }
+        Ok(Rect {
+            x: (rect.x - self.physical.x) / self.scale,
+            y: (rect.y - self.physical.y) / self.scale,
+            width: rect.width / self.scale,
+            height: rect.height / self.scale,
+        })
+    }
+
     pub fn contains(&self, crop: Rect) -> bool {
         let p = self.physical;
         p.valid()
@@ -127,5 +166,11 @@ mod tests {
         assert!(m.point(crop, f64::NAN, 0.).is_err());
         assert!(m.point(Rect { x: -10., ..crop }, 0., 0.).is_err());
         assert!(m.point(crop, -1., 0.).is_err());
+        let css = m.overlay_rect(crop).unwrap();
+        assert_eq!(
+            (css.x, css.y, css.width, css.height),
+            (100., 100., 200., 100.)
+        );
+        assert!(m.overlay_rect(Rect { x: -10., ..crop }).is_err());
     }
 }

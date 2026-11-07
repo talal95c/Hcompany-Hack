@@ -28,8 +28,32 @@ struct Native {
                 default: throw Failure.invalid
                 }
             case "focus":
-                let name = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
-                FileHandle.standardOutput.write(Data((name == "org.blenderfoundation.blender" ? "true" : "false").utf8))
+                guard let app = NSWorkspace.shared.frontmostApplication else { throw Failure.invalid }
+                let id = app.bundleIdentifier ?? app.executableURL?.lastPathComponent ?? String(app.processIdentifier)
+                try json(["app_id": id, "name": app.localizedName ?? id, "pid": app.processIdentifier])
+            case "windows":
+                let front = NSWorkspace.shared.frontmostApplication?.processIdentifier
+                let own = args.count > 1 ? Int32(args[1]) : nil
+                let entries = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] ?? []
+                let values: [[String: Any]] = entries.compactMap { entry in
+                    guard let pid = entry[kCGWindowOwnerPID as String] as? Int32, pid != own,
+                          let app = NSRunningApplication(processIdentifier: pid),
+                          let raw = entry[kCGWindowBounds as String] as? [String: Any],
+                          let bounds = CGRect(dictionaryRepresentation: raw as CFDictionary), bounds.width > 0, bounds.height > 0,
+                          (entry[kCGWindowLayer as String] as? Int) == 0 else { return nil }
+                    var displays = [CGDirectDisplayID](repeating: 0, count: 32)
+                    var count: UInt32 = 0
+                    CGGetActiveDisplayList(32, &displays, &count)
+                    let display = displays.prefix(Int(count)).first { CGDisplayBounds($0).intersects(bounds) } ?? CGMainDisplayID()
+                    let scale = Double(CGDisplayPixelsWide(display)) / CGDisplayBounds(display).width
+                    let id = app.bundleIdentifier ?? app.executableURL?.lastPathComponent ?? String(pid)
+                    return ["app_id": id, "name": app.localizedName ?? id, "pid": pid,
+                            "window_title": entry[kCGWindowName as String] as? String ?? "",
+                            "window_bounds": ["x": bounds.minX * scale, "y": bounds.minY * scale,
+                                              "width": bounds.width * scale, "height": bounds.height * scale],
+                            "scale": scale, "focused": pid == front]
+                }
+                try json(values)
             case "monitors":
                 var ids = [CGDirectDisplayID](repeating: 0, count: 32)
                 var count: UInt32 = 0

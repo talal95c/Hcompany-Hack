@@ -8,6 +8,7 @@ use tokio::sync::Notify;
 #[derive(Clone, Copy)]
 enum Scenario {
     Normal,
+    Moved,
     Empty,
     Ambiguous,
     Incomplete,
@@ -83,6 +84,16 @@ impl AccessibilitySensor for Mock {
             Ok(Node {
                 secure: matches!(self.scenario, Scenario::Secure),
                 value: Some("fresh-value".into()),
+                bounds: Bounds {
+                    x: if matches!(self.scenario, Scenario::Moved) {
+                        9.
+                    } else {
+                        1.
+                    },
+                    y: 2.,
+                    w: 30.,
+                    h: 20.,
+                },
                 ..node("Save")
             })
         })
@@ -138,6 +149,11 @@ impl Default for ConsentContext {
             consent: Mutex::new(Some(input::Consent {
                 token: "token".into(),
                 until: Instant::now() + Duration::from_secs(60),
+                target: crate::discovery::Target {
+                    app_id: "editor-bin".into(),
+                    name: "Editor".into(),
+                    pid: 42,
+                },
             })),
             stopped: AtomicBool::new(false),
             connected: AtomicBool::new(true),
@@ -153,6 +169,7 @@ impl ConsentContext {
             &self.connected,
             &self.lock,
             "token",
+            |_| true,
         )
     }
 }
@@ -311,6 +328,57 @@ async fn mock_secure_values_are_suppressed_and_set_value_never_dispatches() {
     let result = service.act(&app(), "focus", None, &guard).await.unwrap();
     assert!(result.value.is_none());
     assert_eq!(control.actions.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn highlight_refs_are_fresh_snapshot_scoped_and_expire() {
+    let (service, _) = service(Scenario::Moved);
+    let snapshot = service.run(None, snapshot_request()).await;
+    let reference = snapshot["nodes"][0]["ref"].as_str().unwrap();
+    let id = snapshot["snapshot_id"].as_str().unwrap();
+    let rect = service
+        .highlight_bounds(reference, id, Some("editor"))
+        .await
+        .unwrap();
+    assert_eq!(
+        (rect.x, rect.y, rect.width, rect.height),
+        (9., 2., 30., 20.)
+    );
+    let payload = json!({"ref":reference,"snapshot_id":id,"rect":{"x":99,"y":88,"w":77,"h":66},"color":"red","duration_ms":1000});
+    let fresh = crate::commands::highlight_bounds(&service, &payload)
+        .await
+        .unwrap();
+    assert_eq!(fresh.x, 9.);
+    assert!(service
+        .highlight_bounds(reference, "other", None)
+        .await
+        .is_err());
+    assert!(service
+        .highlight_bounds(reference, id, Some("missing"))
+        .await
+        .is_err());
+    service.clear();
+    assert!(service.highlight_bounds(reference, id, None).await.is_err());
+    let fallback = crate::commands::highlight_bounds(&service, &payload)
+        .await
+        .unwrap();
+    assert_eq!(
+        (fallback.x, fallback.y, fallback.width, fallback.height),
+        (99., 88., 77., 66.)
+    );
+}
+
+#[tokio::test]
+async fn highlight_native_failure_and_timeout_use_supplied_rectangle() {
+    for scenario in [Scenario::Defunct, Scenario::PausedRefresh] {
+        let (service, _) = service(scenario);
+        let snapshot = service.run(None, snapshot_request()).await;
+        let payload = json!({"ref":snapshot["nodes"][0]["ref"],"snapshot_id":snapshot["snapshot_id"],"rect":{"x":99,"y":88,"w":77,"h":66}});
+        let fallback = crate::commands::highlight_bounds(&service, &payload)
+            .await
+            .unwrap();
+        assert_eq!(fallback.x, 99.);
+    }
 }
 
 #[tokio::test]
@@ -615,4 +683,107 @@ async fn live_accessibility() {
         }
     }
     println!("find cell + toolbar toggle + get: bounds inside frame");
+
+    let started = Instant::now();
+    let window = crate::discovery::resolve(&service, &app_name)
+        .await
+        .unwrap();
+    println!(
+        "window_lookup_ms={:.3}",
+        started.elapsed().as_secs_f64() * 1000.
+    );
+    assert!(window.window_title.contains("LibreOffice Calc"));
+    assert_ne!(window.pid, std::process::id());
+    assert_eq!(
+        crate::discovery::focused().unwrap().unwrap().pid,
+        window.pid
+    );
+    for (field, actual) in [
+        ("x", window.window_bounds.x),
+        ("y", window.window_bounds.y),
+        ("w", window.window_bounds.width),
+        ("h", window.window_bounds.height),
+    ] {
+        assert!((actual - frame["bounds"][field].as_f64().unwrap()).abs() <= 3.);
+    }
+    let focus = crate::discovery::focus_payload(&window, "available");
+    assert!(crate::protocol::validate(
+        &crate::protocol::envelope("s", "app.focus", focus, None),
+        "s"
+    )
+    .is_ok());
+    let monitor = crate::native::monitors()
+        .unwrap()
+        .into_iter()
+        .find(|m| m.contains(window.window_bounds))
+        .unwrap();
+    let started = Instant::now();
+    let png = crate::native::capture(window.window_bounds, &monitor).unwrap();
+    println!(
+        "window_capture_ms={:.3} png_bytes={}",
+        started.elapsed().as_secs_f64() * 1000.,
+        png.len()
+    );
+    let image = image::load_from_memory(&png).unwrap();
+    assert_eq!(
+        (image.width(), image.height()),
+        (
+            window.window_bounds.width as u32,
+            window.window_bounds.height as u32
+        )
+    );
+    let capture = json!({"capture_id":"window","request_id":"capture","ui_revision":0,"crop":window.window_bounds,"scale":window.scale,"monitor_id":monitor.id,"app":window.app_id,"image_ref":"data:image/png;base64,fixture"});
+    assert!(crate::protocol::validate(
+        &crate::protocol::envelope("s", "capture.result", capture, None),
+        "s"
+    )
+    .is_ok());
+    if let Ok(path) = std::env::var("HCOMPANY_WINDOW_PNG") {
+        std::fs::write(path, &png).unwrap();
+    }
+    let context = ConsentContext::default();
+    context.consent.lock().unwrap().as_mut().unwrap().target =
+        crate::discovery::Target::from(&window);
+    let native_guard = || {
+        input::guard_parts(
+            &context.consent,
+            &context.stopped,
+            &context.connected,
+            &context.lock,
+            "token",
+            crate::discovery::target_focused,
+        )
+    };
+    let app = service.resolve(&app_name).await.unwrap();
+    let (_, before, handle) = service
+        .store
+        .lock()
+        .unwrap()
+        .get(bold["nodes"][0]["ref"].as_str().unwrap(), &app)
+        .unwrap();
+    let active = |node: &Node| node.states.iter().any(|s| s == "checked" || s == "pressed");
+    let guard = native_guard().unwrap();
+    guard.require_pid(window.pid).unwrap();
+    let started = Instant::now();
+    let after = service.act(&handle, "press", None, &guard).await.unwrap();
+    println!(
+        "action_round_trip_ms={:.3}",
+        started.elapsed().as_secs_f64() * 1000.
+    );
+    let restored = service.act(&handle, "press", None, &guard).await.unwrap();
+    assert_ne!(active(&before), active(&after));
+    assert_eq!(active(&before), active(&restored));
+    context.stopped.store(true, Ordering::SeqCst);
+    assert!(matches!(
+        service.act(&handle, "press", None, &guard).await,
+        Err(Error::PermissionDenied)
+    ));
+    drop(guard);
+    assert!(native_guard().is_err());
+    context.stopped.store(false, Ordering::SeqCst);
+    *context.consent.lock().unwrap() = None;
+    assert!(native_guard().is_err());
+    let denied=service.run(None,json!({"request_id":"denied","op":"action","app":app_name,"ref":bold["nodes"][0]["ref"],"action":"press","consent_token":"invalid"})).await;
+    assert_eq!(denied["error"]["code"], "PERMISSION_DENIED");
+    println!("app.focus discovery + window PNG dimensions + guarded Bold toggle/restore + no-consent/stop refusal: ok");
 }
