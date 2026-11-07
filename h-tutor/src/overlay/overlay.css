@@ -1,4 +1,9 @@
-:root { --ghost: #0a84ff; --ghost-ok: #30d158; }
+:root {
+  --g1: #38bdf8;
+  --g2: #818cf8;
+  --g3: #f472b6;
+  --ok: #34d399;
+}
 
 .ghost {
   position: fixed;
@@ -7,88 +12,77 @@
   width: 0;
   height: 0;
   pointer-events: none;
-  transition:
-    transform 400ms cubic-bezier(0.23, 1, 0.32, 1),
-    opacity 200ms ease;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
 }
 
-.ghost--hidden { opacity: 0; }
-.ghost--thinking { opacity: 0.3; }
-.ghost--shown, .ghost--hit { opacity: 0.92; }
-
+/* The tip of the arrow sits at (2, 2) of a 24 box drawn at 26 px. */
 .ghost__cursor {
   position: absolute;
-  left: -1px;
-  top: -1px;
-  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.6)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+  left: -2px;
+  top: -2px;
+  width: 26px;
+  height: 26px;
 }
+.ghost__cursor svg {
+  display: block;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.55)) drop-shadow(0 3px 8px rgba(129, 140, 248, 0.55));
+}
+.ghost--trail svg { position: absolute; left: -2px; top: -2px; }
+.ghost--hit .ghost__cursor svg path { fill: var(--ok); }
 
-/* A still, soft halo: findable on busy UIs without moving. */
 .ghost__halo {
   position: absolute;
-  left: -18px;
-  top: -18px;
-  width: 36px;
-  height: 36px;
+  left: -20px;
+  top: -20px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(10, 132, 255, 0.3) 0%, rgba(10, 132, 255, 0) 70%);
+  background: radial-gradient(circle, rgba(129, 140, 248, 0.35) 0%, rgba(244, 114, 182, 0.12) 45%, transparent 70%);
 }
-.ghost--thinking .ghost__halo { opacity: 0; }
-
-.ghost--hit .ghost__halo {
-  animation: hit 450ms ease-out forwards;
-  background: radial-gradient(circle, rgba(48, 209, 88, 0.45) 0%, rgba(48, 209, 88, 0) 70%);
-}
-.ghost--hit .ghost__cursor path { fill: var(--ghost-ok); }
-
-@keyframes hit {
-  from { transform: scale(0.8); opacity: 1; }
-  to { transform: scale(2.2); opacity: 0; }
-}
+.ghost--hit .ghost__halo { background: radial-gradient(circle, rgba(52, 211, 153, 0.5) 0%, transparent 70%); }
 
 .ghost__label {
   position: absolute;
-  left: 20px;
-  top: 24px;
+  left: 24px;
+  top: 26px;
   max-width: 220px;
   width: max-content;
-  padding: 5px 9px;
-  border-radius: 6px;
-  background: rgba(22, 22, 24, 0.9);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  color: rgba(255, 255, 255, 0.95);
+  padding: 5px 10px;
+  border-radius: 8px;
+  color: #fff;
   font-size: 11.5px;
   line-height: 1.35;
   font-weight: 500;
-  opacity: 0;
-  transform: translateY(-2px);
-  transition: opacity 250ms ease, transform 250ms ease;
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(244, 114, 182, 0.22)),
+    rgba(18, 18, 24, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
-.ghost__label.is-on { opacity: 1; transform: none; }
 .ghost__label.is-left { left: auto; right: 10px; }
 .ghost__label.is-up { top: auto; bottom: 10px; }
 
-/* The real element (from the accessibility tree), outlined. */
+/* The real element (from the accessibility tree): a gradient ring. */
 .ghost-box {
   position: fixed;
   left: 0;
   top: 0;
   pointer-events: none;
-  border-radius: 8px;
-  border: 1.5px solid rgba(10, 132, 255, 0.95);
-  background: rgba(10, 132, 255, 0.08);
-  transition:
-    transform 400ms cubic-bezier(0.23, 1, 0.32, 1),
-    width 400ms cubic-bezier(0.23, 1, 0.32, 1),
-    height 400ms cubic-bezier(0.23, 1, 0.32, 1),
-    opacity 200ms ease;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(244, 114, 182, 0.08));
 }
-.ghost-box--hidden, .ghost-box--thinking { opacity: 0; }
-.ghost-box--hit { border-color: rgba(48, 209, 88, 0.95); background: rgba(48, 209, 88, 0.1); }
-
-@media (prefers-reduced-motion: reduce) {
-  .ghost, .ghost-box { transition: opacity 200ms ease; }
-  .ghost--hit .ghost__halo { animation: none; }
+.ghost-box::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(135deg, var(--g1), var(--g2), var(--g3));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
 }
+.ghost-box--hit { background: rgba(52, 211, 153, 0.1); }
+.ghost-box--hit::before { background: var(--ok); }

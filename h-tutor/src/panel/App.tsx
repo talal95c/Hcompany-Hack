@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Palette from "./Palette";
+import { motion } from "motion/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { listen } from "@tauri-apps/api/event";
 import { api, errorText, speak, stopSpeaking, type Imported, type MilestoneView, type Status, type Step, type TutorialSummary } from "./api";
@@ -427,7 +428,12 @@ export default function App() {
       )}
 
       {phase === "running" && step && (
-        <div className="run">
+        <motion.div
+          className="run"
+          initial={{ opacity: 0, y: 8, filter: "blur(6px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+        >
           <div className="row row--meta">
             <div className="segments" aria-label="Étapes">
               {progress.map((m) => (
@@ -504,7 +510,15 @@ export default function App() {
             </div>
           )}
 
-          <p className={`instruction ${busy || explain ? "instruction--dim" : ""}`}>{step.instruction}</p>
+          <motion.p
+            key={step.instruction}
+            className={`instruction ${busy || explain ? "instruction--dim" : ""}`}
+            initial={{ opacity: 0, y: 6, filter: "blur(6px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+          >
+            {step.instruction}
+          </motion.p>
           {step.teach && !busy && !explain && <div className="teach">{step.teach}</div>}
           {step.milestone?.video_url && !explain && (
             <button className="video-link" onClick={() => openUrl(step.milestone!.video_url!)} title="Ouvrir la vidéo à ce moment">
@@ -523,7 +537,7 @@ export default function App() {
           )}
 
           {listening ? (
-            <div className="status status--rec">{heard ? `“${heard}”` : "Listening…"}</div>
+            <div className="status status--rec">{heard ? `“${heard}”` : "Je t'écoute…"}</div>
           ) : explain ? (
             <div className="status">En pause pendant qu'on parle.</div>
           ) : busy ? (
@@ -556,7 +570,7 @@ export default function App() {
               spellCheck={false}
             />
           </form>
-        </div>
+        </motion.div>
       )}
 
       {phase === "imported" && imported && (
