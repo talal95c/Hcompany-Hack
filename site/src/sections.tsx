@@ -15,8 +15,8 @@ import {
   ScrollRevealText,
   Ticker,
 } from "./ui";
+import { APP_ICONS } from "./appIcons";
 
-const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Finder", "Figma", "VS Code"];
 
 /* ---------------- Nav ---------------- */
 
@@ -87,8 +87,13 @@ export function Hero() {
             Works on top of the apps you already use, from 3D to spreadsheets.
           </p>
           <Marquee duration={28} className="hero-logos">
-            {APPS.map((l) => (
-              <span key={l} className="app-logo">{l}</span>
+            {APP_ICONS.map((a, i) => (
+              <span key={a.name} className="app-logo" style={{ animationDelay: `${-i * 0.9}s` }}>
+                <svg viewBox="0 0 24 24" aria-hidden>
+                  <path d={a.path} />
+                </svg>
+                {a.name}
+              </span>
             ))}
           </Marquee>
         </motion.div>

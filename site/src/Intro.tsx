@@ -30,7 +30,7 @@ export function Intro({ onEnter, onGone }: { onEnter: () => void; onGone: () => 
   const finish = () => {
     setLeaving(true);
     onEnter();
-    window.setTimeout(onGone, 900);
+    window.setTimeout(onGone, 1200);
   };
 
   function enter(e: React.MouseEvent<HTMLButtonElement>) {
@@ -56,7 +56,10 @@ export function Intro({ onEnter, onGone }: { onEnter: () => void; onGone: () => 
       >
         {!ready && <img src="/crt/poster.png" alt="" draggable="false" />}
       </button>
-      <div className="crt-flash" aria-hidden />
+      <div className="crt-vhs" aria-hidden>
+        <span className="vhs-band" />
+        <span className="vhs-band vhs-band--2" />
+      </div>
       <p className="crt-hint">Click the computer to enter Rio</p>
     </div>
   );
