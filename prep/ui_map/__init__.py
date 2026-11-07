@@ -64,9 +64,17 @@ def diff_ui_maps(a: dict, b: dict) -> dict:
 
 
 def operator_menu(ui_map: dict, operator_id: str) -> str | None:
-    candidates = [key for key, menu in ui_map.get("menus", {}).items()
-                  if any(entry.get("kind") == "operator" and entry.get("id") == operator_id
-                         for entry in menu.get("entries", []))]
+    candidates = [
+        key
+        for key, menu in ui_map.get("menus", {}).items()
+        if any(
+            entry.get("kind") == "operator" and entry.get("id") == operator_id
+            for entry in menu.get("entries", [])
+        )
+    ]
     preferred = [key for key in candidates if key.startswith("VIEW3D_MT_")]
-    return min(preferred or candidates, key=lambda key: (
-        len(ui_map["menus"][key].get("entries", [])), key), default=None)
+    return min(
+        preferred or candidates,
+        key=lambda key: (len(ui_map["menus"][key].get("entries", [])), key),
+        default=None,
+    )

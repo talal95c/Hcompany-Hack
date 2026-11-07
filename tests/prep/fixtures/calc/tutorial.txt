@@ -1,0 +1,5 @@
+Hi everyone, welcome back to the channel! Today a quick spreadsheet tip with a small monthly sales table.
+First, let's total the Sales column: click cell B6, right below the numbers, type =SUM(B2:B5) and press Enter.
+Next, make the header stand out: select cells A1 and B1, then click the Bold button on the formatting toolbar.
+Finally, add a chart: select the range A1:B5, open the Insert menu, choose Chart, and click Finish in the wizard.
+That's it, your table is ready. See you next time!
