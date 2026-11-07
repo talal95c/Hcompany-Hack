@@ -745,7 +745,15 @@ class EngineRuntime:
                 wants_to_learn=not (intent.get("delegation_confirmed") is True
                                     and intent.get("wants_to_learn") is False),
             )
-            if not allowed or (not undo and self.session.status != "OBSERVING"):
+            awaiting_consent = (
+                self.adapter is not self.plugin
+                and self.demo_requested == (self.session.generation, self.a11y.focus_epoch)
+                and self.session.status == "PAUSED"
+                and not self.actions_stopped
+                and self.session.preconditions_hold(self.adapter.facts())
+            )
+            if not allowed or (not undo and self.session.status != "OBSERVING"
+                               and not awaiting_consent):
                 raise ValueError
             if self.adapter is not self.plugin:
                 if self.action_task and not self.action_task.done():
@@ -757,6 +765,8 @@ class EngineRuntime:
                     raise ValueError
             self.consent_tokens.add(token)
             self.consent = (token, self.clock.monotonic() + 60, self.session.generation)
+            if awaiting_consent:
+                self.session.transition("OBSERVING")
             if self.session.status == "OBSERVING":
                 self.session.transition("ACTING")
             if self.adapter is not self.plugin:
@@ -852,12 +862,12 @@ class EngineRuntime:
                     hint = self.a11y.expected_rect(step)
                     region = step["check"]["params"].get("region")
                     expected = hint.rect.milli(rect) if hint else (
-                        Rect.from_dict(region) if region else Rect(0, 0, 1000, 1000))
+                        Rect.from_dict(region) if region else None)
                     if (not point or not authorized() or point.target_visible is not True
                             or point.confidence is None or not math.isfinite(point.confidence)
                             or point.confidence < 0.5 or not 0 < point.x < 1000
                             or not 0 < point.y < 1000 or not rect.valid
-                            or not expected.contains(point.x, point.y)):
+                            or expected is None or not expected.contains(point.x, point.y)):
                         raise ValueError("Point hors de la cible attendue")
                     self.capture = {**payload, "image_png": image, "consumed": False}
                     result = await self._input_action(

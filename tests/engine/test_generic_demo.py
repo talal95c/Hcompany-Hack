@@ -102,8 +102,9 @@ async def test_stop_cancels_pending_action_and_ignores_late_ack(tmp_path):
         await runtime.close()
 
 
-@pytest.mark.parametrize("point", [(500, 500), (55, 159)])
-async def test_vision_demo_validates_expected_bounds_and_postchecks(tmp_path, point):
+@pytest.mark.parametrize("point, bounded", [((500, 500), True), ((55, 159), True),
+                                           ((990, 990), False)])
+async def test_vision_demo_validates_expected_bounds_and_postchecks(tmp_path, point, bounded):
     class Holo:
         async def localize(self, image, description, *, timeout_s):
             return LocalizeResult(*point, 0.99, 1, True)
@@ -119,6 +120,10 @@ async def test_vision_demo_validates_expected_bounds_and_postchecks(tmp_path, po
         runtime.session.step["check"] = {"name": "visual_assert", "params": {
             "assertion": "La cellule est sélectionnée ?", "region": {
                 "x": 25, "y": 145, "w": 65, "h": 30}}}
+        if not bounded:
+            del runtime.session.step["check"]["params"]["region"]
+            runtime.a11y.invalidate()
+            assert runtime.a11y.expected_rect(runtime.session.step) is None
         runtime.policy.set_step(runtime.session.step, runtime.session.generation)
         runtime.router.requested = "vision"
         runtime.select_adapter()
@@ -140,6 +145,38 @@ async def test_vision_demo_validates_expected_bounds_and_postchecks(tmp_path, po
         await completed_task(runtime)
         await desktop.barrier()
         assert any(c["type"] == "success" for c in desktop.commands) is bool(inputs)
+    finally:
+        await desktop.close()
+        await runtime.close()
+
+
+@pytest.mark.parametrize("interruption", [None, "stop", "generation", "precondition"])
+async def test_paused_demo_consent_requires_current_request(tmp_path, interruption):
+    runtime, desktop = await start_runtime(tmp_path)
+    try:
+        runtime.session.lesson["steps"] = runtime.session.lesson["steps"][:1]
+        await runtime.observe_once()
+        await request(desktop, runtime)
+        runtime.pause()
+        assert runtime.session.status == "PAUSED"
+        if interruption == "stop":
+            await send_ws(desktop.ws, "user.intent", {"text": "chut", "source": "clavier"})
+            await desktop.barrier()
+        elif interruption == "generation":
+            runtime.session.generation += 1
+        elif interruption == "precondition":
+            runtime.session.step["preconditions"] = {"window_title": "Autre fenêtre"}
+        await consent(desktop)
+        if interruption is None:
+            await completed_task(runtime)
+            await desktop.barrier()
+            assert desktop.action_started.is_set()
+            assert runtime.session.status == "COMPLETE"
+            assert any(c["type"] == "success" for c in desktop.commands)
+        else:
+            assert runtime.action_task is None
+            assert runtime.consent is None
+            assert not desktop.action_started.is_set()
     finally:
         await desktop.close()
         await runtime.close()
