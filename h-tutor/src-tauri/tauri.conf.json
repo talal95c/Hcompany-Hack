@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Holo Tutor",
+  "productName": "Rio",
   "version": "0.1.0",
   "identifier": "com.htutor.app",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Holo Tutor",
+        "title": "Rio",
         "width": 560,
         "height": 64,
         "resizable": false,

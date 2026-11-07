@@ -571,7 +571,7 @@ fn setup_windows(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     // Full-screen, transparent, click-through layer that draws the ghost cursor.
     let overlay = WebviewWindowBuilder::new(app, "overlay", WebviewUrl::App("overlay.html".into()))
-        .title("Holo Tutor Overlay")
+        .title("Rio Overlay")
         .transparent(true)
         .decorations(false)
         .shadow(false)

@@ -26,11 +26,27 @@ static STICKY: AtomicBool = AtomicBool::new(false);
 /// after that is the same gesture that caused the blur: don't reopen.
 static LAST_BLUR_HIDE: Mutex<Option<Instant>> = Mutex::new(None);
 
-/// Monochrome cursor arrow, drawn at runtime and used as a template image so
+/// Monochrome Rio "R" mark, drawn at runtime and used as a template image so
 /// macOS tints it for light/dark menu bars.
 fn icon() -> Image<'static> {
-    // Arrow outline in a 0..18 box.
-    let poly = [(4.0, 2.5), (4.0, 15.0), (7.2, 12.0), (9.6, 16.8), (11.6, 15.9), (9.3, 11.2), (13.8, 11.2)];
+    // Mark on its 96x84 grid (bowl + leg), scaled by 0.15 and centred in a 0..18 box.
+    let fit = |pts: &[(f64, f64)]| -> Vec<(f64, f64)> {
+        pts.iter()
+            .map(|&(x, y)| (1.8 + x * 0.15, 2.7 + y * 0.15))
+            .collect()
+    };
+    let bowl = fit(&[
+        (24.0, 0.0),
+        (84.0, 0.0),
+        (84.0, 40.0),
+        (64.0, 60.0),
+        (64.0, 20.0),
+        (24.0, 20.0),
+        (24.0, 60.0),
+        (0.0, 84.0),
+        (0.0, 24.0),
+    ]);
+    let leg = fit(&[(24.0, 60.0), (64.0, 60.0), (96.0, 84.0), (48.0, 84.0)]);
     let s = ICON_PX as f64 / 18.0;
     let mut rgba = vec![0u8; (ICON_PX * ICON_PX * 4) as usize];
     for py in 0..ICON_PX {
@@ -41,7 +57,7 @@ fn icon() -> Image<'static> {
                 for sx in 0..4 {
                     let x = (px as f64 + (sx as f64 + 0.5) / 4.0) / s;
                     let y = (py as f64 + (sy as f64 + 0.5) / 4.0) / s;
-                    if inside(&poly, x, y) {
+                    if inside(&bowl, x, y) || inside(&leg, x, y) {
                         cover += 1;
                     }
                 }
@@ -68,13 +84,13 @@ fn inside(poly: &[(f64, f64)], x: f64, y: f64) -> bool {
 }
 
 pub fn setup(app: &tauri::App) -> tauri::Result<()> {
-    let quit = MenuItem::with_id(app, "quit", "Quitter Holo Tutor", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quitter Rio", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&quit])?;
 
     TrayIconBuilder::with_id(TRAY_ID)
         .icon(icon())
         .icon_as_template(true)
-        .tooltip("Holo Tutor  ⌥⇧Space")
+        .tooltip("Rio  ⌥⇧Space")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, e| {
