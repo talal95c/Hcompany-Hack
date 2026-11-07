@@ -40,6 +40,9 @@ class FakeCalc:
         self.commands: list[dict] = []
         self.requests: list[dict] = []
         self.condition = asyncio.Condition()
+        self.action_started = asyncio.Event()
+        self.action_release: asyncio.Event | None = None
+        self.apply_actions = True
 
     def nodes(self, query: dict) -> list[dict]:
         found = []
@@ -56,7 +59,16 @@ class FakeCalc:
         if kind == "a11y.request":
             self.requests.append(payload)
             self.snapshot += 1
-            if self.error:
+            if payload["op"] == "action":
+                self.action_started.set()
+                if self.action_release:
+                    await self.action_release.wait()
+                if self.apply_actions and payload["action"] == "set_value":
+                    name = payload["ref"].split("-")[1]
+                    self.values[name] = payload["value"]
+                result = {"request_id": payload["request_id"], "snapshot_id": "action",
+                          "complete": True, "nodes": []}
+            elif self.error:
                 result = {"request_id": payload["request_id"], "snapshot_id": None,
                           "complete": False, "nodes": [],
                           "error": {"code": self.error, "message": "Calc introuvable"}}
@@ -85,7 +97,10 @@ class FakeCalc:
                     validate("commands", message["payload"])
                     self.commands.append(message["payload"])
                 self.condition.notify_all()
-            await self.answer(message)
+            if message["type"] == "a11y.request" and message["payload"]["op"] == "action":
+                self.runtime.spawn(self.answer(message))
+            else:
+                await self.answer(message)
 
     async def start(self) -> None:
         self.ws = await connect(f"ws://127.0.0.1:{self.runtime.desktop.port}",

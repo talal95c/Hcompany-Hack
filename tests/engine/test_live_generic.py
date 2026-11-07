@@ -165,19 +165,32 @@ class Shim:
                 async with self.condition:
                     self.commands.append((payload, time.perf_counter()))
                     self.condition.notify_all()
+                if payload["type"] == "input.action":
+                    asyncio.create_task(self.answer_input(payload))
+                elif payload["type"] == "stop":
+                    await self.calc.call({"op": "stop"})
             elif kind == "a11y.request":
                 asyncio.create_task(self.answer_a11y(payload))
             elif kind == "capture.request":
                 asyncio.create_task(self.answer_capture(payload))
 
     async def answer_a11y(self, payload: dict) -> None:
-        result = await self.calc.call({"op": payload["op"], "query": payload["query"]})
+        result = await self.calc.call({k: v for k, v in payload.items()
+                                       if k not in {"request_id", "app"}})
         await send_ws(self.ws, "a11y.result", {"request_id": payload["request_id"], **result})
+
+    async def answer_input(self, command: dict) -> None:
+        result = await self.calc.call({"op": "input", **command["payload"]})
+        await send_ws(self.ws, "input.result", {"command_id": command["command_id"],
+                      "status": "ok" if result.get("status") == "ok" else "rejected",
+                      "detail": "Action terminée ; vérification requise"})
 
     async def answer_capture(self, payload: dict) -> None:
         bounds, image = await self.calc.capture()
+        capture_id = str(uuid4())
+        await self.calc.call({"op": "capture", "capture_id": capture_id})
         await send_ws(self.ws, "capture.result", {
-            "capture_id": str(uuid4()), "ui_revision": payload["ui_revision"],
+            "capture_id": capture_id, "ui_revision": payload["ui_revision"],
             "crop": {"x": bounds["x"], "y": bounds["y"], "width": bounds["w"],
                      "height": bounds["h"]}, "scale": 1, "monitor_id": "xvfb",
             "request_id": payload["request_id"], "app": payload["app"],
@@ -214,6 +227,13 @@ async def test_live_calc_end_to_end(tmp_path):
     assert set(clients) == {"holo", "jev", "stt", "search"}
     lesson = load_lesson(HERE / "fixtures/calc_lesson.json", allow_unproven=True)
     lesson["app"]["version"] = calc.frame["version"]
+    demo_step = json.loads(json.dumps(lesson["steps"][0]))
+    demo_step["id"] = "consented_demo"
+    demo_step["check"]["params"]["value"] = 73
+    demo_step["target"] = {"description": "Cellule B1", "role": "table cell", "name": "B1"}
+    demo_step["check"]["params"]["target"] = dict(demo_step["target"])
+    demo_step["instruction"] = "Saisissez 73 dans B1 avec une démonstration consentie."
+    lesson["steps"].append(demo_step)
     runtime = EngineRuntime(config, lesson=lesson, **clients)
     latencies: list[dict] = []
     original = runtime.debug.record
@@ -266,6 +286,22 @@ async def test_live_calc_end_to_end(tmp_path):
         typed = time.perf_counter()
         _, received = await shim.wait_for("success", count)
         formula_to_success = (received - typed) * 1000
+        async with asyncio.timeout(5):
+            while runtime.session.step_id != "consented_demo":
+                await asyncio.sleep(0.05)
+        runtime.policy.level = 3
+        await send_ws(shim.ws, "user.intent", {"text": "aide", "source": "clavier"})
+        async with asyncio.timeout(5):
+            while runtime.demo_requested is None:
+                await asyncio.sleep(0.05)
+        token = str(uuid4())
+        await calc.call({"op": "consent", "token": token})
+        count = len(shim.commands)
+        await send_ws(shim.ws, "user.intent", {"source": "bouton", "text": json.dumps({
+            "intent": "fais-le", "consent_token": token,
+            "delegation_confirmed": True, "wants_to_learn": False})})
+        await shim.wait_for("success", count)
+        assert (await calc.cell("B1"))["value"] == "73"
         async with asyncio.timeout(5):
             while runtime.session.status != "COMPLETE":
                 await asyncio.sleep(0.05)

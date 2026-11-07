@@ -5,6 +5,7 @@ import base64
 import binascii
 import inspect
 import json
+import math
 import struct
 import time
 from dataclasses import asdict, replace
@@ -122,6 +123,13 @@ class EngineRuntime:
                                      self.debug.record)
         self.tasks: set[asyncio.Task] = set()
         self.lock = asyncio.Lock()
+        self.action_lock = asyncio.Lock()
+        self.action_task: asyncio.Task | None = None
+        self.actions_stopped = False
+        self.demo_requested: tuple[int, int] | None = None
+        self.demo_undo: tuple[int, dict, str, str | None] | None = None
+        self.policy.on_stop = self.stop_actions
+        self.policy.on_resume = self.resume_actions
         self.ui_revision = 0
         self.permissions = {"screen": False, "accessibility": False, "microphone": False}
         self.capture: dict | None = None
@@ -278,9 +286,22 @@ class EngineRuntime:
         await self.send_state()
 
     def invalidate_native(self) -> None:
+        self.stop_actions()
         self.consent = None
         self.pointer_request = None
         self.invalidate_capture()
+
+    def stop_actions(self) -> None:
+        self.consent = None
+        self.demo_requested = None
+        if (self.action_task and not self.action_task.done()
+                and self.action_task is not asyncio.current_task()):
+            self.actions_stopped = True
+            self.action_task.cancel()
+        self.pause()
+
+    def resume_actions(self) -> None:
+        self.actions_stopped = False
 
     def invalidate_capture(self) -> None:
         self.policy.cancel_intervention(invalidate_capture=True)
@@ -373,6 +394,8 @@ class EngineRuntime:
 
     async def observe_once(self) -> None:
         """Relit l'application via le capteur générique actif puis évalue l'étape."""
+        if self.actions_stopped:
+            return
         self.select_adapter()
         adapter, session = self.adapter, self.session
         if (not session or adapter is None or adapter is self.plugin
@@ -410,6 +433,8 @@ class EngineRuntime:
             self.spawn(self.observe_once())
 
     async def evaluate(self, event: dict) -> None:
+        if self.actions_stopped:
+            return
         session = self.session
         if not session or session.status in {"COMPLETE", "ACTING"}:
             return
@@ -510,7 +535,14 @@ class EngineRuntime:
         if adapter and step:
             context = replace(context, zone=adapter.zone(step), reveal=adapter.reveal(step),
                               demo=adapter.replay(step), demo_undo=adapter.undo_replay(step))
+            if adapter is not self.plugin:
+                context = replace(context, request_demo=self.request_demo)
         return context
+
+    async def request_demo(self) -> None:
+        if self.session and self.app_ready():
+            self.demo_requested = (self.session.generation, self.a11y.focus_epoch)
+            await self.error("consent_required", "Confirmez explicitement la démonstration")
 
     async def send_state(self, connection=None, *, force: bool = False,
                          transcript: str | None = None, transcript_final: bool = False) -> None:
@@ -689,7 +721,11 @@ class EngineRuntime:
             intent = json.loads(payload["text"])
             token = intent["consent_token"]
             UUID(token)
-            if (payload["source"] != "bouton" or intent["intent"] != "fais-le" or not self.session
+            undo = intent["intent"] == "annule"
+            if undo and self.adapter is self.plugin:
+                raise ValueError
+            if (payload["source"] != "bouton" or intent["intent"] not in {"fais-le", "annule"}
+                    or not self.session
                     or not self.app_ready()):
                 raise ValueError
             if token in self.consent_tokens or len(self.consent_tokens.items) >= 4096:
@@ -699,16 +735,31 @@ class EngineRuntime:
                 wants_to_learn=not (intent.get("delegation_confirmed") is True
                                     and intent.get("wants_to_learn") is False),
             )
-            if not allowed or self.session.status != "OBSERVING":
+            if not allowed or (not undo and self.session.status != "OBSERVING"):
                 raise ValueError
+            if self.adapter is not self.plugin:
+                if self.action_task and not self.action_task.done():
+                    raise ValueError
+                if undo:
+                    if not self.demo_undo or self.demo_undo[0] != self.a11y.focus_epoch:
+                        raise ValueError
+                elif self.demo_requested != (self.session.generation, self.a11y.focus_epoch):
+                    raise ValueError
             self.consent_tokens.add(token)
             self.consent = (token, self.clock.monotonic() + 60, self.session.generation)
-            self.session.transition("ACTING")
+            if self.session.status == "OBSERVING":
+                self.session.transition("ACTING")
+            if self.adapter is not self.plugin:
+                self.action_task = self.spawn(self.run_generic_demo(undo=undo))
             await self.send_state(connection)
         except (ValueError, KeyError, TypeError, AttributeError):
             await self.error("consent_required", "Confirmation de délégation requise", connection)
 
     async def input_action(self, action: dict) -> dict | None:
+        async with self.action_lock:
+            return await self._input_action(action)
+
+    async def _input_action(self, action: dict, *, refresh: bool = True) -> dict | None:
         consent, capture = self.consent, self.capture
         if (not self.session or not consent or self.clock.monotonic() >= consent[1]
                 or consent[2] != self.session.generation
@@ -730,7 +781,7 @@ class EngineRuntime:
             result = await self.desktop.correlation.request(
                 command, lambda c: self.desktop.send("command", c),
             )
-            if consent == self.consent and self.session.status == "ACTING":
+            if refresh and consent == self.consent and self.session.status == "ACTING":
                 self.session.transition("CHECKING")
                 self.session.transition("PAUSED")
                 await self.request_refresh()
@@ -740,6 +791,92 @@ class EngineRuntime:
             self.pause()
             await self.error("input_failed", "Action interrompue ; vérifiez la scène")
             return None
+
+    async def run_generic_demo(self, *, undo: bool = False) -> None:
+        consent = self.consent
+        epoch = self.a11y.focus_epoch
+        generation = self.session.generation
+        step = self.session.step
+
+        def authorized() -> bool:
+            return bool(consent and self.consent == consent
+                        and self.clock.monotonic() < consent[1]
+                        and epoch == self.a11y.focus_epoch and generation == self.session.generation
+                        and self.app_ready()
+                        and self.session.preconditions_hold(self.adapter.facts()))
+
+        try:
+            async with self.action_lock:
+                if not authorized():
+                    return
+                if undo or self.adapter is self.a11y:
+                    if not self.permissions["accessibility"]:
+                        raise ValueError("Permission accessibilité requise")
+                    target = self.demo_undo[1] if undo else step["target"]
+                    action_step = {**step, "target": target}
+                    await self.a11y.refresh(action_step)
+                    hint = self.a11y.expected_rect(action_step)
+                    plan = self.a11y.demo_plan(action_step) if not undo else None
+                    if not hint or (not undo and plan is None):
+                        raise ValueError("Cible ou procédure indisponible")
+                    if not authorized():
+                        return
+                    action, value = self.demo_undo[2:] if undo else (plan.action, plan.value)
+                    self.a11y.invalidate()
+                    result = await self.a11y.act(hint.ref, action, consent[0], value)
+                    if result.get("error"):
+                        raise ValueError("Action accessibilité refusée")
+                    if not undo and plan.undo:
+                        self.demo_undo = (epoch, target, plan.undo, plan.previous)
+                else:
+                    if not self.policy.holo or not self.permissions["screen"]:
+                        raise ValueError("Vision indisponible")
+                    frame = await self.capture_window()
+                    if frame is None or not authorized():
+                        return
+                    payload, image = frame
+                    plan = self.vision.demo_plan(step)
+                    point = await self.policy.holo.localize(
+                        image, step["target"]["description"], timeout_s=self.config.holo_timeout_s)
+                    rect = Rect.from_dict(payload["crop"])
+                    hint = self.a11y.expected_rect(step)
+                    region = step["check"]["params"].get("region")
+                    expected = hint.rect.milli(rect) if hint else (
+                        Rect.from_dict(region) if region else Rect(0, 0, 1000, 1000))
+                    if (not point or not authorized() or point.target_visible is not True
+                            or point.confidence is None or not math.isfinite(point.confidence)
+                            or point.confidence < 0.5 or not 0 < point.x < 1000
+                            or not 0 < point.y < 1000 or not rect.valid
+                            or not expected.contains(point.x, point.y)):
+                        raise ValueError("Point hors de la cible attendue")
+                    self.capture = {**payload, "image_png": image, "consumed": False}
+                    result = await self._input_action(
+                        {"type": plan.action, "x": point.x, "y": point.y, "button": "left"},
+                        refresh=False)
+                    if not result or result.get("status") != "ok":
+                        raise ValueError("Action native refusée")
+                if not authorized():
+                    return
+                if undo:
+                    self.demo_undo = None
+                if self.session.status == "ACTING":
+                    self.session.transition("CHECKING")
+                    self.session.transition("PAUSED")
+                self.a11y.invalidate()
+                self.vision.invalidate()
+                if undo:
+                    await self.a11y.refresh(action_step)
+                else:
+                    await self.observe_once()
+        except (ConnectionError, TimeoutError, ValueError):
+            self.pause()
+            await self.error("input_failed", "Démonstration interrompue ; vérification requise")
+        except asyncio.CancelledError:
+            self.pause()
+            raise
+        finally:
+            self.consent = None
+            self.demo_requested = None
 
     async def accept_capture(self, payload: dict) -> None:
         if (not self.permissions["screen"] or payload["capture_id"] in self.capture_ids

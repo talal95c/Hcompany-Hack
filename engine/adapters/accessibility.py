@@ -9,7 +9,7 @@ import time
 from collections.abc import Awaitable, Callable
 from uuid import uuid4
 
-from engine.adapters.base import Command, Rect, TargetHint
+from engine.adapters.base import Command, DemoAction, Rect, TargetHint
 from engine.adapters.profiles import AppProfile
 from engine.checks import AppState, Lookup
 from engine.checks.generic import query_for, query_key
@@ -198,6 +198,31 @@ class AccessibilityAdapter:
     def replay(self, step: dict) -> tuple[Command, ...]:
         # Démo = action native consentie (fais-le), jamais une relecture implicite.
         return ()
+
+    def demo_plan(self, step: dict) -> DemoAction | None:
+        hint = self.expected_rect(step)
+        found = self.target_lookup(step)
+        node = found.unique if found else None
+        if not hint or not node or "password" in node.get("role", "").casefold():
+            return None
+        check = step["check"]
+        params = check["params"]
+        if query_for(params.get("target")) != query_for(step.get("target")):
+            return None
+        if check["name"] == "element_value" and params.get("match", "equals") == "equals":
+            value = params.get("value")
+            if isinstance(value, str | int | float | bool):
+                previous = node.get("value")
+                return DemoAction("set_value", str(value),
+                                  "set_value" if previous is not None else None,
+                                  str(previous) if previous is not None else None)
+        if check["name"] == "element_state":
+            states = params.get("states", [])
+            if states == ["focused"]:
+                return DemoAction("focus")
+            if states == ["selected"]:
+                return DemoAction("select")
+        return None
 
     def undo_replay(self, step: dict) -> tuple[Command, ...]:
         return ()

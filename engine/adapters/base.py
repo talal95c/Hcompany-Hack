@@ -9,6 +9,14 @@ Command = tuple[str, str, dict]
 
 
 @dataclass(frozen=True)
+class DemoAction:
+    action: str
+    value: str | None = None
+    undo: str | None = None
+    previous: str | None = None
+
+
+@dataclass(frozen=True)
 class Rect:
     """Rectangle en pixels physiques écran (origine en haut à gauche)."""
 

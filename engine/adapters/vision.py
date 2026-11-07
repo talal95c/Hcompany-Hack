@@ -7,7 +7,7 @@ import time
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from engine.adapters.base import Command, Rect, TargetHint
+from engine.adapters.base import Command, DemoAction, Rect, TargetHint
 from engine.adapters.profiles import AppProfile
 from engine.checks import AppState
 from engine.checks.generic import assertion_key
@@ -185,6 +185,9 @@ class VisionAdapter:
 
     def replay(self, step: dict) -> tuple[Command, ...]:
         return ()
+
+    def demo_plan(self, step: dict) -> DemoAction:
+        return DemoAction("click")
 
     def undo_replay(self, step: dict) -> tuple[Command, ...]:
         return ()

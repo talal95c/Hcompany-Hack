@@ -24,3 +24,22 @@ préconditions (`facts`), zone (`zone`), dévoilement (`reveal`/`reveal_target`)
   fenêtre, sinon Holo, point rejeté hors de la zone attendue ; démo = `replay` de
   l'adaptateur ou action consentie (`fais-le`).
 - Cache de cibles : clé `app_id × app_version × taille de région × échelle UI × cible`.
+
+## Démonstrations génériques
+
+Le niveau 4 demande un consentement explicite par `user.intent` (source `bouton`,
+intent `fais-le`, token natif). `demo_plan` sélectionne une action autorisée depuis
+le check de la leçon : valeur exacte, focus ou sélection a11y ; sinon le capteur
+vision localise un clic sur une capture fenêtre fraîche. Une localisation hors des
+bounds disponibles ou de `visual_assert.region` est rejetée.
+
+Le runtime sérialise les actions, annule l'attente au stop et invalide l'état avant
+le check post-action. Un acquittement seul ne donne jamais de réussite. Après un
+stop pendant une action, `reprends` autorise à nouveau l'observation. Une valeur
+précédente a11y peut être restaurée avec un nouveau consentement (`intent: annule`),
+tant que la fenêtre n'a pas changé ; les clics n'ont pas d'inverse implicite.
+
+Le pont de recette Calc exécute ces transports avec AT-SPI et xdotool. Le desktop
+natif reste distinct : `input.rs` exige encore le focus du plugin historique et
+aucun dispatcher `a11y.request` n'est branché dans Rust. La recette du pont ne
+valide pas cette intégration native.

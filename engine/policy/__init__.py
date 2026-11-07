@@ -54,6 +54,7 @@ class HelpContext:
     pointer_ref: tuple[str, str] | None = None
     app: str | None = None
     expected_rect: tuple[float, float, float, float] | None = None
+    request_demo: Callable[[], Awaitable[None]] | None = None
 
 
 def inside(rect: tuple[float, float, float, float], x: float, y: float) -> bool:
@@ -95,6 +96,8 @@ class HelpPolicy:
         self.intervention_epoch = 0
         self.localization: asyncio.Task | None = None
         self.app_context = app_context
+        self.on_stop: Callable[[], None] | None = None
+        self.on_resume: Callable[[], None] | None = None
 
     def cancel_intervention(self, *, invalidate_capture: bool = False) -> None:
         self.intervention_epoch += 1
@@ -142,12 +145,16 @@ class HelpPolicy:
     async def intent(self, text: str, context: HelpContext | None = None) -> Decision | None:
         text = text.strip().casefold()
         if text == "chut":
+            if self.on_stop:
+                self.on_stop()
             self.muted = True
             self.cancel_intervention()
             if self.step:
                 await self._command("stop", {"reason": "Silence demandé"})
             return None
         if text == "reprends":
+            if self.on_resume:
+                self.on_resume()
             self.muted = False
             return None
         if text in {"aide", "help"} and self.step and not self.passed:
@@ -381,6 +388,9 @@ class HelpPolicy:
                     "message": "Cible non visible ; utilisez la recherche",
                     "retryable": True,
                 })
+        elif self.level == 3 and context.request_demo:
+            await context.request_demo()
+            self.level = 4
         elif self.level == 3 and context.demo and context.checkpoint_id:
             await self._emit(context.demo, revision=revision)
             # L'orchestrateur attend l'acquittement et vérifie avant finish_demo.
