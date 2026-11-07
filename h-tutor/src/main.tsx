@@ -6,6 +6,8 @@ import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
 import "./panel/styles.css";
 
+document.documentElement.dataset.material = /Mac|Win/.test(navigator.platform) ? "native" : "css";
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <MotionConfig reducedMotion="user">
