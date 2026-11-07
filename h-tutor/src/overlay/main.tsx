@@ -34,7 +34,7 @@ function Arrow({ id }: { id: string }) {
         </filter>
       </defs>
       <path d={ARROW} fill={`url(#${id}-fill)`} />
-      <path d={ARROW} fill="#fff" filter={`url(#${id}-grain)`} className="ghost__grain" />
+      <path d={ARROW} fill="white" filter={`url(#${id}-grain)`} className="ghost__grain" />
     </svg>
   );
 }

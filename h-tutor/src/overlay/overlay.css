@@ -39,7 +39,7 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 170, 110, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.55);
 }
 .ghost--hit .ghost__halo { border-color: var(--ok); }
 
@@ -51,7 +51,7 @@
   width: max-content;
   padding: 5px 10px;
   border-radius: 8px;
-  color: #fff;
+  color: white;
   font-size: 11.5px;
   line-height: 1.35;
   font-weight: 500;
@@ -64,14 +64,14 @@
 .ghost__label.is-left { left: auto; right: 10px; }
 .ghost__label.is-up { top: auto; bottom: 10px; }
 
-/* The real element (from the accessibility tree): a flat orange ring. */
+/* The real element (from the accessibility tree): a fine white ring. */
 .ghost-box {
   position: fixed;
   left: 0;
   top: 0;
   pointer-events: none;
   border-radius: 8px;
-  border: 1.5px solid rgba(255, 154, 77, 0.9);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 .ghost-box--hit { border-color: var(--ok); background: rgba(255,255,255,.04); }
