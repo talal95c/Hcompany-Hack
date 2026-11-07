@@ -86,6 +86,60 @@ macro_rules! proxy {
 }
 
 impl Sensor {
+    async fn scoped_children(
+        &self,
+        parent: &Handle,
+        budget: usize,
+    ) -> Result<(Vec<RawNode>, usize), Error> {
+        let conn = self.connection().await?;
+        let accessible = proxy!(AccessibleProxy, conn, parent);
+        let count = call(accessible.child_count()).await?;
+        if count < 0 || count as usize > budget {
+            return Err(Error::StaleRef);
+        }
+        let children = call(accessible.get_children()).await?;
+        if children.len() != count as usize {
+            return Err(Error::StaleRef);
+        }
+        let children = children
+            .into_iter()
+            .map(handle)
+            .collect::<Result<Vec<_>, _>>()?;
+        let results = stream::iter(children)
+            .map(|h| async move {
+                let accessible = proxy!(AccessibleProxy, conn, &h);
+                let (observation, actual_parent) =
+                    tokio::try_join!(self.read(&h, false), call(accessible.parent()))?;
+                let actual_parent = handle(actual_parent)?;
+                if actual_parent.bus != parent.bus
+                    || actual_parent.path != parent.path
+                    || observation.reasons.iter().any(|(r, _)| {
+                        !matches!(
+                            r,
+                            Reason::DepthLimit | Reason::InvisibleSkipped | Reason::DefunctSkipped
+                        )
+                    })
+                    || (observation.node.is_some() && !observation.valid_bounds)
+                {
+                    return Err(Error::StaleRef);
+                }
+                Ok(observation.node.map(|node| RawNode {
+                    node,
+                    handle: h,
+                    parent: None,
+                }))
+            })
+            .buffered(16)
+            .collect::<Vec<Result<Option<RawNode>, Error>>>()
+            .await;
+        let mut nodes = Vec::new();
+        for result in results {
+            if let Some(node) = result? {
+                nodes.push(node);
+            }
+        }
+        Ok((nodes, count as usize))
+    }
     async fn connection(&self) -> Result<&zbus::Connection, Error> {
         self.connection
             .get_or_try_init(|| async {
@@ -381,6 +435,207 @@ impl Sensor {
 }
 
 impl AccessibilitySensor for Sensor {
+    fn position<'a>(
+        &'a self,
+        parent: &'a Handle,
+        target: &'a Handle,
+    ) -> Task<'a, Option<scoped::Position>> {
+        Box::pin(async move {
+            let conn = self.connection().await?;
+            let accessible = proxy!(AccessibleProxy, conn, parent);
+            if call(accessible.get_role()).await? != Role::Table {
+                return Ok(None);
+            }
+            let table = proxy!(TableProxy, conn, parent);
+            let cell = proxy!(AccessibleProxy, conn, target);
+            let index = call(cell.get_index_in_parent()).await?;
+            if index < 0 {
+                return Err(Error::StaleRef);
+            }
+            let (row, column, rows, columns) = tokio::try_join!(
+                call(table.get_row_at_index(index)),
+                call(table.get_column_at_index(index)),
+                call(table.n_rows()),
+                call(table.n_columns())
+            )?;
+            if row < 0 || column < 0 || row >= rows || column >= columns {
+                return Err(Error::StaleRef);
+            }
+            Ok(Some(scoped::Position {
+                row,
+                column,
+                rows,
+                columns,
+            }))
+        })
+    }
+
+    fn scoped<'a>(
+        &'a self,
+        binding: &'a scoped::Binding,
+        _deadline: Instant,
+        budget: usize,
+    ) -> Task<'a, Tree> {
+        Box::pin(async move {
+            if binding.ancestors.is_empty() || binding.ancestors.len() >= budget {
+                return Err(Error::StaleRef);
+            }
+            let conn = self.connection().await?;
+            let ancestors = stream::iter(binding.ancestors.clone().into_iter().enumerate())
+                .map(|(i, (old, h))| async move {
+                    let expected = if i == 0 {
+                        &binding.app
+                    } else {
+                        &binding.ancestors[i - 1].1
+                    };
+                    let accessible = proxy!(AccessibleProxy, conn, &h);
+                    let (observation, parent) =
+                        tokio::try_join!(self.read(&h, false), call(accessible.parent())).inspect_err(|error| {
+                            if std::env::var_os("RIO_A11Y_TRACE").is_some() { eprintln!("a11y scoped ancestor read_failed index={i} role={} code={}", old.role, error.code()); }
+                        })?;
+                    let parent = handle(parent)?;
+                    let node = observation.node.ok_or(Error::StaleRef)?;
+                    let mut linked = parent.bus == expected.bus && parent.path == expected.path;
+                    if !linked && (h.bus != binding.app.bus || h.path != binding.app.path) {
+                        let expected_proxy = proxy!(AccessibleProxy, conn, expected);
+                        let count = call(expected_proxy.child_count()).await?;
+                        if count >= 0 && count as usize <= budget {
+                            let children = call(expected_proxy.get_children()).await?;
+                            if children.len() == count as usize {
+                                let children = children.into_iter().map(handle).collect::<Result<Vec<_>, _>>()?;
+                                linked = children.iter().filter(|child| child.bus == h.bus && child.path == h.path).count() == 1;
+                            }
+                        }
+                    }
+                    if observation.reasons.iter().any(|(r, _)| {
+                        !matches!(r, Reason::DepthLimit | Reason::InvisibleSkipped | Reason::DefunctSkipped)
+                    }) || node.role != old.role
+                        || ((h.bus != binding.app.bus || h.path != binding.app.path)
+                            && !linked)
+                    {
+                        if std::env::var_os("RIO_A11Y_TRACE").is_some() {
+                            eprintln!("a11y scoped ancestor mismatch index={i} role={} parent={}:{} expected={}:{}", old.role, parent.bus, parent.path, expected.bus, expected.path);
+                        }
+                        return Err(Error::StaleRef);
+                    }
+                    Ok(RawNode {
+                        node,
+                        handle: h,
+                        parent: i.checked_sub(1),
+                    })
+                })
+                .buffered(16)
+                .collect::<Vec<Result<RawNode, Error>>>()
+                .await;
+            let mut nodes: Vec<RawNode> = Vec::new();
+            let mut used = binding.ancestors.len();
+            for (i, ancestor) in ancestors.into_iter().enumerate() {
+                let unchanged_parent = i == 0
+                    || (nodes[i - 1].handle.bus == binding.ancestors[i - 1].1.bus
+                        && nodes[i - 1].handle.path == binding.ancestors[i - 1].1.path);
+                if let Ok(node) = ancestor {
+                    if unchanged_parent {
+                        nodes.push(node);
+                        continue;
+                    }
+                }
+                if i == 0 {
+                    return Err(Error::StaleRef);
+                }
+                let (candidates, count) = self
+                    .scoped_children(&nodes[i - 1].handle, budget.saturating_sub(used))
+                    .await?;
+                used += count;
+                let old = &binding.ancestors[i].0;
+                let node = scoped::unique_ancestor(candidates, old, i - 1)?;
+                nodes.push(node);
+                if std::env::var_os("RIO_A11Y_TRACE").is_some() {
+                    eprintln!(
+                        "a11y scoped recovered ancestor role={} examined={count}",
+                        old.role
+                    );
+                }
+            }
+            let parent_index = nodes.len() - 1;
+            let parent_handle = nodes[parent_index].handle.clone();
+            let parent = &parent_handle;
+            if used >= budget {
+                return Err(Error::StaleRef);
+            }
+            let handles = if let Some(position) = binding.position {
+                let table = proxy!(TableProxy, conn, parent);
+                let (rows, columns, object, index) = tokio::try_join!(
+                    call(table.n_rows()),
+                    call(table.n_columns()),
+                    call(table.get_accessible_at(position.row, position.column)),
+                    call(table.get_index_at(position.row, position.column))
+                )?;
+                if rows != position.rows || columns != position.columns {
+                    return Err(Error::StaleRef);
+                }
+                let h = handle(object)?;
+                let cell = proxy!(AccessibleProxy, conn, &h);
+                if index < 0 || call(cell.get_index_in_parent()).await? != index {
+                    return Err(Error::StaleRef);
+                }
+                vec![h]
+            } else {
+                let (children, _) = self.scoped_children(parent, budget - used).await?;
+                for mut child in children {
+                    child.parent = Some(parent_index);
+                    nodes.push(child);
+                }
+                return Ok(Tree {
+                    nodes,
+                    complete: true,
+                    reasons: BTreeMap::new(),
+                });
+            };
+            let candidates = stream::iter(handles)
+                .map(|h| async move {
+                    let accessible = proxy!(AccessibleProxy, conn, &h);
+                    let (observation, actual_parent) =
+                        tokio::try_join!(self.read(&h, false), call(accessible.parent()))?;
+                    let actual_parent = handle(actual_parent)?;
+                    if actual_parent.bus != parent.bus || actual_parent.path != parent.path {
+                        return Err(Error::StaleRef);
+                    }
+                    if observation.reasons.iter().any(|(r, _)| {
+                        !matches!(
+                            r,
+                            Reason::DepthLimit | Reason::InvisibleSkipped | Reason::DefunctSkipped
+                        )
+                    }) {
+                        return Err(Error::StaleRef);
+                    }
+                    if observation.node.is_some() && !observation.valid_bounds {
+                        return Err(Error::StaleRef);
+                    }
+                    Ok(observation
+                        .node
+                        .filter(|_| observation.valid_bounds)
+                        .map(|node| RawNode {
+                            node,
+                            handle: h,
+                            parent: Some(parent_index),
+                        }))
+                })
+                .buffered(16)
+                .collect::<Vec<Result<Option<RawNode>, Error>>>()
+                .await;
+            for candidate in candidates {
+                if let Some(node) = candidate? {
+                    nodes.push(node);
+                }
+            }
+            Ok(Tree {
+                nodes,
+                complete: true,
+                reasons: BTreeMap::new(),
+            })
+        })
+    }
+
     fn supports_events(&self) -> bool {
         true
     }
@@ -391,7 +646,10 @@ impl AccessibilitySensor for Sensor {
         ready: tokio::sync::oneshot::Sender<bool>,
     ) -> Task<'_, ()> {
         Box::pin(async move {
-            use atspi::events::{Event, EventProperties, FocusEvents, ObjectEvents, WindowEvents};
+            use atspi::events::{
+                Event, EventProperties, EventTypeProperties, FocusEvents, ObjectEvents,
+                WindowEvents,
+            };
             let connection = AccessibilityConnection::new()
                 .await
                 .map_err(|_| Error::PermissionDenied)?;
@@ -432,6 +690,21 @@ impl AccessibilitySensor for Sensor {
                         ) | Event::Window(_)
                     );
                 let focus = matches!(&event, Event::Focus(_) | Event::Window(_));
+                if reconcile && std::env::var_os("RIO_A11Y_TRACE").is_some() {
+                    let property = match &event {
+                        Event::Object(ObjectEvents::PropertyChange(e)) if selector_changed => {
+                            e.property.as_str()
+                        }
+                        _ => "-",
+                    };
+                    eprintln!(
+                        "a11y structural category={} property={} source={}:{}",
+                        event.member(),
+                        property,
+                        event.sender(),
+                        event.path()
+                    );
+                }
                 if !reconcile
                     && !focus
                     && !matches!(
@@ -456,6 +729,9 @@ impl AccessibilitySensor for Sensor {
                     },
                     reconcile,
                     focus,
+                    scoped: !focus
+                        && (selector_changed
+                            || matches!(&event, Event::Object(ObjectEvents::ChildrenChanged(_)))),
                 };
                 sender.send(change).await.map_err(|_| Error::StaleRef)?;
             }

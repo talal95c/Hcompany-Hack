@@ -149,7 +149,7 @@ class AccessibilityAdapter:
             return False
         self.event_sequence = payload["sequence"]
         self.events_supported = payload["events_supported"]
-        self.reconcile |= payload["reconcile"]
+        self.reconcile |= payload["reconcile"] and not payload.get("scoped", False)
         self.change_epoch += 1
         self.invalidate()
         self.interrupt_reads()
@@ -223,11 +223,11 @@ class AccessibilityAdapter:
             except TimeoutError:
                 return Lookup((), False, None, "TIMEOUT")
             error = next((r["error"]["code"] for r in results if r.get("error")), None)
-            if error == "STALE_REF":
+            if error in {"STALE_REF", "AMBIGUOUS_TARGET"}:
                 self.reconcile = True
                 return await self.find(target)
             return Lookup(tuple(n for r in results for n in r["nodes"]),
-                          all(r["complete"] for r in results), previous.snapshot_id, error)
+                          all(r["complete"] for r in results), results[0]["snapshot_id"], error)
 
         try:
             lookups = dict(zip(targets, await asyncio.gather(
@@ -277,6 +277,8 @@ class AccessibilityAdapter:
                 or change_epoch != self.change_epoch):
             return self.state
         state = self.state
+        if self.events_supported and not self.last_error:
+            self.watched = dict(lookups)
         state.lookups = lookups
         state.window_title = self.focus["window_title"] if focused else None
         state.revision = max(state.revision, state.latest_revision) + 1
