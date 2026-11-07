@@ -15,15 +15,14 @@ import {
   ScrollRevealText,
   Ticker,
 } from "./ui";
-import { APP_ICONS } from "./appIcons";
-import { RioArrow } from "./cursor";
 
+const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Finder", "Figma", "VS Code"];
 
 /* ---------------- Nav ---------------- */
 
 export function Nav() {
-  const links = ["Home", "Pricing", "Contact"];
-  const ids = ["top", "pricing", "contact"];
+  const links = ["Use cases", "How it works", "Library", "Pricing", "About"];
+  const ids = ["works", "services", "insights", "pricing", "company"];
   return (
     <motion.header
       className="nav"
@@ -66,7 +65,6 @@ export function Hero() {
           transition={{ duration: 1.6, ease: EASE }}
         />
         <div className="hero-shade" />
-        <div className="tv-screen" aria-hidden />
         <div className="hero-content">
           <h1 className="h-hero">
             <motion.span className="hero-l1" {...up(0.2)}>
@@ -88,13 +86,8 @@ export function Hero() {
             Works on top of the apps you already use, from 3D to spreadsheets.
           </p>
           <Marquee duration={28} className="hero-logos">
-            {APP_ICONS.map((a, i) => (
-              <span key={a.name} className="app-logo" style={{ animationDelay: `${-i * 0.9}s` }}>
-                <svg viewBox="0 0 24 24" aria-hidden>
-                  <path d={a.path} />
-                </svg>
-                {a.name}
-              </span>
+            {APPS.map((l) => (
+              <span key={l} className="app-logo">{l}</span>
             ))}
           </Marquee>
         </motion.div>
@@ -372,6 +365,51 @@ export function Vision() {
             <Btn label="See it in action" variant="ghost" href="#top" />
           </Reveal>
         </div>
+        <div className="features">
+          <Reveal className="feature" delay={0}>
+            <div className="feat-icon feat-search">
+              <svg viewBox="0 0 30.956 44.192" width={36} height={52}>
+                <path
+                  fill="#fff"
+                  d="M 5.587 1.427 C 10.875 -1.564 17.587 0.299 20.577 5.587 C 23.402 10.582 21.894 16.844 17.262 20.044 L 21.222 27.048 L 22.096 26.555 L 30.956 42.223 L 27.475 44.192 L 18.613 28.524 L 19.481 28.033 L 15.521 21.028 C 10.392 23.346 4.251 21.41 1.427 16.417 C -1.563 11.129 0.299 4.417 5.587 1.427 Z M 18.836 6.571 C 16.389 2.245 10.898 0.721 6.571 3.168 C 2.245 5.615 0.721 11.106 3.168 15.432 C 5.615 19.759 11.106 21.283 15.432 18.836 C 19.759 16.389 21.283 10.898 18.836 6.571 Z"
+                  transform="rotate(-30 15 22)"
+                />
+              </svg>
+              <span className="sparkle s1" />
+              <span className="sparkle s2" />
+            </div>
+            <p className="p-15 feat-text">A ghost cursor that points to your next click</p>
+          </Reveal>
+          <Reveal className="feature" delay={0.08}>
+            <div className="feat-icon feat-orbit">
+              <span className="orbit-ring" />
+              <span className="orbit-ring r2" />
+              <span className="orbit-dot" />
+            </div>
+            <p className="p-15 feat-text">Milestone graphs, not brittle click scripts.</p>
+          </Reveal>
+          <Reveal className="feature" delay={0.16}>
+            <div className="feat-icon feat-bars">
+              {[0, 1, 2, 3].map((k) => (
+                <span key={k} className="bar" style={{ animationDelay: `${k * 0.25}s` }}>
+                  <i />
+                </span>
+              ))}
+            </div>
+            <p className="p-15 feat-text">Ask “show me again” and Rio repeats the step</p>
+          </Reveal>
+          <Reveal className="feature" delay={0.24}>
+            <div className="feat-icon feat-langs">
+              <span className="lang-caret" />
+              <Marquee duration={8} className="lang-marquee">
+                {["ZH", "HI", "ES", "FR", "AR", "BN", "PT", "RU", "EN", "DE"].map((l) => (
+                  <span key={l}>{l}</span>
+                ))}
+              </Marquee>
+            </div>
+            <p className="p-15 feat-text">A multilingual voice that runs on your machine.</p>
+          </Reveal>
+        </div>
       </section>
     </>
   );
@@ -517,7 +555,7 @@ const STEPS = [
   { t: "Save it as a tutorial", tag: "Share", d: "At the end, the path you actually took is saved back to the library, so the next learner gets there faster." },
 ];
 
-export const TEAM = [
+const TEAM = [
   { name: "HOLO VISION", role: "Sees and locates", img: "OrsgMbvM0AZiEvhgHFZUJM2g.png", bio: "Holo by H Company looks at each screenshot and returns the exact spot to click, so Rio points instead of guessing." },
   { name: "MILESTONE PLANNER", role: "Plans and checks", img: "BbqpJjnldDFDulJFBarqs7wJpFk.png", bio: "Every goal becomes a graph of milestones with a visual success check. Rio moves on only when the result is on screen." },
   { name: "GLADIA LIVE", role: "Listens", img: "8k7FcfFSjgocOslFu94p0ih1UY.png", bio: "Ask out loud during a lesson. Gladia transcribes you live, and Rio answers, points, skips or repeats the step." },
@@ -599,6 +637,52 @@ export function Process() {
           </Reveal>
         </div>
 
+        <Reveal as="h2" className="h-collective">
+          We are building the coach that sits next to everyone who opens new software.
+        </Reveal>
+        <div className="story">
+          <Reveal as="p" className="p-16">
+            Born at the H Company hackathon, built on Holo computer-use models and real-time voice.
+          </Reveal>
+          <Reveal delay={0.1}>
+            <Btn label="How it works" variant="ghost" href="#services" />
+          </Reveal>
+        </div>
+        <div className="team">
+          {TEAM.map((m, i) => (
+            <Reveal className="member" key={m.name} delay={i * 0.08}>
+              <div className="member-photo">
+                <img src={asset(m.img)} alt={m.name} />
+                <PillLogo size="sm" light />
+              </div>
+              <div className="person on-dark">
+                <span className="person-bar" />
+                <div>
+                  <h5 className="plex-13">{m.name}</h5>
+                  <p className="p-12 muted-w5">{m.role}</p>
+                </div>
+              </div>
+              <div className="member-bio">
+                <div className="bio-social">
+                  <a href="https://x.com" aria-label="X">
+                    <Icon name="xFill" size={15} />
+                  </a>
+                  <a href="https://github.com" aria-label="GitHub">
+                    <Icon name="github" size={15} />
+                  </a>
+                </div>
+                <p className="bio-text">{m.bio}</p>
+                <div className="person">
+                  <span className="person-bar" />
+                  <div>
+                    <p className="plex-13">{m.name}</p>
+                    <p className="plex-11">{m.role}</p>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
       </section>
     </div>
   );
@@ -606,7 +690,7 @@ export function Process() {
 
 /* ---------------- Pricing ---------------- */
 
-export const PLANS = [
+const PLANS = [
   { name: "Learner", price: 0, tagline: "One app at a time.", f: ["Tutorial library", "Typed goals", "Ghost cursor", "Community support"] },
   { name: "Pro", price: 12, tagline: "Unlimited live coaching.", f: ["Unlimited goals", "Voice questions", "Save as tutorial", "Priority support"] },
   { name: "Team", price: 29, tagline: "Onboard a whole team.", f: ["Shared library", "Session journals", "Admin seats", "Slack support"], dark: true },
@@ -654,7 +738,7 @@ export function Pricing() {
         </Reveal>
       </div>
       <Reveal className="plans">
-        {PLANS.slice(0, 3).map((p) => (
+        {PLANS.map((p) => (
           <div key={p.name} className={`plan ${p.dark ? "plan-dark" : ""}`}>
             <img className="plan-wave" src={asset("lu9xdgbj7zB5GkewV6UCW9Y68.jpg")} alt="" />
             <div className="plan-top">
@@ -670,7 +754,7 @@ export function Pricing() {
               <Btn label="Get started" size="sm" variant={p.dark ? "light" : "ghost"} href="#contact" />
             </div>
             <ul className="plan-feats">
-              {p.f.slice(0, 3).map((f) => (
+              {p.f.map((f) => (
                 <li key={f} className="p-14l">
                   {f}
                 </li>
@@ -696,7 +780,7 @@ const FAQ = [
   { q: "Which platforms are supported?", a: "macOS first: Rio lives in the menu bar and floats over full-screen apps. More platforms are on the roadmap." },
 ];
 
-export const ARTICLES = [
+const ARTICLES = [
   { cat: "Blender", title: "Your first donut in Blender, step by step", body: "From the default cube to a finished render, guided milestone by milestone.", author: "Rio library", img: "862JbA3xEJjbdSDVyKEwOZ0f2g.jpeg" },
   { cat: "Docker", title: "Run your first container without memorising commands", body: "Pull an image, start it and check it is running, with every step verified on screen.", author: "Rio library", img: "YKAEpvQFebP2OETEJDVNip8UTg.jpeg", flip: true },
   { cat: "Learning", title: "Why learning by doing beats watching tutorials", body: "Videos never match your screen. Guided practice on the real interface does.", author: "Rio team", img: "egDVD5dc2AvUIZKG0seuGXtH0.jpeg" },
@@ -725,7 +809,7 @@ export function FaqInsights() {
             </div>
           </div>
           <div className="faq-list">
-            {FAQ.slice(0, 4).map((f, i) => {
+            {FAQ.map((f, i) => {
               const active = open === i;
               return (
                 <Reveal key={f.q} delay={i * 0.05} y={20}>
@@ -757,94 +841,42 @@ export function FaqInsights() {
           </div>
         </div>
 
-      </div>
-    </section>
-  );
-}
-
-/* ---------------- Features ---------------- */
-
-export const FEATURES = [
-  { k: "cursor", t: "See where to click", d: "An orange cursor points to the exact button, menu or field you need next." },
-  { k: "steps", t: "Checked on screen", d: "After every action Rio looks at your screen and only moves on when the step is done." },
-  { k: "voice", t: "Ask out loud", d: "Speak mid-task. Gladia transcribes it live and Rio answers in context." },
-  { k: "langs", t: "Answers in your language", d: "Gradium voice runs on your Mac and speaks the language you learn in." },
-  { k: "keys", t: "One shortcut away", d: "Press ⌥⇧Space from any app. Rio opens on top of what you are doing." },
-  { k: "journal", t: "Every lesson saved", d: "Sessions are journaled as milestone tutorials you can replay or share." },
-] as const;
-
-export function FeatIcon({ k }: { k: (typeof FEATURES)[number]["k"] }) {
-  if (k === "cursor")
-    return (
-      <div className="fi fi-cursor">
-        <span className="fi-target" />
-        <span className="fi-arrow"><RioArrow size={20} /></span>
-      </div>
-    );
-  if (k === "steps")
-    return (
-      <div className="fi fi-steps">
-        {[0, 1, 2].map((i) => (
-          <span key={i} className="fi-step" style={{ animationDelay: `${i * 0.6}s` }}>
-            <svg viewBox="0 0 12 12"><path d="M2.5 6.2 5 8.5l4.5-5" /></svg>
-          </span>
-        ))}
-      </div>
-    );
-  if (k === "voice")
-    return (
-      <div className="fi fi-voice">
-        {Array.from({ length: 11 }, (_, i) => (
-          <i key={i} style={{ animationDelay: `${-((i * 0.37) % 1.1)}s` }} />
-        ))}
-      </div>
-    );
-  if (k === "langs")
-    return (
-      <div className="fi feat-langs">
-        <span className="lang-caret" />
-        <Marquee duration={8} className="lang-marquee">
-          {["EN", "FR", "ES", "DE", "IT", "PT", "JA", "ZH", "AR", "HI"].map((l) => (
-            <span key={l}>{l}</span>
-          ))}
-        </Marquee>
-      </div>
-    );
-  if (k === "keys")
-    return (
-      <div className="fi fi-keys">
-        {["⌥", "⇧", "Space"].map((c, i) => (
-          <kbd key={c} className={c === "Space" ? "wide" : ""} style={{ animationDelay: `${i * 0.18}s` }}>{c}</kbd>
-        ))}
-      </div>
-    );
-  return (
-    <div className="fi fi-journal">
-      {[0, 1, 2].map((i) => (
-        <span key={i} style={{ animationDelay: `${i * 0.5}s` }}><b /><i /></span>
-      ))}
-    </div>
-  );
-}
-
-export function Features() {
-  return (
-    <section className="rfeatures" id="features">
-      <div className="rfeatures-head">
-        <Label text="FEATURES" />
-        <Reveal as="h2" className="h2-54 rfeatures-title">
-          A tutor that sees your screen<span className="rf-dim">, and checks every step you take.</span>
-        </Reveal>
-      </div>
-      <div className="rf-grid">
-        {FEATURES.map((f, i) => (
-          <Reveal key={f.k} className="rf" delay={(i % 3) * 0.08}>
-            <FeatIcon k={f.k} />
-            <span className="rf-k">{String(i + 1).padStart(2, "0")}</span>
-            <h3 className="rf-t">{f.t}</h3>
-            <p className="p-15 rf-d">{f.d}</p>
+        <BigMarquee word="Library" star="#ffffff" />
+        <div className="insights-head">
+          <Reveal as="p" className="p-16">
+            Ready-made tutorials and guides to get productive in new software, fast. Every lesson runs live on your own screen.
           </Reveal>
-        ))}
+          <Reveal delay={0.1}>
+            <Btn label="Browse library" href="#insights" />
+          </Reveal>
+        </div>
+        <div className="articles">
+          {ARTICLES.map((a, i) => (
+            <Reveal key={a.title} className={`article ${a.flip ? "flip" : ""}`} delay={i * 0.08}>
+              <a href="#insights" className="article-link">
+                <div className="article-img">
+                  <img src={asset(a.img)} alt="" />
+                </div>
+                <div className="article-body">
+                  <div>
+                    <p className="mono-12">{a.cat}</p>
+                    <h4 className="h4-20 article-title">{a.title}</h4>
+                    <p className="p-14l">{a.body}</p>
+                  </div>
+                  <div className="article-foot">
+                    <div>
+                      <p className="p-14">Written by</p>
+                      <p className="p-12">{a.author}</p>
+                    </div>
+                    <span className="article-go">
+                      <Icon name="arrowRight" size={25} />
+                    </span>
+                  </div>
+                </div>
+              </a>
+            </Reveal>
+          ))}
+        </div>
       </div>
     </section>
   );
