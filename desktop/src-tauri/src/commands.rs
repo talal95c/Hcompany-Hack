@@ -449,9 +449,8 @@ async fn pointer_current(
         if !monitor.contains(crop) {
             return Err("outside_capture");
         }
-        let image = tokio::task::spawn_blocking(move || crate::native::capture(rect, &monitor))
+        let image = crate::bridge::capture_without_overlays(app, rect, &monitor)
             .await
-            .map_err(|_| "capture_unavailable")?
             .map_err(|_| "capture_unavailable")?;
         let actual = image::load_from_memory(&image)
             .map_err(|_| "capture_unavailable")?

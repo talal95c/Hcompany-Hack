@@ -1,5 +1,5 @@
 use crate::{
-    coordinates::Rect,
+    coordinates::{Monitor, Rect},
     guide, input, native,
     tts::{NoSpeech, Speech},
     Capture, Lifecycle, State,
@@ -219,18 +219,7 @@ pub async fn capture_requested(
         .find(|m| m.contains(crop))
         .ok_or("Région hors moniteur ou à cheval sur deux moniteurs")?;
     let started = Instant::now();
-    #[cfg(not(target_os = "macos"))]
-    for window in app.webview_windows().values() {
-        window.hide().map_err(|e| e.to_string())?;
-    }
-    #[cfg(not(target_os = "macos"))]
-    tokio::time::sleep(Duration::from_millis(80)).await;
-    let monitor_for_capture = monitor.clone();
-    let image =
-        tokio::task::spawn_blocking(move || native::capture(crop, &monitor_for_capture)).await;
-    #[cfg(not(target_os = "macos"))]
-    guide::restore(app);
-    let image = image.map_err(|e| e.to_string())??;
+    let image = capture_without_overlays(app, crop, &monitor).await?;
     let (image, image_width, image_height, reference) =
         tokio::task::spawn_blocking(move || bounded_image(&image))
             .await
@@ -279,6 +268,57 @@ pub async fn capture_requested(
     Ok(result)
 }
 
+struct RestoreWindows<F: FnOnce()>(Option<F>);
+
+impl<F: FnOnce()> Drop for RestoreWindows<F> {
+    fn drop(&mut self) {
+        if let Some(restore) = self.0.take() {
+            restore();
+        }
+    }
+}
+
+async fn without_overlays<T>(
+    hide: impl FnOnce() -> Result<(), String>,
+    restore: impl FnOnce(),
+    capture: impl std::future::Future<Output = Result<T, String>>,
+) -> Result<T, String> {
+    let _restore = RestoreWindows(Some(restore));
+    hide()?;
+    capture.await
+}
+
+pub async fn capture_without_overlays(
+    app: &AppHandle,
+    crop: Rect,
+    monitor: &Monitor,
+) -> Result<Vec<u8>, String> {
+    #[cfg(target_os = "macos")]
+    let _ = app;
+    let monitor = monitor.clone();
+    without_overlays(
+        || {
+            #[cfg(not(target_os = "macos"))]
+            for window in app.webview_windows().values() {
+                window.hide().map_err(|e| e.to_string())?;
+            }
+            Ok(())
+        },
+        || {
+            #[cfg(not(target_os = "macos"))]
+            guide::restore(app);
+        },
+        async move {
+            #[cfg(not(target_os = "macos"))]
+            tokio::time::sleep(Duration::from_millis(80)).await;
+            tokio::task::spawn_blocking(move || native::capture(crop, &monitor))
+                .await
+                .map_err(|e| e.to_string())?
+        },
+    )
+    .await
+}
+
 fn bounded_image(bytes: &[u8]) -> Result<(Vec<u8>, u32, u32, image::RgbaImage), String> {
     let mut image = image::load_from_memory(bytes).map_err(|_| "PNG invalide")?;
     let reference = image.to_rgba8();
@@ -316,6 +356,66 @@ fn capture_fits(session: &str, payload: &Value) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[tokio::test]
+    async fn proof_capture_excludes_restored_pill_and_restores_afterwards() {
+        let visible = std::sync::atomic::AtomicBool::new(true);
+        let expected = image::RgbaImage::from_pixel(8, 8, image::Rgba([1, 2, 3, 255]));
+        let actual = without_overlays(
+            || {
+                visible.store(false, Ordering::SeqCst);
+                Ok(())
+            },
+            || visible.store(true, Ordering::SeqCst),
+            async {
+                let mut actual = expected.clone();
+                if visible.load(Ordering::SeqCst) {
+                    actual.put_pixel(0, 0, image::Rgba([255, 0, 0, 255]));
+                }
+                Ok(actual)
+            },
+        )
+        .await
+        .unwrap();
+        assert_eq!(actual, expected);
+        assert!(visible.load(Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn overlay_capture_restores_after_errors_and_cancellation() {
+        let visible = std::sync::atomic::AtomicBool::new(true);
+        for fail_hide in [true, false] {
+            let result = without_overlays(
+                || {
+                    visible.store(false, Ordering::SeqCst);
+                    if fail_hide {
+                        Err("hide failed".into())
+                    } else {
+                        Ok(())
+                    }
+                },
+                || visible.store(true, Ordering::SeqCst),
+                async { Err::<(), String>("capture failed".into()) },
+            )
+            .await;
+            assert!(result.is_err());
+            assert!(visible.load(Ordering::SeqCst));
+        }
+        let result = tokio::time::timeout(
+            Duration::from_millis(1),
+            without_overlays(
+                || {
+                    visible.store(false, Ordering::SeqCst);
+                    Ok(())
+                },
+                || visible.store(true, Ordering::SeqCst),
+                std::future::pending::<Result<(), String>>(),
+            ),
+        )
+        .await;
+        assert!(result.is_err());
+        assert!(visible.load(Ordering::SeqCst));
+    }
+
     #[test]
     fn capture_upload_has_bounded_pixels_without_upscaling() {
         for (width, height) in [(1600, 1000), (3200, 2000), (200, 100), (16000, 32)] {
