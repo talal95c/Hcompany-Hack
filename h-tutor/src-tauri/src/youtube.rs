@@ -411,7 +411,7 @@ pub async fn run_import(
     report("video", "Reading the video…".into());
     let u = url.to_string();
     let video = tauri::async_runtime::spawn_blocking(move || metadata(&u)).await.map_err(|e| e.to_string())??;
-    let dir = std::env::temp_dir().join("h-tutor-youtube").join(tutorial::slug(&video.id));
+    let dir = std::env::temp_dir().join("rio-youtube").join(tutorial::slug(&video.id));
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
 
     report("video", format!("Downloading “{}”…", video.title));

@@ -2291,30 +2291,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "h-tutor"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "cpal",
- "dotenvy",
- "futures-util",
- "image",
- "objc2",
- "ptts",
- "reqwest",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-global-shortcut",
- "tauri-plugin-opener",
- "tokio",
- "tokio-tungstenite",
- "whatlang",
- "xcap",
-]
-
-[[package]]
 name = "h2"
 version = "0.4.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4848,6 +4824,30 @@ dependencies = [
  "libc",
  "untrusted",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "rio"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "cpal",
+ "dotenvy",
+ "futures-util",
+ "image",
+ "objc2",
+ "ptts",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-global-shortcut",
+ "tauri-plugin-opener",
+ "tokio",
+ "tokio-tungstenite",
+ "whatlang",
+ "xcap",
 ]
 
 [[package]]

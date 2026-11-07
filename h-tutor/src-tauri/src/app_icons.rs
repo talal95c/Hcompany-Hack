@@ -1,5 +1,6 @@
-//! Real application icons (and their dominant colour) for the tutorial
-//! palette, read from the installed apps through NSWorkspace.
+//! Extracts application icons (and their dominant colour) from the installed
+//! apps through NSWorkspace. Used once, by `export_icons`, to write the icons
+//! the palette ships in `src/assets/apps/`; the app never runs this.
 
 use serde::Serialize;
 use std::collections::HashMap;
@@ -153,9 +154,7 @@ fn load(name: &str, bundle_id: Option<&str>) -> Option<AppIcon> {
     Some(AppIcon { data_uri: format!("data:image/png;base64,{}", STANDARD.encode(out.into_inner())), color })
 }
 
-/// Icons for the given apps (`[name, bundle_id?]`), keyed by name. Apps not
-/// installed are left out.
-#[tauri::command]
+#[allow(dead_code)]
 pub async fn app_icons(apps: Vec<(String, Option<String>)>) -> HashMap<String, AppIcon> {
     tauri::async_runtime::spawn_blocking(move || {
         let mut out = HashMap::new();
@@ -181,14 +180,41 @@ pub async fn app_icons(apps: Vec<(String, Option<String>)>) -> HashMap<String, A
 
 #[cfg(test)]
 mod tests {
+    /// One-off export of the apps' icons into the frontend (`src/assets/apps/`),
+    /// so the palette ships them and never reads the computer:
+    /// `cargo test --lib app_icons -- --ignored --nocapture`
     #[test]
-    fn reads_installed_app_icons() {
-        for (name, id) in [("Finder", Some("com.apple.finder")), ("Docker Desktop", None), ("Blender", None)] {
-            let icon = super::load(name, id);
-            println!("{name}: {:?}", icon.as_ref().map(|i| (i.data_uri.len(), i.color.clone())));
-            if name == "Finder" {
-                assert!(icon.is_some());
-            }
+    #[ignore]
+    fn export_icons() {
+        use base64::{engine::general_purpose::STANDARD, Engine};
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../src/assets/apps");
+        std::fs::create_dir_all(&dir).unwrap();
+        let apps = [
+            ("Blender", Some("org.blenderfoundation.blender")),
+            ("Docker Desktop", Some("com.docker.docker")),
+            ("Finder", Some("com.apple.finder")),
+            ("Google Chrome", Some("com.google.Chrome")),
+            ("Safari", Some("com.apple.Safari")),
+            ("Visual Studio Code", Some("com.microsoft.VSCode")),
+            ("Mail", Some("com.apple.mail")),
+            ("Notes", Some("com.apple.Notes")),
+            ("Calendar", Some("com.apple.iCal")),
+            ("Preview", Some("com.apple.Preview")),
+            ("Terminal", Some("com.apple.Terminal")),
+            ("System Settings", Some("com.apple.systempreferences")),
+        ];
+        let mut colors = serde_json::Map::new();
+        for (name, id) in apps {
+            let Some(icon) = super::load(name, id) else {
+                println!("{name}: not installed, skipped");
+                continue;
+            };
+            let slug = crate::tutorial::slug(name);
+            let png = STANDARD.decode(icon.data_uri.trim_start_matches("data:image/png;base64,")).unwrap();
+            std::fs::write(dir.join(format!("{slug}.png")), &png).unwrap();
+            println!("{name}: {slug}.png {} KB {}", png.len() / 1024, icon.color);
+            colors.insert(slug, icon.color.into());
         }
+        std::fs::write(dir.join("colors.json"), serde_json::to_string_pretty(&colors).unwrap()).unwrap();
     }
 }

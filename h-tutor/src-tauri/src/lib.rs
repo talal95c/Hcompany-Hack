@@ -1,4 +1,5 @@
 mod agent;
+#[cfg(test)]
 mod app_icons;
 mod audio_out;
 mod ax;
@@ -8,6 +9,7 @@ mod clicks;
 mod holo;
 mod journal;
 mod planner;
+mod platform;
 mod qa;
 mod tutorial;
 mod panel;
@@ -279,11 +281,20 @@ async fn tutor_start(
     // Both entries end up as a milestone graph: a saved tutorial, or one
     // planned by Holo from the goal and the current screen.
     let tutorial = match (tutorial_id, goal) {
+        (Some(id), _) if id.starts_with(platform::ID_PREFIX) => platform::tutorial(&id).await?,
         (Some(id), _) => tutorial::load(&id)?,
         (None, Some(goal)) => {
             app.emit_to("main", "tutor:planning", ()).ok();
-            let shot = shoot().await?;
-            planner::plan(&state.holo, &goal, &shot).await?
+            // The organization's knowledge base, looked up while the screen is captured.
+            let (shot, kb) = tokio::join!(shoot(), platform::search("", &goal));
+            let kb = kb.unwrap_or_else(|e| {
+                eprintln!("[platform] {e}");
+                None
+            });
+            if let Some(k) = &kb {
+                journal::event("knowledge", json!({ "goal": goal, "chars": k.text.len(), "sources": k.sources.len() }));
+            }
+            planner::plan(&state.holo, &goal, &shot?, kb.as_ref().map(|k| k.text.as_str())).await?
         }
         (None, None) => return Err("Nothing to start".into()),
     };
@@ -380,8 +391,10 @@ fn resolve_lang(text: String, spoken: Option<String>, fallback: Option<String>) 
 }
 
 #[tauri::command]
-fn list_tutorials() -> Vec<tutorial::Summary> {
-    tutorial::list()
+async fn list_tutorials() -> Result<Vec<tutorial::Summary>, String> {
+    let mut list = tutorial::list();
+    list.extend(platform::tutorials().await);
+    Ok(list)
 }
 
 /// Saves the current (or just finished) run as a tutorial in the library,
@@ -410,8 +423,9 @@ async fn tutor_repoint(app: AppHandle, state: State<'_, AppState>) -> Result<(),
 async fn tutor_stop(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
     watch::disarm();
     let mut guard = state.session.lock().await;
-    if guard.as_ref().is_some_and(|s| !s.finished) {
+    if let Some(s) = guard.as_ref().filter(|s| !s.finished) {
         journal::end("abandoned");
+        platform::event("tutorial_abandoned", &s.tutorial, None);
     }
     *guard = None;
     *state.target.lock().unwrap() = None;
@@ -729,7 +743,6 @@ pub fn run() {
             resolve_lang,
             qa::answer_question,
             youtube::import_youtube,
-            app_icons::app_icons,
             save_tutorial,
             tutor_stop,
             stt::listen_start,

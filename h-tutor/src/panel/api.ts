@@ -30,7 +30,6 @@ export type TutorialSummary = {
   milestones: number;
   source: string;
 };
-export type AppIcon = { data_uri: string; color: string };
 
 /** One action for the learner, decided by Holo from the live screen. */
 export type Step = {
@@ -76,7 +75,6 @@ export const api = {
   /** YouTube video → tutorial in the library (progress on "import:progress"). */
   importYoutube: (url: string) => invoke<Imported>("import_youtube", { url }),
   /** Real icons of installed apps, keyed by app name. */
-  appIcons: (apps: [string, string | null][]) => invoke<Record<string, AppIcon>>("app_icons", { apps }),
   /** Saves the run as a tutorial in the library; returns its title. */
   saveTutorial: () => invoke<string>("save_tutorial"),
   tutorNext: (event: string, lang: string | null, onlyIfChanged = false) =>

@@ -154,6 +154,7 @@ impl Session {
     pub fn new(tutorial: Tutorial, lang: Option<&str>) -> Self {
         let status = tutorial.milestones.iter().map(|m| (m.id.clone(), Status::Todo)).collect();
         journal::begin(&tutorial, lang);
+        crate::platform::event("tutorial_started", &tutorial, None);
         let mut s = Self {
             tutorial,
             lang: lang.map(String::from),
@@ -219,6 +220,8 @@ impl Session {
         self.evidence.insert(id.clone(), evidence.to_string());
         let kind = if status == Status::Skipped { "milestone_skipped" } else { "milestone_done" };
         journal::event(kind, json!({ "milestone": id, "evidence": evidence }));
+        let goal = self.tutorial.milestone(&id).map(|m| m.goal.clone());
+        crate::platform::event(kind, &self.tutorial, goal.as_deref());
         Some(id)
     }
 
@@ -381,6 +384,7 @@ pub async fn advance(
     session.finished = true;
     journal::event("tutorial_done", json!({}));
     journal::end("completed");
+    crate::platform::event("tutorial_finished", &session.tutorial, None);
     let step = Step {
         kind: "done".into(),
         instruction: String::new(),

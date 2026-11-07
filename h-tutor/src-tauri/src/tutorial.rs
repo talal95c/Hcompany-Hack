@@ -54,7 +54,7 @@ pub struct Tutorial {
     pub goal: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
-    /// "authored" | "generated" | "recorded" | "youtube"
+    /// "authored" | "generated" | "recorded" | "youtube" | "company" (Rio platform)
     #[serde(default = "authored")]
     pub source: String,
     /// Where it came from (the YouTube video for imports).
@@ -142,7 +142,7 @@ pub fn dir() -> PathBuf {
     d
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Summary {
     pub id: String,
     pub title: String,

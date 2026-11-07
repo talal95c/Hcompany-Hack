@@ -514,22 +514,25 @@ export default function App() {
                 <Wave level={level} done={voiceText.final} size="sm" />
                 <Transcript text={tail(voiceText.text, 44)} placeholder="Listening…" className="dicta-inline__text" />
               </motion.div>
+            ) : phase === "planning" || phase === "importing" ? (
+              // While Holo works, its status takes the input's place, on the left.
+              <span className="row-status shimmer">
+                {phase === "importing" ? importStage : planning ? "Holo is planning milestones…" : "Starting…"}
+              </span>
             ) : (
               <input
                 ref={inputRef}
                 autoFocus
                 value={goal}
-                disabled={phase === "planning" || phase === "importing"}
                 onChange={(e) => setGoal(e.target.value)}
-                placeholder="Ask or learn anything, or paste a YouTube link"
+                placeholder={
+                  // While Holo reads a request, its status speaks in the card above.
+                  qa && !qa.result && !qa.error ? "" : "Ask or learn anything, or paste a YouTube link"
+                }
                 spellCheck={false}
               />
             )}
-            {phase === "importing" ? (
-              <span className="hint shimmer">{importStage}</span>
-            ) : phase === "planning" ? (
-              <span className="hint shimmer">{planning ? "Holo is planning milestones…" : "Starting…"}</span>
-            ) : (
+            {phase === "planning" || phase === "importing" ? null : (
               <>
                 <button
                   type="button"

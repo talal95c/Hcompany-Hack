@@ -2,7 +2,9 @@
 //! software (where a feature lives in the current version, shortcuts,
 //! changes between versions), callable by Holo as a tool.
 //!
-//! Backends:
+//! Backends, in order:
+//! - The organization's knowledge base on the Rio platform, when
+//!   `RIO_API_URL` and `RIO_API_TOKEN` are set (see platform.rs).
 //! - Linkup web search, when `LINKUP_API_KEY` is set (real, sourced).
 //! - Otherwise a simulated search: Holo answers as a documentation search
 //!   engine from its own knowledge. Results are labelled as simulated so
@@ -29,6 +31,11 @@ pub struct SearchResult {
 
 /// Runs the search, falling back to the simulated backend if Linkup fails.
 pub async fn run(holo: &Holo, app_name: &str, query: &str) -> SearchResult {
+    match crate::platform::search(app_name, query).await {
+        Ok(Some(r)) => return log(app_name, query, r),
+        Ok(None) => {}
+        Err(e) => eprintln!("[search] {e}, using the other backends"),
+    }
     if let Some(key) = std::env::var("LINKUP_API_KEY").ok().filter(|k| !k.trim().is_empty()) {
         match linkup(&key, app_name, query).await {
             Ok(r) => return log(app_name, query, r),
@@ -120,14 +127,14 @@ async fn simulated(holo: &Holo, app_name: &str, query: &str) -> Result<SearchRes
 pub fn tool() -> Value {
     json!({ "type": "function", "function": {
         "name": "search",
-        "description": "Search up-to-date documentation and tutorials about a piece of software: where a feature \
+        "description": "Search the organization's knowledge base and up-to-date documentation and tutorials about a piece of software: where a feature \
             lives in the current version, menu paths, shortcuts, changes between versions. Use it when you are \
             unsure how to do the task in this app or version, or when the known path did not work. The learner \
             does nothing during a search.",
         "parameters": { "type": "object",
             "properties": {
                 "app_name": { "type": "string", "description": "The software, with its version if visible (e.g. \"Blender 4.2\")" },
-                "query": { "type": "string", "description": "What to find, e.g. \"add a subdivision surface modifier\"" }
+                "query": { "type": "string", "description": "What to find, in English, e.g. \"add a subdivision surface modifier\"" }
             },
             "required": ["app_name", "query"] }
     }})

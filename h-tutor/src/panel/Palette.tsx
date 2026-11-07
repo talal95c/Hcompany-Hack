@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { api, type AppIcon, type TutorialSummary } from "./api";
+import { type TutorialSummary } from "./api";
+import { appIcon } from "./appIcons";
 import { IconClose, IconGrid } from "./icons";
 
 const SOURCE_LABEL: Record<string, string> = {
   generated: "Generated",
   recorded: "From a session",
   youtube: "From YouTube",
+  company: "Company",
 };
 
 type Props = {
@@ -31,14 +33,6 @@ export default function Palette({ tutorials, onStart, onClose }: Props) {
 
   useEffect(() => inputRef.current?.focus(), []);
 
-  // The real icons of the installed apps (and their dominant colour).
-  const [icons, setIcons] = useState<Record<string, AppIcon>>({});
-  useEffect(() => {
-    const seen = new Map<string, string | null>();
-    for (const t of tutorials) if (!seen.has(t.app)) seen.set(t.app, t.bundle_id);
-    api.appIcons([...seen.entries()]).then(setIcons).catch(() => {});
-  }, [tutorials]);
-
   const apps = useMemo(() => {
     const counts = new Map<string, number>();
     for (const t of tutorials) counts.set(t.app, (counts.get(t.app) ?? 0) + 1);
@@ -56,14 +50,16 @@ export default function Palette({ tutorials, onStart, onClose }: Props) {
 
   useEffect(() => setSelected(0), [query, app]);
 
-  const Icon = ({ app, size }: { app: string; size: number }) =>
-    icons[app] ? (
-      <img className="app-icon" src={icons[app].data_uri} width={size} height={size} alt="" draggable={false} />
+  const Icon = ({ app, size }: { app: string; size: number }) => {
+    const icon = appIcon(app);
+    return icon ? (
+      <img className="app-icon" src={icon.src} width={size} height={size} alt="" draggable={false} />
     ) : (
       <span className="app-icon app-icon--fallback" style={{ width: size, height: size }}>
         {app.trim()[0]?.toUpperCase()}
       </span>
     );
+  };
 
   useEffect(() => {
     if (!keyMoved.current) return;
@@ -117,7 +113,7 @@ export default function Palette({ tutorials, onStart, onClose }: Props) {
             <span className="nav-dot">
               <IconGrid />
             </span>
-            Tous
+            All
             <span className="nav-count">{tutorials.length}</span>
           </button>
           {apps.map(([name, count]) => (
@@ -167,14 +163,14 @@ export default function Palette({ tutorials, onStart, onClose }: Props) {
 
       <div className="palette__foot">
         <span>
-          <kbd>↵</kbd> lancer
+          <kbd>↵</kbd> start
         </span>
         <span>
           <kbd>↑</kbd>
-          <kbd>↓</kbd> naviguer
+          <kbd>↓</kbd> navigate
         </span>
         <span>
-          <kbd>esc</kbd> fermer
+          <kbd>esc</kbd> close
         </span>
       </div>
     </motion.div>
