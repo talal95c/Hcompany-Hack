@@ -103,6 +103,32 @@ function clean(p: StructPath): StructPath {
   };
 }
 
+/** Holo copies a doc's one shortcut onto every step, and shifts each value onto the next step's button ("set it to
+ *  Client"). Keep only what the document says: a shortcut written on the line that names the step's element, and a value
+ *  the text contains that is not a button or menu (of the procedure, or marked in bold or as code). */
+const squash = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+function keepWhatTheTextSays(paths: StructPath[], text: string) {
+  const lines = text.split("\n").map((l) => ({ n: norm(l), raw: squash(l) }));
+  const all = norm(text);
+  // What the doc writes in bold or as code is an element of the interface, not something the reader types.
+  const marked = new Set([...text.matchAll(/\*\*([^*\n]+)\*\*|`([^`\n]+)`/g)].flatMap((m) => (m[1] ?? m[2]).split(/[›>]/).map(norm)));
+  for (const p of paths) {
+    const uiWords = new Set([...p.steps.flatMap((s) => (s.ui ?? []).map(norm)), ...marked]);
+    for (const s of p.steps) {
+      if (s.keys) {
+        const label = norm(s.ui?.at(-1));
+        const near = label.length > 2 ? lines.filter((l) => l.n.includes(label)) : lines;
+        const kept = s.keys.split(" or ").filter((k) => near.some((l) => l.raw.includes(squash(k))));
+        s.keys = kept.length ? kept.join(" or ") : null;
+      }
+      if (s.value != null) {
+        const v = norm(String(s.value));
+        if (!v || uiWords.has(v) || !all.includes(v)) s.value = null;
+      }
+    }
+  }
+}
+
 /** A shortcut the document writes on the line that names the step's element ("Click Export › CSV, or press Ctrl+Shift+E"),
  *  when the model left it out. */
 const SHORTCUT_IN_TEXT = /\b(?:(?:Ctrl|Control|Cmd|Command|Shift|Alt|Option|⌘|⇧|⌥)\s*\+\s*)+(?:[A-Z0-9]|F\d{1,2}|Enter|Delete|Tab|Space)\b/g;
@@ -153,6 +179,7 @@ export async function ingest(env: IngestEnv, body: IngestBody) {
   // 2. Structure.
   const struct = await structure(env, app.name, text, title);
   if (!struct.paths.length) throw new Error("Holo found no procedure in this document");
+  keepWhatTheTextSays(struct.paths, text);
   recoverShortcuts(struct.paths, text);
   const sid = `doc_${await sha(`${ws}|${title}|${text.slice(0, 4000)}`)}`;
   await removeSource(db, ws, sid); // re-ingesting the same document replaces it

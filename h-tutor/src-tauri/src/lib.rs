@@ -447,7 +447,9 @@ fn resolve_lang(text: String, spoken: Option<String>, fallback: Option<String>) 
 #[tauri::command]
 async fn list_tutorials() -> Result<Vec<tutorial::Summary>, String> {
     let mut list = tutorial::list();
-    list.extend(platform::tutorials().await);
+    // The palette opens before a tutorial starts: fetch the organization's apps now, for the search tool.
+    let (tutorials, _) = tokio::join!(platform::tutorials(), platform::apps());
+    list.extend(tutorials);
     Ok(list)
 }
 
