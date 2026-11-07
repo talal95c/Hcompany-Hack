@@ -53,7 +53,8 @@ adresses distantes sont refusées. Aucun jeton de transport ni clé cloud dans l
 - `Ctrl+Shift+Escape` arrête prioritairement, annule le consentement et invalide les
   captures. Aucun appui de touche maintenu n'est exposé ; enigo libère ses touches à la sortie.
 - « Fais-le » exige une case de consentement explicite (60 s), une connexion active,
-  une capture fraîche (au plus 10 s), un verrou exclusif et le focus Blender. Chaque
+  une capture fraîche (au plus 10 s), un verrou exclusif et le focus de l'application
+  ciblée au consentement. Chaque
   action consomme sa capture ; il faut en partager une nouvelle avant l'action suivante.
   Les seuls gestes acceptés sont move/click normalisés, navigation, caractères simples,
   libellés alphanumériques et scroll borné. Pas de modificateurs système, shell ni code.
@@ -95,8 +96,8 @@ IPC web → Rust : `permission_status`, `permission_request`, `capture_region`,
 Les commandes sensibles refusent une fenêtre autre que `pill`.
 
 Conventions acceptées pour le contrat v1 (sans modifier ses schémas) :
-1. Capture uniquement sur action locale explicite `capture_region`, puis `capture.result`.
-   Il n'existe pas encore de message engine `capture.request`.
+1. Capture locale explicite `capture_region` ou demande engine `capture.request`.
+   `scope="window"` avec `app` capture la fenêtre résolue ; la réponse est `capture.result`.
 2. Consentement via `user.intent`, source `bouton`, dont `text` est la chaîne JSON
    `{"intent":"fais-le","consent_token":"<uuid>"}`. Le moteur doit réutiliser ce token
    dans `input.action`. Le token ne retourne pas dans la WebView.
@@ -117,8 +118,20 @@ cargo clippy --locked --all-targets -- -D warnings
 cargo test --locked
 cargo build --locked
 ```
-Le marqueur live lance deux intégrations Rust réelles : capture native PNG et handshake
-WebSocket authentifié avec aller-retour validé. Ces tests ne prétendent pas valider les
+Le marqueur live lance les intégrations Rust réelles : capture native PNG, handshake
+WebSocket authentifié et capteur Calc. Sous Linux, la fixture démarre son propre Xvfb
+(affichage libre), bus D-Bus/AT-SPI et Calc avec profil/document jetables. Aucun chemin
+personnel ni script extérieur au dépôt n'est requis. Dépendances : Xvfb, dbus-run-session,
+at-spi2-core, LibreOffice Calc avec son plugin GTK3, xdotool, Python et Cargo.
+Sans `HCOMPANY_LIVE=1` ou sans les exécutables requis, le test Calc est ignoré.
+
+**Limite explicite :** le test Calc utilise le fallback Rust ignoré, pas l'application
+Tauri connectée à une fixture engine. Les durées `*_handler_ms` mesurent les handlers
+Rust, pas un aller-retour WebSocket inter-processus. La découverte `app.focus` et la
+capture native sont vérifiées localement ; leur livraison par le vrai client Tauri
+et la validation Python/jsonschema de ses messages restent à couvrir. Le test transport
+distinct vérifie le handshake et les messages réels de son loopback.
+Ces tests ne prétendent pas valider les
 services cloud (aucun appel cloud dans ce client) ni une leçon complète. La CI existante
 compile Linux et macOS ; Linux CI doit installer `libasound2-dev`.
 
@@ -132,6 +145,30 @@ pour tester le rendu du ✓, sans prétendre prouver une opération Blender.
 avec `HCOMPANY_PROBE_OUTPUT` fixé sur un dossier d'artefacts, permet de vérifier
 le même serveur lancé comme subprocess `python -m engine` et son arrêt réel.
 La compilation seule ne valide pas les permissions, la capture et l'injection macOS.
+
+## Capteur d'accessibilité générique
+Le client natif expose `a11y.request` / `a11y.result` : snapshot borné, recherche fraîche,
+lecture d'une référence opaque et actions sémantiques gardées. Les références incluent
+l'identifiant de snapshot ; quatre snapshots sont retenus pendant 30 s (limites
+configurées). Les valeurs sécurisées sont exclues et les autres valeurs ne sont jamais
+loguées. Un timeout avec des nœuds utilisables rend un résultat partiel, pas une preuve
+d'absence ; voir les [détails du capteur](src-tauri/src/a11y/README.md).
+
+Les tiers d'observation sont : état structuré de l'add-on quand disponible,
+accessibilité native, puis vision sur capture minimale. Python garde les décisions
+pédagogiques ; le natif ne conclut pas à la réussite. Linux AT-SPI/X11 est vérifié avec
+Calc ; macOS AX et Windows UIA sont implémentés, mais leur exécution native reste à
+valider. Le schéma protocole est préchauffé sur un thread au démarrage de l'application.
+Les parcours ont un budget configuré de 3 s, 2 000 nœuds, profondeur par défaut 32 ;
+les appels Linux d'observation sont bornés à 500 ms. Wayland et les arbres virtuels
+non bornables ne sont pas présentés comme complètement observés.
+
+Mesures Linux/Xvfb/GTK3 avec le test privé (5 snapshots, schéma préchauffé) :
+snapshot p50 812,377 ms, p95 878,204 ms (nearest-rank) ; recherche A1 1 038,473 ms,
+recherche Bold 853,854 ms, get 10,030 ms, capture fenêtre 366,734 ms.
+Ce sont des durées locales Rust mesurées, non des latences engine/Tauri de bout en bout.
+Le transport loopback distinct mesure 1 022,06 ms, initialisation comprise ; ces
+mesures ne valident pas la livraison WebSocket des opérations d'accessibilité.
 
 ## Module vocal à venir
 `src-tauri/src/tts.rs` définit `Speech` et `NoSpeech`. Le no-op retourne explicitement

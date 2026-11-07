@@ -186,89 +186,6 @@ pub fn capture(crop: Rect, _monitor: &Monitor) -> Result<Vec<u8>, String> {
     Ok(output.into_inner())
 }
 
-#[cfg(target_os = "linux")]
-pub fn blender_focused() -> bool {
-    use x11rb::{
-        connection::Connection,
-        protocol::xproto::{AtomEnum, ConnectionExt},
-    };
-    let result = (|| -> Result<bool, String> {
-        let (conn, screen) = connection()?;
-        let atom = |name: &[u8]| {
-            conn.intern_atom(false, name)
-                .map_err(|e| e.to_string())?
-                .reply()
-                .map(|v| v.atom)
-                .map_err(|e| e.to_string())
-        };
-        let root = conn.setup().roots[screen].root;
-        let active = conn
-            .get_property(
-                false,
-                root,
-                atom(b"_NET_ACTIVE_WINDOW")?,
-                AtomEnum::WINDOW,
-                0,
-                1,
-            )
-            .map_err(|e| e.to_string())?
-            .reply()
-            .map_err(|e| e.to_string())?;
-        let Some(window) = active.value32().and_then(|mut v| v.next()) else {
-            return Ok(false);
-        };
-        let pid = conn
-            .get_property(
-                false,
-                window,
-                atom(b"_NET_WM_PID")?,
-                AtomEnum::CARDINAL,
-                0,
-                1,
-            )
-            .map_err(|e| e.to_string())?
-            .reply()
-            .map_err(|e| e.to_string())?;
-        let Some(pid) = pid.value32().and_then(|mut v| v.next()) else {
-            return Ok(false);
-        };
-        let path = std::fs::read_link(format!("/proc/{pid}/exe")).map_err(|e| e.to_string())?;
-        Ok(path
-            .file_name()
-            .is_some_and(|s| s == "blender" || s == "blender-bin"))
-    })();
-    result.unwrap_or(false)
-}
-
-#[cfg(test)]
-mod live_tests {
-    use super::*;
-    #[test]
-    #[ignore = "requires a real desktop session; run through pytest -m live"]
-    fn live_native_capture() {
-        let monitors = monitors().unwrap();
-        let monitor = monitors.first().expect("active monitor");
-        let crop = Rect {
-            x: monitor.physical.x,
-            y: monitor.physical.y,
-            width: 256.,
-            height: 128.,
-        };
-        let start = std::time::Instant::now();
-        let bytes = capture(crop, monitor).unwrap();
-        let elapsed = start.elapsed().as_secs_f64() * 1000.;
-        let image = image::load_from_memory(&bytes).unwrap();
-        assert_eq!((image.width(), image.height()), (256, 128));
-        println!(
-            "live native capture_ms={elapsed:.2} png_bytes={}",
-            bytes.len()
-        );
-        use enigo::Mouse;
-        let device = enigo::Enigo::new(&enigo::Settings::default()).unwrap();
-        assert!(device.location().is_ok());
-    }
-}
-
 #[cfg(target_os = "windows")]
 pub fn monitors() -> Result<Vec<Monitor>, String> {
     xcap::Monitor::all()
@@ -313,17 +230,6 @@ pub fn capture(crop: Rect, monitor: &Monitor) -> Result<Vec<u8>, String> {
         .write_to(&mut output, image::ImageFormat::Png)
         .map_err(|e| e.to_string())?;
     Ok(output.into_inner())
-}
-
-#[cfg(target_os = "windows")]
-pub fn blender_focused() -> bool {
-    xcap::Window::all().is_ok_and(|windows| {
-        windows.iter().any(|w| {
-            w.is_focused().unwrap_or(false)
-                && w.app_name()
-                    .is_ok_and(|n| n.eq_ignore_ascii_case("blender"))
-        })
-    })
 }
 
 #[cfg(target_os = "macos")]
@@ -371,7 +277,31 @@ pub fn capture(crop: Rect, monitor: &Monitor) -> Result<Vec<u8>, String> {
     ])
 }
 
-#[cfg(target_os = "macos")]
-pub fn blender_focused() -> bool {
-    mac_call(&["focus"]).is_ok_and(|v| v == b"true")
+#[cfg(test)]
+mod live_tests {
+    use super::*;
+    #[test]
+    #[ignore = "requires a real desktop session; run through pytest -m live"]
+    fn live_native_capture() {
+        let monitors = monitors().unwrap();
+        let monitor = monitors.first().expect("active monitor");
+        let crop = Rect {
+            x: monitor.physical.x,
+            y: monitor.physical.y,
+            width: 256.,
+            height: 128.,
+        };
+        let start = std::time::Instant::now();
+        let bytes = capture(crop, monitor).unwrap();
+        let elapsed = start.elapsed().as_secs_f64() * 1000.;
+        let image = image::load_from_memory(&bytes).unwrap();
+        assert_eq!((image.width(), image.height()), (256, 128));
+        println!(
+            "live native capture_ms={elapsed:.2} png_bytes={}",
+            bytes.len()
+        );
+        use enigo::Mouse;
+        let device = enigo::Enigo::new(&enigo::Settings::default()).unwrap();
+        assert!(device.location().is_ok());
+    }
 }

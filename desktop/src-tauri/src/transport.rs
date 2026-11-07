@@ -194,7 +194,7 @@ pub async fn run(
                     "hello",
                     json!({
                     "app_version":env!("CARGO_PKG_VERSION"), "platform":std::env::consts::OS,
-                    "capabilities":["pointer","capture.region","pcm_s16le","input.action"]}),
+                    "capabilities":["pointer","capture.region","pcm_s16le","input.action","a11y","capture.window","app.focus","highlight.rect"]}),
                     None,
                 );
                 let permissions = protocol::envelope(
@@ -213,6 +213,16 @@ pub async fn run(
                 attempts = 0;
                 let mut tick = tokio::time::interval(Duration::from_secs(2));
                 let mut last_rx = Instant::now();
+                let focus_state = state.clone();
+                let focus_task = tokio::spawn(async move {
+                    let mut tick = tokio::time::interval(Duration::from_millis(500));
+                    tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+                    let mut previous = None;
+                    loop {
+                        tick.tick().await;
+                        crate::discovery::poll(&focus_state, &mut previous).await;
+                    }
+                });
                 loop {
                     tokio::select! {
                         biased;
@@ -244,9 +254,12 @@ pub async fn run(
                         }
                     }
                 }
+                focus_task.abort();
+                let _ = focus_task.await;
                 let _ = socket.close(None).await;
             }
             state.connected.store(false, Ordering::SeqCst);
+            state.a11y.clear();
             input::stop(&state);
             state.captures.lock().unwrap().clear();
             crate::guide::clear(&app);
@@ -259,6 +272,7 @@ pub async fn run(
             tokio::select! { _ = tokio::time::sleep(delay) => {}, _ = control.changed() => break }
         }
         state.connected.store(false, Ordering::SeqCst);
+        state.a11y.clear();
         input::stop(&state);
         state.captures.lock().unwrap().clear();
         if let Some(ref mut child) = engine.child {
