@@ -194,7 +194,7 @@ pub async fn run(
                     "hello",
                     json!({
                     "app_version":env!("CARGO_PKG_VERSION"), "platform":std::env::consts::OS,
-                    "capabilities":["pointer","capture.region","pcm_s16le","input.action"]}),
+                    "capabilities":["pointer","capture.region","pcm_s16le","input.action","a11y"]}),
                     None,
                 );
                 let permissions = protocol::envelope(
@@ -247,6 +247,7 @@ pub async fn run(
                 let _ = socket.close(None).await;
             }
             state.connected.store(false, Ordering::SeqCst);
+            state.a11y.clear();
             input::stop(&state);
             state.captures.lock().unwrap().clear();
             crate::guide::clear(&app);
@@ -259,6 +260,7 @@ pub async fn run(
             tokio::select! { _ = tokio::time::sleep(delay) => {}, _ = control.changed() => break }
         }
         state.connected.store(false, Ordering::SeqCst);
+        state.a11y.clear();
         input::stop(&state);
         state.captures.lock().unwrap().clear();
         if let Some(ref mut child) = engine.child {

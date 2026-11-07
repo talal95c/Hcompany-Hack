@@ -5,17 +5,17 @@ use serde_json::{json, Value};
 pub const MAX_MESSAGE: usize = 8 * 1024 * 1024;
 
 static VALIDATOR: LazyLock<jsonschema::Validator> = LazyLock::new(|| {
-    let mut schema: Value =
+    let schema: Value =
         serde_json::from_str(include_str!("../../../contracts/desktop-ws.schema.json")).unwrap();
-    let mut commands: Value =
+    let commands: Value =
         serde_json::from_str(include_str!("../../../contracts/commands.schema.json")).unwrap();
-    commands.as_object_mut().unwrap().remove("$id");
-    for item in schema["oneOf"].as_array_mut().unwrap() {
-        if item["properties"]["type"]["const"] == "command" {
-            item["properties"]["payload"] = commands.clone();
-        }
-    }
-    jsonschema::validator_for(&schema).expect("embedded protocol schema")
+    jsonschema::options()
+        .with_resource(
+            "https://hcompany-hack.invalid/contracts/commands.schema.json",
+            jsonschema::Resource::from_contents(commands).expect("embedded command resource"),
+        )
+        .build(&schema)
+        .expect("embedded protocol schema")
 });
 
 pub fn validate(value: &Value, session: &str) -> Result<(), String> {

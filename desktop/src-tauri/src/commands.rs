@@ -24,6 +24,14 @@ pub async fn receive(app: &AppHandle, state: &Arc<State>, packet: Value) {
     }
     let payload = &packet["payload"];
     match packet["type"].as_str().unwrap() {
+        "a11y.request" => {
+            let payload = payload.clone();
+            let state = state.clone();
+            tauri::async_runtime::spawn(async move {
+                let result = state.a11y.request(&state, payload).await;
+                let _ = state.send("a11y.result", result, Some(&id));
+            });
+        }
         "ping" => {
             let _ = state.send("pong", payload.clone(), Some(&id));
         }

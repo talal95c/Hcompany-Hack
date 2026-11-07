@@ -19,6 +19,32 @@ pub struct Monitor {
 }
 
 impl Rect {
+    pub fn logical_to_physical(self, scale: f64) -> Option<Self> {
+        if !scale.is_finite() || scale <= 0.0 || !self.valid() {
+            return None;
+        }
+        let rect = Self {
+            x: self.x * scale,
+            y: self.y * scale,
+            width: self.width * scale,
+            height: self.height * scale,
+        };
+        rect.valid().then_some(rect)
+    }
+
+    pub fn atspi_screen(x: i32, y: i32, width: i32, height: i32) -> Option<Self> {
+        if x == i32::MIN || y == i32::MIN {
+            return None;
+        }
+        let rect = Self {
+            x: x.into(),
+            y: y.into(),
+            width: width.into(),
+            height: height.into(),
+        };
+        rect.logical_to_physical(1.0)
+    }
+
     pub fn valid(&self) -> bool {
         [self.x, self.y, self.width, self.height]
             .iter()
@@ -64,6 +90,17 @@ impl Monitor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn accessibility_coordinates() {
+        assert!(Rect::atspi_screen(i32::MIN, 0, 10, 10).is_none());
+        assert!(Rect::atspi_screen(0, 0, 0, 10).is_none());
+        let r = Rect::atspi_screen(-100, 20, 50, 30).unwrap();
+        assert_eq!(r.x, -100.);
+        let p = r.logical_to_physical(2.).unwrap();
+        assert_eq!((p.x, p.y, p.width, p.height), (-200., 40., 100., 60.));
+        assert!(r.logical_to_physical(f64::NAN).is_none());
+        assert!(r.logical_to_physical(0.).is_none());
+    }
 
     #[test]
     fn retina_negative_origin() {

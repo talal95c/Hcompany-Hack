@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod a11y;
 mod audio;
 mod bridge;
 mod commands;
@@ -78,7 +79,8 @@ fn main() {
                 shutdown_done: AtomicBool::new(false),
                 consent: Mutex::new(None),
                 captures: Mutex::new(HashMap::new()),
-                input_lock: Mutex::new(()),
+                input_lock: tokio::sync::Mutex::new(()),
+                a11y: a11y::Service::default(),
                 capture_lock: tokio::sync::Mutex::new(()),
                 generation: AtomicU64::new(0),
                 revision: AtomicU64::new(0),

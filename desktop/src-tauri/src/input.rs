@@ -42,17 +42,7 @@ pub fn stop(state: &State) {
 }
 
 pub fn perform(state: &State, payload: &Value) -> Result<(), String> {
-    let _lock = state.input_lock.try_lock().map_err(|_| "desktop busy")?;
-    let consent = state.consent.lock().unwrap();
-    if state.stopped.load(Ordering::SeqCst)
-        || !state.connected.load(Ordering::SeqCst)
-        || !consent.as_ref().is_some_and(|c| {
-            c.token == payload["consent_token"].as_str().unwrap_or("") && Instant::now() < c.until
-        })
-    {
-        return Err("consent missing, stopped or expired".into());
-    }
-    drop(consent);
+    let _guard = guard(state, payload["consent_token"].as_str().unwrap_or(""))?;
     if !native::permissions().accessibility || !native::blender_focused() {
         stop(state);
         return Err("Blender must have focus and Accessibility permission".into());
@@ -70,9 +60,7 @@ pub fn perform(state: &State, payload: &Value) -> Result<(), String> {
     let action: Action =
         serde_json::from_value(payload["action"].clone()).map_err(|e| e.to_string())?;
     let mut enigo = Enigo::new(&Settings::default()).map_err(|e| e.to_string())?;
-    if state.stopped.load(Ordering::SeqCst) {
-        return Err("stopped".into());
-    }
+    _guard.check()?;
     let mut move_to = |x, y| -> Result<(), String> {
         let (lx, ly) = capture.monitor.point(capture.crop, x, y)?;
         enigo
@@ -89,6 +77,7 @@ pub fn perform(state: &State, payload: &Value) -> Result<(), String> {
                 _ => return Err("unsupported button".into()),
             };
             move_to(x, y)?;
+            _guard.check()?;
             if state.stopped.load(Ordering::SeqCst) || !native::blender_focused() {
                 return Err("stopped or focus lost".into());
             }
@@ -126,6 +115,68 @@ pub fn perform(state: &State, payload: &Value) -> Result<(), String> {
     Ok(())
 }
 
+pub struct ActionGuard<'a> {
+    consent: &'a std::sync::Mutex<Option<Consent>>,
+    stopped: &'a std::sync::atomic::AtomicBool,
+    connected: &'a std::sync::atomic::AtomicBool,
+    token: &'a str,
+    _lock: tokio::sync::MutexGuard<'a, ()>,
+}
+
+impl ActionGuard<'_> {
+    pub fn check(&self) -> Result<(), String> {
+        check_consent(
+            self.consent.lock().unwrap().as_ref(),
+            self.token,
+            self.stopped.load(Ordering::SeqCst),
+            self.connected.load(Ordering::SeqCst),
+            Instant::now(),
+        )
+    }
+}
+
+fn check_consent(
+    consent: Option<&Consent>,
+    token: &str,
+    stopped: bool,
+    connected: bool,
+    now: Instant,
+) -> Result<(), String> {
+    if stopped || !connected || !consent.is_some_and(|c| c.token == token && now < c.until) {
+        Err("consent missing, stopped or expired".into())
+    } else {
+        Ok(())
+    }
+}
+
+pub fn guard<'a>(state: &'a State, token: &'a str) -> Result<ActionGuard<'a>, String> {
+    guard_parts(
+        &state.consent,
+        &state.stopped,
+        &state.connected,
+        &state.input_lock,
+        token,
+    )
+}
+
+pub fn guard_parts<'a>(
+    consent: &'a std::sync::Mutex<Option<Consent>>,
+    stopped: &'a std::sync::atomic::AtomicBool,
+    connected: &'a std::sync::atomic::AtomicBool,
+    lock: &'a tokio::sync::Mutex<()>,
+    token: &'a str,
+) -> Result<ActionGuard<'a>, String> {
+    let guard = ActionGuard {
+        consent,
+        stopped,
+        connected,
+        token,
+        _lock: lock.try_lock().map_err(|_| "desktop busy")?,
+    };
+    guard.check()?;
+    Ok(guard)
+}
+
 fn allowed_key(key: &str) -> Result<Key, String> {
     Ok(match key {
         "tab" => Key::Tab,
@@ -146,6 +197,30 @@ fn allowed_key(key: &str) -> Result<Key, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn action_guards_reject_missing_expired_stopped_and_busy() {
+        let now = Instant::now();
+        let consent = Consent {
+            token: "token".into(),
+            until: now + Duration::from_secs(1),
+        };
+        assert!(check_consent(None, "token", false, true, now).is_err());
+        assert!(check_consent(Some(&consent), "wrong", false, true, now).is_err());
+        assert!(check_consent(
+            Some(&consent),
+            "token",
+            false,
+            true,
+            now + Duration::from_secs(2)
+        )
+        .is_err());
+        assert!(check_consent(Some(&consent), "token", true, true, now).is_err());
+        assert!(check_consent(Some(&consent), "token", false, false, now).is_err());
+        assert!(check_consent(Some(&consent), "token", false, true, now).is_ok());
+        let lock = tokio::sync::Mutex::new(());
+        let _held = lock.try_lock().unwrap();
+        assert!(lock.try_lock().is_err());
+    }
     #[test]
     fn rejects_system_shortcuts_and_unknown_actions() {
         for value in ["cmd", "ctrl", "alt", "delete", "F12", ""] {
