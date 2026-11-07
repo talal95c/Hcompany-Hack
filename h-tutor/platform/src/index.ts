@@ -604,6 +604,9 @@ app.get("/api/app/usage", async (c) => {
 
 // ------------------------------------------------------------------ console (static)
 
+// The landing (../landing, built into web/dist/landing) is the domain's front page; the console lives on its own paths.
+app.get("/", (c) => c.env.ASSETS.fetch(new URL("/landing/index.html", c.req.url)));
+
 app.notFound((c) => (c.req.path.startsWith("/api/") || c.req.path.startsWith("/v1/") ? c.json({ error: "not found" }, 404) : c.env.ASSETS.fetch(c.req.raw)));
 
 export default {

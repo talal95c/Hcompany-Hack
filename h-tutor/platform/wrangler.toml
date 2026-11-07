@@ -8,12 +8,13 @@ compatibility_flags = ["nodejs_compat"]
 # `npm run dev` passes --local-upstream so that local requests keep their 127.0.0.1 origin (better-auth checks it).
 routes = [{ pattern = "rio.vignemale.com", custom_domain = true }]
 
-# The console (React, built by `npm run build:web`). /api and /v1 go to the Worker first.
+# The console (React, built by `npm run build:web`) and the landing in /landing (`npm run build:landing`).
+# /api, /v1 and the front page / go to the Worker first.
 [assets]
 directory = "./web/dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-run_worker_first = ["/api/*", "/v1/*"]
+run_worker_first = ["/", "/api/*", "/v1/*"]
 
 # `npx wrangler d1 create rio` prints the id to put here.
 [[d1_databases]]
