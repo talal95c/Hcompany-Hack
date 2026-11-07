@@ -20,6 +20,8 @@ const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Fi
 
 /* ---------------- Nav ---------------- */
 
+const APP_URL = import.meta.env.VITE_APP_URL ?? "#contact";
+
 export function Nav() {
   const links = ["Pricing", "FAQ"];
   const ids = ["pricing", "faq"];
@@ -40,7 +42,7 @@ export function Nav() {
           </a>
         ))}
       </nav>
-      <Btn label="Get Rio" variant="light" size="sm" href="#contact" className="nav-cta" />
+      <Btn label="Log in" variant="light" size="sm" href={APP_URL} className="nav-cta" />
     </motion.header>
   );
 }
