@@ -29,6 +29,7 @@ def main() -> None:
     parser.add_argument("--timeout", type=float, default=None)
     parser.add_argument("--models", nargs="+", choices=holo.MODELS, default=holo.MODELS)
     parser.add_argument("--concurrency", type=int, choices=[1], default=1)
+    parser.add_argument("--batches-only", action="store_true", help="Jev : conserver les singles")
     args = parser.parse_args()
     names = list(SUITES) if args.suite == "all" else [args.suite]
     if any(SUITES[name] is unavailable for name in names):
@@ -42,7 +43,11 @@ def main() -> None:
             if name == "holo":
                 options.update(out=args.out, models=args.models, concurrency=args.concurrency)
             elif name == "jev":
-                options = {"out": args.out, "timeout": args.timeout or 60}
+                options = {
+                    "out": args.out,
+                    "timeout": args.timeout or 60,
+                    "batches_only": args.batches_only,
+                }
             else:
                 options.update(operations=args.operations)
             report = asyncio.run(SUITES[name](**options))

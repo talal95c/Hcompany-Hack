@@ -2,6 +2,7 @@
 
 import json
 import os
+import random
 import time
 from pathlib import Path
 from typing import Any
@@ -13,6 +14,7 @@ from bench.holo_pacing import Pacer, rate_headers
 
 BASE_URL = "https://api.codiv.ai/v1/"
 MODEL = "openjev-0.1"
+BATCH_SEED = 20261107
 LABELS = {
     "why": "Demande la raison pédagogique de l'action courante, pourquoi ou à quoi elle sert.",
     "help": "Demande aide, indice, localisation ou exprime un blocage/frustration sans déléguer.",
@@ -57,6 +59,12 @@ def request_body(rows: list[dict[str, str]]) -> dict[str, Any]:
             for r in rows
         },
     }
+
+
+def shuffled_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    ordered = list(rows)
+    random.Random(BATCH_SEED).shuffle(ordered)
+    return ordered
 
 
 def parse_results(data: Any, ids: list[str]) -> tuple[dict[str, str | None], list[str]]:
@@ -293,6 +301,7 @@ def summarize(rows: list[dict[str, str]], calls: list[dict[str, Any]]) -> dict[s
             "labels": LABELS,
             "instructions": INSTRUCTIONS,
             "interval_s": 1.05,
+            "batch_shuffle_seed": BATCH_SEED,
         },
         "notes": [
             "Latences réelles : seule tentative HTTP 200, hors pacing et retries. "
@@ -309,17 +318,25 @@ def summarize(rows: list[dict[str, str]], calls: list[dict[str, Any]]) -> dict[s
     }
 
 
-async def run(*, out: Path = Path("bench/results"), timeout: float = 60) -> dict[str, Any]:
+async def run(
+    *, out: Path = Path("bench/results"), timeout: float = 60, batches_only: bool = False
+) -> dict[str, Any]:
     rows = dataset()
+    ordered = shuffled_rows(rows)
     out.mkdir(parents=True, exist_ok=True)
     client = Client(timeout)
     calls = []
+    if batches_only:
+        previous = json.loads((out / "jev.json").read_text())
+        calls = [c for c in previous["raw_samples"] if c["mode"] == "single"]
     try:
         with (out / "jev-calls.jsonl").open("w") as log:
+            for call in calls:
+                log.write(json.dumps(call, ensure_ascii=False) + "\n")
             for mode, batches in (
-                ("single", [[r] for _ in range(2) for r in rows]),
-                ("batch8", [rows[i : i + 8] for i in range(0, len(rows), 8)]),
-                ("all", [rows]),
+                ("single", [] if batches_only else [[r] for _ in range(2) for r in rows]),
+                ("batch8", [ordered[i : i + 8] for i in range(0, len(ordered), 8)]),
+                ("all", [ordered]),
             ):
                 for index, batch in enumerate(batches):
                     call = await client.call(batch)

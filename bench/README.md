@@ -228,13 +228,18 @@ stabilité. Aucun prix inventé : pas de tarif demandé pour ce service.
 
 69/69 réponses 200, zéro 429, zéro erreur de parsing, zéro ID supplémentaire.
 Les 69 réponses confirment `model: openjev-0.1` ; aucune ne fournit d'en-tête
-rate-limit/Retry-After. 45 889 tokens entrée, zéro sortie. Le test live ajoute un
+rate-limit/Retry-After. 45 886 tokens entrée, zéro sortie. Le test live ajoute un
 appel de 372 tokens entrée ; découverte catalogue : un GET sans usage de tokens.
-Soit 70 POST de classification + un GET, 46 261 tokens retournés au total.
-Single : 62/64 (96,875 %), batches de 8 et batch complet : 32/32 chacun.
+Le rapport courant combine les 64 singles originaux et cinq batches relancés.
+Single : 62/64 (96,875 %), batches de 8 : 32/32, batch complet : 31/32.
 Seule confusion, répétée aux deux passes single : « Tu peux juste me montrer où
 est le modifier bevel ? », gold help, prédit delegate. Gold non modifié.
 Première requête : 329,635 ms ; warm single p50/p95 : 203,975 / 232,997 ms.
 Le gain batch est un amortissement ; les phrases voisines peuvent influencer les
-décisions. Les quatre batches de 8 sont regroupés par label dans l'ordre du dataset,
-donc 100 % n'établit pas une supériorité générale du mode batch.
+décisions. Les batches utilisent une copie mélangée par `random.Random(20261107)` ;
+la même permutation sert aux groupes de 8 et au batch complet. Reproduction :
+`python -m bench jev --batches-only` conserve les singles et ne refait que cinq appels.
+Ce relevé a ajouté cinq POST (sans erreurs) ; les singles conservés datent du relevé
+précédent, leur connexion persistante n'est pas celle des nouveaux batches. Le batch
+complet confond why1 avec stop ; les golds restent inchangés. 100 % sur quatre petits
+batches n'établit pas une supériorité générale de ce mode.

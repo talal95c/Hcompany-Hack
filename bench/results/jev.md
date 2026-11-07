@@ -1,6 +1,6 @@
 # Benchmark jev
 
-Mesuré le 2026-11-07T13:52:34.372178+00:00
+Mesuré le 2026-11-07T13:53:30.232920+00:00
 
 | Mesure | Valeur |
 |---|---|
@@ -8,7 +8,7 @@ Mesuré le 2026-11-07T13:52:34.372178+00:00
 | http_attempts | 69 |
 | http_errors | 0 |
 | http_429 | 0 |
-| input_tokens | 45889 |
+| input_tokens | 45886 |
 | output_tokens | 0 |
 | cold_first_call_ms | 329.6347599998626 |
 | extra_result_ids | 0 |
@@ -22,14 +22,14 @@ API typée choice : ni system message chat ni température ; définitions et ins
 | Mode | Appels | Phrases | Exactitude | Parse fails | p50 ms | p95 ms | Amorti p50 ms/phrase |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | single | 64 | 64 | 96.9% | 0 | 203.97454799990555 | 237.50392900001316 | 203.97454799990555 |
-| batch8 | 4 | 32 | 100.0% | 0 | 302.95040800001516 | 371.2854719999541 | 37.868801000001895 |
-| all | 1 | 32 | 100.0% | 0 | 539.9854050001522 | 539.9854050001522 | 16.874543906254758 |
+| batch8 | 4 | 32 | 100.0% | 0 | 266.50250200009395 | 1704.4437489998927 | 33.312812750011744 |
+| all | 1 | 32 | 96.9% | 0 | 692.6333679998606 | 692.6333679998606 | 21.644792749995645 |
 
 ## Par étiquette (correct / total)
 
 | Label | single | batch8 | all |
 |---|---:|---:|---:|
-| why | 8/8 | 4/4 | 4/4 |
+| why | 8/8 | 4/4 | 3/4 |
 | help | 6/8 | 4/4 | 4/4 |
 | delegate | 8/8 | 4/4 | 4/4 |
 | stop | 8/8 | 4/4 | 4/4 |
@@ -57,17 +57,24 @@ API typée choice : ni system message chat ni température ; définitions et ins
     }
   ],
   "batch8": [],
-  "all": []
+  "all": [
+    {
+      "id": "why1",
+      "text": "Euh pourquoi on applique la scale avant le bevel ?",
+      "gold": "why",
+      "predicted": "stop"
+    }
+  ]
 }
 ```
 
 ## Latence de chaque batch
 
-- batch8 : 308.2392449998679 ms ; amorti 38.529905624983485 ms/phrase.
-- batch8 : 302.95040800001516 ms ; amorti 37.868801000001895 ms/phrase.
-- batch8 : 212.12613700004113 ms ; amorti 26.51576712500514 ms/phrase.
-- batch8 : 371.2854719999541 ms ; amorti 46.41068399999426 ms/phrase.
-- all : 539.9854050001522 ms ; amorti 16.874543906254758 ms/phrase.
+- batch8 : 353.7012560000221 ms ; amorti 44.212657000002764 ms/phrase.
+- batch8 : 1704.4437489998927 ms ; amorti 213.0554686249866 ms/phrase.
+- batch8 : 266.50250200009395 ms ; amorti 33.312812750011744 ms/phrase.
+- batch8 : 217.9691339999863 ms ; amorti 27.246141749998287 ms/phrase.
+- all : 692.6333679998606 ms ; amorti 21.644792749995645 ms/phrase.
 
 ## Stabilité et connexion persistante
 
@@ -81,8 +88,8 @@ API typée choice : ni system message chat ni température ; définitions et ins
 
 ```json
 {
-  "timestamp_utc": "2026-11-07T13:52:34.372178+00:00",
-  "git_commit": "5331932dd74365b3548b5e6c0371a784fe801106",
+  "timestamp_utc": "2026-11-07T13:53:30.232920+00:00",
+  "git_commit": "4e0d58566744528f6f161f7bab9e62085a4af806",
   "hostname": "devin-box",
   "cpu": "Intel(R) Xeon(R) Processor",
   "python": "3.11.17"

@@ -1,7 +1,15 @@
 import httpx
 import pytest
 
-from bench.jev import Client, accuracy, dataset, parse_results, request_body, summarize
+from bench.jev import (
+    Client,
+    accuracy,
+    dataset,
+    parse_results,
+    request_body,
+    shuffled_rows,
+    summarize,
+)
 
 
 def test_parse_alignment() -> None:
@@ -40,6 +48,9 @@ def test_dataset_body_accuracy() -> None:
     assert all("label" not in r for r in body["state"])
     assert set(body["questions"]) == {r["id"] for r in rows[:2]}
     assert body == request_body(rows[:2])
+    assert shuffled_rows(rows) == shuffled_rows(rows)
+    assert shuffled_rows(rows) != rows
+    assert len({r["label"] for r in shuffled_rows(rows)[:8]}) > 1
     score = accuracy(rows[:2], {rows[0]["id"]: rows[0]["label"]})
     assert score["accuracy"] == 0.5
     assert score["parse_failures"] == 1
