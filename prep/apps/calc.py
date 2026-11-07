@@ -244,9 +244,9 @@ class CalcAdapter:
         selection = params.get("cell") or params["range"]
         return (
             f"The exact target is {params['sheet']}.{selection}. Select it yourself first "
-            "(a second plain click replaces the selection: for a range, type it in the Name "
-            "Box at the top left and press Enter, or click the first cell then shift+click the "
-            "last), apply the operation, commit any cell "
+            "(a second plain click replaces the selection, so for a range click its first "
+            "cell then extend with the keys shift+right / shift+down, one key action per "
+            "extra column or row), apply the operation once, commit any cell "
             "edit with Enter, finish any wizard, then call done."
         )
 

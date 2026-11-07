@@ -221,7 +221,11 @@ async def drive_step(
                 history.append(ActTurn(action, f"refused: {DIALOG_OPEN}"))
                 continue
             history.append(
-                ActTurn(action, "refused: the expected result is not observed in the app yet")
+                ActTurn(
+                    action,
+                    "refused: the expected result is not observed in the app yet; observed "
+                    + json.dumps({k: v for k, v in verdict.items() if k != "duration"})[:300],
+                )
             )
             continue
         await sandbox.execute(action.native(), image_size=size)
