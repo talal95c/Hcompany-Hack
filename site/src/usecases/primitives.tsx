@@ -11,9 +11,9 @@ export function useSceneFrame() {
   return f > 238 ? 218 * (1 - ease(f, 238, 269)) : f;
 }
 
-export function Camera({ frame, x, y, children }: { frame: number; x: number; y: number; children: ReactNode }) {
+export function Camera({ frame, x, y, amount = .55, children }: { frame: number; x: number; y: number; amount?: number; children: ReactNode }) {
   const zoom = spring({ frame: Math.max(0, frame - 35), fps: FPS, config: { damping: 24, stiffness: 65 } }) * (1 - ease(frame, 145, 192));
-  return <AbsoluteFill style={{ transformOrigin: `${x}px ${y}px`, transform: `scale(${1 + zoom * .55})` }}>{children}</AbsoluteFill>;
+  return <AbsoluteFill style={{ transformOrigin: `${x}px ${y}px`, transform: `scale(${1 + zoom * amount})` }}>{children}</AbsoluteFill>;
 }
 
 export function AppWindow({ name, children, dark = false }: { name: string; children: ReactNode; dark?: boolean }) {
