@@ -68,6 +68,7 @@ mod imp {
     }
 
     pub fn make_panel(win: &WebviewWindow, can_key: bool, level: isize) {
+        let notch = win.label() == "main";
         with_ns(win, move |ns| unsafe {
             AnyObject::set_class(ns, panel_class(can_key));
             let mask: usize = msg_send![ns, styleMask];
@@ -75,6 +76,20 @@ mod imp {
             let _: () = msg_send![ns, setFloatingPanel: true];
             let _: () = msg_send![ns, setHidesOnDeactivate: false];
             pin(ns, level);
+            if notch {
+                let content: *mut AnyObject = msg_send![ns, contentView];
+                if let Some(content) = content.as_ref() {
+                    let _: () = msg_send![content, setWantsLayer: Bool::YES];
+                    let layer: *mut AnyObject = msg_send![content, layer];
+                    if let Some(layer) = layer.as_ref() {
+                        let _: () = msg_send![layer, setCornerRadius: 20.0_f64];
+                        let flipped: Bool = msg_send![layer, isGeometryFlipped];
+                        let corners = if flipped.as_bool() { 10_usize } else { 5_usize };
+                        let _: () = msg_send![layer, setMaskedCorners: corners];
+                        let _: () = msg_send![layer, setMasksToBounds: Bool::YES];
+                    }
+                }
+            }
         });
     }
 
