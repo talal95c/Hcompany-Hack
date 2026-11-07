@@ -70,12 +70,40 @@ les propriétés décrites par une cible sont visibles dans ce menu.
 
 ## Gladia live
 
-Au premier `audio.chunk`, une session Gladia live est ouverte. Les chunks PCM s16le
+Après consentement microphone, une étape active prépare une seule session Gladia
+de réserve (initialisation HTTP et WebSocket uniquement, aucun audio). `ptt.start`
+déclenche aussi cette préparation, sans attendre le premier chunk. Aucun nouveau
+message de focus n'est nécessaire : la préparation pendant l'étape couvre l'overlay
+focalisé. Seuls les chunks d'un PTT autorisé alimentent la session empruntée.
+Les sessions actives ne sont jamais remises dans la réserve et la réserve n'est pas
+remplie pendant leur utilisation. Fermeture sur « chut », arrêt moteur, déconnexion
+ou révocation microphone ; `stop_recording` termine aussi une réserve inutilisée.
+La fermeture réseau est protégée de l'annulation, avec arrêt du lecteur local.
+
+Le TTL local de réserve est de 20 s (configuration, pas une mesure) ;
+`ENGINE_VOICE_PREOPEN_TTL_S` permet de le réduire. Rotation à échéance et rejet d'une
+socket terminée ou d'un format/vocabulaire incompatible avant réutilisation.
+Les ouvertures sont espacées d'au moins 5 s (configuration) ; un échec impose au
+moins 30 s de cooldown (configuration), prolongé par `Retry-After` numérique.
+Ces garde-fous ne remplacent pas les quotas du compte Gladia et ne garantissent pas
+le délai d'inactivité propre à une offre : une session déjà terminée est rouverte.
+
+Les chunks PCM s16le
 mono sont transmis au fil de l'arrivée, avec file bornée, numérotation, limite de taille,
 délais et annulation à la déconnexion. `ptt.stop` ferme l'entrée puis attend les finals,
 sans convertir le flux en WAV pour une transcription fichier. Les partiels et finals
 sont diffusés dans `lesson.state` (`transcript`, `transcript_final`) ; chaque final passe
 à Jev pour l'intention. Le desktop affiche le transcript dans une zone `aria-live`.
+
+Un partiel inchangé pendant 200 ms (configuration
+`ENGINE_VOICE_PARTIAL_STABLE_S`, pas une mesure), ou le dernier partiel à
+`speech_end`, lance une classification Jev sans effet de bord. Même classificateur,
+profil et contexte que le final ; budget spéculatif partagé, réserve interactive
+préservée également pour les requêtes dupliquées. Normalisation : Unicode NFKC,
+casefold, espaces et ponctuation terminale `. ! ? …`. Seuls un texte normalisé et
+une génération identiques au final permettent la réutilisation, contrôlée de
+nouveau par la policy. Sinon annulation et classification du final ; un final reçu
+avant la stabilité n'attend pas le timer. Aucun ordre n'est émis sur un partiel.
 
 Le vocabulaire de service n'a plus de liste applicative intégrée. La configuration
 `ENGINE_STT_VOCABULARY` fournit des termes séparés par des virgules, transmis à la session
