@@ -3,7 +3,7 @@
     "goal": "Saisis Montant en A1.",
     "help_ladder": {
       "1": "① Voix : Saisis Montant en A1.",
-      "2": "② Surlignage et menu : repère Cellule A1 de la première feuille ; consulte le menu Format pour les mises en forme.",
+      "2": "② Surlignage et menu : Repère A1, à l'intersection de la colonne A et de la ligne 1 ; saisis Montant puis Entrée.",
       "3": "③ Pointeur : suis le repère sur Cellule A1 de la première feuille, puis fais le geste.",
       "4": "④ Démo : avec ton accord, je rejoue cette étape dans une copie, puis tu recommences sans aide."
     },
@@ -74,7 +74,7 @@
     "goal": "Saisis 12 en A2, 30 en A3 et 8 en A4.",
     "help_ladder": {
       "1": "① Voix : Saisis 12 en A2, 30 en A3 et 8 en A4.",
-      "2": "② Surlignage et menu : repère Cellule A2 de la première feuille ; consulte le menu Format pour les mises en forme.",
+      "2": "② Surlignage et menu : Repère les trois cellules sous Montant : A2 = 12, A3 = 30, A4 = 8.",
       "3": "③ Pointeur : suis le repère sur Cellule A2 de la première feuille, puis fais le geste.",
       "4": "④ Démo : avec ton accord, je rejoue cette étape dans une copie, puis tu recommences sans aide."
     },
@@ -298,7 +298,7 @@
     "goal": "En A5, saisis =SOMME(A2:A4) : le résultat est 50. Dans Excel ou LibreOffice en anglais, SOMME se nomme SUM.",
     "help_ladder": {
       "1": "① Voix : En A5, saisis =SOMME(A2:A4) : le résultat est 50. Dans Excel ou LibreOffice en anglais, SOMME se nomme SUM.",
-      "2": "② Surlignage et menu : repère Cellule A5 de la première feuille ; consulte le menu Format pour les mises en forme.",
+      "2": "② Surlignage et menu : Repère A5 sous les trois montants ; commence par = puis SOMME(A2:A4), sans oublier A4.",
       "3": "③ Pointeur : suis le repère sur Cellule A5 de la première feuille, puis fais le geste.",
       "4": "④ Démo : avec ton accord, je rejoue cette étape dans une copie, puis tu recommences sans aide."
     },
@@ -398,7 +398,7 @@
     "goal": "Sélectionne A1 et active Gras (Ctrl+G dans Calc/Excel en français).",
     "help_ladder": {
       "1": "① Voix : Sélectionne A1 et active Gras (Ctrl+G dans Calc/Excel en français).",
-      "2": "② Surlignage et menu : repère Bouton Gras de la barre Formatage ; consulte le menu Format pour les mises en forme.",
+      "2": "② Surlignage et menu : Repère A1 puis le bouton Gras dans Formatage ; Ctrl+G agit sur la cellule sélectionnée.",
       "3": "③ Pointeur : suis le repère sur Bouton Gras de la barre Formatage, puis fais le geste.",
       "4": "④ Démo : avec ton accord, je rejoue cette étape dans une copie, puis tu recommences sans aide."
     },
@@ -503,7 +503,7 @@
     "goal": "Sélectionne A2:A5 puis le bouton Monnaie de Formatage (Format monétaire) : A5 doit afficher 50,00 €.",
     "help_ladder": {
       "1": "① Voix : Sélectionne A2:A5 puis le bouton Monnaie de Formatage (Format monétaire) : A5 doit afficher 50,00 €.",
-      "2": "② Surlignage et menu : repère Bouton Monnaie de la barre Formatage ; consulte le menu Format pour les mises en forme.",
+      "2": "② Surlignage et menu : Repère A2:A5 puis Monnaie dans Formatage ; sélectionne les quatre cellules avant de cliquer.",
       "3": "③ Pointeur : suis le repère sur Bouton Monnaie de la barre Formatage, puis fais le geste.",
       "4": "④ Démo : avec ton accord, je rejoue cette étape dans une copie, puis tu recommences sans aide."
     },

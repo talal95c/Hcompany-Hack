@@ -515,23 +515,58 @@
   "before_results": [
     {
       "status": "fail",
-      "seconds": 0.02143264899996211,
+      "seconds": 0.022431280999967385,
       "read_seconds": [
-        0.021428086000014446
+        0.022426123999991887
       ],
       "visual": null,
-      "observed": null
+      "observed": {
+        "nodes": [
+          {
+            "role": "table cell",
+            "name": "A1",
+            "value": "",
+            "states": [
+              "editable",
+              "enabled",
+              "visible"
+            ],
+            "unsupported_states": [
+              "selected"
+            ]
+          }
+        ],
+        "complete": true
+      }
     }
   ],
   "after_results": [
     {
       "status": "pass",
-      "seconds": 0.019732303000182583,
+      "seconds": 0.02356087399999751,
       "read_seconds": [
-        0.01972629500005496
+        0.023551349000001665
       ],
       "visual": null,
-      "observed": null
+      "observed": {
+        "nodes": [
+          {
+            "role": "table cell",
+            "name": "A1",
+            "value": "Montant",
+            "states": [
+              "editable",
+              "enabled",
+              "selected",
+              "visible"
+            ],
+            "unsupported_states": [
+              "selected"
+            ]
+          }
+        ],
+        "complete": true
+      }
     }
   ],
   "known_errors": [
@@ -1045,13 +1080,32 @@
       "on_mistake": "pass",
       "mistake_result": {
         "status": "pass",
-        "seconds": 0.02209470399975544,
+        "seconds": 0.021245061000001897,
         "read_seconds": [
-          0.02208709500018813
+          0.021236210999973082
         ],
         "visual": null,
-        "observed": null
+        "observed": {
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A1",
+              "value": "Total",
+              "states": [
+                "editable",
+                "enabled",
+                "selected",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ],
+          "complete": true
+        }
       },
+      "other_error_results": {},
       "artifact_before": [],
       "artifact_on_mistake": [],
       "step_checks_on_mistake": [
@@ -1060,26 +1114,62 @@
       "step_check_results": [
         {
           "status": "fail",
-          "seconds": 0.022450459000083356,
+          "seconds": 0.02280357800003685,
           "read_seconds": [
-            0.02244774900009361
+            0.0228005549999466
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A1",
+                "value": "Total",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "selected",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "on_correct_path": "fail",
       "correct_result": {
         "status": "fail",
-        "seconds": 0.02177492600003461,
+        "seconds": 0.02820082700003468,
         "read_seconds": [
-          0.02177293400018243
+          0.028196399000023575
         ],
         "visual": null,
-        "observed": null
+        "observed": {
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A1",
+              "value": "Montant",
+              "states": [
+                "editable",
+                "enabled",
+                "selected",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ],
+          "complete": true
+        }
       }
     }
   ],
-  "seconds": 8.350289513000007,
+  "seconds": 8.092125506999992,
   "artifact_results": []
 }

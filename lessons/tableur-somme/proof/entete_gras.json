@@ -531,41 +531,104 @@
   "before_results": [
     {
       "status": "fail",
-      "seconds": 0.035416195999914635,
+      "seconds": 0.03266480799999272,
       "read_seconds": [
-        0.035411587999988114
+        0.03266098599999623
       ],
       "visual": null,
-      "observed": null
+      "observed": {
+        "nodes": [
+          {
+            "role": "toggle button",
+            "name": "Gras",
+            "value": 0.0,
+            "states": [
+              "enabled",
+              "visible"
+            ],
+            "unsupported_states": []
+          }
+        ],
+        "complete": true
+      }
     },
     {
       "status": "pass",
-      "seconds": 0.02131083500034947,
+      "seconds": 0.018446277999998983,
       "read_seconds": [
-        0.02130851000038092
+        0.01844376399998282
       ],
       "visual": null,
-      "observed": null
+      "observed": {
+        "nodes": [
+          {
+            "role": "table cell",
+            "name": "A1",
+            "value": "Montant",
+            "states": [
+              "editable",
+              "enabled",
+              "visible"
+            ],
+            "unsupported_states": [
+              "selected"
+            ]
+          }
+        ],
+        "complete": true
+      }
     }
   ],
   "after_results": [
     {
       "status": "pass",
-      "seconds": 0.04020900800014715,
+      "seconds": 0.032225564999976086,
       "read_seconds": [
-        0.04020279400037907
+        0.03221996100000979
       ],
       "visual": null,
-      "observed": null
+      "observed": {
+        "nodes": [
+          {
+            "role": "toggle button",
+            "name": "Gras",
+            "value": 1.0,
+            "states": [
+              "checked",
+              "enabled",
+              "visible"
+            ],
+            "unsupported_states": []
+          }
+        ],
+        "complete": true
+      }
     },
     {
       "status": "pass",
-      "seconds": 0.025864822999665193,
+      "seconds": 0.023112774000026093,
       "read_seconds": [
-        0.025861641000119562
+        0.023109575999967547
       ],
       "visual": null,
-      "observed": null
+      "observed": {
+        "nodes": [
+          {
+            "role": "table cell",
+            "name": "A1",
+            "value": "Montant",
+            "states": [
+              "editable",
+              "enabled",
+              "visible"
+            ],
+            "unsupported_states": [
+              "selected"
+            ]
+          }
+        ],
+        "complete": true
+      }
     }
   ],
   "known_errors": [
@@ -1089,13 +1152,28 @@
       "on_mistake": "pass",
       "mistake_result": {
         "status": "pass",
-        "seconds": 0.03936067299991919,
+        "seconds": 0.03441226200004621,
         "read_seconds": [
-          0.039353789999950095
+          0.03440458900001886
         ],
         "visual": null,
-        "observed": null
+        "observed": {
+          "nodes": [
+            {
+              "role": "toggle button",
+              "name": "Gras",
+              "value": 0.0,
+              "states": [
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ],
+          "complete": true
+        }
       },
+      "other_error_results": {},
       "artifact_before": [],
       "artifact_on_mistake": [],
       "step_checks_on_mistake": [
@@ -1105,35 +1183,81 @@
       "step_check_results": [
         {
           "status": "fail",
-          "seconds": 0.038093091000064305,
+          "seconds": 0.030711338999992677,
           "read_seconds": [
-            0.03808963700021195
+            0.030708386000014798
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "toggle button",
+                "name": "Gras",
+                "value": 0.0,
+                "states": [
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": []
+              }
+            ],
+            "complete": true
+          }
         },
         {
           "status": "pass",
-          "seconds": 0.023028623999834963,
+          "seconds": 0.01786975399994617,
           "read_seconds": [
-            0.023026542000025074
+            0.01786769400001731
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A1",
+                "value": "Montant",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "on_correct_path": "fail",
       "correct_result": {
         "status": "fail",
-        "seconds": 0.04319704699992144,
+        "seconds": 0.03141654900002777,
         "read_seconds": [
-          0.04319382999983645
+          0.0314140449999627
         ],
         "visual": null,
-        "observed": null
+        "observed": {
+          "nodes": [
+            {
+              "role": "toggle button",
+              "name": "Gras",
+              "value": 1.0,
+              "states": [
+                "checked",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ],
+          "complete": true
+        }
       }
     }
   ],
-  "seconds": 20.005014662999656,
+  "seconds": 19.91314943200001,
   "artifact_results": []
 }

@@ -8,5 +8,10 @@ def write(path, value):
 
 
 def target(role, name, path, description):
-    return {"description": description, "role": role, "name": name,
-            "path": path, "app_region": path[-1]}
+    return {
+        "description": description,
+        "role": role,
+        "name": name,
+        "path": path,
+        "app_region": path[-1],
+    }

@@ -26,9 +26,17 @@ def scaled_dimensions(width, height, minimum=600):
 def prepare_image(original, sent):
     dimensions = png_dimensions(original)
     desired = scaled_dimensions(**dimensions)
-    subprocess.run(["convert", str(original), "-resize",
-                    f"{desired['width']}x{desired['height']}!", str(sent)],
-                   check=True, timeout=15)
+    subprocess.run(
+        [
+            "convert",
+            str(original),
+            "-resize",
+            f"{desired['width']}x{desired['height']}!",
+            str(sent),
+        ],
+        check=True,
+        timeout=15,
+    )
     actual = png_dimensions(sent)
     if actual != desired:
         raise RuntimeError("Dimensions de capture envoyée incompatibles")

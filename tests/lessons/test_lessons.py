@@ -73,8 +73,9 @@ def test_contracts_and_evidence(lesson_id: str) -> None:
 
 
 @pytest.mark.parametrize("lesson_id", IDS)
-@pytest.mark.parametrize("app", [None, {}, {"id": "blender", "name": "Blender",
-                                         "version": "4.5.9", "sensor": "invalid"}])
+@pytest.mark.parametrize(
+    "app", [None, {}, {"id": "blender", "name": "Blender", "version": "4.5.9", "sensor": "invalid"}]
+)
 def test_v2_rejects_missing_empty_or_invalid_app(lesson_id: str, app: dict | None) -> None:
     lesson = load(LESSONS / lesson_id / "lesson.json")
     if app is None:

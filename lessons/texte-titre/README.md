@@ -2,7 +2,8 @@
 
 Leçon originale en français, contrat v2, révision 1, LibreOffice Writer 7.3.7
 (paquet 7.3.7.2). Trois étapes : saisir « Rapport mensuel », appliquer **Titre 1**
-avec Ctrl+1, puis enregistrer **rapport-mensuel.odt**. Aucun appel Holo nécessaire.
+avec Ctrl+1, puis enregistrer **rapport-mensuel.odt**. Holo distingue le gras seul
+du style de titre : la preuve complète exige une clé Holo dans l'environnement.
 Le générateur produit un brouillon ; seule une preuve complète promeut la révision.
 
 ## Cibles AT-SPI réellement observées
@@ -29,6 +30,12 @@ Chaque erreur part d'un document neuf reconstruit par les gestes précédents :
 mauvais texte, gras sans style, style sur un second paragraphe, mauvais nom de
 fichier. Le contrôle du style revient au premier paragraphe pour ne pas confondre
 un titre ailleurs avec le bon titre. Le document normal ne contient qu'une ligne.
+Le gras seul sélectionne réellement le texte avant Ctrl+G ; son assertion visuelle
+exige à la fois le gras et le style par défaut. Le mauvais paragraphe est identifié
+par le contenu du nœud `heading`, pas par le sélecteur du premier paragraphe.
+Chaque faute est aussi testée contre le détecteur de l'autre faute.
+Les lectures AT-SPI temporisées doivent concorder deux fois dans un budget de
+2000 ms (budget, pas mesure de latence).
 
 Enregistrer sous utilise Ctrl+Maj+S, Ctrl+L, le chemin complet dans le dossier
 privé de l'essai, deux validations Entrée, puis Ctrl+S pour enregistrer l'état final.
@@ -59,3 +66,5 @@ Le générateur régénère aussi le brouillon Calc. La session et les prérequi
 natifs sont décrits dans [la leçon de tableur](../tableur-somme/README.md).
 Les tests natifs couvrent les deux applications ; les contrôles de preuves
 complètes s'appliquent aux révisions marquées `proven`, sans promouvoir les brouillons.
+Le mode `--native-only` omet les erreurs à assertion visuelle, dont `bold_only` ;
+seule la preuve complète vérifie cette erreur avec Holo.

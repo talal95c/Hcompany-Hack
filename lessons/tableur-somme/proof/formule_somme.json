@@ -510,23 +510,57 @@
   "before_results": [
     {
       "status": "fail",
-      "seconds": 0.018202585000381077,
+      "seconds": 0.018858562999980677,
       "read_seconds": [
-        0.01819877199977782
+        0.018854625000017222
       ],
       "visual": null,
-      "observed": null
+      "observed": {
+        "nodes": [
+          {
+            "role": "table cell",
+            "name": "A5",
+            "value": "",
+            "states": [
+              "editable",
+              "enabled",
+              "visible"
+            ],
+            "unsupported_states": [
+              "selected"
+            ]
+          }
+        ],
+        "complete": true
+      }
     }
   ],
   "after_results": [
     {
       "status": "pass",
-      "seconds": 0.021865613000045414,
+      "seconds": 0.021578880999982175,
       "read_seconds": [
-        0.021859630000108154
+        0.02157143800002359
       ],
       "visual": null,
-      "observed": null
+      "observed": {
+        "nodes": [
+          {
+            "role": "table cell",
+            "name": "A5",
+            "value": "50",
+            "states": [
+              "editable",
+              "enabled",
+              "visible"
+            ],
+            "unsupported_states": [
+              "selected"
+            ]
+          }
+        ],
+        "complete": true
+      }
     }
   ],
   "known_errors": [
@@ -1036,12 +1070,57 @@
       "on_mistake": "pass",
       "mistake_result": {
         "status": "pass",
-        "seconds": 0.17748028400001203,
+        "seconds": 0.04201291599997603,
         "read_seconds": [
-          0.1774727960000746
+          0.04200478199999225
         ],
         "visual": null,
-        "observed": null
+        "observed": {
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A5",
+              "value": "SOMME(A2:A4)",
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ],
+          "complete": true
+        }
+      },
+      "other_error_results": {
+        "wrong_range": {
+          "status": "fail",
+          "seconds": 0.03221479799998406,
+          "read_seconds": [
+            0.03221076099998754
+          ],
+          "visual": null,
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A5",
+                "value": "SOMME(A2:A4)",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
+        }
       },
       "artifact_before": [],
       "artifact_on_mistake": [],
@@ -1051,23 +1130,57 @@
       "step_check_results": [
         {
           "status": "fail",
-          "seconds": 0.17062898100039092,
+          "seconds": 0.024076407999984895,
           "read_seconds": [
-            0.1706243789999462
+            0.024073336999947514
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A5",
+                "value": "SOMME(A2:A4)",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "on_correct_path": "fail",
       "correct_result": {
         "status": "fail",
-        "seconds": 0.020391752000250563,
+        "seconds": 0.020074079999972128,
         "read_seconds": [
-          0.0203893490001974
+          0.020070916000008765
         ],
         "visual": null,
-        "observed": null
+        "observed": {
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A5",
+              "value": "50",
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ],
+          "complete": true
+        }
       }
     },
     {
@@ -1572,12 +1685,57 @@
       "on_mistake": "pass",
       "mistake_result": {
         "status": "pass",
-        "seconds": 0.02484226700016734,
+        "seconds": 0.03574424999999337,
         "read_seconds": [
-          0.02483548099962718
+          0.035735278999993625
         ],
         "visual": null,
-        "observed": null
+        "observed": {
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A5",
+              "value": "42",
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ],
+          "complete": true
+        }
+      },
+      "other_error_results": {
+        "missing_equals": {
+          "status": "fail",
+          "seconds": 0.020674836000011965,
+          "read_seconds": [
+            0.020671220999986417
+          ],
+          "visual": null,
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A5",
+                "value": "42",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
+        }
       },
       "artifact_before": [],
       "artifact_on_mistake": [],
@@ -1587,26 +1745,60 @@
       "step_check_results": [
         {
           "status": "fail",
-          "seconds": 0.023061594999944646,
+          "seconds": 0.019375373000002583,
           "read_seconds": [
-            0.023059200000261626
+            0.0193730080000023
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "table cell",
+                "name": "A5",
+                "value": "42",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": [
+                  "selected"
+                ]
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "on_correct_path": "fail",
       "correct_result": {
         "status": "fail",
-        "seconds": 0.02126251499976206,
+        "seconds": 0.02547167699998454,
         "read_seconds": [
-          0.02126060000000507
+          0.02546905400004107
         ],
         "visual": null,
-        "observed": null
+        "observed": {
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A5",
+              "value": "50",
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ],
+          "complete": true
+        }
       }
     }
   ],
-  "seconds": 29.024647925999943,
+  "seconds": 27.33101078599998,
   "artifact_results": []
 }

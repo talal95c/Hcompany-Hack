@@ -17,7 +17,10 @@ et `tests/lessons/prove_generic.py`, sans modifier les parcours ci-dessous.
 Sa révision 1 est prouvée ; les appels cloud utilisent des tentatives bornées.
 La leçon
 [texte-titre](texte-titre/README.md) réutilise ce compagnon et ce pilote pour
-Writer : titre structuré et enregistrement ODT, vérifiés sans vision cloud.
+Writer : titre structuré et enregistrement ODT. AT-SPI vérifie le titre appliqué
+au mauvais paragraphe ; Holo distingue le gras seul d'un véritable style de titre
+en lisant aussi le sélecteur de style. Les checks natifs temporisés exigent deux
+lectures concordantes ; leur budget de 2000 ms n'est pas une latence mesurée.
 
 ## Reproduction depuis la racine
 

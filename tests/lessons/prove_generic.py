@@ -16,12 +16,20 @@ def prove(directory: Path, output: Path, *, native_only: bool = False) -> dict:
 
     lesson = json.loads((directory / "lesson.json").read_text())
     companion = json.loads((directory / "steps.json").read_text())
-    for value, schema in [(lesson, ROOT / "contracts/lesson.schema.json"),
-                          (companion, ROOT / "lessons/generic-steps.schema.json")]:
+    for value, schema in [
+        (lesson, ROOT / "contracts/lesson.schema.json"),
+        (companion, ROOT / "lessons/generic-steps.schema.json"),
+    ]:
         Draft202012Validator(json.loads(schema.read_text())).validate(value)
     env = {**os.environ, "LESSON_API_PYTHON": sys.executable}
-    args = ["dbus-run-session", "--", "bash", str(HERE / "a11y_session.sh"),
-            str(directory.resolve()), str(output.resolve())]
+    args = [
+        "dbus-run-session",
+        "--",
+        "bash",
+        str(HERE / "a11y_session.sh"),
+        str(directory.resolve()),
+        str(output.resolve()),
+    ]
     if native_only:
         args.append("--native-only")
     process = subprocess.Popen(args, env=env, start_new_session=True)

@@ -16,8 +16,16 @@ def dump(node, path, depth=0):
         text = node.queryText().getText(0, -1)
     except NotImplementedError:
         text = None
-    if text is not None or node.getRoleName() in ("frame", "combo box", "text", "entry",
-                                                 "paragraph", "heading", "document text", "dialog"):
+    if text is not None or node.getRoleName() in (
+        "frame",
+        "combo box",
+        "text",
+        "entry",
+        "paragraph",
+        "heading",
+        "document text",
+        "dialog",
+    ):
         print(json.dumps({"path": current, "value": text}, ensure_ascii=False), flush=True)
     if node.getRoleName() in ("menu bar", "menu"):
         return

@@ -86,6 +86,36 @@
     },
     {
       "target": {
+        "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+        "role": "heading",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:",
+          "document text:Sans nom 1 - Document LibreOffice"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": [
+        {
+          "role": "heading",
+          "name": "",
+          "value": "Rapport mensuel",
+          "states": [
+            "editable",
+            "enabled",
+            "focused",
+            "visible"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    },
+    {
+      "target": {
         "description": "Commande Enregistrer sous de la barre Standard",
         "role": "push button",
         "name": "Enregistrer sous...",
@@ -172,6 +202,23 @@
     },
     {
       "target": {
+        "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+        "role": "heading",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:",
+          "document text:Sans nom 1 - Document LibreOffice"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": []
+    },
+    {
+      "target": {
         "description": "Commande Enregistrer sous de la barre Standard",
         "role": "push button",
         "name": "Enregistrer sous...",
@@ -231,9 +278,9 @@
   "before_results": [
     {
       "status": "fail",
-      "seconds": 0.0009402910000062548,
+      "seconds": 0.0008009349999156257,
       "read_seconds": [
-        0.0009361229999740317
+        0.0007967980000103125
       ],
       "visual": null,
       "observed": "Sans nom 1 - LibreOffice Writer"
@@ -242,9 +289,9 @@
   "after_results": [
     {
       "status": "pass",
-      "seconds": 0.008700243000021146,
+      "seconds": 0.012316833999875598,
       "read_seconds": [
-        0.008694368000305985
+        0.01230816599991158
       ],
       "visual": null,
       "observed": "rapport-mensuel.odt - LibreOffice Writer"
@@ -372,6 +419,36 @@
         },
         {
           "target": {
+            "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+            "role": "heading",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": [
+            {
+              "role": "heading",
+              "name": "",
+              "value": "Rapport mensuel",
+              "states": [
+                "editable",
+                "enabled",
+                "focused",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
             "description": "Commande Enregistrer sous de la barre Standard",
             "role": "push button",
             "name": "Enregistrer sous...",
@@ -458,6 +535,23 @@
         },
         {
           "target": {
+            "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+            "role": "heading",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": []
+        },
+        {
+          "target": {
             "description": "Commande Enregistrer sous de la barre Standard",
             "role": "push button",
             "name": "Enregistrer sous...",
@@ -477,13 +571,14 @@
       "on_mistake": "pass",
       "mistake_result": {
         "status": "pass",
-        "seconds": 0.053869052000209194,
+        "seconds": 0.006923031000042101,
         "read_seconds": [
-          0.05386040200028219
+          0.0069147909998719115
         ],
         "visual": null,
         "observed": "brouillon.odt - LibreOffice Writer"
       },
+      "other_error_results": {},
       "artifact_before": [
         {
           "file": "rapport-mensuel.odt",
@@ -504,9 +599,9 @@
       "step_check_results": [
         {
           "status": "fail",
-          "seconds": 0.014214113999969413,
+          "seconds": 0.0018603149999307789,
           "read_seconds": [
-            0.014209350000328413
+            0.0018577760001790011
           ],
           "visual": null,
           "observed": "brouillon.odt - LibreOffice Writer"
@@ -515,21 +610,21 @@
       "on_correct_path": "fail",
       "correct_result": {
         "status": "fail",
-        "seconds": 0.000902626999959466,
+        "seconds": 0.0020180139999865787,
         "read_seconds": [
-          0.0009004529997582722
+          0.0020134879998749966
         ],
         "visual": null,
         "observed": "rapport-mensuel.odt - LibreOffice Writer"
       }
     }
   ],
-  "seconds": 20.532328162999875,
+  "seconds": 20.289819797000064,
   "artifact_results": [
     {
       "file": "rapport-mensuel.odt",
       "exists": true,
-      "sha256": "f6b64b3b5ff6f0529f8b4476f8ada3c58d780ec47b106a6fba9aa1ebdade27ce",
+      "sha256": "bc8a3c3504c944503b2d2a541879df8b2594c6c64b6d506209db9902d8ee6b90",
       "status": "pass",
       "mimetype": "application/vnd.oasis.opendocument.text",
       "headings": [

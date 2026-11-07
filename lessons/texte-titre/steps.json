@@ -3,7 +3,7 @@
     "goal": "Saisis Rapport mensuel dans le document vierge.",
     "help_ladder": {
       "1": "① Voix : Saisis Rapport mensuel dans le document vierge.",
-      "2": "② Surlignage et menu : repère Document de rédaction vierge.",
+      "2": "② Surlignage et menu : Repère la page blanche et saisis Rapport mensuel sur la première ligne.",
       "3": "③ Pointeur : suis le repère, puis effectue le geste toi-même.",
       "4": "④ Démo : avec ton accord, je montre ce geste dans une copie, puis tu le refais."
     },
@@ -28,7 +28,7 @@
     "goal": "Place le curseur dans le titre et applique Titre 1 avec Ctrl+1.",
     "help_ladder": {
       "1": "① Voix : Place le curseur dans le titre et applique Titre 1 avec Ctrl+1.",
-      "2": "② Surlignage et menu : repère Texte du sélecteur Style de paragraphe de Formatage.",
+      "2": "② Surlignage et menu : Repère Style de paragraphe dans Formatage ; Ctrl+Début puis Ctrl+1 doit y afficher Titre 1.",
       "3": "③ Pointeur : suis le repère, puis effectue le geste toi-même.",
       "4": "④ Démo : avec ton accord, je montre ce geste dans une copie, puis tu le refais."
     },
@@ -52,7 +52,15 @@
         },
         {
           "kind": "key",
+          "keys": "ctrl+shift+End"
+        },
+        {
+          "kind": "key",
           "keys": "ctrl+g"
+        },
+        {
+          "kind": "key",
+          "keys": "ctrl+Home"
         }
       ],
       "wrong_paragraph": [
@@ -83,7 +91,7 @@
     "goal": "Enregistre sous rapport-mensuel.odt avec Ctrl+Maj+S. Garde le format Texte ODF (.odt).",
     "help_ladder": {
       "1": "① Voix : Enregistre sous rapport-mensuel.odt avec Ctrl+Maj+S. Garde le format Texte ODF (.odt).",
-      "2": "② Surlignage et menu : repère Commande Enregistrer sous de la barre Standard.",
+      "2": "② Surlignage et menu : Ouvre Fichier › Enregistrer sous ; indique rapport-mensuel.odt et conserve Texte ODF.",
       "3": "③ Pointeur : suis le repère, puis effectue le geste toi-même.",
       "4": "④ Démo : avec ton accord, je montre ce geste dans une copie, puis tu le refais."
     },

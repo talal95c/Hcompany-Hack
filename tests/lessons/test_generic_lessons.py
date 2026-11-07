@@ -32,14 +32,19 @@ def load(path):
 
 def validators():
     module = pytest.importorskip("jsonschema")
-    return (module.Draft202012Validator(load(ROOT / "contracts/lesson.schema.json")),
-            module.Draft202012Validator(load(ROOT / "lessons/generic-steps.schema.json")))
+    return (
+        module.Draft202012Validator(load(ROOT / "contracts/lesson.schema.json")),
+        module.Draft202012Validator(load(ROOT / "lessons/generic-steps.schema.json")),
+    )
 
 
-@pytest.mark.parametrize("lesson_id,app_id,app_name,count", [
-    ("tableur-somme", "libreoffice-calc", "LibreOffice Calc", 5),
-    ("texte-titre", "libreoffice-writer", "LibreOffice Writer", 3),
-])
+@pytest.mark.parametrize(
+    "lesson_id,app_id,app_name,count",
+    [
+        ("tableur-somme", "libreoffice-calc", "LibreOffice Calc", 5),
+        ("texte-titre", "libreoffice-writer", "LibreOffice Writer", 3),
+    ],
+)
 def test_generic_contract_companion_and_evidence(lesson_id, app_id, app_name, count):
     directory = ROOT / "lessons" / lesson_id
     contract, companion_schema = validators()
@@ -47,21 +52,23 @@ def test_generic_contract_companion_and_evidence(lesson_id, app_id, app_name, co
     contract.validate(lesson)
     companion_schema.validate(companion)
     assert lesson["schema_version"] == "2.0"
-    assert lesson["app"] == {"id": app_id, "name": app_name,
-                             "version": "7.3.7", "sensor": "auto"}
+    assert lesson["app"] == {"id": app_id, "name": app_name, "version": "7.3.7", "sensor": "auto"}
     assert lesson["revision"] == 1
     assert lesson["language"] == "fr-FR"
     assert len(lesson["steps"]) == count
     assert len({s["why"] for s in lesson["steps"]}) == count
     assert set(companion) == {s["id"] for s in lesson["steps"]}
     assert lesson["source"]["uri"] == f"authored://lessons/{lesson_id}/SOURCE.md"
-    assert hashlib.sha256((directory / "SOURCE.md").read_bytes()).hexdigest() == (
-        lesson["source"]["sha256"])
+    assert (
+        hashlib.sha256((directory / "SOURCE.md").read_bytes()).hexdigest()
+        == (lesson["source"]["sha256"])
+    )
     for step in lesson["steps"]:
         assert step["procedure_ref"] == lesson_id + "/" + step["id"]
         assert len(set(companion[step["id"]]["help_ladder"].values())) == 4
-        assert all(step["target"].get(field) for field in
-                   ["description", "role", "path", "app_region"])
+        assert all(
+            step["target"].get(field) for field in ["description", "role", "path", "app_region"]
+        )
     if lesson["status"] == "draft":
         assert lesson_id == "tableur-somme"
         assert lesson["proof"]["ui_path_verified"] is False
@@ -91,8 +98,9 @@ def test_generic_contract_companion_and_evidence(lesson_id, app_id, app_name, co
         assert reference in manifest["sha256"]
         proof = load(directory / reference)
         assert len(proof["artifact_results"]) == len(extra.get("artifact_checks", []))
-        for artifact, specification in zip(proof["artifact_results"],
-                                            extra.get("artifact_checks", []), strict=True):
+        for artifact, specification in zip(
+            proof["artifact_results"], extra.get("artifact_checks", []), strict=True
+        ):
             required.add(artifact["evidence_ref"])
             saved = directory / artifact["evidence_ref"]
             result = inspect_document(saved.parent, {**specification, "filename": saved.name})
@@ -116,8 +124,12 @@ def test_generic_contract_companion_and_evidence(lesson_id, app_id, app_name, co
             assert error["on_mistake"] == "pass"
             assert error["on_correct_path"] != "pass"
             assert not all(s == "pass" for s in error["step_checks_on_mistake"])
-            measurements += [error["mistake_result"], error["correct_result"],
-                             *error["step_check_results"]]
+            measurements += [
+                error["mistake_result"],
+                error["correct_result"],
+                *error["step_check_results"],
+                *error["other_error_results"].values(),
+            ]
         for result in measurements:
             assert result["seconds"] > 0
             assert result["read_seconds"] and min(result["read_seconds"]) > 0
@@ -126,12 +138,16 @@ def test_generic_contract_companion_and_evidence(lesson_id, app_id, app_name, co
                 assert visual["image"] in manifest["sha256"]
                 assert visual["original_image"] in manifest["sha256"]
                 required.update([visual["image"], visual["original_image"]])
-                assert png_dimensions(directory / visual["original_image"]) == (
-                    visual["original_dimensions"])
+                assert (
+                    png_dimensions(directory / visual["original_image"])
+                    == (visual["original_dimensions"])
+                )
                 assert png_dimensions(directory / visual["image"]) == visual["sent_dimensions"]
                 assert min(visual["sent_dimensions"].values()) >= 600
-                assert scaled_dimensions(**visual["original_dimensions"]) == (
-                    visual["sent_dimensions"])
+                assert (
+                    scaled_dimensions(**visual["original_dimensions"])
+                    == (visual["sent_dimensions"])
+                )
                 assert visual["seconds"] > 0
                 assert visual["model"] == "holo4-27b"
                 assert visual["request_id"]
@@ -147,14 +163,22 @@ def test_generic_companion_rejects_empty_or_unknown(invalid):
 
 def test_generic_schema_closes_actions_checks_and_metadata():
     _, schema = validators()
-    for field in ["goal", "help_ladder", "expected_actions", "checks", "known_errors_extra",
-                  "mistake_actions"]:
+    for field in [
+        "goal",
+        "help_ladder",
+        "expected_actions",
+        "checks",
+        "known_errors_extra",
+        "mistake_actions",
+    ]:
         companion = load(DIRECTORY / "steps.json")
         del companion["saisir_entete"][field]
         assert not schema.is_valid(companion)
-    for replacement in [{"kind": "script", "text": "unsafe"},
-                        {"kind": "click", "target": {"description": "x"}, "x": 4},
-                        {"kind": "type", "text": ""}]:
+    for replacement in [
+        {"kind": "script", "text": "unsafe"},
+        {"kind": "click", "target": {"description": "x"}, "x": 4},
+        {"kind": "type", "text": ""},
+    ]:
         companion = load(DIRECTORY / "steps.json")
         companion["saisir_entete"]["expected_actions"] = [replacement]
         assert not schema.is_valid(companion)
@@ -178,39 +202,54 @@ class FakeReader:
         return self.title
 
 
-@pytest.mark.parametrize("actual,expected,match,tolerance,result", [
-    ("Montant", "Montant", "equals", 0, True),
-    ("50,00 €", "€", "contains", 0, True),
-    ("A5 = 50", r"^A5 = \d+$", "regex", 0, True),
-    (12.001, 12, "equals", 0.01, True), (12.1, 12, "equals", 0.01, False),
-    (True, True, "equals", 0, True), (1, True, "equals", 0, False),
-    (True, 1, "equals", 0, False), ("12", 12, "equals", 0, False),
-    ("", "Montant", "equals", 0, False), (float("nan"), 12, "equals", 1, False),
-])
+@pytest.mark.parametrize(
+    "actual,expected,match,tolerance,result",
+    [
+        ("Montant", "Montant", "equals", 0, True),
+        ("50,00 €", "€", "contains", 0, True),
+        ("A5 = 50", r"^A5 = \d+$", "regex", 0, True),
+        (12.001, 12, "equals", 0.01, True),
+        (12.1, 12, "equals", 0.01, False),
+        (True, True, "equals", 0, True),
+        (1, True, "equals", 0, False),
+        (True, 1, "equals", 0, False),
+        ("12", 12, "equals", 0, False),
+        ("", "Montant", "equals", 0, False),
+        (float("nan"), 12, "equals", 1, False),
+    ],
+)
 def test_value_matching(actual, expected, match, tolerance, result):
     assert matches_value(actual, expected, match, tolerance) is result
 
 
-@pytest.mark.parametrize("name,params,nodes,complete,expected", [
-    ("element_exists", {}, [{}], True, "pass"),
-    ("element_exists", {}, [], True, "fail"),
-    ("element_exists", {"present": False}, [], True, "pass"),
-    ("element_exists", {"present": False}, [], False, "unknown"),
-    ("element_exists", {}, [{}, {}], True, "unknown"),
-    ("element_exists", {}, [{}], False, "unknown"),
-    ("element_value", {"value": "50"}, [{"value": "50"}], True, "pass"),
-    ("element_value", {"value": "50"}, [{"value": "42"}], True, "fail"),
-    ("element_value", {"value": "50"}, [{}], True, "unknown"),
-    ("element_value", {"value": "50"}, [], True, "fail"),
-    ("element_state", {"states": ["checked"]}, [{"states": ["checked"]}], True, "pass"),
-    ("element_state", {"states": ["checked"]}, [{"states": []}], True, "fail"),
-    ("element_state", {"absent_states": ["checked"]}, [{"states": []}], True, "pass"),
-    ("element_state", {"states": ["checked"]}, [{}], True, "unknown"),
-    ("element_state", {"absent_states": ["selected"]},
-     [{"states": [], "unsupported_states": ["selected"]}], True, "unknown"),
-    ("element_state", {}, [{"states": []}], True, "unknown"),
-    ("other", {}, [{}], True, "unknown"),
-])
+@pytest.mark.parametrize(
+    "name,params,nodes,complete,expected",
+    [
+        ("element_exists", {}, [{}], True, "pass"),
+        ("element_exists", {}, [], True, "fail"),
+        ("element_exists", {"present": False}, [], True, "pass"),
+        ("element_exists", {"present": False}, [], False, "unknown"),
+        ("element_exists", {}, [{}, {}], True, "unknown"),
+        ("element_exists", {}, [{}], False, "unknown"),
+        ("element_value", {"value": "50"}, [{"value": "50"}], True, "pass"),
+        ("element_value", {"value": "50"}, [{"value": "42"}], True, "fail"),
+        ("element_value", {"value": "50"}, [{}], True, "unknown"),
+        ("element_value", {"value": "50"}, [], True, "fail"),
+        ("element_state", {"states": ["checked"]}, [{"states": ["checked"]}], True, "pass"),
+        ("element_state", {"states": ["checked"]}, [{"states": []}], True, "fail"),
+        ("element_state", {"absent_states": ["checked"]}, [{"states": []}], True, "pass"),
+        ("element_state", {"states": ["checked"]}, [{}], True, "unknown"),
+        (
+            "element_state",
+            {"absent_states": ["selected"]},
+            [{"states": [], "unsupported_states": ["selected"]}],
+            True,
+            "unknown",
+        ),
+        ("element_state", {}, [{"states": []}], True, "unknown"),
+        ("other", {}, [{}], True, "unknown"),
+    ],
+)
 def test_generic_statuses(name, params, nodes, complete, expected):
     check = {"name": name, "params": {"target": {"description": "Test"}, **params}}
     result = Evaluator(FakeReader(nodes, complete)).evaluate(check)
@@ -235,8 +274,72 @@ def test_timeouts_errors_reconnection_and_window_titles():
     assert Evaluator(reader).evaluate(invalid)["status"] == "unknown"
 
 
-@pytest.mark.parametrize("error", [RuntimeError("Unavailable"), OSError("Disconnected"),
-                                  subprocess.TimeoutExpired("reader", 1)])
+@pytest.mark.parametrize(
+    "values,expected",
+    [
+        (["Titre 1", "Normal", "Titre 1", "Titre 1"], "pass"),
+        (["Normal"], "fail"),
+        ([None], "unknown"),
+        (["Titre 1", "Normal"], "fail"),
+    ],
+)
+def test_value_timeout_requires_stable_reads(values, expected, monkeypatch):
+    clock = [0.0]
+    monkeypatch.setattr("generic_evaluator.time.perf_counter", lambda: clock[0])
+    monkeypatch.setattr(
+        "generic_evaluator.time.sleep", lambda seconds: clock.__setitem__(0, clock[0] + seconds)
+    )
+
+    class SequenceReader:
+        def read(self, target):
+            value = values[min(round(clock[0] / 0.05), len(values) - 1)]
+            return [{"value": value}], True
+
+    check = {
+        "name": "element_value",
+        "params": {"target": {}, "value": "Titre 1", "timeout_ms": 200},
+    }
+    result = Evaluator(SequenceReader()).evaluate(check)
+    assert result["status"] == expected
+    assert len(result["read_seconds"]) >= 2
+
+
+def test_writer_errors_are_discriminating_in_recorded_app_states():
+    proof = load(ROOT / "lessons/texte-titre/proof/apply_heading.json")
+    errors = proof["error_proofs"]
+    assert {error["code"] for error in errors} == {"bold_only", "wrong_paragraph"}
+    for error in errors:
+        assert error["mistake_result"]["status"] == "pass"
+        assert error["correct_result"]["status"] == "fail"
+        assert all(result["status"] == "fail" for result in error["other_error_results"].values())
+        for detector in errors:
+            result = (
+                error["mistake_result"]
+                if detector["code"] == error["code"]
+                else error["other_error_results"][detector["code"]]
+            )
+            observed = result["observed"] or {"nodes": [], "complete": True}
+            reader = FakeReader(observed["nodes"], observed["complete"])
+            check = {
+                **detector["check"],
+                "params": {**detector["check"]["params"], "timeout_ms": 0},
+            }
+            replay = Evaluator(reader, lambda _: result["visual"]).evaluate(check)
+            assert replay["status"] == ("pass" if detector["code"] == error["code"] else "fail")
+
+
+@pytest.mark.parametrize("lesson_id", ["donut", "mini-cube", "tableur-somme", "texte-titre"])
+def test_level_two_hints_are_step_specific(lesson_id):
+    companion = load(ROOT / "lessons" / lesson_id / "steps.json")
+    hints = [extra["help_ladder"]["2"] for extra in companion.values()]
+    assert len(set(hints)) == len(hints)
+    assert all("consulte le menu Format" not in hint for hint in hints)
+
+
+@pytest.mark.parametrize(
+    "error",
+    [RuntimeError("Unavailable"), OSError("Disconnected"), subprocess.TimeoutExpired("reader", 1)],
+)
 def test_reader_errors_are_unknown(error):
     class BrokenReader:
         def read(self, target):
@@ -246,26 +349,33 @@ def test_reader_errors_are_unknown(error):
     assert Evaluator(BrokenReader()).evaluate(check)["status"] == "unknown"
 
 
-@pytest.mark.parametrize("visual,expected", [
-    (None, "unknown"), ({"answer": True, "confidence": 0.9}, "pass"),
-    ({"answer": False, "confidence": 0.9}, "fail"),
-    ({"answer": True, "confidence": 0.7}, "unknown"),
-    ({"answer": "yes", "confidence": 1}, "unknown"),
-    ({"answer": True, "confidence": float("nan")}, "unknown"),
-    ({"answer": True, "confidence": True}, "unknown"),
-    ({"answer": True, "confidence": 1.1}, "unknown"),
-])
+@pytest.mark.parametrize(
+    "visual,expected",
+    [
+        (None, "unknown"),
+        ({"answer": True, "confidence": 0.9}, "pass"),
+        ({"answer": False, "confidence": 0.9}, "fail"),
+        ({"answer": True, "confidence": 0.7}, "unknown"),
+        ({"answer": "yes", "confidence": 1}, "unknown"),
+        ({"answer": True, "confidence": float("nan")}, "unknown"),
+        ({"answer": True, "confidence": True}, "unknown"),
+        ({"answer": True, "confidence": 1.1}, "unknown"),
+    ],
+)
 def test_visual_confidence_is_not_success_without_evidence(visual, expected):
     check = {"name": "visual_assert", "params": {"assertion": "Visible ?"}}
     assert Evaluator(FakeReader(), lambda _: visual).evaluate(check)["status"] == expected
 
 
-@pytest.mark.parametrize("width,height,expected", [
-    (375, 198, {"width": 1137, "height": 600}),
-    (198, 375, {"width": 600, "height": 1137}),
-    (1200, 700, {"width": 1200, "height": 700}),
-    (600, 600, {"width": 600, "height": 600}),
-])
+@pytest.mark.parametrize(
+    "width,height,expected",
+    [
+        (375, 198, {"width": 1137, "height": 600}),
+        (198, 375, {"width": 600, "height": 1137}),
+        (1200, 700, {"width": 1200, "height": 700}),
+        (600, 600, {"width": 600, "height": 600}),
+    ],
+)
 def test_capture_scaling_preserves_large_images(width, height, expected):
     assert scaled_dimensions(width, height) == expected
 
@@ -277,8 +387,9 @@ def test_capture_scaling_rejects_empty_dimensions(width, height):
 
 
 def png_header(width, height):
-    return (b"\x89PNG\r\n\x1a\n" + struct.pack(">I", 13) + b"IHDR"
-            + struct.pack(">II", width, height))
+    return (
+        b"\x89PNG\r\n\x1a\n" + struct.pack(">I", 13) + b"IHDR" + struct.pack(">II", width, height)
+    )
 
 
 def test_prepare_image_records_actual_original_and_sent_dimensions(tmp_path, monkeypatch):
@@ -354,8 +465,9 @@ async def test_holo_invalid_response_is_not_a_pass(tmp_path, monkeypatch, conten
             pass
 
         async def _complete(self, *args, **kwargs):
-            return SimpleNamespace(id="fake", choices=[SimpleNamespace(
-                message=SimpleNamespace(content=content))])
+            return SimpleNamespace(
+                id="fake", choices=[SimpleNamespace(message=SimpleNamespace(content=content))]
+            )
 
     monkeypatch.setattr(holo_assert, "HoloCloudClient", FakeClient)
     image = tmp_path / "sent.png"
@@ -367,8 +479,15 @@ async def test_holo_invalid_response_is_not_a_pass(tmp_path, monkeypatch, conten
 
 def require_native():
     pytest.importorskip("jsonschema")
-    for binary in ["soffice", "Xvfb", "xdotool", "dbus-run-session", "import", "convert",
-                   "/usr/bin/python3"]:
+    for binary in [
+        "soffice",
+        "Xvfb",
+        "xdotool",
+        "dbus-run-session",
+        "import",
+        "convert",
+        "/usr/bin/python3",
+    ]:
         if not shutil.which(binary):
             pytest.skip(f"Dépendance native absente : {binary}")
     probe = subprocess.run(["/usr/bin/python3", "-c", "import pyatspi"], capture_output=True)
@@ -377,8 +496,9 @@ def require_native():
 
 
 @pytest.mark.parametrize("header,expected_attempts", [("3", 2), ("1000", 1)])
-async def test_holo_quota_retry_respects_budget_and_retry_after(monkeypatch, header,
-                                                              expected_attempts):
+async def test_holo_quota_retry_respects_budget_and_retry_after(
+    monkeypatch, header, expected_attempts
+):
     pytest.importorskip("openai")
     adapter = pytest.importorskip("holo_assert")
     cause = RuntimeError("HTTP 429")
@@ -420,17 +540,20 @@ def test_holo_retry_after_http_date_and_invalid_header():
 
 
 def test_odf_extra_evidence_nominal_empty_and_invalid(tmp_path):
-    specification = {"filename": "example.odt",
-                     "mimetype": "application/vnd.oasis.opendocument.text",
-                     "heading": {"text": "Rapport mensuel", "outline_level": 1,
-                                 "style_name": "Heading_20_1"}}
+    specification = {
+        "filename": "example.odt",
+        "mimetype": "application/vnd.oasis.opendocument.text",
+        "heading": {"text": "Rapport mensuel", "outline_level": 1, "style_name": "Heading_20_1"},
+    }
     assert inspect_document(tmp_path, specification)["status"] == "fail"
     file = tmp_path / specification["filename"]
     file.write_bytes(b"invalid archive")
     assert inspect_document(tmp_path, specification)["status"] == "unknown"
-    content = ('<root xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0">'
-               '<text:h text:outline-level="1" text:style-name="Heading_20_1">'
-               'Rapport mensuel</text:h></root>')
+    content = (
+        '<root xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0">'
+        '<text:h text:outline-level="1" text:style-name="Heading_20_1">'
+        "Rapport mensuel</text:h></root>"
+    )
     with zipfile.ZipFile(file, "w") as archive:
         archive.writestr("mimetype", specification["mimetype"])
         archive.writestr("content.xml", content)
@@ -438,14 +561,24 @@ def test_odf_extra_evidence_nominal_empty_and_invalid(tmp_path):
     assert result["status"] == "pass"
     assert result["sha256"] == hashlib.sha256(file.read_bytes()).hexdigest()
     assert result["content_sha256"] == hashlib.sha256(content.encode()).hexdigest()
-    assert inspect_document(tmp_path, {**specification, "heading": {
-        **specification["heading"], "text": "Incorrect"}})["status"] == "fail"
-    assert inspect_document(tmp_path, {**specification, "filename": "../example.odt"})[
-        "status"] == "fail"
+    assert (
+        inspect_document(
+            tmp_path,
+            {**specification, "heading": {**specification["heading"], "text": "Incorrect"}},
+        )["status"]
+        == "fail"
+    )
+    assert (
+        inspect_document(tmp_path, {**specification, "filename": "../example.odt"})["status"]
+        == "fail"
+    )
 
 
 @pytest.mark.a11y
-@pytest.mark.parametrize("lesson_id,count", [("tableur-somme", 4), ("texte-titre", 3)])
+@pytest.mark.parametrize(
+    "lesson_id,count",
+    [("tableur-somme", 4), ("texte-titre", 3)],
+)
 def test_real_accessibility_replay(tmp_path, lesson_id, count):
     require_native()
     directory = tmp_path / lesson_id

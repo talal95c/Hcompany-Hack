@@ -99,6 +99,23 @@
     },
     {
       "target": {
+        "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+        "role": "heading",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:",
+          "document text:Sans nom 1 - Document LibreOffice"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": []
+    },
+    {
+      "target": {
         "description": "Commande Enregistrer sous de la barre Standard",
         "role": "push button",
         "name": "Enregistrer sous...",
@@ -222,6 +239,23 @@
     },
     {
       "target": {
+        "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+        "role": "heading",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:",
+          "document text:Sans nom 1 - Document LibreOffice"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": []
+    },
+    {
+      "target": {
         "description": "Commande Enregistrer sous de la barre Standard",
         "role": "push button",
         "name": "Enregistrer sous...",
@@ -272,7 +306,8 @@
           ],
           "app_region": "scroll pane:"
         },
-        "value": "Rapport mensuel"
+        "value": "Rapport mensuel",
+        "timeout_ms": 2000
       }
     }
   ],
@@ -285,23 +320,84 @@
   "before_results": [
     {
       "status": "fail",
-      "seconds": 0.016520090000085474,
+      "seconds": 2.0188993200000596,
       "read_seconds": [
-        0.016515660000095522
+        0.023094021000019893,
+        0.025443461999998362,
+        0.022722366000039074,
+        0.016961648999995305,
+        0.01547190300004786,
+        0.0192245030000322,
+        0.022977857000000768,
+        0.02010493900002075,
+        0.019421719999968445,
+        0.022728148999931364,
+        0.01609322899992094,
+        0.01675531199998659,
+        0.018083616000012626,
+        0.02490148300000783,
+        0.03366618800009746,
+        0.04285167500006537,
+        0.01893028199992841,
+        0.018856759000072998,
+        0.01771438399998715,
+        0.02405164300000706,
+        0.02323317999992014,
+        0.015308378999975503,
+        0.025744363000058,
+        0.015381548000050316,
+        0.017138584999997875,
+        0.020568462000028376,
+        0.018747861000065313,
+        0.016207903000008628,
+        0.018639534999920215
       ],
       "visual": null,
-      "observed": null
+      "observed": {
+        "nodes": [
+          {
+            "role": "paragraph",
+            "name": "",
+            "value": "",
+            "states": [
+              "editable",
+              "enabled",
+              "focused",
+              "visible"
+            ],
+            "unsupported_states": []
+          }
+        ],
+        "complete": true
+      }
     }
   ],
   "after_results": [
     {
       "status": "pass",
-      "seconds": 0.02007742700016024,
+      "seconds": 0.08855025699995167,
       "read_seconds": [
-        0.020068957000148657
+        0.016671476000055918,
+        0.021548249000034048
       ],
       "visual": null,
-      "observed": null
+      "observed": {
+        "nodes": [
+          {
+            "role": "paragraph",
+            "name": "",
+            "value": "Rapport mensuel",
+            "states": [
+              "editable",
+              "enabled",
+              "focused",
+              "visible"
+            ],
+            "unsupported_states": []
+          }
+        ],
+        "complete": true
+      }
     }
   ],
   "known_errors": [
@@ -327,7 +423,8 @@
             ],
             "app_region": "scroll pane:"
           },
-          "value": "Brouillon"
+          "value": "Brouillon",
+          "timeout_ms": 2000
         }
       },
       "actions": [
@@ -430,6 +527,23 @@
               "unsupported_states": []
             }
           ]
+        },
+        {
+          "target": {
+            "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+            "role": "heading",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": []
         },
         {
           "target": {
@@ -556,6 +670,23 @@
         },
         {
           "target": {
+            "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+            "role": "heading",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": []
+        },
+        {
+          "target": {
             "description": "Commande Enregistrer sous de la barre Standard",
             "role": "push button",
             "name": "Enregistrer sous...",
@@ -585,13 +716,31 @@
       "on_mistake": "pass",
       "mistake_result": {
         "status": "pass",
-        "seconds": 0.019173295000200596,
+        "seconds": 0.08430989800001498,
         "read_seconds": [
-          0.01916753100022106
+          0.015361110999947414,
+          0.018656143000043812
         ],
         "visual": null,
-        "observed": null
+        "observed": {
+          "nodes": [
+            {
+              "role": "paragraph",
+              "name": "",
+              "value": "Brouillon",
+              "states": [
+                "editable",
+                "enabled",
+                "focused",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ],
+          "complete": true
+        }
       },
+      "other_error_results": {},
       "artifact_before": [],
       "artifact_on_mistake": [],
       "step_checks_on_mistake": [
@@ -600,26 +749,114 @@
       "step_check_results": [
         {
           "status": "fail",
-          "seconds": 0.015700989999913872,
+          "seconds": 2.013794370000028,
           "read_seconds": [
-            0.01569908999999825
+            0.014763871999889489,
+            0.017946293000022706,
+            0.04692179999995005,
+            0.016779624000037074,
+            0.01746142799993322,
+            0.031588153000029706,
+            0.01809140800003206,
+            0.01981227500004934,
+            0.024695316999896022,
+            0.019754277999936676,
+            0.025773157000003266,
+            0.027586466000002474,
+            0.018625481999947624,
+            0.017521961000056763,
+            0.020748272000105317,
+            0.021222649000037563,
+            0.021969926999986455,
+            0.020496581999964292,
+            0.031206453999971018,
+            0.02306590499995309,
+            0.019641137999997227,
+            0.026200781999932587,
+            0.022503712999991876,
+            0.03351508499997635,
+            0.024644546999979866,
+            0.030674213999986932,
+            0.017869123000082254,
+            0.019868532000032246
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "paragraph",
+                "name": "",
+                "value": "Brouillon",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "focused",
+                  "visible"
+                ],
+                "unsupported_states": []
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "on_correct_path": "fail",
       "correct_result": {
         "status": "fail",
-        "seconds": 0.019212470000184112,
+        "seconds": 2.0032645579999553,
         "read_seconds": [
-          0.019209144999877026
+          0.018511413000055654,
+          0.019937175999984902,
+          0.016794395000033546,
+          0.018494093999947836,
+          0.022589813999957187,
+          0.019081616999983453,
+          0.016062594999993962,
+          0.016601937000018552,
+          0.014758651999954964,
+          0.015378077000036683,
+          0.024309635999998136,
+          0.019257643000059943,
+          0.016924539999990884,
+          0.022086223000087557,
+          0.025100510000015674,
+          0.01672047800002474,
+          0.016172476000065217,
+          0.01591681599995809,
+          0.018585917999985213,
+          0.01575580799999443,
+          0.01992633999998361,
+          0.018087212999944313,
+          0.01851789500005907,
+          0.018233016999943175,
+          0.016586668999934773,
+          0.018010393999929875,
+          0.015540328999918529,
+          0.015376521000007415,
+          0.020311820999950214,
+          0.01554317100010394
         ],
         "visual": null,
-        "observed": null
+        "observed": {
+          "nodes": [
+            {
+              "role": "paragraph",
+              "name": "",
+              "value": "Rapport mensuel",
+              "states": [
+                "editable",
+                "enabled",
+                "focused",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ],
+          "complete": true
+        }
       }
     }
   ],
-  "seconds": 7.516093015000024,
+  "seconds": 13.777531217000046,
   "artifact_results": []
 }

@@ -99,6 +99,23 @@
     },
     {
       "target": {
+        "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+        "role": "heading",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:",
+          "document text:Sans nom 1 - Document LibreOffice"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": []
+    },
+    {
+      "target": {
         "description": "Commande Enregistrer sous de la barre Standard",
         "role": "push button",
         "name": "Enregistrer sous...",
@@ -209,6 +226,36 @@
     },
     {
       "target": {
+        "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+        "role": "heading",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:",
+          "document text:Sans nom 1 - Document LibreOffice"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": [
+        {
+          "role": "heading",
+          "name": "",
+          "value": "Rapport mensuel",
+          "states": [
+            "editable",
+            "enabled",
+            "focused",
+            "visible"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    },
+    {
+      "target": {
         "description": "Commande Enregistrer sous de la barre Standard",
         "role": "push button",
         "name": "Enregistrer sous...",
@@ -269,7 +316,8 @@
           ],
           "app_region": "panel:Style de paragraphe"
         },
-        "value": "Titre 1"
+        "value": "Titre 1",
+        "timeout_ms": 2000
       }
     }
   ],
@@ -282,56 +330,94 @@
   "before_results": [
     {
       "status": "fail",
-      "seconds": 0.05264768200004255,
+      "seconds": 2.05478813600007,
       "read_seconds": [
-        0.05264301300030638
+        0.038878943999861804,
+        0.04816859599986856,
+        0.04234369999994669,
+        0.04525800199985497,
+        0.07323268100003588,
+        0.04489814099997602,
+        0.04458469599990167,
+        0.045503189999863025,
+        0.04285212500008129,
+        0.04304031699984989,
+        0.045376553999858515,
+        0.0434216280000328,
+        0.04696576000014829,
+        0.06350499999985004,
+        0.04415980499993566,
+        0.05889086399997723,
+        0.048017128000083176,
+        0.05594896599995991,
+        0.05212437799991676,
+        0.06394971300005636,
+        0.054504536999957054
       ],
       "visual": null,
-      "observed": null
+      "observed": {
+        "nodes": [
+          {
+            "role": "text",
+            "name": "",
+            "value": "Style de paragraphe par défaut",
+            "states": [
+              "editable",
+              "enabled",
+              "visible"
+            ],
+            "unsupported_states": []
+          }
+        ],
+        "complete": true
+      }
     }
   ],
   "after_results": [
     {
       "status": "pass",
-      "seconds": 0.05084055699990131,
+      "seconds": 0.16854185200008942,
       "read_seconds": [
-        0.050834250999741926
+        0.04573581700014984,
+        0.0725017359998219
       ],
       "visual": null,
-      "observed": null
+      "observed": {
+        "nodes": [
+          {
+            "role": "text",
+            "name": "",
+            "value": "Titre 1",
+            "states": [
+              "editable",
+              "enabled",
+              "visible"
+            ],
+            "unsupported_states": []
+          }
+        ],
+        "complete": true
+      }
     }
   ],
   "known_errors": [
-    "fail",
+    "unknown",
     "fail"
   ],
   "error_proofs": [
     {
       "code": "bold_only",
       "check": {
-        "name": "element_value",
+        "name": "visual_assert",
         "params": {
-          "target": {
-            "description": "Texte du sélecteur Style de paragraphe de Formatage",
-            "role": "text",
-            "path": [
-              "frame:Sans nom 1 - LibreOffice Writer",
-              "panel:",
-              "panel:",
-              "root pane:Sans nom 1 - LibreOffice Writer",
-              "panel:",
-              "tool bar:Formatage",
-              "panel:Style de paragraphe",
-              "panel:",
-              "filler:",
-              "panel:",
-              "panel:",
-              "filler:",
-              "filler:"
-            ],
-            "app_region": "panel:Style de paragraphe"
+          "assertion": "Le texte Rapport mensuel est-il en gras ET le sélecteur de style en haut à gauche affiche-t-il « Style de paragraphe » (libellé tronqué), et NON « Titre 1 » ?",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "w": 750,
+            "h": 400
           },
-          "value": "Style de paragraphe par défaut"
+          "min_confidence": 0.8
         }
       },
       "actions": [
@@ -341,7 +427,15 @@
         },
         {
           "kind": "key",
+          "keys": "ctrl+shift+End"
+        },
+        {
+          "kind": "key",
           "keys": "ctrl+g"
+        },
+        {
+          "kind": "key",
+          "keys": "ctrl+Home"
         }
       ],
       "before": [
@@ -438,6 +532,23 @@
               "unsupported_states": []
             }
           ]
+        },
+        {
+          "target": {
+            "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+            "role": "heading",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": []
         },
         {
           "target": {
@@ -564,6 +675,23 @@
         },
         {
           "target": {
+            "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+            "role": "heading",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": []
+        },
+        {
+          "target": {
             "description": "Commande Enregistrer sous de la barre Standard",
             "role": "push button",
             "name": "Enregistrer sous...",
@@ -593,12 +721,88 @@
       "on_mistake": "pass",
       "mistake_result": {
         "status": "pass",
-        "seconds": 0.051101506000122754,
+        "seconds": 16.021332116000053,
         "read_seconds": [
-          0.05109525700027007
+          16.021325652999963
         ],
-        "visual": null,
+        "visual": {
+          "model": "holo4-27b",
+          "request_id": "chatcmpl-01a1b704-d609-7702-af2d-4d87647ba476",
+          "seconds": 14.805031999999983,
+          "response": "{\"answer\":true,\"confidence\":0.99}",
+          "answer": true,
+          "confidence": 0.99,
+          "attempts": [
+            {
+              "answer": null,
+              "confidence": 0,
+              "error": "timeout",
+              "http_status": null,
+              "model": "holo4-27b",
+              "seconds": 12.002277733000028,
+              "retry_after": null
+            },
+            {
+              "seconds": 0.29018539699995927,
+              "error": null,
+              "request_id": "chatcmpl-01a1b704-d609-7702-af2d-4d87647ba476"
+            }
+          ],
+          "original_dimensions": {
+            "width": 1125,
+            "height": 360
+          },
+          "sent_dimensions": {
+            "width": 1875,
+            "height": 600
+          },
+          "original_image": "proof/capture-001.png",
+          "image": "proof/capture-001-sent.png"
+        },
         "observed": null
+      },
+      "other_error_results": {
+        "wrong_paragraph": {
+          "status": "fail",
+          "seconds": 2.015998472000092,
+          "read_seconds": [
+            0.015390109999998458,
+            0.021640324000031796,
+            0.018870024000079866,
+            0.01745386699997198,
+            0.01878901300005964,
+            0.02047992500001783,
+            0.05292998799995985,
+            0.020432424999967225,
+            0.02441002099999423,
+            0.01931602499996643,
+            0.023592828000005284,
+            0.01598281600001883,
+            0.01595836900003178,
+            0.018927584000039133,
+            0.022175252000010914,
+            0.018879258999959347,
+            0.017995127000062894,
+            0.015235705000009148,
+            0.015343552999979693,
+            0.01570507799999632,
+            0.019433251999998902,
+            0.039626635000104216,
+            0.015064116000075956,
+            0.01764292600000772,
+            0.017924592999975175,
+            0.016752182000004723,
+            0.018269985000074485,
+            0.020000531000050614,
+            0.016639845999975478,
+            0.015919717000087985
+          ],
+          "visual": null,
+          "observed": {
+            "nodes": [],
+            "complete": true
+          }
+        }
       },
       "artifact_before": [],
       "artifact_on_mistake": [],
@@ -608,22 +812,121 @@
       "step_check_results": [
         {
           "status": "fail",
-          "seconds": 0.04849154499970609,
+          "seconds": 2.1339808829999356,
           "read_seconds": [
-            0.04848915399998077
+            0.04521028900001056,
+            0.0466575450000164,
+            0.053405418000011196,
+            0.07333249600003455,
+            0.043077625000023545,
+            0.04519802400000117,
+            0.04342520800003058,
+            0.045170055000085085,
+            0.07992759000001115,
+            0.04244433900009881,
+            0.04534121899996535,
+            0.04392510399998173,
+            0.0440013940000199,
+            0.04538884999999482,
+            0.046633490000090205,
+            0.040541184999938196,
+            0.05268273600006523,
+            0.05317889100001594,
+            0.06828305999999884,
+            0.05017467000004672,
+            0.13375241300002472
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "text",
+                "name": "",
+                "value": "Style de paragraphe par défaut",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": []
+              }
+            ],
+            "complete": true
+          }
         }
       ],
-      "on_correct_path": "fail",
+      "on_correct_path": "unknown",
       "correct_result": {
-        "status": "fail",
-        "seconds": 0.044962661000226944,
+        "status": "unknown",
+        "seconds": 70.96705769300002,
         "read_seconds": [
-          0.04495991599969784
+          70.96705321700006
         ],
-        "visual": null,
+        "visual": {
+          "answer": null,
+          "confidence": 0,
+          "error": "timeout",
+          "http_status": null,
+          "model": "holo4-27b",
+          "attempts": [
+            {
+              "answer": null,
+              "confidence": 0,
+              "error": "timeout",
+              "http_status": null,
+              "model": "holo4-27b",
+              "seconds": 12.031437433000065,
+              "retry_after": null
+            },
+            {
+              "answer": null,
+              "confidence": 0,
+              "error": "timeout",
+              "http_status": null,
+              "model": "holo4-27b",
+              "seconds": 12.061402137999949,
+              "retry_after": null
+            },
+            {
+              "answer": null,
+              "confidence": 0,
+              "error": "timeout",
+              "http_status": null,
+              "model": "holo4-27b",
+              "seconds": 12.06123331799995,
+              "retry_after": null
+            },
+            {
+              "answer": null,
+              "confidence": 0,
+              "error": "timeout",
+              "http_status": null,
+              "model": "holo4-27b",
+              "seconds": 12.061414739999918,
+              "retry_after": null
+            },
+            {
+              "answer": null,
+              "confidence": 0,
+              "error": "timeout",
+              "http_status": null,
+              "model": "holo4-27b",
+              "seconds": 12.061124008999968,
+              "retry_after": null
+            }
+          ],
+          "seconds": 70.31666459400003,
+          "original_dimensions": {
+            "width": 1125,
+            "height": 360
+          },
+          "sent_dimensions": {
+            "width": 1875,
+            "height": 600
+          },
+          "original_image": "proof/capture-003.png",
+          "image": "proof/capture-003-sent.png"
+        },
         "observed": null
       }
     },
@@ -633,26 +936,21 @@
         "name": "element_value",
         "params": {
           "target": {
-            "description": "Texte du sélecteur Style de paragraphe de Formatage",
-            "role": "text",
+            "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+            "role": "heading",
             "path": [
               "frame:Sans nom 1 - LibreOffice Writer",
               "panel:",
               "panel:",
               "root pane:Sans nom 1 - LibreOffice Writer",
               "panel:",
-              "tool bar:Formatage",
-              "panel:Style de paragraphe",
-              "panel:",
-              "filler:",
-              "panel:",
-              "panel:",
-              "filler:",
-              "filler:"
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
             ],
-            "app_region": "panel:Style de paragraphe"
+            "app_region": "scroll pane:"
           },
-          "value": "Style de paragraphe par défaut"
+          "value": "Corps du rapport.",
+          "timeout_ms": 2000
         }
       },
       "actions": [
@@ -774,6 +1072,23 @@
         },
         {
           "target": {
+            "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+            "role": "heading",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": []
+        },
+        {
+          "target": {
             "description": "Commande Enregistrer sous de la barre Standard",
             "role": "push button",
             "name": "Enregistrer sous...",
@@ -897,6 +1212,36 @@
         },
         {
           "target": {
+            "description": "Paragraphe de corps devenu titre au lieu du premier paragraphe",
+            "role": "heading",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": [
+            {
+              "role": "heading",
+              "name": "",
+              "value": "Corps du rapport.",
+              "states": [
+                "editable",
+                "enabled",
+                "focused",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
             "description": "Commande Enregistrer sous de la barre Standard",
             "role": "push button",
             "name": "Enregistrer sous...",
@@ -926,12 +1271,82 @@
       "on_mistake": "pass",
       "mistake_result": {
         "status": "pass",
-        "seconds": 0.05120250299978579,
+        "seconds": 0.09333540800002993,
         "read_seconds": [
-          0.051193994999721326
+          0.017535555999984354,
+          0.025509759999977177
         ],
         "visual": null,
-        "observed": null
+        "observed": {
+          "nodes": [
+            {
+              "role": "heading",
+              "name": "",
+              "value": "Corps du rapport.",
+              "states": [
+                "editable",
+                "enabled",
+                "focused",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ],
+          "complete": true
+        }
+      },
+      "other_error_results": {
+        "bold_only": {
+          "status": "fail",
+          "seconds": 30.13771918200007,
+          "read_seconds": [
+            30.13771545599991
+          ],
+          "visual": {
+            "model": "holo4-27b",
+            "request_id": "chatcmpl-01a1b705-769f-7f73-aec9-101525ad5f3b",
+            "seconds": 29.41048165299992,
+            "response": "{\"answer\":false,\"confidence\":0.99}",
+            "answer": false,
+            "confidence": 0.99,
+            "attempts": [
+              {
+                "answer": null,
+                "confidence": 0,
+                "error": "timeout",
+                "http_status": null,
+                "model": "holo4-27b",
+                "seconds": 12.059485471000016,
+                "retry_after": null
+              },
+              {
+                "answer": null,
+                "confidence": 0,
+                "error": "timeout",
+                "http_status": null,
+                "model": "holo4-27b",
+                "seconds": 12.032210546000101,
+                "retry_after": null
+              },
+              {
+                "seconds": 0.29345508000005793,
+                "error": null,
+                "request_id": "chatcmpl-01a1b705-769f-7f73-aec9-101525ad5f3b"
+              }
+            ],
+            "original_dimensions": {
+              "width": 1125,
+              "height": 360
+            },
+            "sent_dimensions": {
+              "width": 1875,
+              "height": 600
+            },
+            "original_image": "proof/capture-002.png",
+            "image": "proof/capture-002-sent.png"
+          },
+          "observed": null
+        }
       },
       "artifact_before": [],
       "artifact_on_mistake": [],
@@ -941,26 +1356,107 @@
       "step_check_results": [
         {
           "status": "fail",
-          "seconds": 0.044979101000080846,
+          "seconds": 2.0381396660000064,
           "read_seconds": [
-            0.04497649399991133
+            0.04247516899999937,
+            0.04953136400013136,
+            0.05084180799985916,
+            0.04684249399997498,
+            0.04739626600007796,
+            0.051746648999824174,
+            0.07429974500018943,
+            0.051378636999970695,
+            0.05186771699982273,
+            0.04539074400008758,
+            0.04512466400001358,
+            0.05414653499997257,
+            0.058495542999935424,
+            0.041338854000059655,
+            0.042259874999899694,
+            0.04979931299999407,
+            0.042421921999903134,
+            0.04793658299990966,
+            0.044151756000019304,
+            0.045709701999840036,
+            0.04854994400011492
           ],
           "visual": null,
-          "observed": null
+          "observed": {
+            "nodes": [
+              {
+                "role": "text",
+                "name": "",
+                "value": "Style de paragraphe par défaut",
+                "states": [
+                  "editable",
+                  "enabled",
+                  "visible"
+                ],
+                "unsupported_states": []
+              }
+            ],
+            "complete": true
+          }
         }
       ],
       "on_correct_path": "fail",
       "correct_result": {
         "status": "fail",
-        "seconds": 0.057401974000185874,
+        "seconds": 2.0144648610000786,
         "read_seconds": [
-          0.057398823000312404
+          0.014098573000183023,
+          0.020611271000007036,
+          0.017356389000042327,
+          0.019551868000007744,
+          0.02413547799983462,
+          0.015079985000056695,
+          0.016166333000001032,
+          0.014968948000159799,
+          0.014881837999837444,
+          0.01454147300000841,
+          0.016523565999932543,
+          0.014242918000036298,
+          0.014677065999876504,
+          0.0163945669999066,
+          0.01504685400004746,
+          0.018975095000087094,
+          0.015651364999939688,
+          0.017063135999933365,
+          0.019831367000051614,
+          0.015452681000169832,
+          0.014534281999885934,
+          0.028020108999953663,
+          0.016636919000120542,
+          0.025298625000004904,
+          0.017842049000137195,
+          0.014903430999993361,
+          0.014237619999903472,
+          0.020220023000092624,
+          0.016486759000144957,
+          0.01652304100002766,
+          0.014317948999860164
         ],
         "visual": null,
-        "observed": null
+        "observed": {
+          "nodes": [
+            {
+              "role": "heading",
+              "name": "",
+              "value": "Rapport mensuel",
+              "states": [
+                "editable",
+                "enabled",
+                "focused",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ],
+          "complete": true
+        }
       }
     }
   ],
-  "seconds": 14.761842648999846,
+  "seconds": 142.73830481100003,
   "artifact_results": []
 }
