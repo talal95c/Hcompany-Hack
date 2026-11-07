@@ -3,7 +3,7 @@
   --g1: #ffc078;
   --g2: #ff7a1a;
   --g3: #d9420b;
-  --ok: #b4c7a6;
+  --ok: rgba(255,255,255,.8);
 }
 
 .ghost {
@@ -39,7 +39,7 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 170, 110, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.55);
 }
 .ghost--hit .ghost__halo { border-color: var(--ok); }
 
@@ -51,28 +51,31 @@
   width: max-content;
   padding: 5px 10px;
   border-radius: 8px;
-  color: #fff;
+  color: white;
   font-size: 11.5px;
   line-height: 1.35;
   font-weight: 500;
-  background:
-    linear-gradient(135deg, rgba(255, 154, 77, 0.42), rgba(217, 66, 11, 0.3)),
-    rgba(20, 16, 12, 0.9);
-  border: 1px solid rgba(255, 170, 110, 0.5);
+  background: rgba(16,16,20,.82);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 8px 24px rgba(0,0,0,.25);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
 .ghost__label.is-left { left: auto; right: 10px; }
 .ghost__label.is-up { top: auto; bottom: 10px; }
 
-/* The real element (from the accessibility tree): a flat orange ring. */
+/* The real element (from the accessibility tree): a fine white ring. */
 .ghost-box {
   position: fixed;
   left: 0;
   top: 0;
   pointer-events: none;
-  border-radius: 10px;
-  border: 1.5px solid rgba(255, 154, 77, 0.9);
+  border-radius: 8px;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
-.ghost-box--hit { border-color: var(--ok); background: rgba(180, 199, 166, 0.1); }
+.ghost-box--hit { border-color: var(--ok); background: rgba(255,255,255,.04); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: opacity 120ms linear !important; }
+}
