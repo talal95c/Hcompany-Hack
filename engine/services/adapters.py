@@ -93,6 +93,13 @@ class JevAdapter:
     async def aclose(self):
         await self.client.aclose()
 
+    async def speculate_intent(self, context, *, timeout_s):
+        start = time.perf_counter()
+        result = await asyncio.wait_for(self.client.classify_intent(
+            context["utterance"], context=context.get("instruction", ""), profile=self.profile,
+            speculative=True), timeout_s)
+        return JevDecision(result.choice, None, (time.perf_counter() - start) * 1000)
+
 
 class SttAdapter:
     def __init__(self, client, profile: AppProfile | None = None):

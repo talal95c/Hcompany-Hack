@@ -48,6 +48,7 @@ from engine.interfaces import (
 from engine.learner import LearnerMemory
 from engine.lesson import Session, lesson_app, load_lesson, load_verification
 from engine.lesson.live_audio import LiveUtterance
+from engine.lesson.voice import IntentSpeculation, PreopenedSession
 from engine.platform.coordinates import Rect as CaptureRect
 from engine.platform.coordinates import blender_region
 from engine.policy import HelpContext, HelpPolicy
@@ -149,7 +150,7 @@ class EngineRuntime:
         self.actions_stopped = False
         self.demo_requested: tuple[int, int] | None = None
         self.demo_undo: tuple[int, dict, str, str | None] | None = None
-        self.policy.on_stop = self.stop_actions
+        self.policy.on_stop = self.stop_assistance
         self.policy.on_resume = self.resume_actions
         self.ui_revision = 0
         self.preload_generation = None
@@ -160,6 +161,8 @@ class EngineRuntime:
         self.consent: tuple[str, float, int] | None = None
         self.utterances: dict[str, dict] = {}
         self.live_utterances: dict[str, LiveUtterance] = {}
+        self.voice_pool = (PreopenedSession(stt, ttl_s=config.voice_preopen_ttl_s)
+                           if callable(getattr(stt, "open_live", None)) else None)
         self.help_context = HelpContext()
         self.max_help = 0
         self.closed = False
@@ -326,6 +329,36 @@ class EngineRuntime:
     def resume_actions(self) -> None:
         self.actions_stopped = False
 
+    def stop_assistance(self) -> None:
+        self.stop_actions()
+        if self.voice_pool:
+            self.voice_pool.enabled = False
+        self.spawn(self.close_audio())
+
+    def prepare_voice(self) -> None:
+        if not self.voice_pool:
+            return
+        eligible = (not self.closed and self.permissions["microphone"]
+                    and (not self.policy.muted or self.utterances or self.live_utterances)
+                    and ((self.session and self.session.status != "COMPLETE")
+                         or self.utterances or self.live_utterances))
+        if eligible:
+            self.voice_pool.enabled = True
+            self.voice_pool.warm(sample_rate=16000, language="fr", endpointing_s=.05,
+                                 vocabulary=self.vocabulary())
+        elif self.voice_pool.enabled:
+            self.voice_pool.enabled = False
+            self.spawn(self.close_audio())
+
+    async def close_audio(self) -> None:
+        self.utterances.clear()
+        if self.voice_pool:
+            self.voice_pool.enabled = False
+        streams = tuple(self.live_utterances.values())
+        self.live_utterances.clear()
+        await asyncio.gather(*(s.close() for s in streams),
+                             *([self.voice_pool.close()] if self.voice_pool else []))
+
     def invalidate_capture(self) -> None:
         self.policy.cancel_intervention(invalidate_capture=True)
         self.capture = None
@@ -357,9 +390,7 @@ class EngineRuntime:
         self.select_adapter()
         self.invalidate_native()
         self.permissions = dict.fromkeys(self.permissions, False)
-        self.utterances.clear()
-        await asyncio.gather(*(s.close() for s in self.live_utterances.values()))
-        self.live_utterances.clear()
+        await self.close_audio()
         self.targets.invalidate()
         self.pause()
 
@@ -478,6 +509,7 @@ class EngineRuntime:
             self.spawn(self.observe_once())
 
     async def evaluate(self, event: dict) -> None:
+        self.prepare_voice()
         if self.actions_stopped:
             return
         session = self.session
@@ -787,6 +819,9 @@ class EngineRuntime:
             self.a11y.on_event(payload)
         elif kind == "permissions":
             self.permissions = payload.copy()
+            if not payload["microphone"]:
+                await self.close_audio()
+            self.prepare_voice()
             self.a11y.permission = payload["accessibility"]
             self.vision.permission = payload["screen"]
             self.select_adapter()
@@ -800,6 +835,7 @@ class EngineRuntime:
                     self.consent = None
                     self.pause()
                 await self.policy.intent(payload["text"], self.context())
+                self.prepare_voice()
                 self.max_help = max(self.max_help, self.policy.level)
                 await self.send_state(connection)
         elif kind == "capture.result":
@@ -1111,6 +1147,10 @@ class EngineRuntime:
                     or len(self.live_utterances) >= 4 or key in self.utterances):
                 raise ValueError("Microphone indisponible")
             self.utterances[key] = {"chunks": {}, "size": 0, "encoding": None, "sample_rate": None}
+            if self.voice_pool:
+                self.voice_pool.enabled = True
+                self.voice_pool.warm(sample_rate=16000, language="fr", endpointing_s=.05,
+                                     vocabulary=self.vocabulary())
         elif key not in self.utterances:
             raise ValueError("Énoncé inconnu")
         elif kind == "audio.chunk":
@@ -1123,22 +1163,41 @@ class EngineRuntime:
                 if key not in self.live_utterances:
                     generation = self.session.generation if self.session else 0
 
+                    def current():
+                        return (not self.closed and self.permissions["microphone"]
+                                and (key in self.utterances or key in self.live_utterances)
+                                and (not self.session or generation == self.session.generation))
+
+                    async def classify(text):
+                        return await self.policy.classify_intent(text, speculative=True)
+
+                    speculation = IntentSpeculation(classify, current, generation=generation,
+                        stable_s=self.config.voice_partial_stable_s)
+
                     async def on_event(event):
-                        if self.session and generation != self.session.generation:
+                        if not current():
                             return
+                        if event.kind == "partial":
+                            speculation.partial(event.text)
+                        elif event.kind == "speech_end":
+                            speculation.speech_end()
                         if event.kind in {"partial", "final"}:
                             self.debug.record({"kind": "stt_" + event.kind,
                                                "utterance_id": key, "t": time.monotonic()})
                             await self.send_state(force=True, transcript=event.text,
                                                   transcript_final=event.kind == "final")
                             if event.kind == "final" and event.text:
-                                await self.policy.intent(event.text, self.context())
+                                prediction = await speculation.final(event.text)
+                                if current():
+                                    await self.policy.intent(event.text, self.context(),
+                                                             prediction=prediction)
 
                     async def on_error():
                         await self.error("stt_live_failed", "Transcription interrompue", connection)
 
                     stream = LiveUtterance(self.stt, payload["sample_rate"], on_event, on_error,
-                                           vocabulary=self.vocabulary())
+                                           vocabulary=self.vocabulary(), pool=self.voice_pool,
+                                           on_close=speculation.close, allowed=current)
                     self.live_utterances[key] = stream
                     utterance["sample_rate"] = payload["sample_rate"]
                 stream = self.live_utterances[key]
@@ -1173,6 +1232,7 @@ class EngineRuntime:
                 async def finish():
                     await stream.task
                     self.live_utterances.pop(key, None)
+                    self.prepare_voice()
 
                 self.spawn(finish())
                 return
@@ -1192,8 +1252,7 @@ class EngineRuntime:
         if self.closed:
             return
         self.closed = True
-        await asyncio.gather(*(s.close() for s in self.live_utterances.values()))
-        self.live_utterances.clear()
+        await self.close_audio()
         for task in tuple(self.tasks):
             task.cancel()
         await asyncio.gather(*self.tasks, return_exceptions=True)

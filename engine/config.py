@@ -32,12 +32,16 @@ class EngineConfig:
     a11y_timeout_s: float = 1.5
     vision_poll_s: float = 2.0
     cloud_vision_preload: bool = False
+    voice_preopen_ttl_s: float = 20
+    voice_partial_stable_s: float = .2
 
     def __post_init__(self) -> None:
         if any(not 0 <= p <= 65535 for p in (self.port, self.addon_port, self.debug_port)):
             raise ValueError("Port invalide")
         if not self.session_id or not self.session_token:
             raise ValueError("Session vide")
+        if not (0 < self.voice_preopen_ttl_s <= 20 and 0 <= self.voice_partial_stable_s <= 5):
+            raise ValueError("Délais de préparation vocale invalides")
 
     @classmethod
     def from_env(cls) -> "EngineConfig":
@@ -55,6 +59,8 @@ class EngineConfig:
             lesson=Path(os.environ["ENGINE_LESSON"]) if os.getenv("ENGINE_LESSON") else None,
             holo_model=os.getenv("ENGINE_HOLO_MODEL", "holo4-27b"),
             cloud_vision_preload=os.getenv("ENGINE_CLOUD_VISION_PRELOAD", "0") == "1",
+            voice_preopen_ttl_s=float(os.getenv("ENGINE_VOICE_PREOPEN_TTL_S", "20")),
+            voice_partial_stable_s=float(os.getenv("ENGINE_VOICE_PARTIAL_STABLE_S", ".2")),
             stt_vocabulary=tuple(
                 v.strip() for v in os.getenv("ENGINE_STT_VOCABULARY", "").split(",") if v.strip()
             ),

@@ -22,6 +22,7 @@ from engine.interfaces import (
     LocalizeResult,
     SystemClock,
 )
+from engine.lesson.voice import normalize_utterance
 from engine.pointer import rejection
 
 
@@ -144,7 +145,21 @@ class HelpPolicy:
         for recipient, kind, payload in commands:
             await self._command(kind, payload, revision=revision, recipient=recipient)
 
-    async def intent(self, text: str, context: HelpContext | None = None) -> Decision | None:
+    async def classify_intent(self, text: str, *, speculative: bool = False) -> JevDecision | None:
+        classify = (getattr(self.jev, "speculate_intent", None) if speculative
+                    else getattr(self.jev, "decide", None))
+        if not classify or not self.step or self.muted:
+            return None
+        return await self.fallback.call(
+            "jev_intent_speculative" if speculative else "jev_intent",
+            lambda: classify({"utterance": normalize_utterance(text),
+                "instruction": self.step["instruction"],
+                **({"app": self.app_context} if self.app_context else {})},
+                timeout_s=self.config.jev_timeout_s), self.config.jev_timeout_s,
+            lambda: None)
+
+    async def intent(self, text: str, context: HelpContext | None = None, *,
+                     prediction: tuple[str, int, JevDecision] | None = None) -> Decision | None:
         text = text.strip().casefold()
         if text == "chut":
             if self.on_stop:
@@ -165,13 +180,12 @@ class HelpPolicy:
                                         context or HelpContext(), 0)
         if text and self.step and self.jev:
             generation = self.generation
-            answer = await self.fallback.call(
-                "jev_intent", lambda: self.jev.decide(
-                    {"utterance": text, "instruction": self.step["instruction"],
-                     **({"app": self.app_context} if self.app_context else {})},
-                    timeout_s=self.config.jev_timeout_s), self.config.jev_timeout_s,
-                lambda: JevDecision("other", None, 0))
+            hit = bool(prediction and prediction[:2] == (normalize_utterance(text), generation))
+            self.debug({"kind": "voice_intent_speculation", "hit": hit})
+            answer = prediction[2] if hit else await self.classify_intent(text)
             if generation != self.generation or self.muted:
+                return None
+            if answer is None:
                 return None
             if answer.action == "question":
                 await self._command("say", {"text": self.step.get("why", self.step["instruction"]),
