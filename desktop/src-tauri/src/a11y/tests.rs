@@ -710,11 +710,22 @@ async fn cold_first_snapshot() {
 #[tokio::test]
 #[ignore = "requires isolated X11 and AT-SPI application bus"]
 async fn live_accessibility() {
+    tokio::task::spawn_blocking(crate::protocol::warm)
+        .await
+        .unwrap();
     let service = Service::default();
     let app_name = std::env::var("HCOMPANY_A11Y_APP").unwrap_or_else(|_| "soffice".into());
     let call = |mut payload: Value| async {
         payload["max_depth"] = json!(32);
-        service.run(None, payload).await
+        let operation = payload["request_id"].as_str().unwrap().to_owned();
+        let started = Instant::now();
+        let result = service.run(None, payload).await;
+        println!(
+            "{operation}_handler_ms={:.3}",
+            started.elapsed().as_secs_f64() * 1000.
+        );
+        validate_result(&result);
+        result
     };
     let mut timings = Vec::new();
     for _ in 0..5 {

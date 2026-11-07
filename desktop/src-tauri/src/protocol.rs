@@ -29,6 +29,10 @@ pub fn validate(value: &Value, session: &str) -> Result<(), String> {
     Ok(())
 }
 
+pub fn warm() {
+    LazyLock::force(&VALIDATOR);
+}
+
 pub fn parse(text: &str, session: &str) -> Result<Value, String> {
     if text.len() > MAX_MESSAGE {
         return Err("message exceeds size limit".into());
@@ -47,6 +51,14 @@ pub fn envelope(session: &str, kind: &str, payload: Value, reply: Option<&str>) 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn warmed_validator_accepts_valid_and_rejects_invalid_messages() {
+        std::thread::spawn(warm).join().unwrap();
+        let packet = envelope("s", "ping", json!({"nonce":"warm"}), None);
+        assert!(validate(&packet, "s").is_ok());
+        assert!(validate(&json!({}), "s").is_err());
+    }
 
     #[test]
     fn all_contract_fixtures() {
