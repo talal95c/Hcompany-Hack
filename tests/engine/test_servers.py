@@ -31,13 +31,12 @@ from engine.config import EngineConfig
 from engine.interfaces import FakeClock, LocalizeResult, Transcript
 from engine.lesson import load_lesson
 from engine.lesson.runtime import EngineRuntime, decode_capture
-from engine.policy import HelpContext
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 def lesson():
-    return load_lesson(next((ROOT / "contracts/examples/lesson/valid").glob("*.json")))
+    return load_lesson(ROOT / "tests/engine/fixtures/single_lesson.json")
 
 
 @pytest.fixture
@@ -399,6 +398,7 @@ async def test_runtime_timer_success_and_memory(runtime):
         assert runtime.policy.level == 1
         await send_event(writer, event("scene.changed", 3, 1, changed_ids=["torus"], objects=[{
             "id": "torus", "type": "MESH", "primitive_provenance": "torus",
+                       "mesh": {"verts": 576, "edges": 1152, "polys": 576},
         }]))
         command = (await read_ws(ws, "command"))["payload"]
         assert command["type"] == "success"
@@ -421,7 +421,6 @@ async def test_runtime_demo_ack_before_undo(runtime):
     try:
         await synchronized(runtime, writer, ws)
         runtime.policy.level = 3
-        runtime.help_context = HelpContext(safe_demo=True, checkpoint_id="safe-cp")
         await send_ws(ws, "user.intent", {"text": "aide", "source": "bouton"})
         replay = await read_command(reader)
         assert replay["type"] == "replay"

@@ -60,7 +60,7 @@ def test_validation_references():
 
 
 def lesson_path():
-    return next((ROOT / "contracts/examples/lesson/valid").glob("*.json"))
+    return ROOT / "tests/engine/fixtures/donut_lesson.json"
 
 
 def test_lesson(tmp_path):

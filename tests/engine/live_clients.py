@@ -6,6 +6,7 @@ import binascii
 import io
 import json
 import struct
+import subprocess
 import time
 import wave
 import zlib
@@ -45,6 +46,18 @@ def silence_wav() -> bytes:
         audio.setframerate(16000)
         audio.writeframes(b"\0\0" * 16000)
     return stream.getvalue()
+
+
+def spoken_wav() -> bytes:
+    speech = subprocess.run(
+        ["espeak-ng", "-v", "fr-fr", "-s", "135", "--stdout",
+         "Bonjour. Sélectionne le cube rouge. Ensuite, ouvre le menu."],
+        check=True, capture_output=True, timeout=10,
+    ).stdout
+    return subprocess.run(
+        ["ffmpeg", "-v", "error", "-i", "pipe:0", "-ar", "16000", "-ac", "1",
+         "-f", "wav", "pipe:1"], input=speech, check=True, capture_output=True, timeout=10,
+    ).stdout
 
 
 class HttpClient:
@@ -131,7 +144,7 @@ class GladiaHttpClient(HttpClient):
             raise ValueError("Recette WAV 16 kHz requise")
         start = time.perf_counter()
         upload = await self.request("POST", "https://api.gladia.io/v2/upload",
-                                    files={"audio": ("silence.wav", audio, "audio/wav")})
+                                    files={"audio": ("audio.wav", audio, "audio/wav")})
         job = await self.request("POST", "https://api.gladia.io/v2/pre-recorded", json={
             "audio_url": upload["audio_url"], "language_config": {"languages": [language]},
         })

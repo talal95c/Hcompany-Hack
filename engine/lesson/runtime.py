@@ -74,6 +74,7 @@ class EngineRuntime:
             lesson = load_lesson(config.lesson)
         self.session = Session(config.session_id, lesson) if lesson else None
         if lesson:
+            validate("lesson", lesson)
             for step in lesson["steps"]:
                 require_check(step["check"]["name"])
                 for error in step.get("known_errors", []):
@@ -164,8 +165,16 @@ class EngineRuntime:
         await self.send_state()
 
     def invalidate_native(self) -> None:
-        self.capture, self.consent = None, None
+        self.consent = None
+        self.invalidate_capture()
+
+    def invalidate_capture(self) -> None:
+        self.policy.cancel_intervention(invalidate_capture=True)
+        self.capture = None
         self.help_context = HelpContext()
+        self.targets.invalidate()
+        if self.preloader.task:
+            self.preloader.task.cancel()
 
     def pause(self) -> None:
         if self.session:
@@ -188,6 +197,9 @@ class EngineRuntime:
         self.pause()
 
     async def receive(self, event: dict) -> None:
+        if event["type"] in {"operator.executed", "regions.changed", "scene.changed",
+                             "snapshot", "mode.changed", "selection.changed", "undo"}:
+            self.invalidate_capture()
         await self.buffer.put({**event, "received_at": time.perf_counter(),
                                "connection_epoch": self.connection_epoch})
 
@@ -202,15 +214,20 @@ class EngineRuntime:
                 await self.bus.publish(Topic.EVENT, event)
                 if event["type"] == "hello":
                     self.blender_version = event["payload"]["blender_version"]
+                    if (self.session
+                            and self.blender_version != self.session.lesson["blender_version"]):
+                        self.invalidate_native()
+                        await self.error(
+                            "blender_version_mismatch", "Version Blender incompatible : "
+                            + self.blender_version + " ; version prouvée requise : "
+                            + self.session.lesson["blender_version"],
+                        )
                 if event["type"] == "regions.changed":
                     self.regions = event["payload"]["regions"]
                     self.ui_revision = event["payload"]["ui_revision"]
-                    self.capture = None
-                    self.help_context = HelpContext()
-                    self.targets.invalidate()
+                    self.invalidate_capture()
                 if event["type"] == "operator.executed":
-                    self.targets.invalidate()
-                    self.capture = None
+                    self.invalidate_capture()
                 if "base_revision" in event and event["base_revision"] <= self.state.revision + 1:
                     self.state.revision = event["scene_revision"] - 1
                 self.state.apply(event)
@@ -229,6 +246,11 @@ class EngineRuntime:
     async def evaluate(self, event: dict) -> None:
         session = self.session
         if not session or session.status in {"COMPLETE", "ACTING"}:
+            return
+        if self.blender_version != session.lesson["blender_version"]:
+            self.pause()
+            self.debug.record({"kind": "version_mismatch", "actual": self.blender_version,
+                               "required": session.lesson["blender_version"]})
             return
         if session.status == "READY":
             if not session.observe(self.state.mode):
@@ -283,8 +305,16 @@ class EngineRuntime:
 
     def context(self) -> HelpContext:
         context = self.help_context
-        if self.regions:
-            region = self.regions[0]
+        step = self.session.step if self.session else {}
+        help_spec = step.get("help", {})
+        context = replace(context, menu_id=help_spec.get("menu_id"),
+                          safe_demo=help_spec.get("safe_demo", False),
+                          checkpoint_id=help_spec.get("checkpoint_id"))
+        target = step.get("target", {})
+        region = next((r for r in self.regions if
+                       r.get("area_type", target.get("area_type")) == target.get("area_type")
+                       and r.get("region_type", r.get("type")) == target.get("region_type")), None)
+        if region:
             context = replace(context, area_id=region["area_id"], region_id=region["region_id"])
         return context
 
@@ -306,6 +336,11 @@ class EngineRuntime:
                     if command["type"] != "success":
                         continue
                 if command["recipient"] == "desktop":
+                    if command["type"] == "pointer" and (
+                        self.policy.muted or not self.capture or self.capture.get("consumed")
+                        or command["payload"]["capture_id"] != self.capture["capture_id"]
+                    ):
+                        continue
                     if command["type"] == "input.action":
                         await self.error("consent_required", "Utilisez le canal d'action sécurisé")
                         continue
@@ -339,8 +374,7 @@ class EngineRuntime:
     async def desktop_message(self, message: dict, connection) -> None:
         kind, payload = message["type"], message["payload"]
         if kind == "hello":
-            self.capture = None
-            self.targets.invalidate()
+            self.invalidate_capture()
             await self.send_state(connection)
         elif kind == "ping":
             await self.desktop.send("pong", payload, connection, message["message_id"])
@@ -368,7 +402,8 @@ class EngineRuntime:
             intent = json.loads(payload["text"])
             token = intent["consent_token"]
             UUID(token)
-            if payload["source"] != "bouton" or intent["intent"] != "fais-le" or not self.session:
+            if (payload["source"] != "bouton" or intent["intent"] != "fais-le" or not self.session
+                    or self.blender_version != self.session.lesson["blender_version"]):
                 raise ValueError
             if token in self.consent_tokens or len(self.consent_tokens.items) >= 4096:
                 raise ValueError
@@ -403,8 +438,7 @@ class EngineRuntime:
             "action": action, "consent_token": consent[0], "capture_id": capture["capture_id"],
         }, "desktop")
         capture["consumed"] = True
-        self.help_context = replace(self.help_context, target=None, capture_id=None, image_png=None)
-        self.targets.invalidate()
+        self.invalidate_capture()
         try:
             result = await self.desktop.correlation.request(
                 command, lambda c: self.desktop.send("command", c),
@@ -427,6 +461,7 @@ class EngineRuntime:
         image = decode_capture(payload)
         if payload["ui_revision"] != self.ui_revision:
             raise ValueError("Capture périmée")
+        self.invalidate_capture()
         self.capture_ids.add(payload["capture_id"])
         self.capture = {**payload, "image_png": image, "consumed": False}
         if self.session:
@@ -438,7 +473,8 @@ class EngineRuntime:
                 self.ui_revision, True,
             )
             self.help_context = replace(self.context(), target=target,
-                                        capture_id=payload["capture_id"], image_png=image)
+                                        capture_id=payload["capture_id"], image_png=image,
+                                        capture_epoch=self.policy.capture_epoch)
             if (self.policy.level == 2 and self.session.status != "COMPLETE"
                     and not self.policy.muted):
                 await self.policy.intent("aide", self.context())

@@ -5,7 +5,6 @@ import json
 import math
 import time
 from contextlib import asynccontextmanager
-from copy import deepcopy
 from pathlib import Path
 from uuid import uuid4
 
@@ -24,7 +23,6 @@ from engine.interfaces import FakeClock, HoloClient, JevClient, JevDecision, Loc
 from engine.learner import LearnerMemory
 from engine.lesson import load_lesson
 from engine.lesson.runtime import EngineRuntime
-from engine.policy import HelpContext
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -212,8 +210,6 @@ async def test_donut_replay_exact_decisions_and_latency(tmp_path):
     async with replay(tmp_path, holo=holo, jev=jev) as h:
         for row in rows:
             seq = row["seq"]
-            if seq == 10:
-                h.runtime.help_context = HelpContext(menu_id="VIEW3D_MT_mesh_add")
             if seq == 11:
                 # Délégation confirmée ; un clic consomme sa capture avant la suite pédagogique.
                 token = str(uuid4())
@@ -309,20 +305,11 @@ async def test_slow_jev_real_socket_timeout_and_no_late_decision(tmp_path):
         assert max(h.runtime.debug.samples["check"]) < 10
 
 
-async def test_programmatic_modifier_material_shading_runtime(tmp_path):
-    lesson = load_lesson(FIXTURES / "donut_lesson.json")
-    template = lesson["steps"][0]
-    lesson["steps"] = []
-    for name, params in [
-        ("modifier_present", {"modifier_type": "SUBSURF", "params": {"levels": 2}}),
-        ("material_color", {"color": [1, 0.2, 0.1, 1], "tolerance": 0.001}),
-        ("shading_smooth", {}),
-    ]:
-        step = deepcopy(template)
-        step.update(id=name, skill_id=name, known_errors=[])
-        step["check"] = {"name": name, "params": {"type": "MESH", "primitive": "torus", **params}}
-        lesson["steps"].append(step)
-    base = {"id": "torus", "type": "MESH", "primitive_provenance": "torus"}
+async def test_loaded_modifier_material_shading_runtime(tmp_path):
+    base = {"id": "torus", "type": "MESH", "primitive_provenance": "torus",
+                       "mesh": {"verts": 576, "edges": 1152, "polys": 576}}
+    path = FIXTURES / "extended_lesson.json"
+    lesson = load_lesson(path)
     modified = {**base, "modifiers": [{"type": "SUBSURF", "levels": 2}]}
     colored = {**modified, "materials": [{"base_color": [1, 0.2, 0.1, 1]}]}
     async with replay(tmp_path, lesson=lesson) as h:
@@ -332,8 +319,8 @@ async def test_programmatic_modifier_material_shading_runtime(tmp_path):
             (3, 1, base, False), (4, 2, modified, True), (5, 2, modified, False),
             (6, 3, {**modified, "materials": [{"base_color": [0, 0, 0, 1]}]}, False),
             (7, 4, colored, True), (8, 4, colored, False),
-            (9, 5, {**colored, "mesh": {"shading_smooth": False}}, False),
-            (10, 6, {**colored, "mesh": {"shading_smooth": True}}, True),
+            (9, 5, {**colored, "mesh": {**base["mesh"], "shading_smooth": False}}, False),
+            (10, 6, {**colored, "mesh": {**base["mesh"], "shading_smooth": True}}, True),
         ]:
             message = event("snapshot", seq, revision, mode="OBJECT", active="torus", objects=[obj])
             await h.row(message, ("success",) if passes else ())

@@ -92,7 +92,7 @@ async def test_holo_parse_and_clean_fallback(content, valid):
 async def test_gladia_upload_roundtrip(text):
     def respond(request):
         if request.url.path == "/v2/upload":
-            assert b"silence.wav" in request.content
+            assert b"audio.wav" in request.content
             return httpx.Response(200, json={"audio_url": "https://example.com/audio"})
         if request.method == "POST":
             assert json.loads(request.content)["language_config"] == {"languages": ["fr"]}

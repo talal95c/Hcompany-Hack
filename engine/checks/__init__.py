@@ -65,6 +65,29 @@ class SceneState:
         return self.complete and self.revision == self.latest_revision
 
 
+def primitive_geometry(obj: dict, primitive: str) -> bool | None:
+    mesh = obj.get("mesh", {})
+    if not isinstance(mesh, dict):
+        return None
+    vertices, faces, edges = mesh.get("verts"), mesh.get("polys"), mesh.get("edges")
+    if any(not isinstance(n, int) or isinstance(n, bool) or n < 0
+           for n in (vertices, faces, edges)):
+        return None
+    if primitive == "torus":
+        valid = vertices >= 9 and faces == vertices
+        expected_edges = 2 * vertices
+    elif primitive in {"uv_sphere", "sphere"}:
+        valid = vertices >= 6 and vertices < faces <= 2 * (vertices - 2)
+        expected_edges = vertices + faces - 2
+    elif primitive == "cube":
+        valid, expected_edges = (vertices, faces) == (8, 6), 12
+    elif primitive == "plane":
+        valid, expected_edges = (vertices, faces) == (4, 1), 4
+    else:
+        return None
+    return valid and edges == expected_edges
+
+
 def matches(obj: dict, params: dict) -> bool | None:
     if "type" in params:
         if "type" not in obj:
@@ -74,7 +97,9 @@ def matches(obj: dict, params: dict) -> bool | None:
     if "primitive" in params:
         if "primitive_provenance" not in obj:
             return None
-        return obj["primitive_provenance"] == params["primitive"]
+        if obj["primitive_provenance"] != params["primitive"]:
+            return False
+        return primitive_geometry(obj, params["primitive"])
     return True
 
 
@@ -176,8 +201,8 @@ def progress_signature(name: str, state: SceneState, params: dict) -> str:
         data = state.mode
     else:
         fields = {
-            "object_exists": ("type", "primitive_provenance"),
-            "object_count": ("type", "primitive_provenance"),
+            "object_exists": ("type", "primitive_provenance", "mesh"),
+            "object_count": ("type", "primitive_provenance", "mesh"),
             "modifier_present": ("type", "primitive_provenance", "modifiers"),
             "material_color": ("type", "primitive_provenance", "materials"),
             "shading_smooth": ("type", "primitive_provenance", "mesh", "shading_smooth"),

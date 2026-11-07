@@ -1,6 +1,9 @@
 # ruff: noqa: E402
 
+import asyncio
 import os
+import re
+from difflib import SequenceMatcher
 from pathlib import Path
 
 import pytest
@@ -16,7 +19,7 @@ from live_clients import (
     HoloHttpClient,
     LinkupHttpClient,
     menu_png,
-    silence_wav,
+    spoken_wav,
 )
 
 from engine.bus import EventBus, Topic
@@ -101,12 +104,10 @@ async def test_live_holo_localize():
         metric = show("holo", metrics)
         assert client.attempts == 1
         assert all(status == 200 or status == 429 or status >= 500 for status in client.statuses)
-        if point is None:
-            assert metric["status"] == "fallback"
-        else:
-            assert isinstance(point, LocalizeResult)
-            assert 0 <= point.x <= 1000 and 0 <= point.y <= 1000
-            assert metric["status"] == "ok"
+        assert isinstance(point, LocalizeResult), "Holo doit localiser sans fallback"
+        assert 125 <= point.x < 875 and 500 <= point.y < 750, point
+        assert abs(point.x - 500) <= 75 and abs(point.y - 625) <= 75, point
+        assert metric["status"] == "ok"
 
 
 async def test_live_gladia_upload_and_transcript():
@@ -116,11 +117,18 @@ async def test_live_gladia_upload_and_transcript():
                                  timeout=20) as http:
         client = GladiaHttpClient(http)
         assert isinstance(client, SttClient)
+        audio = await asyncio.to_thread(spoken_wav)
         transcript = await fallback.call("gladia", lambda: client.transcribe(
-            silence_wav(), encoding="wav", sample_rate=16000, language="fr",
+            audio, encoding="wav", sample_rate=16000, language="fr",
         ), 90, lambda: None)
         metric = show("gladia", metrics)
         assert isinstance(transcript, Transcript)
+        words = set(re.findall(r"\w+", transcript.text.casefold()))
+        assert {"bonjour", "cube", "rouge", "menu"} <= words, transcript.text
+        expected = "bonjour sélectionne le cube rouge ensuite ouvre le menu".split()
+        recognized = re.findall(r"\w+", transcript.text.casefold())
+        assert SequenceMatcher(None, expected, recognized).ratio() >= 0.8, transcript.text
+        print("LIVE gladia transcript:", transcript.text)
         assert metric["status"] == "ok"
         assert client.attempts >= 3
         assert all(200 <= status < 300 for status in client.statuses)
