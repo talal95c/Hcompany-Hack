@@ -401,6 +401,7 @@ impl AccessibilitySensor for Sensor {
                 started.elapsed().as_secs_f64() * 1000.
             );
             let registry = call(conn.root_accessible_on_registry()).await?;
+            let windows = crate::discovery::windows().unwrap_or_default();
             let mut apps = Vec::new();
             for object in call(registry.get_children()).await? {
                 let h = handle(object)?;
@@ -420,9 +421,16 @@ impl AccessibilitySensor for Sensor {
                     let frame = proxy!(AccessibleProxy, conn.connection(), &child);
                     focused |= call(frame.get_state()).await?.contains(NativeState::Active);
                 }
+                let window = windows.iter().find(|w| w.pid == pid);
                 apps.push(App {
-                    app_id: executable.clone(),
-                    name: call(a.name()).await?,
+                    app_id: window
+                        .map(|w| w.app_id.clone())
+                        .unwrap_or_else(|| executable.clone()),
+                    name: if let Some(window) = window {
+                        window.name.clone()
+                    } else {
+                        call(a.name()).await?
+                    },
                     handle: h,
                     executable,
                     pid,

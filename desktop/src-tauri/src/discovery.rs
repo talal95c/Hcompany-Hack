@@ -96,7 +96,7 @@ async fn enrich(service: &a11y::Service, windows: &mut [Window]) -> Option<Vec<u
         Ok(Ok(apps)) => {
             for window in windows {
                 if let Some(app) = apps.iter().find(|a| a.pid == window.pid) {
-                    if !app.name.is_empty() {
+                    if !app.name.is_empty() && window.name == window.app_id {
                         window.name = app.name.clone();
                     }
                 }
@@ -148,7 +148,13 @@ pub async fn poll(state: &State, previous: &mut Option<Value>) {
 }
 
 pub fn focus_payload(window: &Window, accessibility: &str) -> Value {
-    json!({"app_id":window.app_id,"name":window.name,"window_title":window.window_title,"window_bounds":window.window_bounds.screen(),"scale":window.scale,"accessibility":accessibility})
+    #[allow(unused_mut)]
+    let mut payload = json!({"app_id":window.app_id,"name":window.name,"window_title":window.window_title,"window_bounds":window.window_bounds.screen(),"scale":window.scale,"accessibility":accessibility});
+    #[cfg(target_os = "linux")]
+    if let Some(version) = crate::app_metadata::lookup(&window.app_id).and_then(|m| m.version) {
+        payload["version"] = json!(version);
+    }
+    payload
 }
 
 #[cfg(target_os = "linux")]
@@ -274,8 +280,13 @@ pub fn windows() -> Result<Vec<Window>, String> {
             .or_else(|| property(id, AtomEnum::WM_NAME.into(), AtomEnum::ANY.into(), 4096))
             .map(|p| String::from_utf8_lossy(&p.value).into_owned())
             .unwrap_or_default();
+        let metadata = property(id, AtomEnum::WM_CLASS.into(), AtomEnum::STRING.into(), 4096)
+            .and_then(|p| crate::app_metadata::for_class(&p.value));
+        let (app_id, name) = metadata
+            .map(|m| (m.id, m.name))
+            .unwrap_or_else(|| (app_id.clone(), app_id));
         result.push(Window {
-            name: app_id.clone(),
+            name,
             app_id,
             pid,
             window_title: title,
