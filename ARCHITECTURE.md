@@ -2,7 +2,7 @@
 
 ![Architecture](docs/schemas/architecture.svg)
 
-Cas d'usage pas à pas : [docs/schemas/cas-usage.svg](docs/schemas/cas-usage.svg) · justification de chaque optimisation : [docs/optimisations-v3.md](docs/optimisations-v3.md).
+Ce qu'on reprend de ReStep : [docs/restep-reutilisation.md](docs/restep-reutilisation.md) · cas d'usage pas à pas : [docs/schemas/cas-usage.svg](docs/schemas/cas-usage.svg) · justification de chaque optimisation : [docs/optimisations-v3.md](docs/optimisations-v3.md).
 
 ## 1. Principe
 **Rien de lent ni de fragile sur le chemin critique.**
