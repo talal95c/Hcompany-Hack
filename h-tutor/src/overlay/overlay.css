@@ -1,7 +1,7 @@
 :root {
-  --g1: #ffffff;
-  --g2: #f4f4f5;
-  --g3: #c7c7cc;
+  --g1: #ffc078;
+  --g2: #ff7a1a;
+  --g3: #d9420b;
   --ok: #ffffff;
 }
 
@@ -25,7 +25,11 @@
 }
 .ghost__cursor svg {
   display: block;
-  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.55)) drop-shadow(0 3px 8px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.55)) drop-shadow(0 3px 9px rgba(255, 110, 20, 0.45));
+}
+.ghost__grain {
+  opacity: 0.55;
+  mix-blend-mode: overlay;
 }
 .ghost--trail svg { position: absolute; left: -2px; top: -2px; }
 

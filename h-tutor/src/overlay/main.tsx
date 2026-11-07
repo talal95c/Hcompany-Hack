@@ -20,13 +20,21 @@ function Arrow({ id }: { id: string }) {
   return (
     <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden>
       <defs>
-        <linearGradient id={id} x1="2" y1="2" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+        <linearGradient id={`${id}-fill`} x1="3" y1="3" x2="18" y2="19" gradientUnits="userSpaceOnUse">
           <stop offset="0" stopColor="var(--g1)" />
-          <stop offset="0.55" stopColor="var(--g2)" />
+          <stop offset="0.5" stopColor="var(--g2)" />
           <stop offset="1" stopColor="var(--g3)" />
         </linearGradient>
+        {/* Fine grey grain, kept inside the shape. */}
+        <filter id={`${id}-grain`} x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" stitchTiles="stitch" />
+          <feColorMatrix type="saturate" values="0" />
+          <feComposite operator="in" in2="SourceGraphic" />
+        </filter>
       </defs>
-      <path d={ARROW} fill={`url(#${id})`} stroke="rgba(0,0,0,0.85)" strokeWidth="1.2" strokeLinejoin="round" />
+      <path d={ARROW} fill={`url(#${id}-fill)`} />
+      <path d={ARROW} fill="#fff" filter={`url(#${id}-grain)`} className="ghost__grain" />
+      <path d={ARROW} fill="none" stroke="rgba(20,8,0,0.8)" strokeWidth="1.1" strokeLinejoin="round" />
     </svg>
   );
 }
