@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { listen } from "@tauri-apps/api/event";
 import { MotionConfig, motion, useMotionTemplate, useSpring, useTransform, useVelocity } from "motion/react";
+import "@fontsource-variable/geist";
 import "./overlay.css";
 
 /** `rect`: the real UI element under the point (accessibility), when known. */
