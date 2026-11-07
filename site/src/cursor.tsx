@@ -27,7 +27,6 @@ const LABELS: [string, string][] = [
   [".nav a", "jump"],
   [".story-hero .btn", "start a lesson"],
   [".try-btn, .story-screen-hit", "launch rio"],
-  [".sf", "feature"],
   [".sp", "pick this plan"],
   [".tv-screen", "rio's screen"],
   [".hero-logos", "your apps"],

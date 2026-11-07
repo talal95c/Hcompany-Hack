@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Btn } from "./ui";
-import { FEATURES, FeatIcon, PLANS } from "./sections";
+import { PLANS } from "./sections";
 import { RioArrow } from "./cursor";
 
 const N = 120;
@@ -8,17 +8,15 @@ const SCROLL_VH = 500;
 const frameSrc = (i: number) => `${import.meta.env.BASE_URL}story/f${String(i + 1).padStart(3, "0")}.webp`;
 const MARKS = [
   { id: "top", at: 0 },
-  { id: "features", at: 0.29 },
   { id: "pricing", at: 0.57 },
   { id: "try", at: 0.88 },
 ];
-const STEP_MS = 1300;
+const STEP_MS = 1300; // per 0.3 of progress
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 // [fade-in start, fully in, fully in until, faded out]
 const WINDOWS: [number, number, number, number][] = [
-  [-1, 0, 0.07, 0.15],
-  [0.17, 0.24, 0.34, 0.41],
-  [0.45, 0.52, 0.62, 0.69],
+  [-1, 0, 0.1, 0.24],
+  [0.4, 0.5, 0.62, 0.7],
   [0.75, 0.82, 2, 3],
 ];
 
@@ -145,7 +143,7 @@ export function Story() {
       const from = scrollY;
       const to = top + next * span;
       const t0 = performance.now();
-      const dur = calm ? 0 : STEP_MS;
+      const dur = calm ? 0 : STEP_MS * Math.min(Math.max(Math.abs(next - p) / 0.3, 1), 1.5);
       cancelAnimationFrame(tween);
       busyUntil = t0 + dur + 350;
       const run = (now: number) => {
@@ -244,19 +242,7 @@ export function Story() {
           <Btn label="Try it now" href="#try" />
         </div>
 
-        <div ref={layer(1)} className="story-layer story-feat">
-          <span className="story-k">Features</span>
-          <ul className="sf-list">
-            {FEATURES.map((f) => (
-              <li key={f.k} className="sf">
-                <FeatIcon k={f.k} />
-                <span>{f.t}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div ref={layer(2)} className="story-layer story-plans">
+        <div ref={layer(1)} className="story-layer story-plans">
           <span className="story-k">Pricing</span>
           <ul className="sp-list">
             {PLANS.slice(0, 3).map((p) => (
@@ -269,7 +255,7 @@ export function Story() {
           </ul>
         </div>
 
-        <div ref={layer(3)} className="story-layer story-try">
+        <div ref={layer(2)} className="story-layer story-try">
           <a className="try-btn" href="#/launch">
             <RioArrow size={18} />
             Try it now
