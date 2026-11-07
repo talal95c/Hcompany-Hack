@@ -44,7 +44,7 @@ npx wrangler d1 create rio                  # put the id in wrangler.toml
 # deploy knowledge/ first (see knowledge/README.md): the platform binds to it
 npm run db:migrate
 for k in BETTER_AUTH_SECRET HAI_API_KEY GLADIA_API_KEY LINKUP_API_KEY; do npx wrangler secret put $k; done
-npx wrangler secret put BETTER_AUTH_URL     # https://rio-platform.<account>.workers.dev
+npx wrangler secret put BETTER_AUTH_URL     # https://rio.vignemale.com (the route in wrangler.toml)
 npm run deploy
 ```
 
@@ -54,7 +54,7 @@ The "Continue with Google" button shows only when `GOOGLE_CLIENT_ID` and `GOOGLE
    scopes `openid`, `email`, `profile` only. These are non-sensitive, so *Publish app* takes effect without review.
    A logo triggers brand verification: leave it out to publish at once.
 2. Credentials → Create OAuth client ID → *Web application*, with these authorized redirect URIs:
-   `http://127.0.0.1:8787/api/auth/callback/google` and `https://<your host>/api/auth/callback/google`.
+   `http://127.0.0.1:8787/api/auth/callback/google` and `https://rio.vignemale.com/api/auth/callback/google`.
 3. Put the ID and secret in `.dev.vars`, and in production:
    `npx wrangler secret put GOOGLE_CLIENT_ID` then `npx wrangler secret put GOOGLE_CLIENT_SECRET`.
 
