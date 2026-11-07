@@ -40,6 +40,12 @@ Une session réussie crée ou met à jour `skills/<tutorial_id>/skill.json` avec
 le graph et le chemin réellement suivi, l'app et l'historique du journal.
 Les écritures sont atomiques ; `compiled` contient les artefacts de compilation.
 Les dates et `muted_until` sont des secondes Unix, `duration_s` est mesurée.
+La version du skill est pilotée par l'empreinte structurelle du goal, du départ
+et des milestones (identifiants, goals, `done_when`, arêtes et caractère optionnel).
+Un run identique ou une modification des hints, de la langue ou de la source
+conserve la version et l'éligibilité des scripts ; une modification structurelle
+l'incrémente et périme les anciens scripts. L'ordre des milestones est conservé
+car il définit aussi le parcours des graphes linéaires sans arêtes explicites.
 
 - `skills_list()` retourne les skills ; `skill_decline({skillId})` enregistre
   un refus. Deux refus consécutifs mettent le skill en sourdine pendant 24 h.
@@ -75,6 +81,14 @@ Après 15 s sans réponse, « Pas maintenant » ou Échap, il enregistre un refu
   fournit son état initial au front, ensuite relayé par `autopilot:view`.
 
 Le front ne décide ni du délai, ni de la fin, ni de l'acquisition du verrou.
+Une seule surface reprend le verre noir, Geist, les bordures et l'ombre de la
+barre Rio, avec les rayons et la courbe d'apparition du site. Le morph utilise
+le spring de `motion` déjà installé ; les contenus se croisent en fondu/flou.
+La fenêtre conserve son encombrement maximal pour ne pas couper l'animation ;
+le Rust reçoit les limites visuelles via `notch_surface` et laisse passer les
+clics hors de la surface, y compris dans les coins arrondis. Le repli termine
+son animation avant le masquage natif. `prefers-reduced-motion` supprime les
+transitions, le flou animé et le shimmer de progression.
 Le pilote est borné à 20 actions par jalon, 80 au total, 300 s et 3 échecs Holo
 ou tours sans progrès consécutifs. Le délai de stabilisation est de 650 ms
 (configuration, pas une mesure). Une session `mode: rio` et les événements

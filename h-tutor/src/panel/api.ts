@@ -94,6 +94,7 @@ export const api = {
   autopilotStop: () => invoke("autopilot_stop"),
   autopilotDecline: () => invoke("autopilot_decline"),
   autopilotView: () => invoke<AutopilotView>("autopilot_view"),
+  notchSurface: (surface: { x: number; y: number; width: number; height: number; radius: number }) => invoke("notch_surface", { surface }),
   status: () => invoke<Status>("status"),
   /** Starts a saved tutorial (`tutorialId`) or plans one from a free-form goal. */
   tutorStart: (goal: string | null, tutorialId: string | null, lang: string | null) =>

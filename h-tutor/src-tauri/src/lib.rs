@@ -687,8 +687,8 @@ fn setup_windows(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .visible(false)
         .visible_on_all_workspaces(true)
         .content_protected(true)
-        .position(pos.x + (size.width - 460.0) / 2.0, pos.y)
-        .inner_size(460.0, 190.0)
+        .position(pos.x + (size.width - 520.0) / 2.0, pos.y)
+        .inner_size(520.0, 240.0)
         .build()?;
     panel::make_panel(&notch, false, panel::LEVEL_OVERLAY);
     if let Some(bar) = app.get_webview_window("main") {
@@ -757,6 +757,7 @@ pub fn run() {
             autopilot::autopilot_stop,
             autopilot::autopilot_decline,
             autopilot::autopilot_view,
+            autopilot::notch_surface,
             skills::skills_list,
             skills::skill_decline,
             skills::skill_propose_now,

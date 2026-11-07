@@ -101,7 +101,30 @@ fn write(root: &Path, skill: &Skill) -> Result<(), String> {
     result.map_err(|e: std::io::Error| e.to_string())
 }
 
-fn record_at(root: &Path, graph: Tutorial, run: Run) -> Result<Skill, String> {
+fn structural_fingerprint(graph: &Tutorial) -> String {
+    let milestones: Vec<_> = graph
+        .milestones
+        .iter()
+        .map(|m| {
+            let mut next = m.next.clone();
+            let mut requires = m.requires.clone();
+            next.sort();
+            requires.sort();
+            serde_json::json!({
+                "id": m.id, "goal": m.goal, "done_when": m.done_when,
+                "next": next, "requires": requires, "optional": m.optional,
+            })
+        })
+        .collect();
+    crate::devin::hash(
+        &serde_json::json!({
+            "goal": graph.goal, "start": graph.start, "milestones": milestones,
+        })
+        .to_string(),
+    )
+}
+
+fn record_at(root: &Path, mut graph: Tutorial, run: Run) -> Result<Skill, String> {
     graph.validate()?;
     let target = path(root, &graph.id)?;
     let mut skill = if target.exists() {
@@ -120,6 +143,15 @@ fn record_at(root: &Path, graph: Tutorial, run: Run) -> Result<Skill, String> {
         }
     };
     if run.outcome == "completed" {
+        graph.version = if structural_fingerprint(&graph) == structural_fingerprint(&skill.graph) {
+            skill.graph.version
+        } else {
+            skill
+                .graph
+                .version
+                .checked_add(1)
+                .ok_or("Version de skill épuisée")?
+        };
         skill.title = graph.title.clone();
         skill.goal = graph.goal.clone();
         skill.app = graph.app.clone();
@@ -374,5 +406,91 @@ mod tests {
         assert!(!ready(&skill, &last, 1901 + MUTE_SECONDS - 1, 1800));
         assert!(ready(&skill, &last, 1901 + MUTE_SECONDS, 1800));
         assert!(path(Path::new("."), "../escape").is_err());
+    }
+
+    #[test]
+    fn skills_structural_version_preserves_script_across_runs() {
+        let root = dir().join(format!("test-structure-{}", std::process::id()));
+        let mut first = record_at(&root, graph(), run("completed")).unwrap();
+        let script = "echo exemple";
+        first.compiled.push(serde_json::json!({
+            "graph_version": first.graph.version, "session_id": "test", "url": "",
+            "status": "completed", "date": 100, "sha256": crate::devin::hash(script),
+            "target_os": std::env::consts::OS, "acus_consumed": 0,
+            "language": "bash", "script": script, "params": [],
+            "test_command": "bash script", "tested": true,
+            "test_platform": std::env::consts::OS, "test_evidence": "Exemple vérifié", "notes": ""
+        }));
+        write(&root, &first).unwrap();
+        let empty = Tutorial {
+            milestones: Vec::new(),
+            ..first.graph.clone()
+        };
+        assert!(record_at(&root, empty, run("completed")).is_err());
+        assert!(crate::devin::selected(&read(&root, "example").unwrap()).is_some());
+        for i in 1..=2 {
+            let mut replay = first.graph.clone();
+            replay.version += i;
+            replay.milestones[0].hints = vec![format!("Autre hint {i}")];
+            replay.language = Some("fr".into());
+            replay.source = "recorded".into();
+            replay.milestones[0].teach = Some("Explication".into());
+            let saved = record_at(&root, replay, run("completed")).unwrap();
+            assert_eq!(saved.graph.version, first.graph.version);
+            assert!(crate::devin::selected(&saved).is_some());
+        }
+        let mut changed = first.graph.clone();
+        changed.milestones[0].done_when = "Nouvelle preuve obligatoire".into();
+        let saved = record_at(&root, changed, run("completed")).unwrap();
+        assert_eq!(saved.graph.version, first.graph.version + 1);
+        assert!(crate::devin::selected(&saved).is_none());
+        let unchanged = record_at(&root, saved.graph.clone(), run("failed")).unwrap();
+        assert_eq!(unchanged.graph.version, saved.graph.version);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn skills_structure_covers_goals_edges_and_empty_graph_metadata() {
+        let original = graph();
+        for changed in [
+            Tutorial {
+                goal: "Autre but".into(),
+                ..original.clone()
+            },
+            Tutorial {
+                start: Some("first".into()),
+                ..original.clone()
+            },
+            Tutorial {
+                milestones: vec![Milestone {
+                    goal: "Autre étape".into(),
+                    ..original.milestones[0].clone()
+                }],
+                ..original.clone()
+            },
+            Tutorial {
+                milestones: vec![Milestone {
+                    next: vec!["first".into()],
+                    ..original.milestones[0].clone()
+                }],
+                ..original.clone()
+            },
+            Tutorial {
+                milestones: Vec::new(),
+                ..original.clone()
+            },
+        ] {
+            assert_ne!(
+                structural_fingerprint(&original),
+                structural_fingerprint(&changed)
+            );
+        }
+        let mut metadata = original.clone();
+        metadata.title = "Autre titre".into();
+        metadata.milestones[0].video_at = Some(30);
+        assert_eq!(
+            structural_fingerprint(&original),
+            structural_fingerprint(&metadata)
+        );
     }
 }
