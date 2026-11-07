@@ -15,11 +15,24 @@ Les liens symboliques ne doivent pas sortir de la révision. Preuves JSON
 retournées comme objets, autres fichiers en base64. Empreinte SHA-256 des octets
 de la leçon ; identités dupliquées refusées. Rejets et raisons dans `list_apps`.
 Le dépôt n'a pas encore de vraie leçon prouvée : les fixtures ne sont pas des
-preuves Blender réelles.
+preuves réelles, y compris la fixture LibreOffice Calc v2.
+
+Le catalogue accepte les leçons v2 avec `app` (id, nom, version et capteur).
+`lesson_app` centralise la compatibilité v1 : Blender, version issue de
+`blender_version`, capteur `addon`. L'identité est le quadruplet
+`(lesson_id, revision, app_id, app_version)` ; une recherche ambiguë sans
+`app_id` est refusée. Les rejets indiquent l'application/version si connues.
+`list_apps` agrège uniquement les leçons prouvées par application, avec nom,
+capteurs, compte par version et compte total. `find_procedure` cherche dans
+le titre, l'identifiant et les skills, sans distinction de casse ; filtres
+optionnels `app_id`, `app_version`, `skill_id`. `get_procedure` et
+`run_procedure` exigent `app_version`, avec `app_id` optionnel.
+L'argument MCP `blender_version` reste un alias obsolète de
+`app_id="blender", app_version=...` ; les filtres contradictoires sont refusés.
 
 Tickets JSON persistants dans `AGENT_STATE_DIR` (défaut
 `~/.local/state/hcompany-hack/agent`). Seul un triage `confirmed` met la
-révision en quarantaine, toutes versions Blender confondues. Aucune réparation.
+révision en quarantaine, toutes applications et versions confondues. Aucune réparation.
 
 ## Installation et commandes
 
@@ -32,7 +45,9 @@ python -m agent.server --transport stdio
 python -m agent.server --transport http --host 127.0.0.1 --port 8000
 # HTTP : http://127.0.0.1:8000/mcp
 python -m agent.triage TICKET_ID confirmed
-python -m agent.skill_export LESSON_ID REVISION BLENDER_VERSION --output ~/skill-exports
+python -m agent.skill_export LESSON_ID REVISION --app-id libreoffice-calc --app-version 24.2 --output ~/skill-exports
+# Version positionnelle historique et --blender-version restent acceptés :
+python -m agent.skill_export LESSON_ID REVISION --blender-version 5.2.3 --output ~/skill-exports
 # HAI_API_KEY injectée dans l'environnement, jamais en argument :
 python -m agent.skill_export LESSON_ID REVISION BLENDER_VERSION --output ~/skill-exports --publish
 ```
@@ -63,7 +78,12 @@ jsonschema, enveloppes MCP validées par le SDK. Doubles runner uniquement unita
 
 ## Export et publication H réels
 
-Identité distante déterministe par leçon × version Blender. Chaque révision de
+Identité distante déterministe par application × leçon × version. Le nom historique
+`blender-lesson-` conserve le hash JSON de `[lesson_id, version]` ; les autres
+applications utilisent `<app_id>-lesson-` et `[app_id, lesson_id, version]`.
+`compatibility` contient le nom de l'application et sa version ;
+`execution_context.app` décrit l'application. `blender_version` n'est conservé
+que si présent dans la leçon. Chaque révision de
 leçon publiée crée une révision distante de cette même Skill. Fichier local
 distinct par leçon × révision × version (`-rN.json`), toujours immuable.
 Contenu : objectif,

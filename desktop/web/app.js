@@ -2,15 +2,25 @@
 const $ = (id) => document.getElementById(id);
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
-let pointerTimer, successTimer, currentStep;
+let pointerTimer, successTimer, highlightTimer, currentStep;
 const listeners = [];
-const clear = () => { clearTimeout(pointerTimer); clearTimeout(successTimer); $("pointer").hidden = true; $("zone").hidden = true; $("success").hidden = true; };
+const clear = () => { clearTimeout(pointerTimer); clearTimeout(successTimer); clearTimeout(highlightTimer); $("pointer").hidden = true; $("zone").hidden = true; $("success").hidden = true; $("highlight").hidden = true; };
 const error = (value) => { $("error").textContent = String(value); $("dismiss-error").hidden = !value; };
 const call = async (command, args) => { try { return await invoke(command, args); } catch (e) { error(e); return null; } };
 const rendered = (p) => { if (p.command_id) requestAnimationFrame(() => requestAnimationFrame(() => call("render_ack", { commandId: p.command_id }))); };
 
 if (location.hash !== "#pill") {
   listeners.push(listen("guide:clear", clear));
+  listeners.push(listen("guide:highlight", ({ payload: p }) => {
+    clear();
+    const rect = $("highlight");
+    for (const [field, property] of Object.entries({ x: "left", y: "top", width: "width", height: "height" })) rect.style[property] = `${p.rect[field]}px`;
+    rect.style.borderColor = p.color;
+    $("highlight-label").textContent = p.label || "";
+    rect.hidden = false;
+    rendered(p);
+    highlightTimer = setTimeout(clear, p.duration_ms);
+  }));
   listeners.push(listen("guide:pointer", ({ payload: p }) => {
     clear();
     $("pointer").style.left = `${p.x}px`; $("pointer").style.top = `${p.y}px`;

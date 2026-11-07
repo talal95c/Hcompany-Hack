@@ -1,65 +1,34 @@
-# Au-delà de Blender : Excel, Finder, apps métier (explication)
+# Rio au-delà de Blender : Excel, Finder, apps métier
 
-_7 nov. 2026. Proposition, rien n'est implémenté. Spécification : [accessibilité native](architecture/accessibilite-native.md) ; décision : [ADR 0011](decisions/0011-accessibilite-native.md)._
+Statut : contrats v2 et capteurs natifs disponibles dans desktop ; intégration du routeur multi-app à poursuivre. [Spécification native](architecture/accessibilite-native.md) · [architecture multi-app](architecture/multi-app.md) · [ADR 0011](decisions/0011-multi-app.md).
 
-## L'idée en une phrase
-Pour Blender, notre add-on lit l'intérieur du logiciel. Pour les autres apps, on n'a pas besoin d'écrire un add-on par logiciel : l'OS fournit déjà une description de l'interface (l'arbre d'accessibilité, celui qu'utilisent les lecteurs d'écran pour les personnes aveugles). On le lit avec un outil open source, agent-desktop.
+## L'idée
+Pour Blender, notre add-on lit l'état du logiciel. Pour les autres apps, l'OS expose souvent une description destinée aux lecteurs d'écran : l'arbre d'accessibilité. Notre desktop le lit via un trait Rust et des backends natifs. Un outil comme `agent-desktop` reste une option d'intégration, pas la brique imposée.
 
-## Ce qu'on a aujourd'hui
-| Question du prof | Blender | Autre app |
-|---|---|---|
-| Où est le bouton ? | l'add-on ouvre le bon menu, puis Holo pointe sur la zone capturée ; s'il ne voit pas la cible, il ne devine pas et on propose F3 | Holo sur la fenêtre entière, et seulement sous Linux ; sur Mac et Windows, échec explicite |
-| L'étape est-elle réussie ? | check sur l'état réel (bpy) | **rien de fiable** |
-| « Fais-le » | Holo clique en pixels, puis check | Holo clique en pixels, sans check |
-
-Le trou, c'est la vérification. Sans check, pas de ✓, donc pas de leçon prouvée.
-
-## Ce que donne l'arbre d'accessibilité
-Pour chaque élément visible : son rôle (bouton, champ, cellule…), son nom (« Gras », « Enregistrer »), sa valeur, son état (activé, coché) et son rectangle à l'écran. Exemple réel lu sur une petite fenêtre de test Linux :
-
-```json
-{"role":"dialog","name":"ControlApp","children":[
-  {"role":"textfield","states":["focused"],"ref_id":"@smrg81dw05npw:e1"},
-  {"role":"button","name":"Cancel","ref_id":"@smrg81dw05npw:e2"},
-  {"role":"button","name":"OK","ref_id":"@smrg81dw05npw:e3"}]}
-```
-
-Ça sert aux trois questions :
-- **Où ?** le rectangle exact, sans appel Holo, donc sans latence modèle ni marge d'erreur.
-- **Réussi ?** lire la valeur de la cellule ou l'état du bouton : c'est un vrai check, comme bpy pour Blender.
-- **Fais-le ?** « appuie sur OK » par sa référence, pas « clique au pixel (812, 430) » : insensible au DPI, au thème et à la taille de fenêtre.
-
-## Pourquoi agent-desktop
-| Critère | Ce qu'on a vérifié |
+## Ce que l'arbre apporte
+| Question du prof | Réponse possible |
 |---|---|
-| Trois OS | macOS (AX), Windows (UI Automation), Linux (AT-SPI), une seule CLI |
-| Intégration simple | binaire Rust, sortie JSON stable (enveloppe versionnée) ; desktop est déjà en Rust |
-| Pas de modèle caché | il observe et agit, nos règles décident ; Holo reste notre modèle |
-| Sûr par défaut | actions sémantiques ; souris et clavier physiques seulement avec `--headed` |
-| Face Agent | serveur MCP intégré (`agent-desktop mcp`), même logique que notre `agent/` |
-| Licence et activité | Apache-2.0, ~18,5 k étoiles, mis à jour le 7 nov. 2026 |
+| Où est le bouton ? | rôle, nom et rectangle, si la cible est unique |
+| L'étape est-elle réussie ? | valeur ou état relu avec un check frais |
+| « Fais-le » ? | action sémantique avec consentement, puis nouveau check |
 
-Alternatives écartées : tout en vision (pas de check), écrire nos propres liaisons pour trois OS (trop long), ou laisser engine appeler l'outil (nos règles réservent les accès natifs à desktop).
+L'arbre ne donne pas l'état métier complet de toutes les apps. Un canevas peut être invisible ; la vision Holo reste nécessaire. Une capture fraîche et une assertion visuelle autorisée peuvent servir de check, avec une confiance moindre. Sans check récent, pas de ✓.
 
 ## Comment ça s'emboîte
-Le code a déjà la bonne prise : pour Blender, un « adaptateur » (`AddonTargetAdapter`) ouvre le menu et donne la zone à capturer, et le reste du moteur ne connaît pas Blender. On ajoute un deuxième adaptateur, branché sur l'arbre d'accessibilité.
-1. Une leçon pour une app native décrit ses cibles par rôle et nom (« bouton Gras du ruban »), jamais par position : même règle que pour Blender.
-2. En direct, desktop lit l'arbre de l'app ; l'adaptateur trouve la cible, ouvre son menu si besoin et donne son rectangle ; l'overlay pointe.
-3. L'utilisateur agit ; desktop relit l'arbre ; engine lance le check (« la cellule B2 vaut 42 ») et affiche ✓.
-4. Si l'arbre est vide ou ambigu, on retombe sur Holo avec ses garde-fous actuels.
+1. La leçon v2 indique déjà l'application, sa version et son capteur ; les cibles restent descriptives.
+2. Desktop annonce l'app active ; engine choisit add-on, accessibilité ou vision.
+3. Desktop lit seulement le sous-arbre utile ; engine vérifie valeur ou état après l'action.
+4. Si la cible est ambiguë ou l'arbre incomplet, engine utilise la vision autorisée ou suspend la validation.
 
-Blender ne change pas : il n'expose pas son interface à l'OS (testé), l'add-on reste la référence.
+Les valeurs privées ne sont pas journalisées ni envoyées au cloud par défaut. Aucun champ de mot de passe n'est lu ou automatisé ; le secours Holo utilise seulement une capture minimale consentie.
 
 ## Ce qui reste à prouver
-- Excel : on s'attend à un arbre riche (Office vise les lecteurs d'écran), **non testé**.
-- Photoshop : menus et panneaux probablement visibles, canevas non ; **non testé**.
-- Permission Accessibilité macOS pour un sidecar lancé par notre app : à vérifier sur Mac.
-- Tests faits : fenêtre GTK lue correctement sous Linux ; Blender invisible pour l'outil.
+- Excel, Finder et Photoshop sur Mac : profondeur utile, valeurs, actions et zones absentes.
+- Permissions AX dans l'application Tauri signée, refus puis accord ; backends Linux et Windows testés séparément.
+- Latence, taux de réussite et fréquence des secours, à mesurer dans `bench/`.
+- Tests de reconnexion, refs périmées et arrêt prioritaire avant une démo réelle.
 
-## Calendrier proposé
-| Étape | Contenu | Quand |
-|---|---|---|
-| 0 | slide « vision » pour le jury, rien dans la démo | hackathon |
-| 1 | essai sur Mac : Excel, Finder, Photoshop ; mesures dans `bench/` | après démo |
-| 2 | sidecar dans desktop, messages WebSocket `a11y.*`, `A11yTargetAdapter` | si l'étape 1 est concluante |
-| 3 | checks `element_*`, leçon multi-app, `list_apps` multi-app | ensuite |
+La suite : intégrer le routeur, valider les backends sur chaque OS et prouver une leçon par application/version. Des contrats et capteurs disponibles ne signifient pas une recette produit complète réussie.
+
+## Proposition initiale
+La [proposition de sidecar agent-desktop](decisions/0011-accessibilite-native.md) est conservée comme alternative historique. Le choix actuel est le trait Rust et les backends natifs de desktop : pas de décision dans un outil externe, pas d'accès natif depuis engine. Les essais Mac Excel, Finder et Photoshop restent nécessaires avant toute promesse de couverture.

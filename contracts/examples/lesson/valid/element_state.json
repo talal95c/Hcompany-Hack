@@ -1,0 +1,72 @@
+{
+  "schema_version": "2.0",
+  "lesson_id": "calc_sum",
+  "revision": 1,
+  "title": "Faire une somme dans la calculatrice",
+  "language": "fr-FR",
+  "status": "proven",
+  "source": {
+    "uri": "fixture://calc_sum",
+    "sha256": "EXEMPLE_NON_PUBLIE"
+  },
+  "skills": [
+    "press_button"
+  ],
+  "steps": [
+    {
+      "id": "press_equals",
+      "skill_id": "press_button",
+      "instruction": "Appuie sur le bouton égal.",
+      "preconditions": {
+        "window_title": "Calculatrice"
+      },
+      "check": {
+        "name": "element_state",
+        "params": {
+          "target": {
+            "description": "Champ résultat",
+            "role": "text",
+            "name": "Résultat"
+          },
+          "states": [
+            "visible"
+          ],
+          "absent_states": [
+            "busy"
+          ]
+        }
+      },
+      "target": {
+        "description": "Bouton égal du pavé",
+        "role": "button",
+        "name": "=",
+        "path": [
+          "frame:Calculatrice",
+          "panel:Pavé"
+        ],
+        "app_region": "keypad"
+      },
+      "why": "Le bouton égal affiche le résultat.",
+      "audio_ref": null,
+      "known_errors": [],
+      "procedure_ref": "calc_sum/press_equals",
+      "proof": {
+        "status": "proven",
+        "method": "accessibility",
+        "evidence_ref": "proof/press_equals.json",
+        "ui_path_verified": true
+      }
+    }
+  ],
+  "proof": {
+    "method": "per_step",
+    "evidence_ref": "proof/manifest.json",
+    "ui_path_verified": false
+  },
+  "app": {
+    "id": "gnome-calculator",
+    "name": "Calculatrice",
+    "version": "46.1",
+    "sensor": "accessibility"
+  }
+}

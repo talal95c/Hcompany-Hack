@@ -109,3 +109,44 @@ test("guide acknowledges a rendered command only when command_id exists", () => 
   } });
   assert.equal(ui.calls.filter((name) => name === "render_ack").length, 1);
 });
+
+test("highlight renders bounds, color and literal label, and expires", () => {
+  const ui = frontend("#guide");
+  ui.listeners.get("guide:highlight").callback({ payload: {
+    rect: { x: 100, y: 50, width: 200, height: 80 }, color: "#ff0088",
+    label: "<em>Target</em>", duration_ms: 1000, command_id: "highlight",
+  } });
+  assert.equal(ui.get("highlight").hidden, false);
+  assert.equal(ui.get("highlight").style.left, "100px");
+  assert.equal(ui.get("highlight").style.top, "50px");
+  assert.equal(ui.get("highlight").style.width, "200px");
+  assert.equal(ui.get("highlight").style.height, "80px");
+  assert.equal(ui.get("highlight").style.borderColor, "#ff0088");
+  assert.equal(ui.get("highlight-label").textContent, "<em>Target</em>");
+  assert.ok(ui.calls.includes("render_ack"));
+  [...ui.timers.values()][0]();
+  assert.equal(ui.get("highlight").hidden, true);
+});
+
+test("highlights without labels replace prior visuals and stop clears timers", () => {
+  const ui = frontend("#guide");
+  const show = (label) => ui.listeners.get("guide:highlight").callback({ payload: {
+    rect: { x: 0, y: 0, width: 1, height: 1 }, color: "red", label, duration_ms: 0,
+  } });
+  show("First"); show();
+  assert.equal(ui.get("highlight-label").textContent, "");
+  assert.equal(ui.timers.size, 1);
+  ui.listeners.get("guide:success").callback({ payload: { text: "Done", duration_ms: 100 } });
+  assert.equal(ui.get("highlight").hidden, true);
+  show("Again");
+  assert.equal(ui.get("success").hidden, true);
+  ui.listeners.get("guide:clear").callback();
+  assert.equal(ui.get("highlight").hidden, true);
+  assert.equal(ui.timers.size, 0);
+});
+
+test("product and consent copy are application-neutral", () => {
+  const html = readFileSync(`${__dirname}/../web/index.html`, "utf8");
+  assert.match(html, /<title>Guide<\/title>/);
+  assert.ok(html.includes("J'autorise le contrôle de l'application pendant 60 s."));
+});

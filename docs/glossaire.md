@@ -10,7 +10,7 @@
 | Diff | comparaison versionnée des opérateurs, paramètres, préconditions et chemins |
 | UI map | carte menus/libellés/opérateurs d'une version Blender |
 | Target | description sémantique à localiser ; pas des pixels persistants |
-| Arbre d'accessibilité | description de l'interface fournie par l'OS (AX, UI Automation, AT-SPI) : rôle, nom, valeur, état, rectangle |
+| Arbre d'accessibilité | description privée de l'interface fournie par l'OS (AX, UI Automation, AT-SPI) : rôle, nom, valeur, états et rectangle |
 | Ref | identifiant d'élément valable pour un seul snapshot d'accessibilité ; jamais stocké dans une leçon |
 | Grounding | localisation d'une cible sur une capture fraîche |
 | Région | sous-surface Blender WINDOW, HEADER, UI, etc. |

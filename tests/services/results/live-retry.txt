@@ -1,0 +1,6 @@
+..                                                                       [100%]
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED tests/services/test_services_live.py::test_holo_locates_blender_elements_and_acts
+PASSED tests/services/test_verify_live.py::test_live_calc_computer_use
+2 passed, 73 deselected in 65.73s (0:01:05)

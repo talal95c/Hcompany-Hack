@@ -1,0 +1,512 @@
+{
+  "captures": [
+    {
+      "id": "calc-00-00",
+      "image": "calc-00-00.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "3117d0e76aecf57db52cee07d07a75ae64059c3df7a175408332aa8e8be9067c"
+    },
+    {
+      "id": "calc-00-01",
+      "image": "calc-00-01.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "a50ef11ada65f75b5ae4651d7e2aef8eb11d00e579ba0f93dcff0c4b4861a701"
+    },
+    {
+      "id": "calc-00-02",
+      "image": "calc-00-02.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "35e236e1e1bd9f13e0ac7d78fd6af621703edfa2057fd8cc4c1774dc45a77096"
+    },
+    {
+      "id": "calc-00-03",
+      "image": "calc-00-03.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-00-04",
+      "image": "calc-00-04.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-00-05",
+      "image": "calc-00-05.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-00-06",
+      "image": "calc-00-06.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-00-07",
+      "image": "calc-00-07.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-00-08",
+      "image": "calc-00-08.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-01-00",
+      "image": "calc-01-00.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "3117d0e76aecf57db52cee07d07a75ae64059c3df7a175408332aa8e8be9067c"
+    },
+    {
+      "id": "calc-01-01",
+      "image": "calc-01-01.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "a50ef11ada65f75b5ae4651d7e2aef8eb11d00e579ba0f93dcff0c4b4861a701"
+    },
+    {
+      "id": "calc-01-02",
+      "image": "calc-01-02.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "35e236e1e1bd9f13e0ac7d78fd6af621703edfa2057fd8cc4c1774dc45a77096"
+    },
+    {
+      "id": "calc-01-03",
+      "image": "calc-01-03.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-01-04",
+      "image": "calc-01-04.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-01-05",
+      "image": "calc-01-05.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-01-06",
+      "image": "calc-01-06.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-01-07",
+      "image": "calc-01-07.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-01-08",
+      "image": "calc-01-08.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-02-00",
+      "image": "calc-02-00.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "3117d0e76aecf57db52cee07d07a75ae64059c3df7a175408332aa8e8be9067c"
+    },
+    {
+      "id": "calc-02-01",
+      "image": "calc-02-01.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "a50ef11ada65f75b5ae4651d7e2aef8eb11d00e579ba0f93dcff0c4b4861a701"
+    },
+    {
+      "id": "calc-02-02",
+      "image": "calc-02-02.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "35e236e1e1bd9f13e0ac7d78fd6af621703edfa2057fd8cc4c1774dc45a77096"
+    },
+    {
+      "id": "calc-02-03",
+      "image": "calc-02-03.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-02-04",
+      "image": "calc-02-04.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-02-05",
+      "image": "calc-02-05.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-02-06",
+      "image": "calc-02-06.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-02-07",
+      "image": "calc-02-07.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    },
+    {
+      "id": "calc-02-08",
+      "image": "calc-02-08.png",
+      "window_id": "8388725",
+      "bounds": [
+        57,
+        50,
+        1485,
+        900
+      ],
+      "image_size": [
+        1280,
+        776
+      ],
+      "sha256": "254d9f01594d6f17cdddf91ed8cbc891ddda0e6380d804ee00f0f10753583c6f"
+    }
+  ],
+  "startups": [
+    {
+      "time_to_bus_ms": 1873.4813510000095,
+      "time_to_window_ms": 1873.482530000274,
+      "app_name": "soffice",
+      "display": ":1",
+      "plugin": "gtk3",
+      "system_python": "3.10.12",
+      "pid": 35831
+    },
+    {
+      "time_to_bus_ms": 2002.4550250000175,
+      "time_to_window_ms": 2002.455910000208,
+      "app_name": "soffice",
+      "display": ":1",
+      "plugin": "gtk3",
+      "system_python": "3.10.12",
+      "pid": 37130
+    },
+    {
+      "time_to_bus_ms": 1948.61942200032,
+      "time_to_window_ms": 1948.6204210002143,
+      "app_name": "soffice",
+      "display": ":1",
+      "plugin": "gtk3",
+      "system_python": "3.10.12",
+      "pid": 37769
+    }
+  ],
+  "targets": [
+    {
+      "name": "Bold",
+      "prompt": "the button that makes the selected cell text bold",
+      "functional": true
+    },
+    {
+      "name": "Italic",
+      "prompt": "le bouton qui met le texte de la cellule en italique",
+      "functional": true
+    },
+    {
+      "name": "Underline",
+      "prompt": "the toolbar button for underlining the selected cell text",
+      "functional": true
+    },
+    {
+      "name": "Align Center",
+      "prompt": "le bouton pour centrer horizontalement le contenu de la cellule",
+      "functional": false
+    },
+    {
+      "name": "Sort Ascending",
+      "prompt": "the toolbar button that sorts spreadsheet data in ascending order",
+      "functional": false
+    },
+    {
+      "name": "Chart",
+      "prompt": "le bouton de la barre d'outils pour insérer un graphique",
+      "functional": false
+    },
+    {
+      "name": "Select Function",
+      "prompt": "the small dropdown button with a sigma symbol for selecting a function",
+      "functional": false
+    },
+    {
+      "name": "Wrap Text",
+      "prompt": "le bouton qui active le retour automatique à la ligne dans une cellule",
+      "functional": false
+    },
+    {
+      "name": "Merge Cells",
+      "prompt": "the toolbar button for merging cells without centering their contents",
+      "functional": false
+    }
+  ]
+}

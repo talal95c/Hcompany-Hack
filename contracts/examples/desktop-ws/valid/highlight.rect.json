@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "message_id": "m1",
+  "reply_to": null,
+  "type": "highlight.rect",
+  "payload": {
+    "app": "gnome-calculator",
+    "rect": {
+      "x": 120,
+      "y": 340,
+      "w": 64,
+      "h": 48
+    },
+    "ref": "@s7:e12",
+    "snapshot_id": "s7",
+    "color": "#ffcc00",
+    "label": "Bouton =",
+    "duration_ms": 3000
+  }
+}

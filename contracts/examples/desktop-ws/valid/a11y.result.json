@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "message_id": "m2",
+  "reply_to": "m1",
+  "type": "a11y.result",
+  "payload": {
+    "request_id": "a1",
+    "snapshot_id": "s7",
+    "complete": true,
+    "nodes": [
+      {
+        "ref": "@s7:e12",
+        "role": "button",
+        "name": "=",
+        "states": [
+          "enabled",
+          "visible"
+        ],
+        "bounds": {
+          "x": 120,
+          "y": 340,
+          "w": 64,
+          "h": 48
+        },
+        "parent_ref": "@s7:e3"
+      }
+    ]
+  }
+}

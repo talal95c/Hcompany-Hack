@@ -53,8 +53,15 @@ def test_fixture_inventory() -> None:
 
 def test_check_fixture_inventory() -> None:
     checks = SCHEMAS["lesson"]["$defs"]["check"]["oneOf"]
-    names = {check["properties"]["name"]["const"] for check in checks} - {"object_exists"}
-    assert len(names) == 7
+    names = {
+        check["properties"]["name"].get("const") or check["properties"]["name"]["enum"][0]
+        for check in checks
+    } - {"object_exists"}
+    assert len(names) == 12
+    for check in checks:
+        name = check["properties"]["name"]
+        if "enum" in name:
+            assert name["enum"] == [name["enum"][0], f"blender.{name['enum'][0]}"]
     for name in names:
         for expectation in ("valid", "invalid"):
             assert (CONTRACTS / "examples/lesson" / expectation / f"{name}.json").is_file()

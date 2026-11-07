@@ -3,7 +3,8 @@
 État : design et socle technique étape 0. Lire [AGENTS](../AGENTS.md), [PRD](../PRD.md), [synthèse architecture](../ARCHITECTURE.md). Les exemples de leçons ne sont pas des preuves obtenues ; les schémas, fixtures et scaffold sont désormais testables, sans moteur pédagogique implémenté.
 
 ## architecture
-- [accessibilite-native](architecture/accessibilite-native.md) (proposition)
+- [multi-app](architecture/multi-app.md)
+- [accessibilite-native](architecture/accessibilite-native.md)
 - [addon](architecture/addon.md)
 - [desktop-tauri](architecture/desktop-tauri.md)
 - [engine](architecture/engine.md)
@@ -19,6 +20,7 @@
 - [ws-desktop](contrats/ws-desktop.md)
 
 ## decisions
+- [0011-multi-app](decisions/0011-multi-app.md)
 - [0001-tauri-v2](decisions/0001-tauri-v2.md)
 - [0002-ia-cloud](decisions/0002-ia-cloud.md)
 - [0003-engine-asyncio](decisions/0003-engine-asyncio.md)
@@ -29,7 +31,7 @@
 - [0008-skill-mcp](decisions/0008-skill-mcp.md)
 - [0009-addon-capteur](decisions/0009-addon-capteur.md)
 - [0010-cibles-descriptives](decisions/0010-cibles-descriptives.md)
-- [0011-accessibilite-native](decisions/0011-accessibilite-native.md) (proposé)
+- [0011-accessibilite-native](decisions/0011-accessibilite-native.md) (proposition historique de sidecar)
 
 ## workflows
 - [01-preparer-un-tuto](workflows/01-preparer-un-tuto.md)
@@ -43,9 +45,9 @@
 - [09-premier-lancement-permissions](workflows/09-premier-lancement-permissions.md)
 
 ## Transversal
+- [Extension aux apps natives](extension-apps-natives.md)
 - [Environnement de développement et commandes d'installation](environnement-dev.md)
 - [optimisations-v3](optimisations-v3.md)
-- [extension-apps-natives](extension-apps-natives.md) (explication, proposition)
 - [zones-ombre](zones-ombre.md)
 - [tests-et-jalons](tests-et-jalons.md)
 - [equipe-et-workflow](equipe-et-workflow.md)
