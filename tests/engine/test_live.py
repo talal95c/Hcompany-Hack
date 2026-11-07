@@ -1,8 +1,15 @@
+# ruff: noqa: E402
+
 import os
 from pathlib import Path
 
-import httpx
 import pytest
+
+httpx = pytest.importorskip(
+    "httpx", reason="Installez les dépendances : pip install -e '.[engine]'",
+)
+pytest.importorskip("websockets", reason="Installez les dépendances : pip install -e '.[engine]'")
+
 from live_clients import (
     CodivClient,
     GladiaHttpClient,

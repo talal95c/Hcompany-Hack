@@ -1,3 +1,5 @@
+# ruff: noqa: E402
+
 import asyncio
 import base64
 import binascii
@@ -12,8 +14,13 @@ from copy import deepcopy
 from pathlib import Path
 from uuid import uuid4
 
-import httpx
 import pytest
+
+httpx = pytest.importorskip(
+    "httpx", reason="Installez les dépendances : pip install -e '.[engine]'",
+)
+pytest.importorskip("websockets", reason="Installez les dépendances : pip install -e '.[engine]'")
+
 from websockets.asyncio.client import connect
 from websockets.exceptions import InvalidStatus
 

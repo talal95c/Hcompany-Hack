@@ -1,3 +1,5 @@
+# ruff: noqa: E402
+
 import asyncio
 import json
 import math
@@ -6,6 +8,11 @@ from contextlib import asynccontextmanager
 from copy import deepcopy
 from pathlib import Path
 from uuid import uuid4
+
+import pytest
+
+pytest.importorskip("httpx", reason="Installez les dépendances : pip install -e '.[engine]'")
+pytest.importorskip("websockets", reason="Installez les dépendances : pip install -e '.[engine]'")
 
 from test_servers import capture, event, send_event, send_ws
 from websockets.asyncio.client import connect
