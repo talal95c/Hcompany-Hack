@@ -47,15 +47,31 @@ export function Story() {
     let raf = 0;
     let count = 0;
 
+    let blur = 0;
+    let drawnBlur = 0;
+    // Zoom blur: the frame is re-stamped slightly enlarged around the centre,
+    // which reads as forward camera motion.
     const draw = () => {
       let i = Math.round(cur);
       while (i > 0 && !imgs[i]?.naturalWidth) i--;
       const im = imgs[i];
       if (!im?.naturalWidth) return;
       const s = Math.max(cv.width / im.naturalWidth, cv.height / im.naturalHeight);
-      const w = im.naturalWidth * s;
-      const h = im.naturalHeight * s;
-      ctx.drawImage(im, (cv.width - w) / 2, (cv.height - h) / 2, w, h);
+      const stamp = (z: number) => {
+        const w = im.naturalWidth * s * z;
+        const h = im.naturalHeight * s * z;
+        ctx.drawImage(im, (cv.width - w) / 2, (cv.height - h) / 2, w, h);
+      };
+      ctx.globalAlpha = 1;
+      stamp(1);
+      if (blur > 0.02) {
+        for (let k = 1; k <= 4; k++) {
+          ctx.globalAlpha = 0.3 * blur;
+          stamp(1 + blur * 0.022 * k);
+        }
+        ctx.globalAlpha = 1;
+      }
+      drawnBlur = blur;
     };
     for (let i = 0; i < N; i++) {
       const im = new Image();
@@ -87,13 +103,17 @@ export function Story() {
       draw();
     };
     const tick = () => {
+      const prev = cur;
       cur = calm ? target : cur + (target - cur) * 0.22;
       if (Math.abs(target - cur) < 0.05) cur = target;
-      if (Math.round(cur) !== shown) {
+      const speed = calm ? 0 : Math.min(Math.abs(cur - prev) / 0.6, 1);
+      blur += (speed - blur) * 0.25;
+      if (cur === target && blur < 0.03) blur = 0;
+      if (Math.round(cur) !== shown || Math.abs(blur - drawnBlur) > 0.04 || (blur === 0 && drawnBlur)) {
         shown = Math.round(cur);
         draw();
       }
-      raf = cur === target ? 0 : requestAnimationFrame(tick);
+      raf = cur === target && blur === 0 && !drawnBlur ? 0 : requestAnimationFrame(tick);
     };
     const onScroll = () => {
       const r = wrap.current!.getBoundingClientRect();
@@ -142,13 +162,13 @@ export function Story() {
       if (step(dir)) e.preventDefault();
     };
     // A new step needs a fresh gesture: trackpad inertia keeps firing wheel
-    // events, so wait for a quiet gap before re-arming.
+    // events, so wait for a quiet gap (after the step ends) before re-arming.
     let lastWheel = 0;
     let armed = true;
     const onWheel = (e: WheelEvent) => {
       if (!inside() || e.ctrlKey) return;
       const now = performance.now();
-      if (now - lastWheel > 220) armed = true;
+      if (now - Math.max(lastWheel, busyUntil) > 400) armed = true;
       lastWheel = now;
       if (!armed || now < busyUntil) {
         acc = 0;
