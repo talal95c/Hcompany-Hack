@@ -765,36 +765,85 @@ export function FaqInsights() {
 /* ---------------- Features ---------------- */
 
 const FEATURES = [
-  { k: "Ghost cursor", t: "See where to click", d: "An orange cursor points to the exact button, menu or field you need next." },
-  { k: "Verified steps", t: "Checked on screen", d: "After every action Rio looks at your screen and only moves on when the step is done." },
-  { k: "Voice", t: "Ask out loud", d: "Speak your question mid-task. Gladia transcribes it live, Rio answers in context." },
-  { k: "Local speech", t: "Answers in your language", d: "Gradium voice runs on your Mac and speaks the language you learn in." },
-  { k: "Menu bar", t: "One shortcut away", d: "Press ⌥⇧Space from any app. Rio opens on top of what you are doing." },
-  { k: "Journal", t: "Every lesson saved", d: "Sessions are journaled as milestone tutorials you can replay or share." },
-];
+  { k: "cursor", t: "See where to click", d: "An orange cursor points to the exact button, menu or field you need next." },
+  { k: "steps", t: "Checked on screen", d: "After every action Rio looks at your screen and only moves on when the step is done." },
+  { k: "voice", t: "Ask out loud", d: "Speak mid-task. Gladia transcribes it live and Rio answers in context." },
+  { k: "langs", t: "Answers in your language", d: "Gradium voice runs on your Mac and speaks the language you learn in." },
+  { k: "keys", t: "One shortcut away", d: "Press ⌥⇧Space from any app. Rio opens on top of what you are doing." },
+  { k: "journal", t: "Every lesson saved", d: "Sessions are journaled as milestone tutorials you can replay or share." },
+] as const;
+
+function FeatIcon({ k }: { k: (typeof FEATURES)[number]["k"] }) {
+  if (k === "cursor")
+    return (
+      <div className="fi fi-cursor">
+        <span className="fi-target" />
+        <span className="fi-arrow"><RioArrow size={20} /></span>
+      </div>
+    );
+  if (k === "steps")
+    return (
+      <div className="fi fi-steps">
+        {[0, 1, 2].map((i) => (
+          <span key={i} className="fi-step" style={{ animationDelay: `${i * 0.6}s` }}>
+            <svg viewBox="0 0 12 12"><path d="M2.5 6.2 5 8.5l4.5-5" /></svg>
+          </span>
+        ))}
+      </div>
+    );
+  if (k === "voice")
+    return (
+      <div className="fi fi-voice">
+        {Array.from({ length: 11 }, (_, i) => (
+          <i key={i} style={{ animationDelay: `${-((i * 0.37) % 1.1)}s` }} />
+        ))}
+      </div>
+    );
+  if (k === "langs")
+    return (
+      <div className="fi feat-langs">
+        <span className="lang-caret" />
+        <Marquee duration={8} className="lang-marquee">
+          {["EN", "FR", "ES", "DE", "IT", "PT", "JA", "ZH", "AR", "HI"].map((l) => (
+            <span key={l}>{l}</span>
+          ))}
+        </Marquee>
+      </div>
+    );
+  if (k === "keys")
+    return (
+      <div className="fi fi-keys">
+        {["⌥", "⇧", "Space"].map((c, i) => (
+          <kbd key={c} className={c === "Space" ? "wide" : ""} style={{ animationDelay: `${i * 0.18}s` }}>{c}</kbd>
+        ))}
+      </div>
+    );
+  return (
+    <div className="fi fi-journal">
+      {[0, 1, 2].map((i) => (
+        <span key={i} style={{ animationDelay: `${i * 0.5}s` }}><b /><i /></span>
+      ))}
+    </div>
+  );
+}
 
 export function Features() {
   return (
     <section className="rfeatures" id="features">
       <div className="rfeatures-head">
         <Label text="FEATURES" />
-        <Reveal as="h2" className="h2-54">A tutor that sees your screen.</Reveal>
+        <Reveal as="h2" className="h2-54 rfeatures-title">
+          A tutor that sees your screen<span className="rf-dim">, and checks every step you take.</span>
+        </Reveal>
       </div>
       <div className="rf-grid">
         {FEATURES.map((f, i) => (
-          <motion.article
-            key={f.k}
-            className="rf"
-            initial={{ opacity: 0, y: 40, filter: "blur(8px)" }}
-            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            viewport={{ once: true, margin: "-10% 0px" }}
-            transition={{ duration: 0.8, ease: EASE, delay: (i % 3) * 0.08 }}
-          >
-            <span className="rf-k">{String(i + 1).padStart(2, "0")} / {f.k}</span>
+          <Reveal key={f.k} className="rf" delay={(i % 3) * 0.08}>
+            <FeatIcon k={f.k} />
+            <span className="rf-k">{String(i + 1).padStart(2, "0")}</span>
             <h3 className="rf-t">{f.t}</h3>
-            <p className="p-16 rf-d">{f.d}</p>
-            <span className="rf-arrow"><RioArrow size={22} /></span>
-          </motion.article>
+            <p className="p-15 rf-d">{f.d}</p>
+          </Reveal>
         ))}
       </div>
     </section>
