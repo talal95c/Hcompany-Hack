@@ -8,7 +8,7 @@ Pour Blender, notre add-on lit l'intérieur du logiciel. Pour les autres apps, o
 ## Ce qu'on a aujourd'hui
 | Question du prof | Blender | Autre app |
 |---|---|---|
-| Où est le bouton ? | Holo sur capture, recadrée sur la zone que donne l'add-on | Holo sur capture plein écran |
+| Où est le bouton ? | l'add-on ouvre le bon menu, puis Holo pointe sur la zone capturée ; s'il ne voit pas la cible, il ne devine pas et on propose F3 | Holo sur la fenêtre entière, et seulement sous Linux ; sur Mac et Windows, échec explicite |
 | L'étape est-elle réussie ? | check sur l'état réel (bpy) | **rien de fiable** |
 | « Fais-le » | Holo clique en pixels, puis check | Holo clique en pixels, sans check |
 
@@ -42,10 +42,11 @@ Pour chaque élément visible : son rôle (bouton, champ, cellule…), son nom (
 Alternatives écartées : tout en vision (pas de check), écrire nos propres liaisons pour trois OS (trop long), ou laisser engine appeler l'outil (nos règles réservent les accès natifs à desktop).
 
 ## Comment ça s'emboîte
+Le code a déjà la bonne prise : pour Blender, un « adaptateur » (`AddonTargetAdapter`) ouvre le menu et donne la zone à capturer, et le reste du moteur ne connaît pas Blender. On ajoute un deuxième adaptateur, branché sur l'arbre d'accessibilité.
 1. Une leçon pour une app native décrit ses cibles par rôle et nom (« bouton Gras du ruban »), jamais par position : même règle que pour Blender.
-2. En direct, desktop lit l'arbre de l'app, engine trouve la cible et l'overlay pointe son rectangle.
+2. En direct, desktop lit l'arbre de l'app ; l'adaptateur trouve la cible, ouvre son menu si besoin et donne son rectangle ; l'overlay pointe.
 3. L'utilisateur agit ; desktop relit l'arbre ; engine lance le check (« la cellule B2 vaut 42 ») et affiche ✓.
-4. Si l'arbre est vide ou ambigu, on retombe sur Holo, comme aujourd'hui.
+4. Si l'arbre est vide ou ambigu, on retombe sur Holo avec ses garde-fous actuels.
 
 Blender ne change pas : il n'expose pas son interface à l'OS (testé), l'add-on reste la référence.
 
@@ -60,5 +61,5 @@ Blender ne change pas : il n'expose pas son interface à l'OS (testé), l'add-on
 |---|---|---|
 | 0 | slide « vision » pour le jury, rien dans la démo | hackathon |
 | 1 | essai sur Mac : Excel, Finder, Photoshop ; mesures dans `bench/` | après démo |
-| 2 | sidecar dans desktop + messages WebSocket `a11y.*` | si l'étape 1 est concluante |
+| 2 | sidecar dans desktop, messages WebSocket `a11y.*`, `A11yTargetAdapter` | si l'étape 1 est concluante |
 | 3 | checks `element_*`, leçon multi-app, `list_apps` multi-app | ensuite |
