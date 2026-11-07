@@ -150,23 +150,29 @@ impl Watch {
     }
 
     fn describe(&self, changed: bool) -> String {
-        let mut what = if self.hits > 0 {
-            "The learner clicked the highlighted element".to_string()
-        } else if self.misses > 0 {
-            "The learner clicked somewhere other than the highlighted element".to_string()
-        } else if self.keys > 0 {
-            "The learner did not click".to_string()
-        } else {
-            "The learner did not click (hover, keyboard or scroll)".to_string()
-        };
-        if self.keys > 0 {
-            what += if self.enter { ", used the keyboard and pressed Enter" } else { ", used the keyboard" };
-        }
-        if changed {
-            format!("{what}, and the screen changed. Check the new screenshot to see whether the action was done.")
-        } else {
-            format!("{what}, but nothing visibly changed on screen.")
-        }
+        describe_event(self.hits, self.misses, self.keys, self.enter, changed)
+    }
+}
+
+/// What the watcher tells Holo about the learner's action. Shared with the
+/// learner simulator so both speak exactly like the real watcher.
+pub fn describe_event(hits: u32, misses: u32, keys: u32, enter: bool, changed: bool) -> String {
+    let mut what = if hits > 0 {
+        "The learner clicked the highlighted element".to_string()
+    } else if misses > 0 {
+        "The learner clicked somewhere other than the highlighted element".to_string()
+    } else if keys > 0 {
+        "The learner did not click".to_string()
+    } else {
+        "The learner did not click (hover, keyboard or scroll)".to_string()
+    };
+    if keys > 0 {
+        what += if enter { ", used the keyboard and pressed Enter" } else { ", used the keyboard" };
+    }
+    if changed {
+        format!("{what}, and the screen changed. Check the new screenshot to see whether the action was done.")
+    } else {
+        format!("{what}, but nothing visibly changed on screen.")
     }
 }
 

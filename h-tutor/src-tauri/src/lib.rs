@@ -14,6 +14,9 @@ mod planner;
 mod platform;
 mod qa;
 mod search;
+/// Learner simulator, driven from tests only (never shipped in the app).
+#[cfg(test)]
+mod sim;
 mod skills;
 mod stt;
 mod tray;

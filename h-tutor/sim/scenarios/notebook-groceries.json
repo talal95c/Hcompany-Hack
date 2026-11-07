@@ -1,0 +1,9 @@
+{
+  "id": "notebook-groceries",
+  "app": "Notebook",
+  "url": "apps/notebook.html",
+  "goal": "Create a new note named \"Groceries\" with a checklist item \"Bread\" marked as important",
+  "lang": "fr",
+  "max_steps": 30,
+  "success": "app.notes.some(n => n.name === 'Groceries' && n.items.some(i => i.text === 'Bread' && i.important))"
+}

@@ -27,3 +27,6 @@ dist-ssr
 debug/
 sessions/
 skills/
+
+# Learner simulator reports (local runs)
+sim/results/

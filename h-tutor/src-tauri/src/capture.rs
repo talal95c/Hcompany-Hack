@@ -55,6 +55,14 @@ pub fn capture_primary() -> Result<Shot, String> {
     Ok(Shot { data_uri: format!("data:image/jpeg;base64,{}", STANDARD.encode(buf.into_inner())), thumb })
 }
 
+/// A screenshot from JPEG bytes taken elsewhere (the learner simulator's
+/// headless browser), with the same comparison thumbnail as live captures.
+#[cfg(test)]
+pub fn shot_from_jpeg(jpeg: &[u8]) -> Result<Shot, String> {
+    let img = image::load_from_memory(jpeg).map_err(|e| format!("Invalid screenshot: {e}"))?;
+    Ok(Shot { data_uri: format!("data:image/jpeg;base64,{}", STANDARD.encode(jpeg)), thumb: thumb_of(&img) })
+}
+
 /// Just the tiny grayscale thumbnail of the primary display, for watching
 /// the screen for changes several times a second without any encoding.
 pub fn capture_thumb() -> Result<GrayImage, String> {

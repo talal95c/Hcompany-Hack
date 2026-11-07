@@ -13,8 +13,10 @@ pub struct Holo {
 /// Shown in the bar while Holo is retried or hedged, so a slow answer is
 /// never silent.
 const SLOW: &str = "Holo is slow to answer, trying again…";
-/// A stream with no data at all for this long is abandoned (est.).
-const STALL_FIRST: std::time::Duration = std::time::Duration::from_secs(20);
+/// A stream with no data at all for this long is abandoned and retried on
+/// a fresh connection (est.: the server's first byte usually comes in ~1.5 s,
+/// and the simulator saw ~7 % of streams stall for good).
+const STALL_FIRST: std::time::Duration = std::time::Duration::from_secs(10);
 /// Once tokens flow they come every fraction of a second; a gap this long
 /// means the stream is stuck (est.).
 const STALL_GAP: std::time::Duration = std::time::Duration::from_secs(12);
