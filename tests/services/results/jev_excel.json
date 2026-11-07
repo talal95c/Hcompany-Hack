@@ -1,0 +1,184 @@
+{
+  "date": "2026-11-07T15:47:51+00:00",
+  "host": {
+    "os": "Linux-6.8.0-1060-aws-x86_64-with-glibc2.35",
+    "python": "3.11.18"
+  },
+  "measured": true,
+  "summary": {
+    "jev.decide": {
+      "n": 10,
+      "n_ok": 10,
+      "failures": {},
+      "p50_ms": 177.7,
+      "p95_ms": 415.9,
+      "min_ms": 154.6,
+      "max_ms": 518.9
+    }
+  },
+  "calls": [
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 518.86,
+      "status": "ok",
+      "request_id": "req_9f71f001d4bdc8e687d9be64345cb456",
+      "input_tokens": 247,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 179.13,
+      "status": "ok",
+      "request_id": "req_1c03f13bdd3da5d9d49f76a43c2832f5",
+      "input_tokens": 249,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 154.56,
+      "status": "ok",
+      "request_id": "req_8ff6f23f979756c01a37ae0dab3b37a6",
+      "input_tokens": 251,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 168.41,
+      "status": "ok",
+      "request_id": "req_99d67d355837bdb47bad91c4dcaa4286",
+      "input_tokens": 251,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 206.2,
+      "status": "ok",
+      "request_id": "req_c32fc5c377a7b5aa6d5501a1022b8323",
+      "input_tokens": 251,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 159.7,
+      "status": "ok",
+      "request_id": "req_d4df01a3a99c74d8c06e09d52cced1c2",
+      "input_tokens": 247,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 290.08,
+      "status": "ok",
+      "request_id": "req_f146e0ab3dfb0bcc0db384649294d5b9",
+      "input_tokens": 250,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 199.76,
+      "status": "ok",
+      "request_id": "req_a0ab2950fdef7bba77677e9af0fc80e5",
+      "input_tokens": 248,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 160.74,
+      "status": "ok",
+      "request_id": "req_5182afd959b250c8c1bde226774d39e5",
+      "input_tokens": 244,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "jev",
+      "operation": "decide",
+      "duration_ms": 176.33,
+      "status": "ok",
+      "request_id": "req_75581c391e2bc55ca9931937e3eb5196",
+      "input_tokens": 245,
+      "cached_tokens": null,
+      "output_tokens": null
+    }
+  ],
+  "accuracy": 1.0,
+  "cases": [
+    {
+      "text": "Comment je fais une RECHERCHEV ?",
+      "expected": "question",
+      "choice": "question",
+      "probability": 0.9996619940605933
+    },
+    {
+      "text": "À quoi sert un tableau croisé dynamique dans Excel ?",
+      "expected": "question",
+      "choice": "question",
+      "probability": 0.999914704223869
+    },
+    {
+      "text": "Fais-le pour moi, ajoute la formule SOMME.",
+      "expected": "fais_le",
+      "choice": "fais_le",
+      "probability": 0.9992352079149989
+    },
+    {
+      "text": "Remplis cette colonne à ma place, vas-y.",
+      "expected": "fais_le",
+      "choice": "fais_le",
+      "probability": 0.9995584237300194
+    },
+    {
+      "text": "J'en ai marre, cette formule ne marche jamais !",
+      "expected": "frustration",
+      "choice": "frustration",
+      "probability": 0.9998344168030626
+    },
+    {
+      "text": "Excel me rend fou, rien ne fonctionne !",
+      "expected": "frustration",
+      "choice": "frustration",
+      "probability": 0.9998569222071697
+    },
+    {
+      "text": "Chut, laisse-moi réfléchir à ma formule.",
+      "expected": "chut",
+      "choice": "chut",
+      "probability": 0.9998115195291838
+    },
+    {
+      "text": "Arrête de parler s'il te plaît.",
+      "expected": "chut",
+      "choice": "chut",
+      "probability": 0.999917006879601
+    },
+    {
+      "text": "Je vais prendre un café.",
+      "expected": "other",
+      "choice": "other",
+      "probability": 0.9996817639395045
+    },
+    {
+      "text": "Il fait beau aujourd'hui.",
+      "expected": "other",
+      "choice": "other",
+      "probability": 0.9998036184698375
+    }
+  ]
+}

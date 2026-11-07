@@ -1,8 +1,8 @@
 {
-  "date": "2026-11-07T15:28:17+00:00",
+  "date": "2026-11-07T15:49:04+00:00",
   "host": {
-    "os": "Linux-6.8.0-1061-aws-x86_64-with-glibc2.35",
-    "python": "3.11.17"
+    "os": "Linux-6.8.0-1060-aws-x86_64-with-glibc2.35",
+    "python": "3.11.18"
   },
   "measured": true,
   "summary": {
@@ -10,118 +10,28 @@
       "n": 3,
       "n_ok": 3,
       "failures": {},
-      "p50_ms": 411.4,
-      "p95_ms": 555.0,
-      "min_ms": 409.3,
-      "max_ms": 570.9
+      "p50_ms": 463.9,
+      "p95_ms": 539.8,
+      "min_ms": 425.0,
+      "max_ms": 548.3
     },
     "holo.locate": {
       "n": 18,
       "n_ok": 18,
       "failures": {},
-      "p50_ms": 246.2,
-      "p95_ms": 543.6,
-      "min_ms": 232.8,
-      "max_ms": 627.2
+      "p50_ms": 269.4,
+      "p95_ms": 365.6,
+      "min_ms": 247.3,
+      "max_ms": 593.6
     }
   },
   "calls": [
     {
       "service": "holo",
       "operation": "locate",
-      "duration_ms": 528.8,
+      "duration_ms": 593.65,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-d73f-7fe0-8db3-344707a68999",
-      "input_tokens": 1507,
-      "cached_tokens": 0,
-      "output_tokens": 16
-    },
-    {
-      "service": "holo",
-      "operation": "locate",
-      "duration_ms": 298.32,
-      "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-d93d-75f2-be4a-2b3a3077dd11",
-      "input_tokens": 1504,
-      "cached_tokens": 1056,
-      "output_tokens": 17
-    },
-    {
-      "service": "holo",
-      "operation": "locate",
-      "duration_ms": 627.16,
-      "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-da65-76e1-b544-3583017c164e",
-      "input_tokens": 1510,
-      "cached_tokens": 0,
-      "output_tokens": 17
-    },
-    {
-      "service": "holo",
-      "operation": "locate",
-      "duration_ms": 242.52,
-      "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-dcdd-74c2-89f1-fb73ae707a81",
-      "input_tokens": 1504,
-      "cached_tokens": 1056,
-      "output_tokens": 16
-    },
-    {
-      "service": "holo",
-      "operation": "locate",
-      "duration_ms": 391.88,
-      "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-ddcf-7862-a5b8-6b23cd6922a8",
-      "input_tokens": 1507,
-      "cached_tokens": 0,
-      "output_tokens": 18
-    },
-    {
-      "service": "holo",
-      "operation": "locate",
-      "duration_ms": 379.17,
-      "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-df57-75a1-93ce-159d9da22bf9",
-      "input_tokens": 1507,
-      "cached_tokens": 0,
-      "output_tokens": 17
-    },
-    {
-      "service": "holo",
-      "operation": "locate",
-      "duration_ms": 239.25,
-      "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-e0d2-75b2-a80c-4df1dd3f7087",
-      "input_tokens": 1509,
-      "cached_tokens": 1056,
-      "output_tokens": 18
-    },
-    {
-      "service": "holo",
-      "operation": "locate",
-      "duration_ms": 238.36,
-      "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-e1c3-7b62-855a-51d55b6b8ace",
-      "input_tokens": 1508,
-      "cached_tokens": 1056,
-      "output_tokens": 18
-    },
-    {
-      "service": "holo",
-      "operation": "locate",
-      "duration_ms": 248.6,
-      "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-e2b2-7cb1-b7bc-81ba772de70a",
-      "input_tokens": 1507,
-      "cached_tokens": 1056,
-      "output_tokens": 18
-    },
-    {
-      "service": "holo",
-      "operation": "locate",
-      "duration_ms": 299.96,
-      "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-e3ad-75a0-8aff-eb2b5b8fbd26",
+      "request_id": "chatcmpl-01a1b6b2-330d-7ae0-9833-29446a20b34b",
       "input_tokens": 1507,
       "cached_tokens": 1056,
       "output_tokens": 16
@@ -129,9 +39,9 @@
     {
       "service": "holo",
       "operation": "locate",
-      "duration_ms": 240.26,
+      "duration_ms": 266.5,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-e4d9-7c90-9c7c-362e4fb6d8f3",
+      "request_id": "chatcmpl-01a1b6b2-3bd1-7693-bffd-8439825b316a",
       "input_tokens": 1504,
       "cached_tokens": 1056,
       "output_tokens": 17
@@ -139,9 +49,9 @@
     {
       "service": "holo",
       "operation": "locate",
-      "duration_ms": 237.62,
+      "duration_ms": 247.27,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-e5ca-7ef3-9c20-89192be89e5a",
+      "request_id": "chatcmpl-01a1b6b2-45a2-75e0-9adb-64ce349671ca",
       "input_tokens": 1510,
       "cached_tokens": 1056,
       "output_tokens": 17
@@ -149,9 +59,9 @@
     {
       "service": "holo",
       "operation": "locate",
-      "duration_ms": 232.79,
+      "duration_ms": 253.63,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-e6b8-7e11-b3f8-1d04c9d56321",
+      "request_id": "chatcmpl-01a1b6b2-4f74-7793-bfc7-99d00639f5f1",
       "input_tokens": 1504,
       "cached_tokens": 1056,
       "output_tokens": 16
@@ -159,9 +69,9 @@
     {
       "service": "holo",
       "operation": "locate",
-      "duration_ms": 314.97,
+      "duration_ms": 294.78,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-e7a2-7db1-8495-927197ddf0d3",
+      "request_id": "chatcmpl-01a1b6b2-5961-7991-aaea-0d4832ed7958",
       "input_tokens": 1507,
       "cached_tokens": 1056,
       "output_tokens": 18
@@ -169,9 +79,9 @@
     {
       "service": "holo",
       "operation": "locate",
-      "duration_ms": 245.13,
+      "duration_ms": 294.86,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-e8de-7381-a694-58b7375918fe",
+      "request_id": "chatcmpl-01a1b6b2-630b-7f30-b025-c40dc22bda17",
       "input_tokens": 1507,
       "cached_tokens": 1056,
       "output_tokens": 17
@@ -179,9 +89,9 @@
     {
       "service": "holo",
       "operation": "locate",
-      "duration_ms": 247.22,
+      "duration_ms": 277.5,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-e9d4-78e2-a10d-ba2dd4a5ac62",
+      "request_id": "chatcmpl-01a1b6b2-6cdc-7223-9a83-9167fc1c56b1",
       "input_tokens": 1509,
       "cached_tokens": 1056,
       "output_tokens": 18
@@ -189,9 +99,9 @@
     {
       "service": "holo",
       "operation": "locate",
-      "duration_ms": 237.72,
+      "duration_ms": 301.56,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-eacc-7713-9b45-27fd47ef6eba",
+      "request_id": "chatcmpl-01a1b6b2-76aa-7341-9b2d-d82cc2728663",
       "input_tokens": 1508,
       "cached_tokens": 1056,
       "output_tokens": 18
@@ -199,9 +109,99 @@
     {
       "service": "holo",
       "operation": "locate",
-      "duration_ms": 237.84,
+      "duration_ms": 281.33,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-ebba-73e2-893b-409039218b02",
+      "request_id": "chatcmpl-01a1b6b2-8078-7fd3-a833-4e5ce6c11ed4",
+      "input_tokens": 1507,
+      "cached_tokens": 1056,
+      "output_tokens": 18
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 255.17,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b2-8a53-74f3-a516-d52a1e681635",
+      "input_tokens": 1507,
+      "cached_tokens": 1056,
+      "output_tokens": 16
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 274.57,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b2-9418-7162-903a-e340b1b988e2",
+      "input_tokens": 1504,
+      "cached_tokens": 1056,
+      "output_tokens": 17
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 255.65,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b2-9de9-77b2-bf03-d95764908bcc",
+      "input_tokens": 1510,
+      "cached_tokens": 1056,
+      "output_tokens": 17
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 251.6,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b2-a7c2-7fb0-8cfd-b55b56dcdd21",
+      "input_tokens": 1504,
+      "cached_tokens": 1056,
+      "output_tokens": 16
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 272.34,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b2-b186-7150-acb9-6381f50a2568",
+      "input_tokens": 1507,
+      "cached_tokens": 1056,
+      "output_tokens": 18
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 248.03,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b2-bb57-74f3-bab7-8ac2b47b5ee0",
+      "input_tokens": 1507,
+      "cached_tokens": 1056,
+      "output_tokens": 17
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 254.12,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b2-c528-7b81-afc4-35921e638d87",
+      "input_tokens": 1509,
+      "cached_tokens": 1056,
+      "output_tokens": 18
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 263.19,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b2-cef8-7780-835e-11eeb4f48ec9",
+      "input_tokens": 1508,
+      "cached_tokens": 1056,
+      "output_tokens": 18
+    },
+    {
+      "service": "holo",
+      "operation": "locate",
+      "duration_ms": 325.3,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b2-d8c6-73e0-b08d-b289abbc7b03",
       "input_tokens": 1507,
       "cached_tokens": 1056,
       "output_tokens": 18
@@ -209,9 +209,9 @@
     {
       "service": "holo",
       "operation": "act",
-      "duration_ms": 409.28,
+      "duration_ms": 463.86,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-ecaa-7b51-8f3d-f36f41fccb2f",
+      "request_id": "chatcmpl-01a1b6b2-e295-7b50-94cd-ac30dde3599b",
       "input_tokens": 2097,
       "cached_tokens": 1056,
       "output_tokens": 58
@@ -219,21 +219,21 @@
     {
       "service": "holo",
       "operation": "act",
-      "duration_ms": 570.94,
+      "duration_ms": 425.03,
       "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-ee47-70c1-8e61-2e5fc4639450",
+      "request_id": "chatcmpl-01a1b6b2-ec67-7e22-9be2-d2dc69141de2",
+      "input_tokens": 2097,
+      "cached_tokens": 1056,
+      "output_tokens": 58
+    },
+    {
+      "service": "holo",
+      "operation": "act",
+      "duration_ms": 548.28,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b2-f635-7f82-a8a7-06f668cca7ed",
       "input_tokens": 2097,
       "cached_tokens": 0,
-      "output_tokens": 58
-    },
-    {
-      "service": "holo",
-      "operation": "act",
-      "duration_ms": 411.37,
-      "status": "ok",
-      "request_id": "chatcmpl-01a1b69f-f082-7150-a1a1-9965988d01aa",
-      "input_tokens": 2097,
-      "cached_tokens": 1056,
       "output_tokens": 58
     }
   ],

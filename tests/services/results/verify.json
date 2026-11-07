@@ -1,0 +1,268 @@
+{
+  "date": "2026-11-07T15:50:20+00:00",
+  "host": {
+    "os": "Linux-6.8.0-1060-aws-x86_64-with-glibc2.35",
+    "python": "3.11.18"
+  },
+  "measured": true,
+  "summary": {
+    "holo.verify": {
+      "n": 12,
+      "n_ok": 12,
+      "failures": {},
+      "p50_ms": 396.1,
+      "p95_ms": 634.9,
+      "min_ms": 302.9,
+      "max_ms": 693.4
+    }
+  },
+  "calls": [
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 586.99,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b3-b4a7-7ea0-af4d-4d028ab4d3e6",
+      "input_tokens": 1522,
+      "cached_tokens": 0,
+      "output_tokens": 40
+    },
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 384.26,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b3-bd81-7582-9c77-7336dbfedb3e",
+      "input_tokens": 1513,
+      "cached_tokens": 0,
+      "output_tokens": 34
+    },
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 319.29,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b3-c74f-74e1-8159-a6854df9724b",
+      "input_tokens": 1517,
+      "cached_tokens": 0,
+      "output_tokens": 33
+    },
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 447.1,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b3-d11f-7022-b803-d7d38ed38f47",
+      "input_tokens": 1522,
+      "cached_tokens": 0,
+      "output_tokens": 46
+    },
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 408.04,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b3-daee-7760-87ab-02ce08ee88bd",
+      "input_tokens": 1513,
+      "cached_tokens": 0,
+      "output_tokens": 29
+    },
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 302.89,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b3-e4b9-7261-8901-ffcdb5e15fdc",
+      "input_tokens": 1517,
+      "cached_tokens": 0,
+      "output_tokens": 31
+    },
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 529.7,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b3-ee94-76d1-b645-0c6faa6d5295",
+      "input_tokens": 1522,
+      "cached_tokens": 0,
+      "output_tokens": 34
+    },
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 363.95,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b3-f864-7c43-9bb6-ef86f4d4093f",
+      "input_tokens": 1518,
+      "cached_tokens": 0,
+      "output_tokens": 35
+    },
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 340.89,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b4-022d-7c43-a511-7b7ea7364caa",
+      "input_tokens": 1516,
+      "cached_tokens": 0,
+      "output_tokens": 31
+    },
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 424.2,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b4-0bfb-7fa1-a7f5-6999f85386e4",
+      "input_tokens": 1522,
+      "cached_tokens": 0,
+      "output_tokens": 35
+    },
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 368.69,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b4-15cd-7950-9951-e261d65d741c",
+      "input_tokens": 1518,
+      "cached_tokens": 0,
+      "output_tokens": 42
+    },
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 693.43,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b4-1f9c-7b20-970f-6f2b3c716d2a",
+      "input_tokens": 1516,
+      "cached_tokens": 0,
+      "output_tokens": 45
+    }
+  ],
+  "model": "holo4-27b",
+  "accuracy": 1.0,
+  "cases": [
+    {
+      "fixture": "calc_sum_formula.png",
+      "assertion": "Cell A4 contains a SUM formula summing A1 through A3.",
+      "expected": "pass",
+      "verdict": "pass",
+      "confidence": 1.0,
+      "reason": "The formula bar shows =SUM(A1:A3), and cell A4 displays the correct sum of 60.",
+      "latency_ms": 587.1578420000105,
+      "request_id": "chatcmpl-01a1b6b3-b4a7-7ea0-af4d-4d028ab4d3e6"
+    },
+    {
+      "fixture": "calc_sum_formula.png",
+      "assertion": "Cell A4 is empty.",
+      "expected": "fail",
+      "verdict": "fail",
+      "confidence": 1.0,
+      "reason": "Cell A4 contains the value 60, which is clearly visible in the spreadsheet.",
+      "latency_ms": 2307.0848290000185,
+      "request_id": "chatcmpl-01a1b6b3-bd81-7582-9c77-7336dbfedb3e"
+    },
+    {
+      "fixture": "calc_sum_formula.png",
+      "assertion": "Cell A1 displays the number 10.",
+      "expected": "pass",
+      "verdict": "pass",
+      "confidence": 1.0,
+      "reason": "Cell A1 clearly displays the number 10, as seen in the spreadsheet.",
+      "latency_ms": 2446.1301879999837,
+      "request_id": "chatcmpl-01a1b6b3-c74f-74e1-8159-a6854df9724b"
+    },
+    {
+      "fixture": "calc_no_formula.png",
+      "assertion": "Cell A4 contains a SUM formula summing A1 through A3.",
+      "expected": "fail",
+      "verdict": "fail",
+      "confidence": 0.95,
+      "reason": "Cell A4 is empty and the formula bar shows no formula, so it does not contain a SUM formula summing A1 through A3.",
+      "latency_ms": 2639.3341039999996,
+      "request_id": "chatcmpl-01a1b6b3-d11f-7022-b803-d7d38ed38f47"
+    },
+    {
+      "fixture": "calc_no_formula.png",
+      "assertion": "Cell A4 is empty.",
+      "expected": "pass",
+      "verdict": "pass",
+      "confidence": 1.0,
+      "reason": "Cell A4 is visibly empty with no content displayed in it.",
+      "latency_ms": 2471.5435139999045,
+      "request_id": "chatcmpl-01a1b6b3-daee-7760-87ab-02ce08ee88bd"
+    },
+    {
+      "fixture": "calc_no_formula.png",
+      "assertion": "Cell A1 displays the number 99.",
+      "expected": "fail",
+      "verdict": "fail",
+      "confidence": 1.0,
+      "reason": "Cell A1 displays the number 10, not 99.",
+      "latency_ms": 2401.425781000057,
+      "request_id": "chatcmpl-01a1b6b3-e4b9-7261-8901-ffcdb5e15fdc"
+    },
+    {
+      "fixture": "blender_torus.png",
+      "assertion": "A torus or donut-shaped object is visible in the 3D viewport.",
+      "expected": "pass",
+      "verdict": "pass",
+      "confidence": 1.0,
+      "reason": "A torus-shaped object is clearly visible in the center of the 3D viewport.",
+      "latency_ms": 2736.9211819999464,
+      "request_id": "chatcmpl-01a1b6b3-ee94-76d1-b645-0c6faa6d5295"
+    },
+    {
+      "fixture": "blender_torus.png",
+      "assertion": "The selected object in the 3D viewport is a cube.",
+      "expected": "fail",
+      "verdict": "fail",
+      "confidence": 0.99,
+      "reason": "The selected object in the 3D viewport is a torus, not a cube.",
+      "latency_ms": 2343.0474849999428,
+      "request_id": "chatcmpl-01a1b6b3-f864-7c43-9bb6-ef86f4d4093f"
+    },
+    {
+      "fixture": "blender_torus.png",
+      "assertion": "A 3D viewport with a grid is visible.",
+      "expected": "pass",
+      "verdict": "pass",
+      "confidence": 1.0,
+      "reason": "The screenshot shows a 3D viewport with a visible grid in Blender.",
+      "latency_ms": 2484.2859400000634,
+      "request_id": "chatcmpl-01a1b6b4-022d-7c43-a511-7b7ea7364caa"
+    },
+    {
+      "fixture": "blender_cube.png",
+      "assertion": "A torus or donut-shaped object is visible in the 3D viewport.",
+      "expected": "fail",
+      "verdict": "fail",
+      "confidence": 1.0,
+      "reason": "The 3D viewport shows a cube, not a torus or donut-shaped object.",
+      "latency_ms": 2595.3117969999084,
+      "request_id": "chatcmpl-01a1b6b4-0bfb-7fa1-a7f5-6999f85386e4"
+    },
+    {
+      "fixture": "blender_cube.png",
+      "assertion": "The selected object in the 3D viewport is a cube.",
+      "expected": "pass",
+      "verdict": "pass",
+      "confidence": 1.0,
+      "reason": "The selected object in the 3D viewport is clearly a cube, as indicated by its shape and the orange outline around it.",
+      "latency_ms": 2455.319443999997,
+      "request_id": "chatcmpl-01a1b6b4-15cd-7950-9951-e261d65d741c"
+    },
+    {
+      "fixture": "blender_cube.png",
+      "assertion": "A 3D viewport with a grid is visible.",
+      "expected": "pass",
+      "verdict": "pass",
+      "confidence": 1.0,
+      "reason": "The screenshot shows a 3D viewport with a grid and a cube object, confirming the presence of a 3D viewport with a grid.",
+      "latency_ms": 2836.42872300004,
+      "request_id": "chatcmpl-01a1b6b4-1f9c-7b20-970f-6f2b3c716d2a"
+    }
+  ],
+  "false_passes": 0,
+  "unknown_counts_as_incorrect": true,
+  "pacing_interval_s": 2.5
+}

@@ -1,0 +1,162 @@
+{
+  "date": "2026-11-07T15:49:18+00:00",
+  "host": {
+    "os": "Linux-6.8.0-1060-aws-x86_64-with-glibc2.35",
+    "python": "3.11.18"
+  },
+  "measured": true,
+  "summary": {
+    "holo.act": {
+      "n": 4,
+      "n_ok": 4,
+      "failures": {},
+      "p50_ms": 697.8,
+      "p95_ms": 974.4,
+      "min_ms": 440.6,
+      "max_ms": 994.1
+    },
+    "holo.verify": {
+      "n": 1,
+      "n_ok": 1,
+      "failures": {},
+      "p50_ms": 336.0,
+      "p95_ms": 336.0,
+      "min_ms": 336.0,
+      "max_ms": 336.0
+    }
+  },
+  "calls": [
+    {
+      "service": "holo",
+      "operation": "act",
+      "duration_ms": 862.74,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b3-0737-7822-90c2-0fc4237d147e",
+      "input_tokens": 2155,
+      "cached_tokens": 0,
+      "output_tokens": 60
+    },
+    {
+      "service": "holo",
+      "operation": "act",
+      "duration_ms": 440.55,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b3-10f4-7302-94b1-59307c01dca7",
+      "input_tokens": 2175,
+      "cached_tokens": 0,
+      "output_tokens": 46
+    },
+    {
+      "service": "holo",
+      "operation": "act",
+      "duration_ms": 532.78,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b3-1ac2-71c0-aee0-de73899e1730",
+      "input_tokens": 2192,
+      "cached_tokens": 0,
+      "output_tokens": 67
+    },
+    {
+      "service": "holo",
+      "operation": "act",
+      "duration_ms": 994.09,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b3-248f-7b23-b8fe-d1578f3071e5",
+      "input_tokens": 2228,
+      "cached_tokens": 0,
+      "output_tokens": 72
+    },
+    {
+      "service": "holo",
+      "operation": "verify",
+      "duration_ms": 336.04,
+      "status": "ok",
+      "request_id": "chatcmpl-01a1b6b3-2e62-7950-9593-500e0c492e9e",
+      "input_tokens": 1530,
+      "cached_tokens": 0,
+      "output_tokens": 39
+    }
+  ],
+  "status": "success",
+  "turns": [
+    {
+      "action": {
+        "type": "type",
+        "x": null,
+        "y": null,
+        "text": "=SUM(A1:A3)",
+        "keys": [],
+        "button": "left",
+        "reason": "Cell A4 is already selected; typing the SUM formula to add A1:A3.",
+        "request_id": "chatcmpl-01a1b6b3-0737-7822-90c2-0fc4237d147e"
+      },
+      "outcome": "executed"
+    },
+    {
+      "action": {
+        "type": "key",
+        "x": null,
+        "y": null,
+        "text": null,
+        "keys": [
+          "enter"
+        ],
+        "button": "left",
+        "reason": "Confirm the SUM formula in A4.",
+        "request_id": "chatcmpl-01a1b6b3-10f4-7302-94b1-59307c01dca7"
+      },
+      "outcome": "executed"
+    },
+    {
+      "action": {
+        "type": "click",
+        "x": 51.0,
+        "y": 197.0,
+        "text": null,
+        "keys": [],
+        "button": "left",
+        "reason": "Click cell A4 to select it and show the SUM formula in the formula bar.",
+        "request_id": "chatcmpl-01a1b6b3-1ac2-71c0-aee0-de73899e1730"
+      },
+      "outcome": "executed"
+    },
+    {
+      "action": {
+        "type": "done",
+        "x": null,
+        "y": null,
+        "text": null,
+        "keys": [],
+        "button": "left",
+        "reason": "The SUM formula was entered in A4, confirmed with Enter (showing 60), and A4 is now selected with =SUM(A1:A3) visible in the formula bar. All conditions of the goal are met.",
+        "request_id": "chatcmpl-01a1b6b3-248f-7b23-b8fe-d1578f3071e5"
+      },
+      "outcome": "done verified"
+    }
+  ],
+  "final": {
+    "verdict": "pass",
+    "confidence": 1.0,
+    "reason": "Cell A4 is selected, displays 60, and the formula bar shows =SUM(A1:A3).",
+    "latency_ms": 1767.5013980000358,
+    "request_id": "chatcmpl-01a1b6b3-2e62-7950-9593-500e0c492e9e"
+  },
+  "latencies_ms": [
+    1962.2595209999645,
+    1383.8365870000189,
+    2697.3116980000214,
+    4405.8487879999575
+  ],
+  "error": null,
+  "captures": [
+    "computer_use/capture_00.png",
+    "computer_use/capture_01.png",
+    "computer_use/capture_02.png",
+    "computer_use/capture_03.png",
+    "computer_use/capture_04.png"
+  ],
+  "total_latency_ms": 14258.068448000016,
+  "pacing_interval_s": 2.5,
+  "display": ":80",
+  "consent": "explicit user request; isolated synthetic test window"
+}

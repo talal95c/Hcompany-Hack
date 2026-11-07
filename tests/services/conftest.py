@@ -4,6 +4,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+from runpy import run_path
 from typing import Any
 
 import pytest
@@ -26,7 +27,28 @@ _REGISTRY = Registry().with_resources(
 # `pip install -e .`) les modules de test du dossier ne sont pas collectés.
 SERVICE_DEPS = ("httpx", "h2", "websockets", "openai")
 MISSING_DEPS = [m for m in SERVICE_DEPS if importlib.util.find_spec(m) is None]
-collect_ignore = ["test_services_unit.py", "test_services_live.py"] if MISSING_DEPS else []
+collect_ignore = (
+    ["test_services_unit.py", "test_services_live.py", "test_verify_live.py"]
+    if MISSING_DEPS else []
+)
+
+
+@pytest.fixture(autouse=True)
+def pace_live_holo(request, monkeypatch):
+    if request.node.get_closest_marker("live") is None or MISSING_DEPS:
+        return
+    from engine.services.holo import HoloCloudClient
+
+    if not hasattr(pace_live_holo, "pacer"):
+        Pacer = run_path(str(ROOT / "bench/holo_pacing.py"))["Pacer"]
+        pace_live_holo.pacer = Pacer(interval=2.5)
+    complete = HoloCloudClient._complete
+
+    async def paced(self, *args, **kwargs):
+        await pace_live_holo.pacer.acquire()
+        return await complete(self, *args, **kwargs)
+
+    monkeypatch.setattr(HoloCloudClient, "_complete", paced)
 
 
 def pytest_report_header(config: pytest.Config) -> str | None:

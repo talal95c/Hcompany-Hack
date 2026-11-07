@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-07T15:47:54+00:00",
+  "host": {
+    "os": "Linux-6.8.0-1060-aws-x86_64-with-glibc2.35",
+    "python": "3.11.18"
+  },
+  "measured": true,
+  "summary": {
+    "linkup.search": {
+      "n": 1,
+      "n_ok": 1,
+      "failures": {},
+      "p50_ms": 3398.8,
+      "p95_ms": 3398.8,
+      "min_ms": 3398.8,
+      "max_ms": 3398.8
+    }
+  },
+  "calls": [
+    {
+      "service": "linkup",
+      "operation": "search",
+      "duration_ms": 3398.8,
+      "status": "ok",
+      "request_id": null,
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    }
+  ],
+  "query": "How do I use the SUM function in Excel?",
+  "answer": "Enter a formula in a cell and press Enter. SUM adds individual numbers, cell references, ranges, or a mix of them. For a quick total, select an empty cell next to or above/below the values, then choose AutoSum > Sum and press Enter to confirm.",
+  "data": {
+    "answer": "Enter a formula in a cell and press Enter. SUM adds individual numbers, cell references, ranges, or a mix of them. For a quick total, select an empty cell next to or above/below the values, then choose AutoSum > Sum and press Enter to confirm.",
+    "app_version": "Not specified in the provided information.",
+    "menu_path": "Home or Formulas tab > AutoSum > Sum",
+    "shortcut": "Alt+= (Windows); Option+= (Mac)",
+    "formula": "=SUM(A2:A10)"
+  },
+  "sources": [
+    "https://support.microsoft.com/en-us/excel/functions/sum-function",
+    "https://support.microsoft.com/en-us/excel/get-started/use-excel-as-your-calculator",
+    "https://support.microsoft.com/id-id/excel/functions/sum-function",
+    "https://support.microsoft.com/en-us/office/overview-of-formulas-in-excel-ecfdc708-9162-49e8-b993-c311f47ca173",
+    "https://support.microsoft.com/en-gb/excel/create-a-simple-formula-in-excel",
+    "https://support.microsoft.com/sl-si/excel/functions/sum-function",
+    "https://support.microsoft.com/ro-ro/excel/functions/sum-function",
+    "https://support.microsoft.com/en-us/office/ways-to-add-values-in-an-excel-spreadsheet-d3f918a1-0151-403e-881f-a92f3176f8ea",
+    "https://support.microsoft.com/en-us/excel/use-the-sum-function-to-sum-numbers-in-a-range",
+    "https://support.microsoft.com/en-us/excel/subtract-numbers-in-excel",
+    "https://support.microsoft.com/en-gb/excel/learn-more-about-sum",
+    "https://support.microsoft.com/en-us/excel/math-and-trigonometry-functions-reference",
+    "https://support.microsoft.com/en-us/excel/how-to-avoid-broken-formulas-in-excel",
+    "https://support.microsoft.com/en-us/sharepoint/lists/data-and-lists/examples-of-common-formulas-in-lists",
+    "https://support.microsoft.com/en-us/excel/using-functions-and-nested-functions-in-excel-formulas",
+    "https://support.microsoft.com/en-us/office/use-autosum-to-sum-numbers-in-excel-543941e7-e783-44ef-8317-7d1bb85fe706",
+    "https://support.microsoft.com/en-us/excel/functions/choose-function",
+    "https://support.microsoft.com/en-us/excel/functions/xlookup-function",
+    "https://support.microsoft.com/en-us/excel/functions/offset-function",
+    "https://support.microsoft.com/en-us/excel/functions/aggregate-function"
+  ]
+}

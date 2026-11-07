@@ -341,7 +341,10 @@ def parse_tool_action(message: Any, request_id: str | None = None) -> HoloAction
             keys = [k for k in keys.replace("+", " ").split() if k]
         if not isinstance(keys, list) or not keys:
             raise InvalidResponse(SERVICE, "touches absentes", request_id=request_id)
-        norm = tuple(str(k).strip().lower() for k in keys)
+        norm = tuple(
+            {"return": "enter"}.get(str(k).strip().lower(), str(k).strip().lower())
+            for k in keys
+        )
         bad = [k for k in norm if k not in ALLOWED_KEYS]
         if bad:
             raise InvalidResponse(SERVICE, f"touches non autorisées {bad}", request_id=request_id)

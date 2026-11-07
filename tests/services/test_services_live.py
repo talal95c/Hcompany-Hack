@@ -13,6 +13,7 @@ from engine.services.holo import HoloCloudClient
 from engine.services.jev import CodivJevClient
 from engine.services.latency import LatencyRecorder
 from engine.services.linkup import LinkupSearchClient
+from engine.services.profiles import load_profile
 from engine.services.protocols import HoloAction, Intent
 
 from .conftest import FIXTURES, RESULTS, contract_example, require_env, validate_contract
@@ -289,7 +290,7 @@ async def test_linkup_returns_blender_docs() -> None:
         "Blender 4.5 Subdivision Surface modifier levels viewport",
     ]
     rows = []
-    async with LinkupSearchClient(recorder=rec) as lk:
+    async with LinkupSearchClient(recorder=rec, profile=load_profile("blender")) as lk:
         for q in queries:
             res = await lk.search(q)
             rows.append(

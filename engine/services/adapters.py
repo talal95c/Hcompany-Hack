@@ -9,6 +9,7 @@ import wave
 
 from engine.config import EngineConfig
 from engine.interfaces import JevDecision, LocalizeResult, SearchHit, Transcript
+from engine.services.profiles import AppProfile, load_profile
 
 
 class HoloAdapter:
@@ -34,8 +35,9 @@ class HoloAdapter:
 
 
 class JevAdapter:
-    def __init__(self, client):
+    def __init__(self, client, profile: AppProfile | None = None):
         self.client = client
+        self.profile = profile or getattr(client, "profile", None) or load_profile(None)
 
     async def decide(self, context, *, timeout_s):
         from engine.services.protocols import JevQuestion
@@ -43,14 +45,16 @@ class JevAdapter:
         start = time.perf_counter()
         if "utterance" in context:
             result = await asyncio.wait_for(self.client.classify_intent(
-                context["utterance"], context=context.get("instruction", "")), timeout_s)
+                context["utterance"], context=context.get("instruction", ""),
+                profile=self.profile), timeout_s)
         else:
             criteria = {"intervene": "The learner needs help now",
                         "wait": "Recent progress; let the learner think"}
             criteria.update({"error_code:" + code: code
                              for code in context.get("known_errors", [])})
             result = (await self.client.decide(context, {"action": JevQuestion(
-                "choice", "Choose whether to help the Blender learner", criteria)},
+                "choice", f"Choose whether to help the {self.profile.name} learner. "
+                f"{self.profile.jev_context}", criteria)},
                 timeout_s=timeout_s))["action"]
         return JevDecision(result.choice, None, (time.perf_counter() - start) * 1000)
 
@@ -59,10 +63,12 @@ class JevAdapter:
 
 
 class SttAdapter:
-    def __init__(self, client):
+    def __init__(self, client, profile: AppProfile | None = None):
         self.client = client
+        self.profile = profile or getattr(client, "profile", None) or load_profile(None)
 
     async def open_live(self, **config):
+        config.setdefault("vocabulary", self.profile.vocabulary)
         return await self.client.open_live(**config)
 
     async def transcribe(self, audio, *, encoding, sample_rate, language):
@@ -78,7 +84,8 @@ class SttAdapter:
         elif encoding != "wav":
             raise ValueError("Encodage STT non pris en charge")
         result = await self.client.transcribe_file(audio, filename="utterance.wav",
-                                                   language=language)
+                                                   language=language,
+                                                   vocabulary=self.profile.vocabulary)
         return Transcript(result.text, (time.perf_counter() - start) * 1000)
 
     async def aclose(self):
@@ -86,11 +93,12 @@ class SttAdapter:
 
 
 class SearchAdapter:
-    def __init__(self, client):
+    def __init__(self, client, profile: AppProfile | None = None):
         self.client = client
+        self.profile = profile or getattr(client, "profile", None) or load_profile(None)
 
     async def search(self, query, *, depth="standard"):
-        result = await self.client.search(query, depth=depth)
+        result = await self.client.search(query, depth=depth, profile=self.profile)
         return [SearchHit(s.name, s.url, s.snippet) for s in result.sources]
 
     async def aclose(self):
@@ -98,6 +106,7 @@ class SearchAdapter:
 
 
 def build_clients(config: EngineConfig) -> dict:
+    profile = load_profile(getattr(config, "app_id", None) or os.getenv("HCOMPANY_APP"))
     clients = {}
     if os.getenv("HAI_API_KEY"):
         from engine.services.holo import HoloCloudClient
@@ -106,13 +115,13 @@ def build_clients(config: EngineConfig) -> dict:
     if os.getenv("CODIV_API_KEY"):
         from engine.services.jev import CodivJevClient
 
-        clients["jev"] = JevAdapter(CodivJevClient())
+        clients["jev"] = JevAdapter(CodivJevClient(profile=profile), profile=profile)
     if os.getenv("GLADIA_API_KEY"):
         from engine.services.gladia import GladiaSttClient
 
-        clients["stt"] = SttAdapter(GladiaSttClient())
+        clients["stt"] = SttAdapter(GladiaSttClient(profile=profile), profile=profile)
     if os.getenv("LINKUP_API_KEY"):
         from engine.services.linkup import LinkupSearchClient
 
-        clients["search"] = SearchAdapter(LinkupSearchClient())
+        clients["search"] = SearchAdapter(LinkupSearchClient(profile=profile), profile=profile)
     return clients
