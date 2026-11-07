@@ -30,11 +30,11 @@ enum Failure {
 
 trait Driver {
     fn stopped(&self) -> bool;
-    fn replay(&mut self, step: agent::Step);
     fn progressed(&self) -> bool {
         true
     }
     async fn advance(&mut self) -> Result<agent::Step, String>;
+    async fn check_script(&mut self) -> Result<bool, String>;
     async fn execute(&mut self, step: &agent::Step) -> Result<(), String>;
     async fn pause(&self);
 }
@@ -146,17 +146,30 @@ async fn after_script<D: Driver>(
         return Err(Failure::Stopped);
     }
     let reason = match script_result {
-        Ok(()) => match driver.advance().await {
-            Ok(step) if step.kind == "done" => {
-                *run_mode = skills::Mode::Script;
-                return Ok(0);
+        Ok(()) => {
+            *run_mode = skills::Mode::Script;
+            let mut last = String::new();
+            let mut not_met = false;
+            for attempt in 1..=3 {
+                if driver.stopped() { return Err(Failure::Stopped); }
+                let result = driver.check_script().await;
+                if driver.stopped() { return Err(Failure::Stopped); }
+                match result {
+                    Ok(true) => return Ok(0),
+                    Ok(false) => { not_met = true; break; }
+                    Err(error) => {
+                        journal::event("holo_retry", serde_json::json!({
+                            "attempt": attempt, "error": error, "check": "script", "exhausted": attempt == 3,
+                        }));
+                        last = error;
+                    }
+                }
             }
-            Ok(step) => {
-                driver.replay(step);
-                Some("La vérification Holo demande encore des actions".into())
+            if !not_met {
+                return Err(Failure::Failed(format!("Vérification du script indéterminée après trois essais : {last}")));
             }
-            Err(error) => Some(format!("Vérification Holo échouée : {error}")),
-        },
+            Some("Le critère de réussite du script n'est pas atteint".into())
+        }
         Err(crate::script::Failure::Stopped) => return Err(Failure::Stopped),
         Err(crate::script::Failure::NotEligible) => None,
         Err(error) => Some(error.to_string()),
@@ -177,24 +190,17 @@ struct LiveDriver<'a> {
     actions: usize,
     progressed: bool,
     ticket: u64,
-    pending: Option<agent::Step>,
 }
 
 impl Driver for LiveDriver<'_> {
     fn stopped(&self) -> bool {
         autopilot::stop_requested()
     }
-    fn replay(&mut self, step: agent::Step) {
-        self.pending = Some(step);
-    }
     fn progressed(&self) -> bool {
         self.progressed
     }
 
     async fn advance(&mut self) -> Result<agent::Step, String> {
-        if let Some(step) = self.pending.take() {
-            return Ok(step);
-        }
         let after_action = std::mem::take(&mut self.after_action);
         let before = self.session.before.as_ref().map(|s| s.thumb.clone());
         let event = after_action.then(|| {
@@ -210,6 +216,10 @@ impl Driver for LiveDriver<'_> {
                     crate::capture::thumb_diff(before, &after.thumb) > 0.1
                 });
         Ok(step)
+    }
+
+    async fn check_script(&mut self) -> Result<bool, String> {
+        agent::verify_script(self.holo, &mut self.session).await
     }
 
     async fn execute(&mut self, step: &agent::Step) -> Result<(), String> {
@@ -281,7 +291,6 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
             actions: 0,
             progressed: true,
             ticket,
-            pending: None,
         };
         let candidate = crate::script::eligible(&skill);
         let mut run_mode = if candidate.is_some() {
@@ -353,6 +362,9 @@ mod tests {
     #[derive(Default)]
     struct Fake {
         steps: VecDeque<Result<agent::Step, String>>,
+        checks: VecDeque<Result<bool, String>>,
+        check_count: usize,
+        stop_after_checks: Option<usize>,
         executed: usize,
         stop_after: Option<usize>,
         pending: bool,
@@ -363,9 +375,7 @@ mod tests {
     impl Driver for Fake {
         fn stopped(&self) -> bool {
             self.stop_after.is_some_and(|n| self.executed >= n)
-        }
-        fn replay(&mut self, step: agent::Step) {
-            self.steps.push_front(Ok(step));
+                || self.stop_after_checks.is_some_and(|n| self.check_count >= n)
         }
         fn progressed(&self) -> bool {
             !self.no_screen_change || self.executed == 0
@@ -377,6 +387,10 @@ mod tests {
             self.steps
                 .pop_front()
                 .unwrap_or_else(|| Err("Holo indisponible".into()))
+        }
+        async fn check_script(&mut self) -> Result<bool, String> {
+            self.check_count += 1;
+            self.checks.pop_front().unwrap_or_else(|| Err("Vérification indéterminée".into()))
         }
         async fn execute(&mut self, _: &agent::Step) -> Result<(), String> {
             if self.execution_error {
@@ -430,7 +444,7 @@ mod tests {
     async fn autopilot_script_verification_and_fallback_use_the_live_driver_route() {
         let mut mode = skills::Mode::Rio;
         let mut verified = Fake {
-            steps: [done()].into(),
+            checks: [Ok(true)].into(),
             ..Default::default()
         };
         assert_eq!(after_script(&mut verified, Ok(()), &mut mode).await, Ok(0));
@@ -440,6 +454,7 @@ mod tests {
             Err(crate::script::Failure::Failed("Erreur factice".into())),
         ] {
             let mut fake = Fake {
+                checks: [Ok(false)].into(),
                 steps: [action(100.0, "a"), done()].into(),
                 ..Default::default()
             };
@@ -451,12 +466,8 @@ mod tests {
             assert_eq!(fake.executed, 1);
         }
         let mut failed_check = Fake {
-            steps: [
-                Err("Capture indisponible".into()),
-                action(100.0, "a"),
-                done(),
-            ]
-            .into(),
+            checks: [Err("Capture indisponible".into()), Ok(false)].into(),
+            steps: [action(100.0, "a"), done()].into(),
             ..Default::default()
         };
         assert_eq!(
@@ -464,6 +475,7 @@ mod tests {
             Ok(1)
         );
         assert!(matches!(mode, skills::Mode::Rio));
+        assert_eq!(failed_check.check_count, 2);
         assert_eq!(
             after_script(
                 &mut Fake::default(),
@@ -473,6 +485,49 @@ mod tests {
             .await,
             Err(Failure::Stopped)
         );
+    }
+
+    #[tokio::test]
+    async fn autopilot_script_stall_retries_the_check_without_actions_or_fallback() {
+        let mut mode = skills::Mode::Script;
+        let mut fake = Fake {
+            checks: [Err("Flux bloqué".into()), Err("Connexion interrompue".into()), Ok(true)].into(),
+            steps: [action(100.0, "a"), done()].into(),
+            ..Default::default()
+        };
+        assert_eq!(after_script(&mut fake, Ok(()), &mut mode).await, Ok(0));
+        assert_eq!(fake.check_count, 3);
+        assert_eq!(fake.executed, 0);
+        assert_eq!(fake.steps.len(), 2);
+        assert!(matches!(mode, skills::Mode::Script));
+    }
+
+    #[tokio::test]
+    async fn autopilot_script_unknown_and_network_errors_never_fall_back_or_succeed() {
+        for error in ["Flux bloqué", "Erreur réseau", "Résultat unknown", "Réponse malformée"] {
+            let mut mode = skills::Mode::Script;
+            let mut fake = Fake {
+                checks: (0..4).map(|_| Err(error.into())).collect(),
+                steps: [action(100.0, "a"), done()].into(),
+                ..Default::default()
+            };
+            assert!(matches!(after_script(&mut fake, Ok(()), &mut mode).await, Err(Failure::Failed(_))));
+            assert_eq!(fake.check_count, 3);
+            assert_eq!(fake.executed, 0);
+            assert_eq!(fake.steps.len(), 2);
+            assert!(matches!(mode, skills::Mode::Script));
+        }
+        let mut stopped = Fake { stop_after: Some(0), ..Default::default() };
+        assert_eq!(after_script(&mut stopped, Ok(()), &mut skills::Mode::Script).await, Err(Failure::Stopped));
+        assert_eq!(stopped.check_count, 0);
+        let mut stopped = Fake {
+            checks: [Err("Flux bloqué".into()), Ok(true)].into(),
+            stop_after_checks: Some(1),
+            ..Default::default()
+        };
+        assert_eq!(after_script(&mut stopped, Ok(()), &mut skills::Mode::Script).await, Err(Failure::Stopped));
+        assert_eq!(stopped.check_count, 1);
+        assert_eq!(stopped.executed, 0);
     }
 
     #[tokio::test]

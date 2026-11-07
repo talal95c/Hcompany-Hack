@@ -3,6 +3,51 @@
 use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
 
+pub async fn until_stopped<T>(
+    request: impl std::future::Future<Output = Result<T, String>>,
+    stopped: impl Fn() -> bool,
+) -> Result<T, String> {
+    tokio::select! {
+        biased;
+        _ = async {
+            while !stopped() {
+                tokio::time::sleep(std::time::Duration::from_millis(25)).await;
+            }
+        } => Err("Arrêt demandé".into()),
+        result = request => result,
+    }
+}
+
+async fn retry_stream<T, F: std::future::Future<Output = Result<T, String>>>(
+    mut request: impl FnMut() -> F,
+    stopped: impl Fn() -> bool,
+) -> Result<T, String> {
+    let mut last = String::new();
+    for attempt in 1..=2 {
+        if stopped() { return Err("Arrêt demandé".into()); }
+        match until_stopped(request(), &stopped).await {
+            Ok(value) => return Ok(value),
+            Err(error) => {
+                if stopped() { return Err("Arrêt demandé".into()); }
+                crate::journal::event("holo_retry", json!({
+                    "attempt": attempt, "error": error, "stream": true, "exhausted": attempt == 2,
+                }));
+                last = error;
+            }
+        }
+    }
+    Err(format!("Impossible de joindre Holo : {last}"))
+}
+
+fn stream_idle_timeout() -> std::time::Duration {
+    std::time::Duration::from_secs(
+        std::env::var("HOLO_STREAM_IDLE_SECONDS").ok()
+            .and_then(|value| value.parse::<u64>().ok())
+            .filter(|seconds| (2..=20).contains(seconds))
+            .unwrap_or(8),
+    )
+}
+
 pub struct Holo {
     http: reqwest::Client,
     /// No connection reuse: hedged copies must not share a stalled
@@ -174,12 +219,21 @@ impl Holo {
     /// receives the thinking trace as it grows, so the UI can show what Holo
     /// is looking at. Returns the same message, latency and usage as
     /// `chat_usage`. The request is hedged like the others on its time to
-    /// first byte, a stream silent for 20 s is abandoned, and a failure
+    /// first byte, a stream silent for 8 s (configurable) is abandoned, and a failure
     /// before any answer is retried once.
     pub async fn chat_stream(
         &self,
         body: &Value,
         on_reasoning: &(dyn Fn(&str) + Sync),
+    ) -> Result<(Value, u128, Value), String> {
+        self.chat_stream_stoppable(body, on_reasoning, &|| false).await
+    }
+
+    pub async fn chat_stream_stoppable(
+        &self,
+        body: &Value,
+        on_reasoning: &(dyn Fn(&str) + Sync),
+        stopped: &(dyn Fn() -> bool + Sync),
     ) -> Result<(Value, u128, Value), String> {
         let mut body = body.clone();
         body["stream"] = json!(true);
@@ -188,18 +242,10 @@ impl Holo {
         let base = env_or("HAI_BASE_URL", "https://api.hcompany.ai/v1");
         let url = format!("{}/chat/completions", base.trim_end_matches('/'));
         let started = std::time::Instant::now();
-        let mut last = String::new();
-        for attempt in 1..=2 {
-            match self.stream_once(&url, &key, &body, on_reasoning).await {
-                Ok((message, usage)) => return Ok((message, started.elapsed().as_millis(), usage)),
-                Err(e) => {
-                    eprintln!("[holo] stream attempt {attempt}/2 failed: {e}");
-                    crate::journal::event("holo_retry", json!({ "attempt": attempt, "error": e, "stream": true }));
-                    last = e;
-                }
-            }
-        }
-        Err(format!("Impossible de joindre Holo : {last}"))
+        let (message, usage) = retry_stream(|| {
+            self.stream_once(&url, &key, &body, on_reasoning, stream_idle_timeout())
+        }, stopped).await?;
+        Ok((message, started.elapsed().as_millis(), usage))
     }
 
     async fn stream_once(
@@ -208,6 +254,7 @@ impl Holo {
         key: &str,
         body: &Value,
         on_reasoning: &(dyn Fn(&str) + Sync),
+        idle_timeout: std::time::Duration,
     ) -> Result<(Value, Value), String> {
         use futures_util::StreamExt;
         let res = self.hedged_response(url, key, body).await?;
@@ -223,8 +270,8 @@ impl Holo {
         let mut calls: Vec<(String, String, String)> = Vec::new(); // id, name, arguments
         let (mut finish, mut usage) = (Value::Null, Value::Null);
         loop {
-            let chunk = match tokio::time::timeout(std::time::Duration::from_secs(20), stream.next()).await {
-                Err(_) => return Err("Flux bloqué (aucune donnée depuis 20 s)".into()),
+            let chunk = match tokio::time::timeout(idle_timeout, stream.next()).await {
+                Err(_) => return Err(format!("Flux bloqué (aucune donnée depuis {} ms)", idle_timeout.as_millis())),
                 Ok(None) => break,
                 Ok(Some(Err(e))) => return Err(describe(&e)),
                 Ok(Some(Ok(bytes))) => bytes,
@@ -268,6 +315,9 @@ impl Holo {
                     finish = choice["finish_reason"].clone();
                 }
             }
+        }
+        if finish.is_null() {
+            return Err("Flux interrompu avant une réponse complète".into());
         }
         let tool_calls: Vec<Value> = calls
             .into_iter()
@@ -431,6 +481,116 @@ fn describe(e: &reqwest::Error) -> String {
 
 #[cfg(test)]
 mod tests {
+    fn fake_stream(responses: Vec<bool>) -> (String, std::sync::mpsc::Sender<()>, std::thread::JoinHandle<()>) {
+        use std::io::{BufRead, Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/v1/chat/completions", listener.local_addr().unwrap());
+        let (release, done) = std::sync::mpsc::channel();
+        let server = std::thread::spawn(move || {
+            let mut held = Vec::new();
+            for complete in responses {
+                let (mut connection, _) = listener.accept().unwrap();
+                connection.set_read_timeout(Some(std::time::Duration::from_secs(2))).unwrap();
+                {
+                    let mut reader = std::io::BufReader::new(&mut connection);
+                    let mut length = 0;
+                    loop {
+                        let mut line = String::new();
+                        assert_ne!(reader.read_line(&mut line).unwrap(), 0);
+                        if line == "\r\n" { break; }
+                        if let Some(value) = line.to_ascii_lowercase().strip_prefix("content-length:") {
+                            length = value.trim().parse::<usize>().unwrap();
+                        }
+                    }
+                    reader.read_exact(&mut vec![0; length]).unwrap();
+                }
+                let event = if complete {
+                    serde_json::json!({"choices":[{"delta":{"tool_calls":[{"index":0,"id":"fresh","function":{"name":"answer","arguments":"{\"outcome\":\"success\"}"}}]},"finish_reason":"tool_calls"}]})
+                } else {
+                    serde_json::json!({"choices":[{"delta":{"tool_calls":[{"index":0,"id":"stale","function":{"name":"answer","arguments":"{"}}]}}]})
+                };
+                let body = format!("data: {event}\n\n");
+                write!(connection, "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", if complete { body.len() } else { 99999 }).unwrap();
+                if !complete { held.push(connection); }
+            }
+            let _ = done.recv_timeout(std::time::Duration::from_secs(3));
+        });
+        (url, release, server)
+    }
+
+    #[tokio::test]
+    async fn holo_stalled_stream_retries_without_reusing_partial_actions() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let (url, release, server) = fake_stream(vec![false, true]);
+        let holo = super::Holo::new();
+        let body = serde_json::json!({"model":"fake", "stream":true});
+        let attempts = AtomicUsize::new(0);
+        let started = std::time::Instant::now();
+        let (message, _) = super::retry_stream(|| {
+            attempts.fetch_add(1, Ordering::SeqCst);
+            holo.stream_once(&url, "fake", &body, &|_| {}, std::time::Duration::from_millis(20))
+        }, || false).await.unwrap();
+        println!("fake_stream stall_then_success_ms={} attempts={}", started.elapsed().as_millis(), attempts.load(Ordering::SeqCst));
+        assert_eq!(attempts.load(Ordering::SeqCst), 2);
+        assert_eq!(message["tool_calls"].as_array().unwrap().len(), 1);
+        assert_eq!(message["tool_calls"][0]["id"], "fresh");
+        assert_eq!(message["tool_calls"][0]["function"]["arguments"], "{\"outcome\":\"success\"}");
+        drop(release);
+        server.join().unwrap();
+    }
+
+    #[tokio::test]
+    async fn holo_stalls_are_bounded_to_two_attempts() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let (url, release, server) = fake_stream(vec![false, false]);
+        let holo = super::Holo::new();
+        let body = serde_json::json!({"model":"fake"});
+        let attempts = AtomicUsize::new(0);
+        let result = super::retry_stream(|| {
+            attempts.fetch_add(1, Ordering::SeqCst);
+            holo.stream_once(&url, "fake", &body, &|_| {}, std::time::Duration::from_millis(20))
+        }, || false).await;
+        assert!(result.unwrap_err().contains("Flux bloqué"));
+        assert_eq!(attempts.load(Ordering::SeqCst), 2);
+        drop(release);
+        server.join().unwrap();
+    }
+
+    #[tokio::test]
+    async fn holo_stop_cancels_a_stall_and_prevents_retries() {
+        use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+        let attempts = AtomicUsize::new(0);
+        let stopped = AtomicBool::new(false);
+        let request = super::retry_stream(|| {
+            attempts.fetch_add(1, Ordering::SeqCst);
+            std::future::pending::<Result<(), String>>()
+        }, || stopped.load(Ordering::SeqCst));
+        let stop = async {
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+            stopped.store(true, Ordering::SeqCst);
+        };
+        let started = std::time::Instant::now();
+        let (result, _) = tokio::join!(request, stop);
+        println!("fake_stream stop_ms={} attempts={}", started.elapsed().as_millis(), attempts.load(Ordering::SeqCst));
+        assert_eq!(result.unwrap_err(), "Arrêt demandé");
+        assert_eq!(attempts.load(Ordering::SeqCst), 1);
+        stopped.store(false, Ordering::SeqCst);
+        let result = super::retry_stream(|| {
+            attempts.fetch_add(1, Ordering::SeqCst);
+            stopped.store(true, Ordering::SeqCst);
+            async { Err::<(), _>("Flux bloqué".into()) }
+        }, || stopped.load(Ordering::SeqCst)).await;
+        assert_eq!(result.unwrap_err(), "Arrêt demandé");
+        assert_eq!(attempts.load(Ordering::SeqCst), 2);
+        assert!(started.elapsed() < std::time::Duration::from_millis(500));
+        let result = super::retry_stream(|| {
+            attempts.fetch_add(1, Ordering::SeqCst);
+            async { Ok::<_, String>(()) }
+        }, || true).await;
+        assert_eq!(result.unwrap_err(), "Arrêt demandé");
+        assert_eq!(attempts.load(Ordering::SeqCst), 2);
+    }
+
     /// A real streamed agent step: live reasoning, then a parsed tool call.
     /// `cargo test --lib streams_a_step -- --ignored --nocapture`
     #[test]

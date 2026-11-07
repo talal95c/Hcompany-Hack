@@ -32,6 +32,27 @@ A tutorial is a **graph of milestones** (`tutorials/*.json`), not a click script
 - **Sessions** are journaled in `sessions/<timestamp>-<slug>/`: `session.json` (outcome), `tutorial.json`, `events.jsonl` (milestones, steps with reasoning and latency, learner events, questions) and `shots/` (with `-marked` copies showing where Holo pointed).
 - **Save as tutorial** at the end of a run writes it back to the library with the path actually taken as each milestone's hints.
 
+## Robustesse et mesures Holo
+
+Le seuil d'inactivité du stream est configuré à 8 s, contre 20 s auparavant
+(`HOLO_STREAM_IDLE_SECONDS`, de 2 à 20). Deux tentatives au maximum réutilisent
+`holo_retry` et le hedge existant `holo_hedge` ; une réponse partielle n'est pas
+réutilisée lors de la relance. L'arrêt Rio annule les attentes réseau, le backoff
+et les relances, sans rendre les sessions tuteur dépendantes du drapeau Rio.
+
+`milestone_check_latency` mesure `capture_ms`, `request_ms`, `total_ms`, le modèle
+et l'état du transport, y compris les erreurs. Le check reste séquentiel : la
+décision suivante dépend du jalon vérifié ; une action spéculative pourrait
+modifier l'écran avant la validation de sa preuve. Le chemin script supprime
+plutôt la décision d'action initiale et vérifie directement les `done_when`.
+Pour mesurer uniquement la requête indépendante sur une capture de recette
+déjà consentie (sans lancer l'application ni envoyer une nouvelle capture) :
+
+```bash
+RIO_CHECK_BENCH_IMAGE=/chemin/capture.jpg RIO_CHECK_BENCH_CRITERION='critère visible' \
+  cargo test agent_measure_independent_check_latency -- --ignored --nocapture
+```
+
 ## How it works
 
 ### Bibliothèque de skills (Rust)
@@ -140,9 +161,13 @@ La notch affiche « Script testé par Devin » ; le front ne sélectionne pas le
 Les paramètres par défaut sont transmis comme arguments séparés, sans shell
 intermédiaire. Le processus reçoit un environnement restreint, sans clés API.
 Arrêter tue son groupe de processus ; `RIO_SCRIPT_TIMEOUT_SECONDS` limite aussi
-l'exécution (300 s par défaut). Une capture fraîche et `advance` vérifient toujours
-le résultat. Tout échec du script ou de cette vérification provoque un repli
-journalisé vers la voie A. Le run est enregistré en mode `script`, ou `rio` en cas
+l'exécution (300 s par défaut). Un check indépendant sur une nouvelle capture
+vérifie chaque `done_when`, sans demander d'abord une décision d'action à Holo.
+Seul un `not_met` explicite autorise le repli vers la voie A après un script réussi.
+Les erreurs réseau, stalls, réponses malformées et `unknown` relancent le check
+(trois checks au plus), puis échouent sans action ni ✓ si la preuve reste absente.
+Un échec du processus script conserve le repli journalisé vers la voie A.
+Le run est enregistré en mode `script`, ou `rio` en cas
 de repli ; aucun succès n'est déclaré sur le seul code de sortie du processus.
 
 ```
