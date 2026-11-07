@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Btn, Marquee } from "./ui";
+import { Btn } from "./ui";
 import { FEATURES, FeatIcon, PLANS } from "./sections";
-import { APP_ICONS } from "./appIcons";
 import { RioArrow } from "./cursor";
 
 const N = 120;
@@ -9,37 +8,43 @@ const SCROLL_VH = 500;
 const frameSrc = (i: number) => `${import.meta.env.BASE_URL}story/f${String(i + 1).padStart(3, "0")}.webp`;
 const MARKS = [
   { id: "top", at: 0 },
-  { id: "features", at: 0.26 },
-  { id: "pricing", at: 0.55 },
+  { id: "features", at: 0.29 },
+  { id: "pricing", at: 0.57 },
   { id: "try", at: 0.86 },
 ];
+// [fade-in start, fully in, fully in until, faded out]
+const WINDOWS: [number, number, number, number][] = [
+  [-1, 0, 0.07, 0.15],
+  [0.17, 0.24, 0.34, 0.41],
+  [0.45, 0.52, 0.62, 0.69],
+  [0.75, 0.82, 2, 3],
+];
 
-function stageOf(p: number) {
-  if (p < 0.1) return 0;
-  if (p < 0.17) return -1;
-  if (p < 0.4) return 1;
-  if (p < 0.46) return -1;
-  if (p < 0.68) return 2;
-  if (p < 0.78) return -1;
-  return 3;
+const ease = (t: number) => t * t * (3 - 2 * t);
+function weight(p: number, [a, b, c, d]: [number, number, number, number]) {
+  if (p <= a || p >= d) return 0;
+  if (p < b) return ease((p - a) / (b - a));
+  if (p > c) return ease(1 - (p - c) / (d - c));
+  return 1;
 }
 
 export function Story() {
   const wrap = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [stage, setStage] = useState(0);
+  const layers = useRef<(HTMLDivElement | null)[]>([]);
   const [loaded, setLoaded] = useState(0);
 
   useEffect(() => {
     const cv = canvas.current!;
     const ctx = cv.getContext("2d")!;
+    const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const imgs: HTMLImageElement[] = [];
     let cur = 0;
     let target = 0;
     let shown = -1;
     let raf = 0;
     let count = 0;
-    const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const imgs: HTMLImageElement[] = [];
+
     const draw = () => {
       let i = Math.round(cur);
       while (i > 0 && !imgs[i]?.naturalWidth) i--;
@@ -60,6 +65,18 @@ export function Story() {
       im.src = frameSrc(i);
       imgs.push(im);
     }
+    const paintLayers = (p: number) => {
+      layers.current.forEach((el, k) => {
+        if (!el) return;
+        const w = weight(p, WINDOWS[k]);
+        const dir = p < WINDOWS[k][1] ? 1 : -1;
+        el.style.opacity = String(w);
+        el.style.transform = `translate3d(0, ${(1 - w) * 28 * dir}px, 0)`;
+        el.style.filter = w > 0.98 ? "none" : `blur(${(1 - w) * 8}px)`;
+        el.style.visibility = w < 0.02 ? "hidden" : "visible";
+        el.classList.toggle("on", w > 0.6);
+      });
+    };
     const size = () => {
       const d = Math.min(devicePixelRatio || 1, 2);
       cv.width = innerWidth * d;
@@ -68,7 +85,7 @@ export function Story() {
       draw();
     };
     const tick = () => {
-      cur = calm ? target : cur + (target - cur) * 0.16;
+      cur = calm ? target : cur + (target - cur) * 0.14;
       if (Math.abs(target - cur) < 0.05) cur = target;
       if (Math.round(cur) !== shown) {
         shown = Math.round(cur);
@@ -80,7 +97,7 @@ export function Story() {
       const r = wrap.current!.getBoundingClientRect();
       const p = Math.min(Math.max(-r.top / (r.height - innerHeight), 0), 1);
       target = p * (N - 1);
-      setStage(stageOf(p));
+      paintLayers(p);
       if (!raf) raf = requestAnimationFrame(tick);
     };
     size();
@@ -95,7 +112,9 @@ export function Story() {
     };
   }, []);
 
-  const on = (s: number) => (stage === s ? " on" : "");
+  const layer = (k: number) => (el: HTMLDivElement | null) => {
+    layers.current[k] = el;
+  };
   return (
     <section className="flythru" ref={wrap} style={{ height: `${SCROLL_VH + 100}vh` }}>
       {MARKS.map((m) => (
@@ -105,74 +124,48 @@ export function Story() {
         <canvas ref={canvas} className="story-canvas" />
         <div className="story-shade" />
         <span className={`story-load${loaded >= N ? " done" : ""}`}>
-          Loading scene {String(Math.round((loaded / N) * 100)).padStart(3, "0")}
+          {String(Math.round((loaded / N) * 100)).padStart(3, "0")}
         </span>
 
-        <div className={`story-hero${on(0)}`}>
+        <div ref={layer(0)} className="story-layer story-hero">
           <h1 className="h-hero">
             <span className="hero-l1">Learn any software.</span>
             <span className="hero-l2">Live, on your screen.</span>
           </h1>
-          <p className="p-16 hero-sub">
-            Rio watches your screen, breaks any task into steps and shows you exactly where to click. You do it, Rio checks it.
-          </p>
           <Btn label="Try it now" href="#try" />
-          <span className="story-hint">Scroll to fly in</span>
-        </div>
-        <div className={`story-logos${on(0)}`}>
-          <Marquee duration={28} className="hero-logos">
-            {APP_ICONS.map((a, i) => (
-              <span key={a.name} className="app-logo" style={{ animationDelay: `${-i * 0.9}s` }}>
-                <svg viewBox="0 0 24 24" aria-hidden>
-                  <path d={a.path} />
-                </svg>
-                {a.name}
-              </span>
-            ))}
-          </Marquee>
         </div>
 
-        <div className={`story-panel story-feat${on(1)}`}>
+        <div ref={layer(1)} className="story-layer story-feat">
           <span className="story-k">Features</span>
-          <h2 className="story-h">A tutor that sees your screen.</h2>
-          <div className="sf-grid">
+          <ul className="sf-list">
             {FEATURES.map((f) => (
-              <div key={f.k} className="sf">
+              <li key={f.k} className="sf">
                 <FeatIcon k={f.k} />
-                <h3>{f.t}</h3>
-                <p>{f.d}</p>
-              </div>
+                <span>{f.t}</span>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
 
-        <div className={`story-panel story-plans${on(2)}`}>
+        <div ref={layer(2)} className="story-layer story-plans">
           <span className="story-k">Pricing</span>
-          <h2 className="story-h">Start free. Upgrade when Rio clicks.</h2>
-          <div className="sp-grid">
+          <ul className="sp-list">
             {PLANS.slice(0, 3).map((p) => (
-              <div key={p.name} className={`sp${p.dark ? " sp-hot" : ""}`}>
+              <li key={p.name} className={`sp${p.dark ? " sp-hot" : ""}`}>
                 <span className="sp-name">{p.name}</span>
-                <span className="sp-price">${p.price}<em>/mo</em></span>
                 <span className="sp-tag">{p.tagline}</span>
-                <ul>
-                  {p.f.slice(0, 3).map((x) => <li key={x}>{x}</li>)}
-                </ul>
-              </div>
+                <span className="sp-price">${p.price}</span>
+              </li>
             ))}
-          </div>
-          <span className="sp-note">Indicative pricing, early access.</span>
+          </ul>
         </div>
 
-        <div className={`story-try${on(3)}`}>
-          <span className="story-k">Rio · ready</span>
+        <div ref={layer(3)} className="story-layer story-try">
           <a className="try-btn" href="#/launch">
-            <RioArrow size={22} />
+            <RioArrow size={18} />
             Try it now
           </a>
-          <span className="story-hint">Click the screen to launch the app</span>
         </div>
-        <a className={`story-screen-hit${on(3)}`} href="#/launch" aria-label="Launch Rio" />
       </div>
     </section>
   );
