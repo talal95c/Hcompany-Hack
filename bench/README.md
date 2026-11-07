@@ -14,7 +14,7 @@ ruff check .
 ```
 
 `live` est ignoré par défaut ; `-m live` ou `BENCH_LIVE=1` l'active.
-`jev`, `gladia` et `all` signalent les suites encore indisponibles.
+`gladia` et `all` signalent la suite encore indisponible.
 Options addon : `--blender /opt/blender/blender`, `--timeout 60`, `--operations 50`.
 Installation Blender 4.5.9 LTS : voir `docs/environnement-dev.md`.
 Exécuter depuis la racine (bench n'est pas inclus dans les packages distribués du socle).
@@ -153,3 +153,88 @@ https://hub.hcompany.ai/models-api/build-an-agent/core-concepts.md#prompt-cachin
 Les tableaux `uncached`/`cached` désignent donc les conditions du protocole, pas une
 garantie de cache servi. Total : 717 040 tokens entrée + 2 622 sortie = 719 662 ; coût
 calculé 0,19961136 USD, hors requêtes catalogue et probe préalable.
+
+## Jev : intentions françaises via Codiv
+
+```sh
+export CODIV_API_KEY=... # uniquement dans l'environnement, jamais dans les rapports
+python -m bench jev --timeout 60 --out bench/results
+pytest -q -s -m live bench/tests -k jev
+```
+
+Découverte : `GET https://api.codiv.ai/v1/models` renvoie une liste `models` avec
+`name` (pas la forme OpenAI `data/id`). Modèle retenu : `openjev-0.1` ; alias
+`openjev-latest` annoncé comme pointant vers cette version. Autres IDs du catalogue :
+`diffusiongemma-26b`, `laya-1.0`, `verdict-1.4`, `clm-v0.1`, `jevk5-0.3`,
+`clef-flash-1.0`. Aucun de ces autres modèles n'est utilisé.
+
+Vraie API Jev : `POST https://api.codiv.ai/v1/systemone`, Bearer provenant uniquement
+de `CODIV_API_KEY`. Corps : `{model, state:[{id,text}], questions:{id:{type:"choice",
+instructions,criteria:{label:definition}}}}`. Réponse :
+`{model,answers:{id:{type:"choice",choice,probabilities,confidence}},usage}`.
+Les IDs de questions ne sont pas montrés au modèle selon la documentation : chaque
+instruction désigne donc explicitement l'ID de la phrase dans le state. Golds exclus
+du corps envoyé. Le parser normalise les réponses en dictionnaire id → label, jamais
+par ordre de retour ; IDs absents/labels invalides = échec de parsing et miss ; IDs
+supplémentaires conservés séparément. Pas de génération chat, pas de system message
+ni température dans cette API : instructions et critères stables remplacent ce prompt.
+`/v1/chat/completions` existe mais utilise un autre modèle et n'est pas appelé.
+
+Sources fournisseur consultées :
+- https://codiv.ai/docs/api-reference/system-one.md
+- https://codiv.ai/docs/api-reference/models.md
+- https://codiv.ai/docs/guides/rate-limits.md
+- https://codiv.ai/docs/api-reference/chat-completions.md
+
+Les **1 200 req/min sont documentaires, non mesurées**. Nous imposons une limite
+plus stricte : token bucket capacité 1, intervalle 1,05 s, appels séquentiels,
+Retry-After/resets et backoff du pacer Holo réutilisé ; jusqu'à 20 tentatives pour
+429/5xx/transport, sans retry des erreurs de quota épuisé. Le GET catalogue n'a
+fourni aucun en-tête rate-limit. Les en-têtes observés sur les appels de décision
+sont conservés dans `attempts[].rate_headers`, sans Authorization.
+
+### Taxonomie et données
+
+Huit labels de benchmark, pas une enum canonique importée du moteur :
+
+| Label | Intention | Référence et dérivation |
+|---|---|---|
+| why | Raison pédagogique de l'action en cours | PRD.md F7/F12 ; docs/workflows/05-question-vocale.md |
+| help | Indice, localisation, blocage/frustration sans délégation | PRD.md F6 ; docs/workflows/04-blocage-paliers.md ; docs/architecture/engine.md « Politique d'aide » |
+| delegate | Faire à ma place, consentement explicite | docs/workflows/06-fais-le.md ; docs/architecture/engine.md « Mémoire apprenant » |
+| stop | Arrêt, annulation, chut | docs/workflows/06-fais-le.md « Cas vide, erreur et arrêt » ; docs/architecture/engine.md « Politique d'aide » |
+| repeat | Répéter/reformuler une consigne | Extension opérationnelle des consignes vocales PRD.md F7, pas un intent explicitement nommé dans les docs |
+| next | Confirmer sa progression / demander la suite | docs/architecture/engine.md machine PASSED → READY ; docs/glossaire.md « Étape », « Check » |
+| question | Question Blender hors étape | PRD.md F12 ; docs/workflows/05-question-vocale.md réponse hors script |
+| other | Bruit et hors sujet | Extension négative du cas vide/silence de docs/workflows/05-question-vocale.md, pas un intent métier explicite |
+
+`bench/data/jev_utterances.jsonl` : 32 phrases rédigées et étiquetées avant tout appel,
+4 par label, style oral français, hésitations et termes Blender anglais. Aucun label
+produit par le service ni corrigé après mesure. En cas d'ambiguïté, priorité explicite
+stop > delegate > repeat > why > help > next > question > other ; confirmer une
+délégation reste delegate. Pas de contexte réel d'étape : une question technique
+générale est question, une demande d'indice immédiat help. Petit jeu synthétique,
+pas une validation utilisateur ni un benchmark de transcription audio.
+
+Deux passes single (64 appels), quatre groupes de 8 et un groupe complet (32),
+soit 69 appels logiques / 128 décisions. Même AsyncClient persistant. Cold désigne
+seulement la première requête connexion/TLS comprise, pas une preuve de GPU froid.
+Latence = tentative HTTP 200 seule ; attente et retries séparés. Amorti batch =
+durée/nombre de phrases, pas délai individuel. Les rapports conservent les tokens,
+les confusions, les résultats par label, chaque durée batch et les deux passes de
+stabilité. Aucun prix inventé : pas de tarif demandé pour ce service.
+
+### Résultat conservé
+
+69/69 réponses 200, zéro 429, zéro erreur de parsing, zéro ID supplémentaire.
+Les 69 réponses confirment `model: openjev-0.1` ; aucune ne fournit d'en-tête
+rate-limit/Retry-After. 45 889 tokens entrée, zéro sortie. Le test live ajoute un
+appel de 372 tokens entrée ; découverte catalogue : un GET sans usage de tokens.
+Soit 70 POST de classification + un GET, 46 261 tokens retournés au total.
+Single : 62/64 (96,875 %), batches de 8 et batch complet : 32/32 chacun.
+Seule confusion, répétée aux deux passes single : « Tu peux juste me montrer où
+est le modifier bevel ? », gold help, prédit delegate. Gold non modifié.
+Première requête : 329,635 ms ; warm single p50/p95 : 203,975 / 232,997 ms.
+Le gain batch est un amortissement ; les phrases voisines peuvent influencer les
+décisions. Les quatre batches de 8 sont regroupés par label dans l'ordre du dataset,
+donc 100 % n'établit pas une supériorité générale du mode batch.

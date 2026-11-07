@@ -4,7 +4,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from bench import addon, holo
+from bench import addon, holo, jev
 from bench.common import write_report
 
 
@@ -15,7 +15,7 @@ async def unavailable(**kwargs: Any) -> dict[str, Any]:
 SUITES: dict[str, Callable] = {
     "addon": addon.run,
     "holo": holo.run,
-    "jev": unavailable,
+    "jev": jev.run,
     "gladia": unavailable,
 }
 
@@ -32,7 +32,7 @@ def main() -> None:
     args = parser.parse_args()
     names = list(SUITES) if args.suite == "all" else [args.suite]
     if any(SUITES[name] is unavailable for name in names):
-        parser.error("Suites jev et gladia non implémentées à cette étape")
+        parser.error("Suite gladia non implémentée à cette étape")
     for name in names:
         try:
             options = {
@@ -41,6 +41,8 @@ def main() -> None:
             }
             if name == "holo":
                 options.update(out=args.out, models=args.models, concurrency=args.concurrency)
+            elif name == "jev":
+                options = {"out": args.out, "timeout": args.timeout or 60}
             else:
                 options.update(operations=args.operations)
             report = asyncio.run(SUITES[name](**options))
