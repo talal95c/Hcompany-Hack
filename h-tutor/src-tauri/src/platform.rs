@@ -78,8 +78,12 @@ pub async fn apps() -> Vec<String> {
     }
     match get("/v1/apps", &[]).await {
         Ok(v) => {
-            let list: Vec<String> =
-                v["apps"].as_array().into_iter().flatten().filter_map(|a| a["name"].as_str().map(String::from)).collect();
+            let list: Vec<String> = v["apps"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|a| a["name"].as_str().map(String::from))
+                .collect();
             *APPS.lock().unwrap() = Some((Instant::now(), list.clone()));
             list
         }

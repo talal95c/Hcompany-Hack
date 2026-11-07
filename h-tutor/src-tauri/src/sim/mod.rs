@@ -161,6 +161,9 @@ pub async fn run(holo: &Holo, scenario: &Scenario, persona: &Persona, seed: u64)
     let started = std::time::Instant::now();
     let mut report = Report { scenario: scenario.id.clone(), persona: persona.id.into(), seed, ..Default::default() };
     if let Err(e) = drive(holo, scenario, persona, seed, &mut report).await {
+        journal::event("sim_error", serde_json::json!({ "error": e }));
+        // A run cut by an error still closes its journal.
+        journal::end("sim-error");
         report.errors.push(e);
     }
     report.wall_s = (started.elapsed().as_secs_f64() * 10.0).round() / 10.0;
