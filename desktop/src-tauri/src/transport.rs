@@ -142,7 +142,7 @@ pub async fn run(
         let mut engine = match launch(&state).await {
             Ok(engine) => engine,
             Err(error) => {
-                let _ = app.emit("native.error", error);
+                let _ = app.emit("native:error", error);
                 let _ = state.lifecycle.send(Lifecycle::Stopped);
                 continue;
             }
@@ -154,7 +154,7 @@ pub async fn run(
                 .as_mut()
                 .is_some_and(|c| !matches!(c.try_wait(), Ok(None)))
             {
-                let _ = app.emit("native.error", "Engine arrêté ; redémarrez explicitement.");
+                let _ = app.emit("native:error", "Engine arrêté ; redémarrez explicitement.");
                 let _ = state.lifecycle.send(Lifecycle::Stopped);
                 break;
             }
@@ -200,7 +200,7 @@ pub async fn run(
                     }
                 }
                 state.connected.store(true, Ordering::SeqCst);
-                let _ = app.emit("sidecar.status", "connected");
+                let _ = app.emit("sidecar:status", "connected");
                 attempts = 0;
                 let mut tick = tokio::time::interval(Duration::from_secs(2));
                 let mut last_rx = Instant::now();
@@ -213,7 +213,7 @@ pub async fn run(
                                 last_rx = Instant::now();
                                 match protocol::parse(&text, &state.session) {
                                     Ok(value) => crate::receive(&app, &state, value).await,
-                                    Err(_) => { let _ = app.emit("native.error", "Message engine non conforme ignoré."); }
+                                    Err(_) => { let _ = app.emit("native:error", "Message engine non conforme ignoré."); }
                                 }
                             }
                             Some(Ok(Message::Ping(data))) => { let _ = socket.send(Message::Pong(data)).await; }
@@ -224,7 +224,7 @@ pub async fn run(
                         packet = rx.recv() => {
                             let Some(packet) = packet else { break };
                             if protocol::validate(&packet, &state.session).is_err() {
-                                let _ = app.emit("native.error", "Message sortant invalide bloqué."); continue;
+                                let _ = app.emit("native:error", "Message sortant invalide bloqué."); continue;
                             }
                             if socket.send(Message::Text(packet.to_string().into())).await.is_err() { break; }
                         }
@@ -240,8 +240,8 @@ pub async fn run(
             state.connected.store(false, Ordering::SeqCst);
             input::stop(&state);
             state.captures.lock().unwrap().clear();
-            let _ = app.emit("guide.clear", ());
-            let _ = app.emit("sidecar.status", "disconnected");
+            let _ = app.emit("guide:clear", ());
+            let _ = app.emit("sidecar:status", "disconnected");
             if *control.borrow() != Lifecycle::Running {
                 break;
             }
@@ -255,7 +255,7 @@ pub async fn run(
         if let Some(ref mut child) = engine.child {
             terminate(child).await;
         }
-        let _ = app.emit("sidecar.status", "stopped");
+        let _ = app.emit("sidecar:status", "stopped");
     }
     state.shutdown_done.store(true, Ordering::SeqCst);
     app.exit(0);

@@ -6,6 +6,8 @@ import base64
 import hmac
 import json
 import os
+import signal
+import sys
 import time
 import uuid
 from pathlib import Path
@@ -22,7 +24,7 @@ VALIDATOR = Draft202012Validator(
 )
 
 
-async def main(port: int, output: Path) -> None:
+async def main(port: int, output: Path, sidecar: bool = False) -> None:
     token = os.environ["ENGINE_SESSION_TOKEN"]
     session = os.environ["ENGINE_SESSION_ID"]
     output.mkdir(parents=True, exist_ok=True)
@@ -89,13 +91,33 @@ async def main(port: int, output: Path) -> None:
 
     async with serve(handler, "127.0.0.1", port, process_request=authenticate,
                      max_size=8 * 1024**2):
-        print(f"PROBE_READY {port}", flush=True)
-        await asyncio.Future()
+        if not sidecar:
+            print(f"PROBE_READY {port}", flush=True)
+            await asyncio.Future()
+        else:
+            stopped = asyncio.Event()
+            loop = asyncio.get_running_loop()
+            loop.add_signal_handler(signal.SIGTERM, stopped.set)
+            reader = asyncio.StreamReader()
+            await loop.connect_read_pipe(lambda: asyncio.StreamReaderProtocol(reader), sys.stdin)
+
+            async def read_shutdown():
+                while await reader.readline() not in (b"", b"shutdown\n"):
+                    pass
+                stopped.set()
+
+            shutdown = asyncio.create_task(read_shutdown())
+            print("ENGINE_READY " + json.dumps({"ws_port": port}), flush=True)
+            event("sidecar_ready")
+            await stopped.wait()
+            event("sidecar_stopped")
+            shutdown.cancel()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=9876)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--sidecar", action="store_true")
     args = parser.parse_args()
-    asyncio.run(main(args.port, args.output))
+    asyncio.run(main(args.port, args.output, args.sidecar))

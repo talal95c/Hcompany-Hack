@@ -90,7 +90,7 @@ fn main() {
                             serde_json::json!({"text":"stop","source":"bouton"}),
                             None,
                         );
-                        let _ = app.emit("guide.clear", ());
+                        let _ = app.emit("guide:clear", ());
                     }
                 })?;
             let shortcut =
@@ -110,7 +110,7 @@ fn main() {
             {
                 eprintln!("desktop PTT hotkey unavailable: {error}");
                 let _ = app.emit(
-                    "native.error",
+                    "native:error",
                     "Raccourci vocal indisponible ; utilisez le bouton micro.",
                 );
             }

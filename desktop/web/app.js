@@ -8,8 +8,8 @@ const error = (value) => { $("error").textContent = String(value); };
 const call = async (command, args) => { try { $("error").textContent = ""; return await invoke(command, args); } catch (e) { error(e); return null; } };
 
 if (location.hash !== "#pill") {
-  listen("guide.clear", clear);
-  listen("guide.pointer", ({ payload: p }) => {
+  listen("guide:clear", clear).catch(error);
+  listen("guide:pointer", ({ payload: p }) => {
     clearTimeout(pointerTimer);
     $("pointer").style.left = `${p.x}px`; $("pointer").style.top = `${p.y}px`;
     for (const field of ["x", "y", "width", "height"]) {
@@ -17,12 +17,12 @@ if (location.hash !== "#pill") {
     }
     $("pointer").hidden = false; $("zone").hidden = false;
     pointerTimer = setTimeout(clear, p.duration_ms);
-  });
-  listen("guide.success", ({ payload: p }) => {
+  }).catch(error);
+  listen("guide:success", ({ payload: p }) => {
     clearTimeout(successTimer); clear();
     $("success-text").textContent = p.text; $("success").hidden = false;
     successTimer = setTimeout(clear, p.duration_ms);
-  });
+  }).catch(error);
 } else {
   $("guide").hidden = true; $("pill").hidden = false;
   let expanded = false;
@@ -52,12 +52,12 @@ if (location.hash !== "#pill") {
       $("shortcuts").textContent = `Voix : ${p.ptt_hotkey} · Arrêt prioritaire : ${p.stop_hotkey}`;
     } catch (e) { error(e); }
   };
-  listen("sidecar.status", ({ payload }) => connection(payload === "connected"));
-  listen("permission.changed", ({ payload }) => permissions(payload));
-  listen("native.error", ({ payload }) => error(payload));
-  listen("lesson.state", ({ payload }) => { $("instruction").textContent = payload.instruction; });
-  listen("speech.text", ({ payload }) => { $("instruction").textContent = payload; });
-  listen("audio.status", ({ payload }) => { $("mic").classList.toggle("active", payload); $("mic").textContent = payload ? "Je vous écoute…" : "Maintenir pour parler"; });
+  listen("sidecar:status", ({ payload }) => connection(payload === "connected")).catch(error);
+  listen("permission:changed", ({ payload }) => permissions(payload)).catch(error);
+  listen("native:error", ({ payload }) => error(payload)).catch(error);
+  listen("lesson:state", ({ payload }) => { $("instruction").textContent = payload.instruction; }).catch(error);
+  listen("speech:text", ({ payload }) => { $("instruction").textContent = payload; }).catch(error);
+  listen("audio:status", ({ payload }) => { $("mic").classList.toggle("active", payload); $("mic").textContent = payload ? "Je vous écoute…" : "Maintenir pour parler"; }).catch(error);
   $("mic").onpointerdown = (event) => { event.currentTarget.setPointerCapture(event.pointerId); call("ptt", { active: true }); };
   $("mic").onpointerup = $("mic").onpointercancel = () => call("ptt", { active: false });
   window.addEventListener("blur", () => call("ptt", { active: false }));

@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -17,3 +18,16 @@ VALIDATOR = Draft202012Validator(
 def test_desktop_fixtures_validate_with_jsonschema(folder, valid):
     for path in (CONTRACTS / "examples/desktop-ws" / folder).glob("*.json"):
         assert VALIDATOR.is_valid(json.loads(path.read_text())) is valid, path
+
+
+def test_native_event_names_and_frontend_listeners():
+    """Tauri event names are not the dotted engine WebSocket discriminants."""
+    desktop = Path(__file__).resolve().parents[1]
+    emitted = set()
+    for path in (desktop / "src-tauri/src").glob("*.rs"):
+        emitted.update(re.findall(r'\.emit\(\s*"([^"]+)"', path.read_text()))
+        emitted.update(re.findall(r'\.emit_to\(\s*"guide",\s*"([^"]+)"', path.read_text()))
+    listened = set(re.findall(r'listen\("([^"]+)"', (desktop / "web/app.js").read_text()))
+    assert listened <= emitted
+    assert "guide:pointer" in listened
+    assert all(re.fullmatch(r"[a-zA-Z0-9_:/-]+", name) for name in emitted | listened)

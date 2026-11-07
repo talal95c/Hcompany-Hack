@@ -49,11 +49,11 @@ impl Audio {
                         ) {
                             Ok(stream) => {
                                 current = Some((stream, id));
-                                let _ = app.emit("audio.status", true);
+                                let _ = app.emit("audio:status", true);
                             }
                             Err(error) => {
                                 active_thread.store(false, Ordering::SeqCst);
-                                let _ = app.emit("native.error", error);
+                                let _ = app.emit("native:error", error);
                                 let _ = tx.try_send(crate::protocol::envelope(
                                     &session,
                                     "ptt.stop",
@@ -77,7 +77,7 @@ impl Audio {
                                 None,
                             ));
                         }
-                        let _ = app.emit("audio.status", false);
+                        let _ = app.emit("audio:status", false);
                         if matches!(command, Control::Quit) {
                             break;
                         }
@@ -136,7 +136,7 @@ fn stream(
     let on_error = move |_error| {
         active.store(false, Ordering::SeqCst);
         let _ = app.emit(
-            "native.error",
+            "native:error",
             "Microphone interrompu ; relâchez puis réessayez.",
         );
     };
@@ -237,7 +237,7 @@ impl Encoder {
             self.active.store(false, Ordering::SeqCst);
             let _ = self
                 .app
-                .emit("native.error", "File audio saturée ; dictée interrompue.");
+                .emit("native:error", "File audio saturée ; dictée interrompue.");
             self.bytes.clear();
             return;
         }

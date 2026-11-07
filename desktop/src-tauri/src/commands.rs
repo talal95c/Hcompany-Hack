@@ -29,11 +29,11 @@ pub async fn receive(app: &AppHandle, state: &Arc<State>, packet: Value) {
         }
         "lesson.state" => {
             state.captures.lock().unwrap().clear();
-            let _ = app.emit("guide.clear", ());
-            let _ = app.emit("lesson.state", payload);
+            let _ = app.emit("guide:clear", ());
+            let _ = app.emit("lesson:state", payload);
         }
         "error" => {
-            let _ = app.emit("native.error", payload["message"].clone());
+            let _ = app.emit("native:error", payload["message"].clone());
         }
         "command" => {
             if payload["recipient"] != "desktop" {
@@ -48,7 +48,7 @@ pub async fn receive(app: &AppHandle, state: &Arc<State>, packet: Value) {
             let kind = payload["type"].as_str().unwrap();
             if kind == "stop" {
                 input::stop(state);
-                let _ = app.emit("guide.clear", ());
+                let _ = app.emit("guide:clear", ());
                 return;
             }
             if generation < state.generation.load(Ordering::SeqCst)
@@ -57,19 +57,19 @@ pub async fn receive(app: &AppHandle, state: &Arc<State>, packet: Value) {
                 return;
             }
             if generation > state.generation.swap(generation, Ordering::SeqCst) {
-                let _ = app.emit("guide.clear", ());
+                let _ = app.emit("guide:clear", ());
             }
             let p = &payload["payload"];
             match kind {
                 "pointer" => pointer(app, state, p, payload["deadline_ms"].as_f64().unwrap()),
                 "success" => {
                     if !payload["expected_scene_revision"].is_null() {
-                        let _ = app.emit_to("guide", "guide.success", json!({"text":p["text"],"duration_ms":payload["deadline_ms"].as_f64().unwrap().min(2500.)}));
+                        let _ = app.emit_to("guide", "guide:success", json!({"text":p["text"],"duration_ms":payload["deadline_ms"].as_f64().unwrap().min(2500.)}));
                     }
                 }
                 "say" => {
                     let _ = NoSpeech.speak(p["text"].as_str().unwrap());
-                    let _ = app.emit("speech.text", p["text"].clone());
+                    let _ = app.emit("speech:text", p["text"].clone());
                 }
                 "input.action" => {
                     state.results.lock().unwrap().insert(command.clone(), json!({"command_id":command,"status":"rejected","detail":"already accepted; never replay"}));
@@ -99,7 +99,7 @@ pub async fn receive(app: &AppHandle, state: &Arc<State>, packet: Value) {
                             results.insert(command, result.clone());
                         }
                         let _ = state.send("input.result", result.clone(), Some(&id));
-                        let _ = app.emit("input.result", result);
+                        let _ = app.emit("input:result", result);
                     });
                 }
                 _ => {}
@@ -149,7 +149,7 @@ fn pointer(app: &AppHandle, state: &State, payload: &Value, budget: f64) {
     let zone = json!({"x":(c.crop.x-pos.x as f64)/scale,"y":(c.crop.y-pos.y as f64)/scale,"width":c.crop.width/scale,"height":c.crop.height/scale});
     let _ = app.emit_to(
         "guide",
-        "guide.pointer",
+        "guide:pointer",
         json!({"x":css_x,"y":css_y,"zone":zone,"duration_ms":budget.min(5000.)}),
     );
 }

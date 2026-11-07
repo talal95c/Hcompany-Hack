@@ -41,7 +41,7 @@ pub async fn permission_request(
         serde_json::to_value(&permissions).unwrap(),
         None,
     );
-    let _ = app.emit("permission.changed", &permissions);
+    let _ = app.emit("permission:changed", &permissions);
     Ok(permissions)
 }
 
@@ -96,7 +96,7 @@ pub fn stop_actions(app: AppHandle, state: tauri::State<'_, Arc<State>>) {
         json!({"text":"stop", "source":"bouton"}),
         None,
     );
-    let _ = app.emit("guide.clear", ());
+    let _ = app.emit("guide:clear", ());
 }
 
 #[tauri::command]
@@ -215,6 +215,6 @@ pub async fn capture_region(
     drop(captures);
     state.send("capture.result", payload, None)?;
     let result = json!({"ui_revision":revision, "crop":crop});
-    let _ = app.emit("capture.result", &result);
+    let _ = app.emit("capture:result", &result);
     Ok(result)
 }
