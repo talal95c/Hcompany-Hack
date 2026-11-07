@@ -1,9 +1,10 @@
-# Holo Tutor — landing
+# Ordinateur CRT → Google
 
-Site de présentation français, indépendant de l’application native `h-tutor/`.
-Il n’appelle aucune commande Tauri, ne capture pas l’écran et n’utilise aucune clé.
+Une seule interaction : petit ordinateur jaune, suivi du pointeur, bouton
+« Click » intégré à l’écran incurvé, zoom à travers la vitre, puis navigation
+vers Google. Aucune landing, section marketing, commande Tauri ou API.
 
-## Démarrage
+## Lancer
 
 Node.js 22.12+ et npm :
 
@@ -13,11 +14,10 @@ npm ci
 npm run dev
 ```
 
-Vite écoute sur le port 5173. `npm run build` produit le site statique dans
-`dist/` ; `npm run preview` permet de servir ce build. Le site est prévu à la
-racine d’un domaine (les chemins des assets commencent par `/`).
+`npm run build` produit le site statique dans `dist/`.
+`npm run preview` sert ce build. Hébergement à la racine du domaine.
 
-## Vérifications
+## Vérifier
 
 ```sh
 npm run typecheck
@@ -26,63 +26,37 @@ npm test
 npm run build
 ```
 
-La CI lance ces quatre vérifications. Vitest couvre l’entrée, les sorties de
-secours, les liens, le menu et la sélection d’aperçu. Ces tests DOM ne prouvent
-ni la fluidité du raccord animé ni le fonctionnement natif du tuteur.
+Le lien HTML réel reste disponible sans Canvas, sans JavaScript ou si les
+images ne chargent pas. Entrée et Espace activent l’ordinateur. Échap annule
+un zoom en cours. Avec réduction des animations, le clic ouvre directement
+Google, sans zoom. Pas de stockage de session : l’ordinateur réapparaît à
+chaque visite. Ctrl/Cmd-clic conserve le comportement normal d’un lien.
 
-L’override npm de `minimatch` est limité au parseur TypeScript ESLint : il évite
-la version transitive touchée par GHSA-g3hv-75wg-m249 sans modifier les
-dépendances de l’application native.
+Le changement de destination se fait dans `src/App.tsx` (`DESTINATION`) et
+dans le lien sans JavaScript de `index.html`. Le moteur dessine une miniature
+statique de Google dans l’écran ; ce n’est ni un iframe ni une page Google
+interactive. Le vrai site est ouvert seulement après le zoom.
 
-Recette visuelle : souris et clic sur l’ordinateur, Entrée/Espace, Tab/Échap,
-« Passer l’intro », retour/rechargement, « Rejouer l’intro », mobile tactile,
-menu, FAQ, préférence de réduction des animations et blocage des images.
-Les ancres directes contournent l’introduction ; elle n’apparaît qu’une fois
-par session de navigation. Si le stockage est bloqué, toutes les sorties
-restent utilisables. Sans JavaScript, un résumé et le lien d’installation
-restent disponibles dans `index.html`.
+## Rendu
 
-## Ordinateur original
+Le Canvas 2D projette la miniature sur une grille incurvée et superpose la
+coque et les reflets. Une seule paire de vues est dessinée à la fois : aucun
+mélange de silhouettes qui dédouble les contours. Les vues sont chargées à la
+demande, avec un cache limité à huit angles. Tactile et réduction des animations
+conservent la vue centrale. Le zoom dure 1 150 ms ; la vitre s’aplatit et la coque
+sort du champ avant la navigation.
 
-L’entrée affiche 57 vues (19 angles horizontaux × 3 verticaux) d’un ordinateur
-créé pour Holo Tutor dans Blender, en WebP transparent. Un canvas interpole
-les quatre vues voisines ; aucun runtime 3D n’est téléchargé. Les rendus sont
-chargés à quatre requêtes concurrentes sur ordinateur ; un écran tactile ne
-charge que la vue centrale. Ils restent décoratifs. Le bouton et le
-contenu ne dépendent ni de WebGL, ni d’un chargement complet des images.
+Les tests couvrent les liens, le clavier, le repli, le cycle de vie, la projection,
+le cadrage du zoom et la présence des 114 images. Ils ne remplacent pas une
+recette visuelle du navigateur.
 
-Le générateur est `scripts/render_computer.py`. Pour refaire les rendus avec
-Blender 4.5, depuis la racine du dépôt :
+## Provenance des visuels
 
-```sh
-blender -b --threads 8 --python landing/scripts/render_computer.py
-for image in landing/render-work/frame-*.png; do
-  ffmpeg -y -loglevel error -i "$image" -c:v libwebp -quality 84 \
-    "landing/public/computer/$(basename "${image%.png}").webp"
-done
-cp landing/render-work/frames.json landing/public/computer/frames.json
-```
+Les 57 vues de coque, les 57 vues de vitre et le poster proviennent de la
+référence demandée. Les URL de provenance sont conservées dans
+`public/crt/sources.json`. Le moteur de rendu et le composant React sont notre
+code ; aucun script tiers du site de référence n’est exécuté ou embarqué.
 
-`-- --center-only` permet de refaire uniquement la vue centrale. Les PNG de
-travail ne sont pas versionnés. Le générateur réutilise la texture d’écran
-originale, déjà fournie dans `public/computer/screen.webp`.
-
-## Contenu et assets
-
-- Les boutons d’installation pointent vers les instructions réelles dans
-  `h-tutor/README.md`. Pas de formulaire sans backend, ni de téléchargement
-  fictif : aucun binaire n’est livré par ce site.
-- L’aperçu du guide est **une illustration interactive**, explicitement
-  identifiée comme telle, sur une vraie capture Blender issue de
-  `tests/services/fixtures/blender_4.5.9_layout_1600x900.png`. Il ne simule pas
-  une exécution native, ne valide pas une leçon et ne déclenche aucun agent.
-- La [photographie de paysage](https://images.unsplash.com/photo-1470252649378-9c29740c9fa8)
-  est utilisée sous la
-  [licence Unsplash](https://unsplash.com/license), qui autorise son utilisation
-  et sa modification sans attribution obligatoire. La texture du moniteur
-  adapte cette photographie avec notre propre titre et notre propre bouton.
-- Les polices Manrope et Cormorant Garamond sont auto-hébergées via Fontsource
-  (licence SIL OFL, fournie avec leurs paquets). Les icônes sont celles de
-  Lucide (licence ISC). Aucun appel de police, tracker ou CDN au runtime.
-- Le modèle d’ordinateur, sa géométrie, son éclairage et les illustrations CSS
-  sont nos propres assets. Aucun code ni asset de site de référence n’est embarqué.
+Ces visuels ne sont pas des créations originales de ce dépôt. Aucune licence
+de redistribution n’a été vérifiée : confirmer les droits avant une publication
+publique. Aucun autre asset de la précédente landing n’est utilisé.

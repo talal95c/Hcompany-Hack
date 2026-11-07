@@ -34,15 +34,15 @@ Démo sur **macOS**. Tout est prévu pour tourner aussi sous **Windows** : Pytho
 
 ## Le dépôt
 
-La [landing Holo Tutor](landing/README.md) est un site React/Vite indépendant
-de l’application native : `cd landing && npm ci && npm run dev`.
+L’[entrée ordinateur CRT](landing/README.md) est un site React/Vite indépendant
+de l’application native, avec un zoom qui ouvre Google : `cd landing && npm ci && npm run dev`.
 
 ```
 contracts/  formats partagés (leçon, événements, ordres) — figés en premier
 engine/     orchestrateur Python (la boucle en direct)
 addon/      add-on Blender « Œil » (capteur + surlignage)
 h-tutor/    front principal : barre + curseur fantôme (Tauri v2, React)
-landing/    site de présentation français avec entrée ordinateur interactive
+landing/    ordinateur CRT interactif → zoom → Google
 desktop/    overlay Tauri v2 branché sur l'engine (pointeur, pastille, ✓)
 prep/       préparation : tuto → leçon prouvée
 agent/      face Agent : H Skills + serveur MCP

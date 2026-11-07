@@ -1,233 +1,108 @@
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
-import App from "../src/App";
-import { INTRO_KEY, shouldShowIntro } from "../src/intro";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import App, { DESTINATION } from "../src/App";
+import { mountComputer } from "../src/computer";
 
-function visitLanding() {
-  sessionStorage.setItem(INTRO_KEY, "true");
-  return render(<App />);
-}
+const renderer = vi.hoisted(() => ({
+  point: vi.fn(),
+  reset: vi.fn(),
+  hover: vi.fn(),
+  enter: vi.fn(),
+  cancel: vi.fn(),
+  dispose: vi.fn(),
+}));
+vi.mock("../src/computer", () => ({ mountComputer: vi.fn(() => renderer) }));
 
-describe("entrance", () => {
-  it("hands off the animated screen zoom to the live page and cancels resources", async () => {
-    vi.stubGlobal(
-      "Image",
-      class {
-        onload: (() => void) | null = null;
-        onerror: (() => void) | null = null;
-        set src(_value: string) {
-          queueMicrotask(() => this.onload?.());
-        }
-      },
-    );
-    vi.mocked(HTMLCanvasElement.prototype.getContext).mockReturnValue({
-      clearRect: vi.fn(),
-      drawImage: vi.fn(),
-    } as unknown as CanvasRenderingContext2D);
-    const { container } = render(<App />);
-    await waitFor(() =>
-      expect(container.querySelector(".computer-fallback")).toBeNull(),
-    );
-    const button = screen.getByRole("button", {
-      name: "Entrer dans Holo Tutor",
-    });
-    const cancel = vi.fn();
-    const animate = vi.fn<
-      (
-        keyframes: Keyframe[],
-        options: KeyframeAnimationOptions,
-      ) => { cancel: typeof cancel }
-    >(() => ({ cancel }));
-    Object.assign(button, { animate });
-    Object.assign(screen.getByRole("dialog"), { animate });
-    vi.spyOn(button, "getBoundingClientRect").mockReturnValue({
-      left: 200,
-      top: 100,
-      width: 500,
-      height: 500,
-    } as DOMRect);
-    vi.useFakeTimers();
-    fireEvent.click(button);
-    act(() => {
-      vi.advanceTimersByTime(200);
-    });
-    expect(animate).toHaveBeenCalledTimes(2);
-    expect(animate.mock.calls[0][0][1].transform).not.toMatch(/Infinity|NaN/);
-    act(() => {
-      vi.advanceTimersByTime(1150);
-    });
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(sessionStorage.getItem(INTRO_KEY)).toBe("true");
-    expect(cancel).toHaveBeenCalledTimes(2);
-  });
-
-  it("starts with an accessible entrance and keeps the live page inert", async () => {
-    const { container } = render(<App />);
-    expect(screen.getByRole("dialog")).toHaveAccessibleName(
-      "Le prochain clic, c’est le vôtre.",
-    );
-    expect(container.querySelector(".site")).toHaveAttribute("inert");
-    expect(document.body.style.overflow).toBe("hidden");
-    expect(screen.getByRole("dialog")).toHaveFocus();
-    await userEvent.tab();
-    expect(
-      screen.getByRole("button", { name: "Entrer dans Holo Tutor" }),
-    ).toHaveFocus();
-    await userEvent.tab();
-    expect(
-      screen.getByRole("button", { name: "Passer l’intro" }),
-    ).toHaveFocus();
-    await userEvent.tab({ shift: true });
-    expect(
-      screen.getByRole("button", { name: "Entrer dans Holo Tutor" }),
-    ).toHaveFocus();
-  });
-
-  it("skips, remembers the entrance, restores scrolling and does not repeat on remount", async () => {
-    const view = render(<App />);
-    await userEvent.click(
-      screen.getByRole("button", { name: "Passer l’intro" }),
-    );
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(sessionStorage.getItem(INTRO_KEY)).toBe("true");
-    expect(document.body.style.overflow).toBe("");
-    expect(view.container.querySelector(".site")).not.toHaveAttribute("inert");
-    view.unmount();
-    render(<App />);
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
-
-  it("accepts Escape and keyboard activation without WebGL or the animation API", async () => {
-    render(<App />);
-    await userEvent.keyboard("{Escape}");
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    await userEvent.click(
-      screen.getByRole("button", { name: "Rejouer l’intro" }),
-    );
-    await userEvent.keyboard("{Enter}");
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
-
-  it("does not block the page when the computer image fails", async () => {
-    const { container } = render(<App />);
-    fireEvent.error(container.querySelector(".computer-fallback")!);
-    expect(screen.getByText(/Le décor n’a pas chargé/)).toBeInTheDocument();
-    await userEvent.click(
-      screen.getByRole("button", { name: "Entrer dans Holo Tutor" }),
-    );
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
-
-  it("bypasses the entrance for reduced motion and direct section links", () => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    vi.mocked(window.matchMedia).mockReturnValue({ ...media, matches: true });
-    expect(shouldShowIntro()).toBe(false);
-    render(<App />);
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    vi.mocked(window.matchMedia).mockReturnValue({ ...media, matches: false });
-    history.replaceState({}, "", "/#questions");
-    expect(shouldShowIntro()).toBe(false);
-  });
-
-  it("works even if session storage is unavailable", async () => {
-    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
-      throw new Error("blocked");
-    });
-    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-      throw new Error("blocked");
-    });
-    render(<App />);
-    await userEvent.click(
-      screen.getByRole("button", { name: "Passer l’intro" }),
-    );
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
+beforeEach(() => {
+  vi.clearAllMocks();
+  renderer.enter.mockReturnValue(true);
 });
 
-describe("landing", () => {
-  it("links every local anchor to an existing section, and installation to the real project", () => {
-    const { container } = visitLanding();
-    for (const anchor of container.querySelectorAll<HTMLAnchorElement>(
-      'a[href^="#"]',
-    )) {
-      expect(document.getElementById(anchor.hash.slice(1))).not.toBeNull();
-    }
-    const installs = screen.getAllByRole("link", { name: /Installer/ });
-    expect(installs).toHaveLength(3);
-    for (const link of installs)
-      expect(link).toHaveAttribute(
-        "href",
-        "https://github.com/talal95c/Hcompany-Hack/tree/main/h-tutor#run",
-      );
-    expect(
-      screen.queryByRole("button", { name: /Télécharger/ }),
-    ).not.toBeInTheDocument();
-    expect(container.querySelector("form")).toBeNull();
-  });
-
-  it("updates the illustrated preview and opens the corresponding explanation", async () => {
-    visitLanding();
-    const selector = screen.getByRole("group", {
-      name: "Explorer l’aperçu du guide",
-    });
-    const second = within(selector).getByRole("button", {
-      name: /Une indication à l’écran/,
-    });
-    await userEvent.click(second);
-    expect(second).toHaveAttribute("aria-pressed", "true");
-    expect(
-      screen.getByText("Ouvrez le menu « Ajouter » dans la vue 3D."),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Repérez le prochain geste/ }),
-    ).toHaveAttribute("aria-expanded", "true");
-    await userEvent.click(
-      screen.getByRole("button", { name: /Faites-le vous-même/ }),
+describe("computer only", () => {
+  it("shows just the computer, with a real Google link and no marketing", () => {
+    render(<App />);
+    expect(screen.getByRole("link")).toHaveAttribute("href", DESTINATION);
+    expect(screen.getByRole("link")).toHaveAccessibleName(
+      "Cliquer sur l’ordinateur pour ouvrir Google",
     );
-    expect(
-      screen.getByText("Une question ? Demandez à Holo de réexpliquer."),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Pas une session en direct/)).toBeInTheDocument();
+    expect(screen.queryByRole("navigation")).toBeNull();
+    expect(screen.queryByRole("heading")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("opens and closes mobile navigation, including Escape", async () => {
-    visitLanding();
-    const toggle = screen.getByRole("button", { name: "Ouvrir le menu" });
-    await userEvent.click(toggle);
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
-    expect(document.body.style.overflow).toBe("hidden");
-    await userEvent.click(
-      within(screen.getByRole("navigation")).getByRole("link", {
-        name: "Questions",
-      }),
+  it("does not bypass the computer because of the previous intro storage or a hash", () => {
+    sessionStorage.setItem("holo-tutor:intro-seen", "true");
+    history.replaceState({}, "", "/#accueil");
+    render(<App />);
+    expect(screen.getByRole("link")).toBeVisible();
+  });
+
+  it("starts one zoom and blocks repeated activation", () => {
+    const view = render(<App />);
+    const link = screen.getByRole("link");
+    fireEvent.click(link);
+    fireEvent.click(link);
+    expect(renderer.enter).toHaveBeenCalledTimes(1);
+    expect(renderer.enter).toHaveBeenCalledWith(expect.any(Function));
+    expect(link).toHaveAttribute("aria-busy", "true");
+    expect(view.container.firstChild).toHaveClass("crt--zooming");
+  });
+
+  it("supports focus, Space and Escape without an extra intro button", async () => {
+    render(<App />);
+    const link = screen.getByRole("link");
+    await userEvent.tab();
+    expect(link).toHaveFocus();
+    expect(renderer.hover).toHaveBeenCalledWith(true);
+    fireEvent.keyDown(link, { key: " " });
+    expect(renderer.enter).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(link, { key: "Escape" });
+    expect(renderer.cancel).toHaveBeenCalledTimes(1);
+    expect(link).toHaveAttribute("aria-busy", "false");
+  });
+
+  it("keeps the image/link fallback until the renderer is ready", () => {
+    const { container } = render(<App />);
+    expect(container.querySelector("img")).toHaveAttribute(
+      "src",
+      "/crt/poster.png",
     );
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(document.body.style.overflow).toBe("");
-    await userEvent.click(toggle);
-    within(screen.getByRole("navigation"))
-      .getByRole("link", { name: "Questions" })
-      .focus();
-    await userEvent.keyboard("{Escape}");
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(toggle).toHaveFocus();
+    const ready = vi.mocked(mountComputer).mock.calls[0][1];
+    act(() => ready(true));
+    expect(container.querySelector("img")).toBeNull();
+    expect(screen.getByRole("link")).toHaveAttribute(
+      "href",
+      "https://www.google.com/",
+    );
   });
 
-  it("exposes native FAQ disclosures and honest platform/privacy limitations", () => {
-    const { container } = visitLanding();
-    expect(container.querySelectorAll("details")).toHaveLength(5);
-    expect(
-      screen.getByText(/Il n’y a pas encore d’installateur publié/),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/consultez leur politique de rétention/),
-    ).toBeInTheDocument();
+  it("preserves modified link clicks", () => {
+    render(<App />);
+    const link = screen.getByRole("link");
+    link.addEventListener("click", (event) => event.preventDefault());
+    fireEvent.click(link, { ctrlKey: true });
+    fireEvent.click(link, { metaKey: true });
+    expect(renderer.enter).not.toHaveBeenCalled();
+  });
+
+  it("restores a usable computer after returning from Google via browser back", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("link"));
+    act(() =>
+      window.dispatchEvent(
+        new PageTransitionEvent("pageshow", { persisted: true }),
+      ),
+    );
+    expect(renderer.cancel).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("link")).toHaveAttribute("aria-busy", "false");
+  });
+
+  it("disposes resources and listeners when unmounted", () => {
+    const view = render(<App />);
+    view.unmount();
+    expect(renderer.dispose).toHaveBeenCalledTimes(1);
+    window.dispatchEvent(new Event("pointermove"));
+    expect(renderer.point).not.toHaveBeenCalled();
   });
 });
