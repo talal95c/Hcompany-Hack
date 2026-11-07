@@ -14,7 +14,7 @@ ruff check .
 ```
 
 `live` est ignoré par défaut ; `-m live` ou `BENCH_LIVE=1` l'active.
-`gladia` et `all` signalent la suite encore indisponible.
+Les quatre suites sont disponibles ; `all` les exécute successivement avec leurs clés.
 Options addon : `--blender /opt/blender/blender`, `--timeout 60`, `--operations 50`.
 Installation Blender 4.5.9 LTS : voir `docs/environnement-dev.md`.
 Exécuter depuis la racine (bench n'est pas inclus dans les packages distribués du socle).
@@ -243,3 +243,88 @@ Ce relevé a ajouté cinq POST (sans erreurs) ; les singles conservés datent du
 précédent, leur connexion persistante n'est pas celle des nouveaux batches. Le batch
 complet confond why1 avec stop ; les golds restent inchangés. 100 % sur quatre petits
 batches n'établit pas une supériorité générale de ce mode.
+
+## Gladia live STT
+
+```sh
+export GLADIA_API_KEY=... # environnement seulement
+python -m bench gladia --timeout 30
+pytest -q -s -m live bench/tests -k gladia
+```
+
+API v2 directe, sans SDK : `POST https://api.gladia.io/v2/live`, authentification
+`x-gladia-key`, puis connexion au WebSocket retourné. Le modèle live documenté est
+`solaria-1`, explicitement demandé. Configuration : `encoding: wav/pcm`, 16 000 Hz,
+mono, 16 bits, `endpointing: 0.05`,
+`language_config: {languages:["fr","en"],code_switching:true}`,
+`messages_config` active partials, finals et événements de cycle de vie. Deux langues
+autorisent l'anglais ; selon les docs, une seule langue ferait ignorer code_switching.
+Pas de vocabulaire personnalisé ni de référence transmise au STT.
+
+Sources consultées :
+- https://docs.gladia.io/api-reference/v2/live/init
+- https://docs.gladia.io/chapters/live-stt/quickstart.md
+- https://docs.gladia.io/asyncapi.yaml
+
+Chaque session envoie les samples PCM bruts (pas l'en-tête WAV) par blocs de 3 200
+octets / 100 ms sur une échéance monotone absolue, dernier bloc éventuellement plus
+court. Envoi et réception tournent simultanément. `stop_recording` est envoyé après
+la durée audio ; on continue de lire jusqu'à `end_session`. Limite totale 30 s après
+connexion, init HTTP et handshake également bornés. Une erreur/timeout arrête la
+suite explicitement ; les sessions terminées restent dans `gladia-calls.jsonl`.
+Pas de retry aveugle ni de session facturable dupliquée. URL WebSocket signée et
+clé non conservées, seuls session_id, transcriptions, types d'événements et temps
+locaux sont enregistrés.
+
+### Clips et reproduction offline
+
+Quatre clips français (références `bench/data/gladia_references.json`) synthétisés
+localement avec **Piper 1.8.0, fr_FR-siwis-medium**, voix française 22 050 Hz, puis
+ffmpeg vers PCM 16 kHz mono 16-bit. WAV commis : environ 300 Kio au total, pas de
+modèle TTS commis. L'exécution du benchmark ne nécessite ni Piper ni téléchargement.
+Pour régénérer (synthèse elle-même offline après téléchargement) :
+
+```sh
+uv pip install --python ~/.venvs/hcompany-hack/bin/python piper-tts==1.8.0
+python -m piper.download_voices fr_FR-siwis-medium --download-dir ~/downloads
+python -m bench.generate_speech --voice ~/downloads/fr_FR-siwis-medium.onnx
+```
+
+Attribution voix/données : projet Piper / rhasspy, corpus SIWIS (Université
+d'Édimbourg), licence du dataset CC-BY 4.0 selon la model card :
+https://huggingface.co/rhasspy/piper-voices/blob/main/fr/fr_FR/siwis/medium/MODEL_CARD
+et https://datashare.is.ed.ac.uk/handle/10283/2353.
+Piper prononce les termes anglais avec une voix française : ces clips ne valident
+ni des accents humains variés ni les erreurs d'un vrai micro.
+
+### Définitions des mesures
+
+Chaque clip est joué trois fois dans trois sessions indépendantes ; client HTTP
+persistant, nouveau WebSocket par session. Init HTTP et handshake sont séparés.
+Début = premier send PCM ; onset = premier sample dont |amplitude| ≥ 500 sur 32 768,
+dans la timeline audio ancrée au début (pas un VAD humain). Temps vers premier
+partial non vide ; pas de substitution d'un final quand le partial manque.
+Fin audio = retour du dernier send PCM, pas fin acoustique ni stop_recording. Temps
+vers dernier final reçu (texte assemblé par ID d'utterance, finals répétés remplacés)
+et vers end_session ; les temps négatifs éventuels restent visibles si un final
+arrive avant la fin de l'envoi. Horodatages monotones bruts des envois/réceptions
+conservés. Le streaming n'envoie jamais tout le clip à vitesse réseau.
+
+WER implémentée localement par Levenshtein sur mots ; CER sur caractères, espaces
+inclus. Normalisation NFC, minuscules, ponctuation/apostrophes remplacées par espaces,
+accents conservés. Agrégats pondérés par le nombre de mots/caractères référence,
+pas moyenne naïve des pourcentages. Les termes anglais ne bénéficient d'aucune
+correction tolérante. Coût **calculé** : secondes audio × 0,68 €/3 600, hors éventuel
+minimum de facturation et frais de session inconnus, pas une facture.
+
+### Relevé conservé
+
+12 sessions (4 clips × 3), toutes initialisées HTTP 201 et terminées par end_session,
+zéro message malformé, aucun partial manquant. Écarts observés entre envois consécutifs :
+96,69–103,63 ms. Total audio 27,620625 s, coût calculé 0,00521723 € ; WER corpus
+15,625 %, CER 5,389 %. Les sorties sont identiques aux trois répétitions de chaque
+clip : extrude et bevel exacts ; Shift A → Shifta ; Euh → Heure et viewport → vieux
+pote. Les références ne sont pas adaptées aux erreurs observées.
+Le test live ajoute une session torus de 1,8228125 s : 13 sessions au total,
+29,4434375 s audio et 0,00556154 € calculés, test inclus. Tous les résultats mesurés
+par session sont dans les rapports ; aucune mesure de robustesse aux accents/bruit.

@@ -1,0 +1,6 @@
+[
+  {"id":"extrude","text":"Comment je fais un extrude sur cette face ?"},
+  {"id":"torus","text":"Ajoute un torus avec Shift A."},
+  {"id":"viewport","text":"Euh, je ne trouve plus la barre dans le viewport."},
+  {"id":"bevel","text":"Pourquoi appliquer la scale avant le modifier bevel ?"}
+]

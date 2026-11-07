@@ -4,7 +4,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from bench import addon, holo, jev
+from bench import addon, gladia, holo, jev
 from bench.common import write_report
 
 
@@ -16,7 +16,7 @@ SUITES: dict[str, Callable] = {
     "addon": addon.run,
     "holo": holo.run,
     "jev": jev.run,
-    "gladia": unavailable,
+    "gladia": gladia.run,
 }
 
 
@@ -48,6 +48,8 @@ def main() -> None:
                     "timeout": args.timeout or 60,
                     "batches_only": args.batches_only,
                 }
+            elif name == "gladia":
+                options = {"out": args.out, "timeout": args.timeout or 30}
             else:
                 options.update(operations=args.operations)
             report = asyncio.run(SUITES[name](**options))
