@@ -31,6 +31,7 @@ export function Nav() {
     ["FAQ", "#faq"],
   ];
   const [open, setOpen] = useState(false);
+  const [hover, setHover] = useState<string | null>(null);
   useEffect(() => {
     if (!open) return;
     const close = () => setOpen(false);
@@ -48,10 +49,22 @@ export function Nav() {
         <PillLogo size="sm" />
         <span>Rio</span>
       </a>
-      <nav className="nav-pill" aria-label="Main">
+      <nav className="nav-pill" aria-label="Main" onMouseLeave={() => setHover(null)}>
         {links.map(([l, href]) => (
-          <a key={l} href={href} className="nav-link">
-            <span data-label={l}>{l}</span>
+          <a key={l} href={href} className="nav-link" onMouseEnter={() => setHover(l)} onFocus={() => setHover(l)} onBlur={() => setHover(null)}>
+            <AnimatePresence>
+              {hover === l && (
+                <motion.span
+                  layoutId="nav-hover"
+                  className="nav-hover"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 520, damping: 38, opacity: { duration: 0.15 } }}
+                />
+              )}
+            </AnimatePresence>
+            <span className="nav-text">{l}</span>
           </a>
         ))}
       </nav>
