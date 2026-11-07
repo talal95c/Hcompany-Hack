@@ -15,7 +15,7 @@ Contrats v1, interfaces documentées et composants amont ; aucune dépendance de
 ## État et validation
 `HoloCompiler.compile(transcript, ui_map, lesson_id=..., blender_version=...)` appelle
 Holo4 via AsyncOpenAI (HAI_API_KEY), température 0, JSON object et réflexion désactivée.
-Modèle par défaut holo4-35b-a3b ; alternative holo4-27b configurable sur HTTP 404/429.
+Modèle par défaut holo4-27b ; modèle et alternative configurables sur HTTP 404/429.
 Leçon validée par
 JSON Schema avant preuve, avec un nouvel essai si JSON invalide ; tokens et latences
 mesurés. `reselect(step, docs)` fournit le callback de sélection autorisée.

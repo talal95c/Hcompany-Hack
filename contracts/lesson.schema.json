@@ -98,6 +98,12 @@
           "check": {
             "$ref": "#/$defs/check"
           },
+          "runtime_check": {
+            "allOf": [
+              {"$ref": "#/$defs/check"},
+              {"properties": {"name": {"enum": ["element_value", "visual_assert"]}}}
+            ]
+          },
           "target": {
             "anyOf": [
               {

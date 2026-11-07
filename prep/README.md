@@ -60,6 +60,25 @@ vérifie le check sur un instantané frais (ou par vision pour `visual_assert`),
 un checkpoint, revérifie après sauvegarde et écrit preuves, captures et SHA256.
 Un arbre incomplet ou perdu donne `unknown`, jamais `pass`.
 
+### Checks Calc et runtime
+Les checks `calc.cell_formula`, `calc.range_bold` et `calc.chart_source` sont évalués
+uniquement par `prep.apps.calc.evaluate_document` sur les octets ODS enregistrés par
+le prouveur (`document_snapshot`). Ils lisent formule et valeur calculée, styles de
+chaque cellule et plage source du graphique : aucun capteur runtime ne fournit cet
+état documentaire. Le moteur runtime actuel reçoit le check principal `calc.*` et
+le considère indisponible (`unknown`), pas réussi. Il ne bascule pas implicitement
+sur un autre check.
+
+La compilation ajoute `runtime_check` : valeur de cellule via `element_value` pour
+la somme, assertion visuelle pour le gras et le graphique. Le prouveur vérifie aussi
+ce check sur l'application réelle et l'inscrit dans les preuves. L'accessibilité
+est utilisée avant le graphique ; après l'assistant, seule la vision est interrogée.
+Ces checks sont des alternatives moins fortes (une valeur ne prouve pas la formule,
+une image ne prouve pas la plage source). Le consommateur runtime doit explicitement
+choisir cette alternative et son capteur ; le moteur actuel ignore ce nouveau champ.
+Sans cette intégration, la leçon exportée reste `unknown` au runtime sur `calc.*` ;
+la preuve ODS ne constitue pas une mesure fraîche du poste de l'utilisateur.
+
 Limite AT-SPI observée (LibreOffice 7.3.7.2, VCL gtk3) : après « Terminer » de l'assistant
 graphique, l'application reste enregistrée avec un nom vide et toute requête AT-SPI la
 fige (écran noir, sauvegarde impossible). Les objets dessinés (graphique, image) sont donc

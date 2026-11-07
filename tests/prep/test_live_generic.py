@@ -70,12 +70,27 @@ async def test_live_calc_tutorial_to_proven_lesson(tmp_path):
         "calc.chart_source",
     }
     manifest = json.loads((out / "proof/manifest.json").read_text())
+    accessibility_proofs = []
     for path, digest in manifest["artifacts_sha256"].items():
         assert hashlib.sha256((out / path).read_bytes()).hexdigest() == digest
     for step in lesson["steps"]:
         evidence = json.loads((out / step["proof"]["evidence_ref"]).read_text())
         assert evidence["check_before"]["result"] == "fail"
         assert evidence["attempts"][-1]["check"]["result"] == "pass"
+        runtime = evidence["check_final"]["runtime_check"]
+        if runtime["sensor"] == "accessibility":
+            assert runtime["result"] == "pass" and runtime["snapshot_complete"]
+            accessibility_proofs.append(step["id"])
+        print(
+            "Holo step latencies (s):",
+            step["id"],
+            [
+                turn["holo_duration"]
+                for attempt in evidence["attempts"]
+                for turn in attempt["turns"]
+            ],
+        )
+    assert accessibility_proofs
     timings = json.loads((out / "timings.json").read_text())
     assert timings["holo_operator"] and timings["sandbox"]
     last = lesson["steps"][-1]["id"]

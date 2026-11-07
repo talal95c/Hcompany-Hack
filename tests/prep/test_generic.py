@@ -89,6 +89,7 @@ def test_profiles():
 
 def test_cli_routing():
     args = parser().parse_args(["tuto.txt", "--out", "lessons/x"])
+    assert args.holo_model == "holo4-27b"
     assert args.app == "blender" and not profile_for(args).generic
     args = parser().parse_args(
         ["tuto.txt", "--app", "libreoffice-calc", "--out", "lessons/x", "--fixture", "a.csv"]
@@ -627,7 +628,8 @@ async def test_visual_step_uses_vision_for_dialogs(tmp_path):
     assert result["turns"][0]["open_dialogs"] and "open_dialogs" not in result["turns"][1]
 
 
-async def test_holo_quota_retry(monkeypatch):
+@pytest.mark.parametrize("transient", ["quota", "timeout"])
+async def test_holo_quota_retry(monkeypatch, transient):
     from engine.services.errors import QuotaExceeded
     from prep.prover import holo_desktop
 
@@ -639,11 +641,14 @@ async def test_holo_quota_retry(monkeypatch):
 
     monkeypatch.setattr(holo_desktop.asyncio, "sleep", no_sleep)
     agent = holo_desktop.HoloDesktopAgent()
+    assert agent.model == "holo4-27b"
     calls = []
 
     async def flaky():
         calls.append(1)
         if len(calls) == 1:
+            if transient == "timeout":
+                raise TimeoutError()
             raise QuotaExceeded("holo", "HTTP 429 busy")
         return "ok"
 
