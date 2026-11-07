@@ -646,11 +646,27 @@ ul { list-style: none; }
 .sp-tag { color: rgba(255, 255, 255, 0.82); }
 .story-shade { background: linear-gradient(90deg, rgba(4, 5, 14, 0.6), transparent 42%, transparent 58%, rgba(4, 5, 14, 0.5)); }
 .try-btn { text-shadow: none; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25); }
+/* compact */
+.story-hero { gap: 24px; }
+.story-hero .h-hero { font-size: 50px; line-height: 55px; letter-spacing: -1.8px; }
+.story-hero .btn { transform: scale(0.88); transform-origin: left center; }
+.story-k { font-size: 10px; margin-bottom: 12px; }
+.story-feat { width: 270px; margin-top: -125px; }
+.sf { font-size: 14px; height: 42px; gap: 10px; }
+.sf .fi, .sf .feat-langs { transform: scale(0.48); margin-right: -30px; }
+.story-plans { width: 360px; margin-top: -90px; }
+.sp { padding: 12px 0; grid-template-columns: 74px 1fr auto; }
+.sp-name { font-size: 14px; }
+.sp-tag { font-size: 12px; }
+.sp-price { font-size: 22px; letter-spacing: -0.6px; }
+.try-btn { font-size: 16px; padding: 13px 22px; gap: 10px; }
 @media (max-width: 900px) {
   .story-hero { top: 18vh; left: 20px; right: 20px; }
   .story-feat, .story-plans { left: 20px; right: 20px; width: auto; top: auto; bottom: 32px; margin: 0; }
   .story-shade { background: linear-gradient(rgba(4, 5, 14, 0.35), transparent 35%, rgba(4, 5, 14, 0.82) 62%); }
   .story-hero::before, .story-feat::before, .story-plans::before { inset: -40px -30px; }
+  .story-hero .h-hero { font-size: 34px; line-height: 38px; letter-spacing: -1.2px; }
+  .story-feat, .story-plans { width: auto; }
   .sp { grid-template-columns: 80px 1fr auto; }
 }
 
