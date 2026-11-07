@@ -1,0 +1,611 @@
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import Palette from "./Palette";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import { listen } from "@tauri-apps/api/event";
+import { api, errorText, speak, stopSpeaking, type Imported, type MilestoneView, type Status, type Step, type TutorialSummary } from "./api";
+import {
+  IconCheck,
+  IconClose,
+  IconEnter,
+  IconGrid,
+  IconMic,
+  IconReplay,
+  IconSkip,
+  IconSpark,
+  IconVolume,
+  IconVolumeOff,
+} from "./icons";
+
+type Phase = "home" | "planning" | "importing" | "imported" | "running" | "done";
+
+const isYoutube = (s: string) => /^(https?:\/\/)?(www\.|m\.)?(youtube\.com\/|youtu\.be\/)/i.test(s.trim());
+/** thinking: waiting for Holo · waiting: the learner's turn · success: brief "nice" */
+type StepState = "thinking" | "waiting" | "success" | "error";
+/** A question asked mid-tutorial; the tutorial is paused while it is open. */
+type Explain = { question: string; answer?: string; details: string[]; target: string; error?: string };
+
+const BAR_WIDTH = 560;
+const PALETTE_WIDTH = 760;
+
+export default function App() {
+  const [status, setStatus] = useState<Status | null>(null);
+  const [phase, setPhase] = useState<Phase>("home");
+  const [goal, setGoal] = useState("");
+  const [title, setTitle] = useState("");
+  const [homeError, setHomeError] = useState("");
+  const [step, setStep] = useState<Step | null>(null);
+  const [progress, setProgress] = useState<MilestoneView[]>([]);
+  const [library, setLibrary] = useState<TutorialSummary[]>([]);
+  const [planning, setPlanning] = useState(false); // goal mode: Holo designs the milestones
+  const [saved, setSaved] = useState<string | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [importStage, setImportStage] = useState("");
+  const [imported, setImported] = useState<Imported | null>(null);
+  const paletteRef = useRef(paletteOpen);
+  paletteRef.current = paletteOpen;
+  const [stepState, setStepState] = useState<StepState>("thinking");
+  const [message, setMessage] = useState("");
+  const [voice, setVoice] = useState(true);
+  const [listening, setListening] = useState(false);
+  const [heard, setHeard] = useState("");
+  const [explain, setExplain] = useState<Explain | null>(null);
+  const [question, setQuestion] = useState("");
+
+  /** Learner's language: updated by everything they say (Gladia) or type
+   *  (text detection), sent to Holo with every step. Never taken from the screen. */
+  const langRef = useRef<string | null>(null);
+  const voiceRef = useRef(voice);
+  voiceRef.current = voice;
+  const liveRef = useRef({ phase, stepState, step, explain });
+  liveRef.current = { phase, stepState, step, explain };
+  const barRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    api.status().then(setStatus).catch(() => setStatus(null));
+  }, []);
+
+  useEffect(() => {
+    if (phase === "home" || paletteOpen) api.listTutorials().then(setLibrary).catch(() => setLibrary([]));
+  }, [phase, paletteOpen]);
+
+  useEffect(() => {
+    const offs = [
+      listen("tutor:planning", () => setPlanning(true)),
+      listen<{ stage: string; detail: string }>("import:progress", (e) => setImportStage(e.payload.detail)),
+      listen<MilestoneView[]>("tutor:plan", (e) => {
+        setPlanning(false);
+        setProgress(e.payload);
+      }),
+    ];
+    return () => offs.forEach((p) => p.then((off) => off()));
+  }, []);
+
+  // The native window is exactly the size of what is shown (bar, plus the
+  // palette above it when open): follow it.
+  useLayoutEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const fit = () =>
+      api.resizeBar(Math.ceil(el.getBoundingClientRect().height), paletteRef.current ? PALETTE_WIDTH : BAR_WIDTH);
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    fit();
+    return () => ro.disconnect();
+  }, [paletteOpen]);
+
+  useEffect(() => {
+    api.setSticky(phase === "running" || phase === "planning" || phase === "importing" || phase === "imported");
+  }, [phase]);
+
+  useEffect(() => {
+    const onFocus = () => inputRef.current?.focus();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey) && liveRef.current.phase === "home") {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+      } else if (e.key === "Escape" && liveRef.current.phase !== "running" && !paletteRef.current) {
+        api.hideBar();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // ---------- Tutorial loop (Holo decides each step from the live screen) ----------
+
+  const showStep = useCallback((s: Step) => {
+    if (s.progress.length) setProgress(s.progress);
+    if (s.kind === "done") {
+      setStep(s);
+      setPhase("done");
+      api.hidePointer();
+      if (voiceRef.current) speak(doneLine(langRef.current), langRef.current);
+      return;
+    }
+    setStep(s);
+    // A milestone just closed: say so briefly.
+    const closed = s.completed.length ? liveRef.current.step?.milestone?.goal : null;
+    setMessage(closed ? `✓ ${closed}` : "");
+    setStepState("waiting");
+    if (voiceRef.current) speak(s.instruction, langRef.current);
+  }, []);
+
+  /** Tells Holo what the learner did and moves to the step it picks next. */
+  const report = useCallback(
+    async (event: string) => {
+      const { phase, stepState, explain } = liveRef.current;
+      if (phase !== "running" || stepState === "thinking" || explain) return;
+      setStepState("thinking");
+      api.hidePointer();
+      try {
+        const next = await api.tutorNext(event, langRef.current);
+        if (liveRef.current.phase !== "running") return;
+        showStep(next);
+      } catch (e) {
+        if (liveRef.current.phase !== "running") return;
+        setStepState("error");
+        setMessage(errorText(e));
+      }
+    },
+    [showStep],
+  );
+
+  // The screen changed and settled (or the target was clicked with no visible
+  // effect): let Holo look and decide.
+  useEffect(() => {
+    const off = listen<{ event: string }>("watch:changed", (e) => report(e.payload.event));
+    return () => {
+      off.then((f) => f());
+    };
+  }, [report]);
+
+  // Mirror progress in the menu bar.
+  useEffect(() => {
+    if (phase === "running" && step) {
+      const total = progress.length;
+      const n = progress.filter((m) => m.status === "done" || m.status === "skipped").length + 1;
+      const prefix = stepState === "thinking" ? "…" : `${Math.min(n, total)}/${total}`;
+      api.setTray(`${prefix} · ${step.instruction}`);
+    } else if (phase === "done") {
+      api.setTray("✓ Done");
+      const t = setTimeout(() => api.setTray(null), 6000);
+      return () => clearTimeout(t);
+    } else {
+      api.setTray(null);
+    }
+  }, [phase, step, stepState, progress]);
+
+  async function importVideo(url: string) {
+    setHomeError("");
+    setImported(null);
+    setImportStage("Reading the video…");
+    setPhase("importing");
+    try {
+      const t = await api.importYoutube(url.trim());
+      setImported(t);
+      setGoal("");
+      setPhase("imported");
+      if (voiceRef.current) speak(`${t.title}: ${t.milestones} milestones, ready.`, langRef.current);
+    } catch (e) {
+      setHomeError(errorText(e));
+      setPhase("home");
+    }
+  }
+
+  async function startTutorial(text = goal, lang: string | null = null, tutorialId: string | null = null) {
+    const g = text.trim();
+    if (!g && !tutorialId) return;
+    if (!tutorialId && isYoutube(g)) return importVideo(g);
+    setHomeError("");
+    setSaved(null);
+    setProgress([]);
+    setPlanning(false);
+    setTitle(g);
+    // A typed or spoken goal sets the language; a library pick keeps the current one.
+    langRef.current = tutorialId ? lang ?? langRef.current : await api.resolveLang(g, lang, langRef.current);
+    liveRef.current.step = null;
+    setStep(null);
+    setPhase("planning");
+    try {
+      const first = await api.tutorStart(tutorialId ? null : g, tutorialId, langRef.current);
+      setPhase("running");
+      showStep(first);
+    } catch (e) {
+      setHomeError(errorText(e));
+      setPhase("home");
+    }
+  }
+  const startRef = useRef(startTutorial);
+  startRef.current = startTutorial;
+
+  async function skipMilestone() {
+    if (liveRef.current.stepState === "thinking") return;
+    setStepState("thinking");
+    api.hidePointer();
+    try {
+      showStep(await api.tutorSkipMilestone(langRef.current));
+    } catch (e) {
+      setStepState("error");
+      setMessage(errorText(e));
+    }
+  }
+
+  function iDidIt() {
+    const s = liveRef.current.step;
+    const event =
+      s?.kind === "write"
+        ? `The learner typed “${s.text}”.`
+        : s?.kind === "press_key"
+          ? `The learner pressed ${s.keys}.`
+          : s?.kind === "scroll"
+            ? "The learner scrolled."
+            : "The learner says they did it.";
+    report(event);
+  }
+
+  function quit() {
+    setExplain(null);
+    api.tutorStop();
+    stopSpeaking();
+    setPhase("home");
+  }
+
+  function toggleVoice() {
+    if (voice) stopSpeaking();
+    setVoice(!voice);
+  }
+
+  // ---------- Questions (pause, explain, continue) ----------
+
+  async function askQuestion(text: string, spoken: string | null = null) {
+    const q = text.trim();
+    if (!q || phase !== "running") return;
+    langRef.current = await api.resolveLang(q, spoken, langRef.current);
+    stopSpeaking();
+    api.hidePointer();
+    setQuestion("");
+    setExplain({ question: q, details: [], target: "" });
+    try {
+      const a = await api.ask(q, liveRef.current.step, langRef.current);
+      if (!liveRef.current.explain) return; // closed meanwhile
+      if (voiceRef.current) speak(a.answer, langRef.current);
+      if (a.action === "next") {
+        setExplain(null);
+        report(`The learner said: “${q}”.`);
+        return;
+      }
+      if (a.action === "repeat") {
+        setExplain(null);
+        api.tutorResume();
+        return;
+      }
+      const target = a.action === "point" ? a.target : "";
+      setExplain({ question: q, answer: a.answer, details: a.details ?? [], target });
+      if (target) api.locate(target, a.answer).catch(() => {});
+    } catch (e) {
+      setExplain({ question: q, details: [], target: "", error: errorText(e) });
+    }
+  }
+  const askRef = useRef(askQuestion);
+  askRef.current = askQuestion;
+
+  function continueTutorial() {
+    stopSpeaking();
+    setExplain(null);
+    api.tutorResume();
+  }
+
+  // ---------- Voice input (Gladia) ----------
+
+  async function toggleMic() {
+    if (listening) {
+      api.listenStop();
+      return;
+    }
+    stopSpeaking();
+    setHeard("");
+    try {
+      await api.listenStart();
+    } catch (e) {
+      const m = errorText(e);
+      if (liveRef.current.phase === "running") setMessage(m);
+      else setHomeError(m);
+    }
+  }
+
+  // A full spoken sentence: a goal on the home screen, a question during a tutorial.
+  const onUtterance = useCallback(
+    async (text: string, lang: string | null) => {
+      const { phase } = liveRef.current;
+      if (phase === "home") {
+        setGoal(text);
+        startRef.current(text, lang);
+        return;
+      }
+      if (phase === "running") askRef.current(text, lang);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const offs = [
+      listen<boolean>("stt:state", (e) => {
+        setListening(e.payload);
+        if (!e.payload) setHeard("");
+      }),
+      listen<{ text: string; is_final: boolean; language: string | null }>("stt:transcript", (e) => {
+        if (e.payload.is_final) {
+          setHeard("");
+          onUtterance(e.payload.text, e.payload.language);
+        } else {
+          setHeard(e.payload.text);
+        }
+      }),
+    ];
+    return () => offs.forEach((p) => p.then((off) => off()));
+  }, [onUtterance]);
+
+  const busy = stepState === "thinking";
+
+  return (
+    <div className="shell" ref={barRef}>
+      {paletteOpen && phase === "home" && (
+        <Palette
+          tutorials={library}
+          onClose={() => {
+            setPaletteOpen(false);
+            inputRef.current?.focus();
+          }}
+          onStart={(t) => {
+            setPaletteOpen(false);
+            startTutorial(t.title, null, t.id);
+          }}
+        />
+      )}
+    <div className="bar">
+      {(phase === "home" || phase === "planning" || phase === "importing") && (
+        <>
+          <form
+            className="row row--input"
+            onSubmit={(e) => {
+              e.preventDefault();
+              startTutorial();
+            }}
+          >
+            <span className="lead">
+              {phase === "planning" || phase === "importing" ? <span className="spinner" /> : <IconSpark />}
+            </span>
+            <input
+              ref={inputRef}
+              autoFocus
+              value={listening && heard ? heard : goal}
+              disabled={phase === "planning" || phase === "importing"}
+              onChange={(e) => setGoal(e.target.value)}
+              placeholder={listening ? "Listening…" : "What do you want to learn? Or paste a YouTube link"}
+              spellCheck={false}
+            />
+            {phase === "importing" ? (
+              <span className="hint shimmer">{importStage}</span>
+            ) : phase === "planning" ? (
+              <span className="hint shimmer">{planning ? "Holo is planning milestones…" : "Starting…"}</span>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={`tool ${paletteOpen ? "tool--on" : ""}`}
+                  onClick={() => setPaletteOpen((o) => !o)}
+                  title="Tutorials (⌘K)"
+                >
+                  <IconGrid />
+                </button>
+                <button
+                  type="button"
+                  className={`tool ${listening ? "tool--rec" : ""}`}
+                  onClick={toggleMic}
+                  title={listening ? "Stop listening" : "Speak (Gladia)"}
+                >
+                  <IconMic />
+                </button>
+                <button className="key" type="submit" disabled={!goal.trim()} title="Start">
+                  <IconEnter />
+                </button>
+              </>
+            )}
+          </form>
+          {homeError && <div className="note note--error">{homeError}</div>}
+          {status && !status.has_key && !homeError && (
+            <div className="note note--error">HAI_API_KEY is missing from .env</div>
+          )}
+        </>
+      )}
+
+      {phase === "running" && step && (
+        <div className="run">
+          <div className="row row--meta">
+            <div className="segments" aria-label="Milestones">
+              {progress.map((m) => (
+                <span
+                  key={m.id}
+                  title={m.goal}
+                  className={`seg ${m.status === "done" ? "seg--done" : m.status === "current" ? "seg--now" : m.status === "skipped" ? "seg--skip" : ""}`}
+                />
+              ))}
+            </div>
+            <span className="count milestone" title={step.milestone?.goal}>
+              {step.milestone?.goal ?? ""}
+            </span>
+            <div className="tools">
+              <button
+                className={`tool ${listening ? "tool--rec" : ""}`}
+                onClick={toggleMic}
+                title={listening ? "Stop listening" : "Ask a question out loud"}
+              >
+                <IconMic />
+              </button>
+              <button className="tool" onClick={() => api.tutorRepoint()} disabled={busy} title="Show me again">
+                <IconReplay />
+              </button>
+              <button className="tool" onClick={iDidIt} disabled={busy} title="I did it">
+                <IconCheck />
+              </button>
+              <button
+                className="tool"
+                onClick={skipMilestone}
+                disabled={busy}
+                title="Skip this milestone"
+              >
+                <IconSkip />
+              </button>
+              <button className="tool" onClick={toggleVoice} title={voice ? "Mute voice" : "Unmute voice"}>
+                {voice ? <IconVolume /> : <IconVolumeOff />}
+              </button>
+              <button className="tool" onClick={quit} title="Stop">
+                <IconClose />
+              </button>
+            </div>
+          </div>
+
+          {explain && (
+            <div className="explain">
+              <div className="explain__q">“{explain.question}”</div>
+              {explain.error ? (
+                <p className="status status--error">{explain.error}</p>
+              ) : explain.answer ? (
+                <>
+                  <p className="explain__a">{explain.answer}</p>
+                  {explain.details.length > 0 && (
+                    <ul className="explain__list">
+                      {explain.details.map((d, i) => (
+                        <li key={i}>{d}</li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              ) : (
+                <p className="explain__a shimmer">Holo is thinking…</p>
+              )}
+              <div className="explain__actions">
+                {explain.target && (
+                  <button className="pill" onClick={() => api.locate(explain.target, explain.answer ?? "")}>
+                    Show me
+                  </button>
+                )}
+                <button className="pill pill--light" onClick={continueTutorial}>
+                  Continue
+                </button>
+              </div>
+            </div>
+          )}
+
+          <p className={`instruction ${busy || explain ? "instruction--dim" : ""}`}>{step.instruction}</p>
+          {step.teach && !busy && !explain && <div className="teach">{step.teach}</div>}
+          {step.milestone?.video_url && !explain && (
+            <button className="video-link" onClick={() => openUrl(step.milestone!.video_url!)} title="Open the video at this moment">
+              ▶ Watch this part in the video
+            </button>
+          )}
+          {step.kind === "write" && step.text && !busy && (
+            <div className="chip">
+              Type <code>{step.text}</code>
+            </div>
+          )}
+          {step.kind === "press_key" && step.keys && !busy && (
+            <div className="chip">
+              Press <kbd>{step.keys}</kbd>
+            </div>
+          )}
+
+          {listening ? (
+            <div className="status status--rec">{heard ? `“${heard}”` : "Listening…"}</div>
+          ) : explain ? (
+            <div className="status">Paused while we talk.</div>
+          ) : busy ? (
+            <div className="status shimmer">Holo is looking at your screen…</div>
+          ) : stepState === "error" ? (
+            <div className="status status--error">{message}</div>
+          ) : stepState === "success" ? (
+            <div className="status status--ok">{message}</div>
+          ) : (
+            <div className="status">
+              {message ||
+                (step.kind === "click"
+                  ? "Go where I'm pointing. I'm watching your screen."
+                  : step.kind === "write"
+                    ? "Type it in the field I'm pointing at."
+                    : "Go ahead, I'm watching your screen.")}
+            </div>
+          )}
+          <form
+            className="ask"
+            onSubmit={(e) => {
+              e.preventDefault();
+              askQuestion(question);
+            }}
+          >
+            <input
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Ask Holo anything…"
+              spellCheck={false}
+            />
+          </form>
+        </div>
+      )}
+
+      {phase === "imported" && imported && (
+        <div className="row row--done">
+          <span className="lead lead--yt">▶</span>
+          <span className="done-text">
+            {imported.title} <span className="dim">· {imported.app} · {imported.milestones} milestones</span>
+          </span>
+          <button className="pill" onClick={() => setPhase("home")}>
+            Later
+          </button>
+          <button className="pill pill--light" onClick={() => startTutorial(imported.title, null, imported.id)}>
+            Start
+          </button>
+        </div>
+      )}
+
+      {phase === "done" && (
+        <div className="row row--done">
+          <span className="lead lead--ok">
+            <IconCheck />
+          </span>
+          <span className="done-text">
+            {saved ? `Saved to your library` : "Done"} <span className="dim">· {saved ?? title}</span>
+          </span>
+          {!saved && (
+            <button
+              className="pill"
+              onClick={() => api.saveTutorial().then(setSaved).catch((e) => setHomeError(errorText(e)))}
+              title="Keep this run as a reusable tutorial, with the path you took as hints"
+            >
+              Save as tutorial
+            </button>
+          )}
+          <button
+            className="pill pill--light"
+            onClick={() => {
+              setGoal("");
+              setPhase("home");
+            }}
+          >
+            New
+          </button>
+        </div>
+      )}
+    </div>
+    </div>
+  );
+}
+
+function doneLine(lang: string | null): string {
+  return lang === "fr" ? "Bravo, tu as terminé le tuto !" : "Well done, you finished the tutorial!";
+}

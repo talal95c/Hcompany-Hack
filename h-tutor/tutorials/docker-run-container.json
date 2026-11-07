@@ -1,0 +1,49 @@
+{
+  "id": "docker-run-container",
+  "version": 1,
+  "title": "Run a container from an image",
+  "app": {
+    "name": "Docker Desktop",
+    "bundle_id": "com.docker.docker"
+  },
+  "goal": "Start a new container from a local image in Docker Desktop",
+  "source": "authored",
+  "milestones": [
+    {
+      "id": "images",
+      "goal": "Open the Images page",
+      "done_when": "The Images page is shown, with the list of local images",
+      "hints": [
+        "Left sidebar: Images (the icon under Containers when the sidebar is collapsed)"
+      ],
+      "teach": "An image is the template; a container is a running copy of it."
+    },
+    {
+      "id": "run",
+      "goal": "Open the Run dialog for an image",
+      "done_when": "The 'Run a new container' dialog is open",
+      "hints": [
+        "Click the ▶ Run button in the Actions column of the image's row"
+      ]
+    },
+    {
+      "id": "settings",
+      "goal": "Name the container",
+      "done_when": "Optional settings are expanded and the Container name field is filled",
+      "hints": [
+        "Expand Optional settings",
+        "Type a name in Container name"
+      ],
+      "teach": "A clear name makes the container easy to find in the list later.",
+      "optional": true
+    },
+    {
+      "id": "start",
+      "goal": "Start the container",
+      "done_when": "The container's page shows a Running status, or the new container appears as running in the Containers list",
+      "hints": [
+        "Click Run at the bottom of the dialog"
+      ]
+    }
+  ]
+}

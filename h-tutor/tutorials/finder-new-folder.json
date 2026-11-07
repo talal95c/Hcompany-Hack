@@ -1,0 +1,40 @@
+{
+  "id": "finder-new-folder",
+  "version": 1,
+  "title": "Create and rename a folder",
+  "app": {
+    "name": "Finder",
+    "bundle_id": "com.apple.finder"
+  },
+  "goal": "Create a new folder on the Desktop and give it a name",
+  "source": "authored",
+  "milestones": [
+    {
+      "id": "window",
+      "goal": "Open a Finder window showing the Desktop",
+      "done_when": "A Finder window is open with Desktop selected in its sidebar",
+      "hints": [
+        "Click the Finder icon in the Dock",
+        "Click Desktop in the sidebar"
+      ]
+    },
+    {
+      "id": "create",
+      "goal": "Create a new folder",
+      "done_when": "A folder named 'untitled folder' appears with its name ready to edit",
+      "hints": [
+        "File > New Folder",
+        "or press Shift+Command+N"
+      ],
+      "teach": "Shift+Command+N works in any Finder window."
+    },
+    {
+      "id": "rename",
+      "goal": "Give the folder a name",
+      "done_when": "The new folder shows the name the learner typed (not 'untitled folder')",
+      "hints": [
+        "Type the name while it is highlighted, then press Return"
+      ]
+    }
+  ]
+}

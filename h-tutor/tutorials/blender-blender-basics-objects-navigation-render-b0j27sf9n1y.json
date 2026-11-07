@@ -1,0 +1,120 @@
+{
+  "id": "blender-blender-basics-objects-navigation-render-b0j27sf9n1y",
+  "version": 1,
+  "title": "Blender Basics: Objects, Navigation, Render",
+  "app": {
+    "name": "Blender"
+  },
+  "goal": "Complete the Blender Guru donut tutorial basics: add objects, navigate, render, and transform",
+  "language": "en",
+  "source": "youtube",
+  "source_url": "https://www.youtube.com/watch?v=B0J27sf9N1Y",
+  "milestones": [
+    {
+      "id": "m1",
+      "goal": "Delete the default cube and add a monkey mesh",
+      "done_when": "The default cube is gone and a monkey (Suzanne) mesh is visible in the 3D viewport.",
+      "hints": [
+        "Select cube, press X or Delete",
+        "Shift+A > Mesh > Monkey"
+      ],
+      "teach": "The Add menu (Shift+A) is how you insert new objects into your scene.",
+      "video_at": 155
+    },
+    {
+      "id": "m2",
+      "goal": "Orbit around the scene using the middle mouse button",
+      "done_when": "The 3D viewport shows the monkey from a different angle than the default front view.",
+      "hints": [
+        "Hold and drag Middle Mouse Button",
+        "Use the navigation widget in the corner"
+      ],
+      "teach": "Orbiting lets you inspect your 3D model from any angle without moving the object itself.",
+      "video_at": 217
+    },
+    {
+      "id": "m3",
+      "goal": "Switch to Rendered View Mode",
+      "done_when": "The viewport shading shows a rendered appearance with lighting and shadows instead of flat solid colors.",
+      "hints": [
+        "Top Right Corner > Rendered View Mode"
+      ],
+      "teach": "Rendered view shows how your scene will look in the final output with full lighting calculations.",
+      "video_at": 309
+    },
+    {
+      "id": "m4",
+      "goal": "Pan the view using Shift + Middle Mouse Button",
+      "done_when": "The viewport has shifted position, showing a different part of the scene without changing the viewing angle.",
+      "hints": [
+        "Shift + Middle Mouse Button drag",
+        "Use the Move Tool from the navigation widget"
+      ],
+      "teach": "Panning slides the viewport sideways without rotating, useful for looking at objects outside your current view.",
+      "video_at": 356
+    },
+    {
+      "id": "m5",
+      "goal": "Move the light object using the Move Tool",
+      "done_when": "The light object has been repositioned in the 3D viewport from its original location.",
+      "hints": [
+        "Left Toolbar > Move Tool (G key)",
+        "Click and drag to move"
+      ],
+      "teach": "The G key activates the Move tool, letting you reposition any selected object in 3D space.",
+      "video_at": 393
+    },
+    {
+      "id": "m6",
+      "goal": "Render the scene using F12",
+      "done_when": "A rendered image appears in a new window or the render result is visible in the interface.",
+      "hints": [
+        "Press F12",
+        "Render > Render Image"
+      ],
+      "teach": "F12 triggers a full render of your scene, producing the final image output.",
+      "video_at": 612
+    },
+    {
+      "id": "m7",
+      "goal": "Switch to camera view and move the camera",
+      "done_when": "The viewport is now showing the scene from the camera's perspective (camera view).",
+      "hints": [
+        "Numpad 0 to switch to camera view",
+        "Select camera, press G to move it"
+      ],
+      "teach": "The camera determines what the viewer sees in the final render; Numpad 0 toggles camera view.",
+      "video_at": 661
+    },
+    {
+      "id": "m8",
+      "goal": "Add a cone to the scene",
+      "done_when": "A cone object is visible in the 3D viewport alongside the monkey.",
+      "hints": [
+        "Shift+A > Mesh > Cone"
+      ],
+      "teach": "Primitive shapes like cones are building blocks you can combine to create more complex models.",
+      "video_at": 858
+    },
+    {
+      "id": "m9",
+      "goal": "Scale up the cone object",
+      "done_when": "The cone is visibly larger than its default size in the viewport.",
+      "hints": [
+        "Press S key and drag mouse to scale"
+      ],
+      "teach": "The S key activates Scale mode, letting you resize the selected object proportionally.",
+      "video_at": 916
+    },
+    {
+      "id": "m10",
+      "goal": "Rotate the cone to align with the monkey's head",
+      "done_when": "The cone is rotated so it appears aligned with or positioned on the monkey's head.",
+      "hints": [
+        "Press R key and drag to rotate"
+      ],
+      "teach": "The R key activates Rotate mode, allowing you to spin the object around its axes.",
+      "video_at": 1015
+    }
+  ]
+}
