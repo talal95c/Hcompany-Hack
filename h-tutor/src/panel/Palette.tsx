@@ -91,8 +91,9 @@ export default function Palette({ tutorials, onStart, onClose }: Props) {
     <motion.div
       className="palette"
       onKeyDown={onKeyDown}
-      initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, filter: "blur(6px)" }}
-      animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+      initial={reduced ? { opacity: 0 } : { opacity: 0, y: -8, height: 0, filter: "blur(6px)" }}
+      animate={{ opacity: 1, y: 0, height: 480, filter: "blur(0px)" }}
+      exit={reduced ? { opacity: 0, transition: { duration: 0.12 } } : { opacity: 0, y: -8, height: 0, filter: "blur(6px)", transition: { duration: 0.14, ease: [0.23, 1, 0.32, 1] } }}
       transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
     >
       <div className="palette__head">

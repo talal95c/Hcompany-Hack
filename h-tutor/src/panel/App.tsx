@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import Palette from "./Palette";
 import { sfx, useSoundEnabled, setSoundEnabled } from "../sound";
 import { Feedback } from "../feedback";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Transcript, Wave, tail } from "./Dictaphone";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { listen } from "@tauri-apps/api/event";
@@ -113,7 +113,7 @@ export default function App() {
   }, []);
 
   // The native window is exactly the size of what is shown (bar, plus the
-  // palette above it when open): follow it.
+  // palette below it when open): follow it.
   useLayoutEffect(() => {
     const el = barRef.current;
     if (!el) return;
@@ -445,22 +445,10 @@ export default function App() {
   }, [onUtterance]);
 
   const busy = stepState === "thinking";
+  const reduced = useReducedMotion();
 
   return (
     <div className={`shell ${paletteOpen && phase === "home" ? "shell--library" : ""}`} ref={barRef}>
-      {paletteOpen && phase === "home" && (
-        <Palette
-          tutorials={library}
-          onClose={() => {
-            setPaletteOpen(false);
-            inputRef.current?.focus();
-          }}
-          onStart={(t) => {
-            setPaletteOpen(false);
-            startTutorial(t.title, null, t.id);
-          }}
-        />
-      )}
     <div className="bar">
       {phase === "home" && qa && (qa.result || qa.error) && (
         <div className="explain qa">
@@ -601,7 +589,7 @@ export default function App() {
       {phase === "running" && step && (
         <motion.div
           className="run"
-          initial={{ opacity: 0, y: 8, filter: "blur(6px)" }}
+          initial={reduced ? { opacity: 0 } : { opacity: 0, y: -8, filter: "blur(6px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
         >
@@ -695,7 +683,7 @@ export default function App() {
           <motion.p
             key={step.instruction}
             className={`instruction ${busy || explain ? "instruction--dim" : ""}`}
-            initial={{ opacity: 0, y: 6, filter: "blur(6px)" }}
+            initial={reduced ? { opacity: 0 } : { opacity: 0, y: -6, filter: "blur(6px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
           >
@@ -769,9 +757,9 @@ export default function App() {
               <motion.div
                 key="dicta"
                 className="dicta"
-                initial={{ opacity: 0, height: 0, filter: "blur(6px)" }}
-                animate={{ opacity: 1, height: "auto", filter: "blur(0px)" }}
-                exit={{ opacity: 0, height: 0, filter: "blur(6px)", transition: { duration: 0.2, ease: [0.23, 1, 0.32, 1] } }}
+                initial={reduced ? { opacity: 0 } : { opacity: 0, y: -6, height: 0, filter: "blur(6px)" }}
+                animate={{ opacity: 1, y: 0, height: "auto", filter: "blur(0px)" }}
+                exit={reduced ? { opacity: 0, transition: { duration: 0.12 } } : { opacity: 0, y: -6, height: 0, filter: "blur(6px)", transition: { duration: 0.14, ease: [0.23, 1, 0.32, 1] } }}
                 transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
               >
                 <Wave level={level} done={voiceText.final} size="lg" />
@@ -782,9 +770,9 @@ export default function App() {
                 <motion.form
                   key="ask"
                   className="ask"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0, transition: { duration: 0.16, ease: [0.23, 1, 0.32, 1] } }}
+                  initial={reduced ? { opacity: 0 } : { opacity: 0, y: -6, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  exit={reduced ? { opacity: 0, transition: { duration: 0.12 } } : { opacity: 0, y: -6, height: 0, transition: { duration: 0.14, ease: [0.23, 1, 0.32, 1] } }}
                   transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -849,6 +837,22 @@ export default function App() {
         </div>
       )}
     </div>
+      <AnimatePresence initial={false}>
+        {paletteOpen && phase === "home" && (
+          <Palette
+            key="palette"
+            tutorials={library}
+            onClose={() => {
+              setPaletteOpen(false);
+              inputRef.current?.focus();
+            }}
+            onStart={(t) => {
+              setPaletteOpen(false);
+              startTutorial(t.title, null, t.id);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

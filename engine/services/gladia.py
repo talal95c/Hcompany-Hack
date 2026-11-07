@@ -112,6 +112,8 @@ class GladiaLiveSession:
         self._queue: asyncio.Queue[SttEvent | None] = asyncio.Queue()
         self._last_audio_at: float | None = None
         self._first_partial_pending = True
+        self._stopped = False
+        self._closing: asyncio.Task | None = None
         self._utterance_audio_start: float | None = None
         self._reader = asyncio.create_task(self._read())
 
@@ -126,6 +128,8 @@ class GladiaLiveSession:
                     continue
                 self._observe(event)
                 await self._queue.put(event)
+                if event.kind == "ended":
+                    break
         except websockets.ConnectionClosed:
             pass
         finally:
@@ -153,8 +157,15 @@ class GladiaLiveSession:
             await self._ws.send(chunk)
             self._last_audio_at = time.perf_counter()
 
+    @property
+    def closed(self) -> bool:
+        return self._reader.done()
+
     async def stop(self) -> None:
         """Demande la fin d'enregistrement ; les derniers finals arrivent ensuite."""
+        if self._stopped:
+            return
+        self._stopped = True
         with contextlib.suppress(websockets.ConnectionClosed):
             await self._ws.send(json.dumps({"type": "stop_recording"}))
 
@@ -168,10 +179,23 @@ class GladiaLiveSession:
                 return
 
     async def aclose(self) -> None:
-        await self._ws.close()
-        self._reader.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await self._reader
+        if self._closing is None:
+            self._closing = asyncio.create_task(self._close())
+        try:
+            await asyncio.shield(self._closing)
+        except asyncio.CancelledError:
+            await self._closing
+            raise
+
+    async def _close(self) -> None:
+        try:
+            try:
+                await self.stop()
+            finally:
+                await self._ws.close()
+        finally:
+            self._reader.cancel()
+            await asyncio.gather(self._reader, return_exceptions=True)
 
 
 class GladiaSttClient:
@@ -221,9 +245,14 @@ class GladiaSttClient:
                 raise ServiceUnavailable(SERVICE, f"transport: {exc}") from exc
             ctx.request_id = resp.headers.get("x-request-id")
             if resp.status_code not in (200, 201):
-                raise error_for_status(
+                error = error_for_status(
                     SERVICE, resp.status_code, resp.text, request_id=ctx.request_id
                 )
+                try:
+                    error.retry_after = max(0, float(resp.headers.get("retry-after", "0")))
+                except ValueError:
+                    pass
+                raise error
             try:
                 body = resp.json()
             except ValueError as exc:
