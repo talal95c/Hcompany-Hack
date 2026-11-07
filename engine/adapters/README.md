@@ -17,6 +17,9 @@ préconditions (`facts`), zone (`zone`), dévoilement (`reveal`/`reveal_target`)
   `app.focus`. Un check exact lu en vision reste `unknown` : aucun ✓ inventé.
 - `profiles/*.json` : vocabulaire STT, contexte Jev, domaines de documentation et noms de
   processus par `lesson.app.id` ; une application inconnue reçoit un profil neutre.
+- `services.py` : les clients génériques transmettent les domaines et un schéma de
+  documentation neutre à Linkup, ainsi que le profil complet à Jev (intentions et aide).
+  Les clients du plugin conservent leurs paramètres et prompts existants.
 - Leçons v1 : `engine.lesson.lesson_app` projette `blender_version` en
   `{id: blender, version, sensor: addon}` sans réécrire la leçon ni sa preuve.
 - Aide générique : zone = commandes de l'adaptateur (`highlight` add-on ou `highlight.rect`

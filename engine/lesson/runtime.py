@@ -22,6 +22,7 @@ from engine.adapters import (
     load_profile,
 )
 from engine.adapters.profiles import version_matches
+from engine.adapters.services import ProfileJevAdapter, ProfileSearchAdapter
 from engine.adapters.vision import visual_checks
 from engine.bus import EventBus, Topic
 from engine.bus.servers import AddonServer, DesktopServer, EventBuffer, Seen
@@ -46,6 +47,7 @@ from engine.learner import LearnerMemory
 from engine.lesson import Session, lesson_app, load_lesson, load_verification
 from engine.lesson.live_audio import LiveUtterance
 from engine.policy import HelpContext, HelpPolicy
+from engine.services.adapters import JevAdapter, SearchAdapter
 
 
 def decode_capture(payload: dict) -> bytes:
@@ -103,6 +105,11 @@ class EngineRuntime:
         self.session = Session(config.session_id, lesson) if lesson else None
         self.app = lesson_app(lesson) if lesson else dict(DEFAULT_PLUGIN_APP)
         self.profile = load_profile(self.app)
+        if self.app["id"] not in PLUGINS:
+            if isinstance(search, SearchAdapter):
+                self.search = ProfileSearchAdapter(search.client, self.profile)
+            if isinstance(jev, JevAdapter):
+                jev = ProfileJevAdapter(jev.client, self.profile)
         if lesson:
             validate("lesson", lesson)
             for step in lesson["steps"]:
