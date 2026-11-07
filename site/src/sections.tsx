@@ -20,7 +20,7 @@ const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Fi
 
 /* ---------------- Nav ---------------- */
 
-const APP_URL = import.meta.env.VITE_APP_URL ?? "#contact";
+export const GET_RIO = "#/get-rio";
 
 export function Nav() {
   const links = ["Pricing", "FAQ"];
@@ -42,7 +42,7 @@ export function Nav() {
           </a>
         ))}
       </nav>
-      <Btn label="Log in" variant="light" size="sm" href={APP_URL} className="nav-cta" />
+      <Btn label="Get Rio" variant="light" size="sm" href={GET_RIO} className="nav-cta" />
     </motion.header>
   );
 }
@@ -80,7 +80,7 @@ export function Hero() {
             Rio watches your screen, breaks any task into steps and shows you exactly where to click. You do it, Rio checks it.
           </motion.p>
           <motion.div {...up(0.56)}>
-            <Btn label="Try Rio" href="#contact" />
+            <Btn label="Try Rio" href={GET_RIO} />
           </motion.div>
         </div>
         <motion.div className="hero-bottom" {...up(0.85)}>
