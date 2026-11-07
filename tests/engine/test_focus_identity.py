@@ -3,6 +3,7 @@ import asyncio
 import pytest
 
 from engine.adapters import VisionAdapter
+from engine.adapters.profiles import version_matches
 from engine.bus import Topic
 from engine.cache import TargetContext
 from engine.checks import evaluate
@@ -144,3 +145,12 @@ async def test_preconditions_rechecked_after_check_dispatch(tmp_path):
     runtime.bus.publish = publish
     await runtime.tick()
     assert runtime.commands.empty() and runtime.session.status == "PAUSED"
+
+
+@pytest.mark.parametrize(("required", "observed", "matches"), [
+    ("7.3", "7.3.7.2", True), ("7.3.7", "7.3.7.2", True),
+    ("7.3", "7.30.1", False), ("7.3.7", "7.3", False),
+    ("7.3", "unknown", False), ("7.3", "7.4", False),
+])
+def test_component_version_compatibility(required, observed, matches):
+    assert version_matches(required, observed) is matches

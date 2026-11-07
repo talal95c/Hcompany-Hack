@@ -20,6 +20,8 @@ from engine.adapters import (
     VisionAdapter,
     load_profile,
 )
+from engine.adapters.profiles import version_matches
+from engine.adapters.vision import visual_checks
 from engine.bus import EventBus, Topic
 from engine.bus.servers import AddonServer, DesktopServer, EventBuffer, Seen
 from engine.bus.validation import validate
@@ -197,8 +199,7 @@ class EngineRuntime:
             return False
         if adapter is self.plugin:
             return self.plugin.version == self.app["version"]
-        return adapter.available() and adapter.version != "unknown" and (
-            adapter.version == self.app["version"])
+        return adapter.available() and version_matches(self.app["version"], adapter.version)
 
     async def desktop_send(self, kind: str, payload: dict) -> None:
         if not self.desktop.clients:
@@ -391,6 +392,14 @@ class EngineRuntime:
             return
         if generation != session.generation or adapter is not self.adapter:
             return
+        if adapter is self.a11y and visual_checks(session.step):
+            epoch = self.a11y.focus_epoch
+            self.a11y.state.verdicts.clear()
+            if self.vision.available():
+                visual = await self.vision.refresh(session.step)
+                if epoch != self.a11y.focus_epoch or not visual.recent:
+                    return
+                self.a11y.state.verdicts = dict(visual.verdicts)
         async with self.lock:
             await self.evaluate({"type": "heartbeat", "payload": {}, "received_at": received})
 

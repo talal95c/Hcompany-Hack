@@ -8,6 +8,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent / "profiles"
 
 
+def version_matches(required: str, observed: str) -> bool:
+    if not required or observed == "unknown":
+        return False
+    expected, actual = required.split("."), observed.split(".")
+    return (all(part.isdecimal() for part in expected + actual)
+            and actual[:len(expected)] == expected)
+
+
 @dataclass(frozen=True)
 class AppProfile:
     id: str

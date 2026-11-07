@@ -88,6 +88,7 @@ class AccessibilityAdapter:
         self.state.complete = False
         self.state.latest_revision = self.state.revision + 1
         self.state.lookups.clear()
+        self.state.verdicts.clear()
 
     def resolve(self, payload: dict) -> bool:
         future = self.pending.get(payload["request_id"])
