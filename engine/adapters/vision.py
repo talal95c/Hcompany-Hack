@@ -97,6 +97,11 @@ class VisionAdapter:
         self.state = AppState(app_id=self.app_id)
         self.focus: dict | None = None
         self.permission = False
+        self.focus_epoch = 0
+
+    @property
+    def version(self) -> str:
+        return (self.focus.get("version") or "unknown") if self.focused else "unknown"
 
     @property
     def focused(self) -> bool:
@@ -116,27 +121,35 @@ class VisionAdapter:
 
     def on_focus(self, payload: dict) -> bool:
         changed = self.focus is None or any(
-            self.focus.get(k) != payload.get(k) for k in ("app_id", "window_bounds", "scale"))
+            self.focus.get(k) != payload.get(k) for k in (
+                "app_id", "name", "window_title", "window_bounds", "scale", "version"))
         self.focus = payload
         self.state.window_title = payload["window_title"] if self.focused else None
-        if not self.focused:
+        if changed:
+            self.focus_epoch += 1
+        if changed or not self.focused:
             self.invalidate()
         return changed
 
     def invalidate(self) -> None:
         self.state.complete = False
         self.state.latest_revision = self.state.revision + 1
+        self.state.verdicts.clear()
 
     def disconnect(self) -> None:
+        self.focus_epoch += 1
         self.focus = None
         self.permission = False
         self.invalidate()
 
     async def refresh(self, step: dict) -> AppState:
+        epoch = self.focus_epoch
         state = self.state
         verdicts: dict[str, VerifyResult] = {}
         params_list = visual_checks(step)
         frame = await self.capture() if params_list and self.focused and self.verifier else None
+        if epoch != self.focus_epoch:
+            return state
         if frame is not None:
             _, image = frame
             for params in params_list:
@@ -149,6 +162,8 @@ class VisionAdapter:
                                            type(error).__name__)
                 self.metric("holo.verify", (time.perf_counter() - start) * 1000)
                 verdicts[assertion_key(params)] = verdict
+        if epoch != self.focus_epoch:
+            return state
         state.verdicts = verdicts
         state.window_title = self.focus["window_title"] if self.focused else None
         state.revision = max(state.revision, state.latest_revision) + 1

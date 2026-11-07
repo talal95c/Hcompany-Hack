@@ -145,6 +145,7 @@ class EngineRuntime:
                                     timeout_s=config.holo_timeout_s, metric=self.metric)
         self.adapter = None
         self.window_requests: dict[str, asyncio.Future] = {}
+        self.window_epochs: dict[str, int] = {}
         self.select_adapter()
         self.connection_epoch = 0
         self.commands = self.bus.subscribe(Topic.COMMAND)
@@ -188,7 +189,7 @@ class EngineRuntime:
     def app_version(self) -> str:
         if self.plugin and self.adapter is self.plugin:
             return self.plugin.version
-        return self.app["version"]
+        return self.adapter.version if self.adapter else "unknown"
 
     def app_ready(self) -> bool:
         adapter = self.adapter
@@ -196,7 +197,8 @@ class EngineRuntime:
             return False
         if adapter is self.plugin:
             return self.plugin.version == self.app["version"]
-        return adapter.available()
+        return adapter.available() and adapter.version != "unknown" and (
+            adapter.version == self.app["version"])
 
     async def desktop_send(self, kind: str, payload: dict) -> None:
         if not self.desktop.clients:
@@ -276,6 +278,7 @@ class EngineRuntime:
 
     def invalidate_native(self) -> None:
         self.consent = None
+        self.pointer_request = None
         self.invalidate_capture()
 
     def invalidate_capture(self) -> None:
@@ -408,6 +411,9 @@ class EngineRuntime:
                                "required": self.app["version"],
                                "sensor": getattr(self.adapter, "sensor", None)})
             return
+        if not session.preconditions_hold(self.adapter.facts()):
+            self.pause()
+            return
         if session.status == "READY":
             if not session.observe(self.adapter.facts()):
                 return
@@ -419,6 +425,7 @@ class EngineRuntime:
             return
         session.transition("CHECKING")
         generation = session.generation
+        focus_epoch = self.a11y.focus_epoch
         check = session.step["check"]
         result = evaluate(check["name"], self.state, check["params"])
         if self.adapter is self.plugin:
@@ -433,10 +440,15 @@ class EngineRuntime:
         decision = await self.policy.process(
             self.state, result, event_type=event["type"],
             undo_count=event["payload"].get("count", 1), context=self.context(),
+            can_pass=lambda: self.app_ready() and session.preconditions_hold(self.adapter.facts())
+            and (self.adapter is self.plugin or focus_epoch == self.a11y.focus_epoch),
         )
         if generation != session.generation or session.status != "CHECKING":
             return
         self.max_help = max(used_help, self.policy.level)
+        if not self.app_ready() or not session.preconditions_hold(self.adapter.facts()):
+            self.pause()
+            return
         if decision:
             self.metric("check→decision", (time.perf_counter() - checked_at) * 1000)
             self.metric("event→decision", (time.perf_counter() - event["received_at"]) * 1000)
@@ -444,7 +456,8 @@ class EngineRuntime:
                 self.metric("addon→decision", time.monotonic() * 1000
                             - event["ts_monotonic_ms"])
         if result.status == "pass" and decision and decision.kind == "success":
-            session.transition("PASSED")
+            if self.adapter is self.plugin:
+                session.transition("PASSED")
             save = asyncio.create_task(asyncio.to_thread(
                 self.learner.review, session.step["skill_id"], passed=True,
                 help_level=self.max_help, challenge=session.step.get("challenge", False)))
@@ -453,6 +466,12 @@ class EngineRuntime:
             except asyncio.CancelledError:
                 await save
                 raise
+            if (not self.app_ready() or not session.preconditions_hold(self.adapter.facts())
+                    or (self.adapter is not self.plugin and focus_epoch != self.a11y.focus_epoch)):
+                self.pause()
+                return
+            if session.status == "CHECKING":
+                session.transition("PASSED")
             session.advance(session.generation)
             self.invalidate_native()
             await self.preloader.cancel()
@@ -580,8 +599,10 @@ class EngineRuntime:
         if len(self.window_requests) >= 8:
             return None
         request_id = str(uuid4())
+        epoch = self.vision.focus_epoch
         future = asyncio.get_running_loop().create_future()
         self.window_requests[request_id] = future
+        self.window_epochs[request_id] = epoch
         start = time.perf_counter()
         try:
             await self.desktop.send("capture.request", {
@@ -590,6 +611,8 @@ class EngineRuntime:
                 "scope": "window", "app": self.app["id"],
             })
             frame = await asyncio.wait_for(future, 3)
+            if epoch != self.vision.focus_epoch:
+                return None
             self.metric("capture.window", (time.perf_counter() - start) * 1000)
             return frame
         except (TimeoutError, asyncio.CancelledError, ConnectionError):
@@ -598,6 +621,7 @@ class EngineRuntime:
             return None
         finally:
             self.window_requests.pop(request_id, None)
+            self.window_epochs.pop(request_id, None)
 
     async def forward_diagnostics(self) -> None:
         while True:
@@ -617,7 +641,10 @@ class EngineRuntime:
             if changed:
                 self.ui_revision += 1
                 self.router.recover("accessibility")
-                self.invalidate_capture()
+                self.invalidate_native()
+                self.pause()
+                if self.session and self.adapter is not self.plugin:
+                    self.policy.set_step(self.session.step, self.session.generation)
             self.select_adapter()
         elif kind == "a11y.result":
             self.a11y.resolve(payload)
@@ -714,6 +741,8 @@ class EngineRuntime:
             raise ValueError("Capture périmée")
         window = self.window_requests.get(payload.get("request_id", ""))
         if window is not None:
+            if self.window_epochs.get(payload["request_id"]) != self.vision.focus_epoch:
+                raise ValueError("Capture périmée")
             self.capture_ids.add(payload["capture_id"])
             if not window.done():
                 window.set_result((payload, image))

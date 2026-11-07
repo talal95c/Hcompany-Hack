@@ -175,6 +175,7 @@ class HelpPolicy:
     async def process(
         self, state: Any, result: CheckResult, *, event_type: str = "heartbeat",
         undo_count: int = 1, context: HelpContext | None = None,
+        can_pass: Callable[[], bool] | None = None,
     ) -> Decision | None:
         async with self.lock:
             if not self.step or self.passed:
@@ -184,6 +185,8 @@ class HelpPolicy:
             if result.scene_revision != state.revision or not state.recent:
                 return None
             if result.status == "pass":
+                if can_pass is not None and not can_pass():
+                    return None
                 self.passed = True
                 await self._command("success", {"text": "Étape réussie"}, revision=state.revision)
                 decision = await self._decision("success", "check_pass")

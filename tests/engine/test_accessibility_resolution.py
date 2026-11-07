@@ -95,6 +95,7 @@ async def test_runtime_falls_back_without_inventing_visual_checks(error, tmp_pat
     runtime.vision.verifier = object()
     runtime.vision.capture = forbidden_capture
     focus = {"app_id": "soffice", "name": "LibreOffice Calc",
+             "version": runtime.app["version"],
              "window_title": "Sans nom 1 - LibreOffice Calc", "window_bounds": WINDOW,
              "scale": 1, "accessibility": "available"}
     runtime.a11y.on_focus(focus)

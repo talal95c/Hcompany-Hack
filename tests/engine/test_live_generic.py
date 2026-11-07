@@ -150,7 +150,8 @@ class Shim:
         await send_ws(self.ws, "permissions", {"screen": True, "accessibility": True,
                                               "microphone": False})
         await send_ws(self.ws, "app.focus", {
-            "app_id": "soffice", "name": "LibreOffice Calc",
+            "app_id": "soffice", "name": self.calc.frame["name"],
+            "version": self.calc.frame["version"],
             "window_title": self.calc.frame["title"], "window_bounds": self.calc.frame["bounds"],
             "scale": 1, "accessibility": "available"})
 
@@ -211,8 +212,9 @@ async def test_live_calc_end_to_end(tmp_path):
                           no_progress_s=600, cooldown_s=0)
     clients = build_clients(config)
     assert set(clients) == {"holo", "jev", "stt", "search"}
-    runtime = EngineRuntime(config, lesson=load_lesson(HERE / "fixtures/calc_lesson.json",
-                                                       allow_unproven=True), **clients)
+    lesson = load_lesson(HERE / "fixtures/calc_lesson.json", allow_unproven=True)
+    lesson["app"]["version"] = calc.frame["version"]
+    runtime = EngineRuntime(config, lesson=lesson, **clients)
     latencies: list[dict] = []
     original = runtime.debug.record
 

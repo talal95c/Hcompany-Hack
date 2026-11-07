@@ -5,6 +5,7 @@ Joue le rôle du backend natif Linux du desktop pour la recette Calc sous Xvfb.
 
 import json
 import re
+import subprocess
 import sys
 import time
 
@@ -19,6 +20,8 @@ STATES = {
 }
 CELL = re.compile(r"^([A-Z]{1,3})([0-9]{1,7})$")
 snapshot = 0
+VERSION = re.search(r"\d+\.\d+\.\d+(?:\.\d+)?", subprocess.check_output(
+    ["soffice", "--version"], text=True)).group()
 
 
 def frame(app_name: str):
@@ -90,7 +93,9 @@ def handle(request: dict) -> dict:
     if request["op"] == "frame":
         if root is None:
             return {"error": "APP_NOT_FOUND"}
-        return {"title": root.name, "bounds": node(root, "frame")["bounds"]}
+        return {"title": root.name, "bounds": node(root, "frame")["bounds"],
+                "name": "LibreOffice Calc" if root.name.endswith("LibreOffice Calc") else root.name,
+                "version": VERSION}
     if root is None:
         return {"snapshot_id": None, "complete": False, "nodes": [],
                 "error": {"code": "APP_NOT_FOUND", "message": "Fenêtre absente"}}

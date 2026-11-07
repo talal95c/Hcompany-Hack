@@ -100,6 +100,7 @@ class FakeCalc:
     async def focus(self, app_id: str, name: str = "LibreOffice Calc") -> None:
         await send_ws(self.ws, "app.focus", {
             "app_id": app_id, "name": name,
+            "version": self.runtime.app["version"],
             "window_title": "Sans nom 1 - LibreOffice Calc", "window_bounds": WINDOW,
             "scale": 1, "accessibility": "available"})
         await self.barrier()

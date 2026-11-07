@@ -182,7 +182,8 @@ def test_lesson_loader_v1_mapping_and_v2_app():
 def test_profiles_and_rect_geometry():
     calc = load_profile({"id": "libreoffice-calc", "name": "Calc"})
     assert "cellule" in calc.vocabulary and "help.libreoffice.org" in calc.docs_domains
-    assert calc.matches("soffice") and not calc.matches("blender")
+    assert calc.matches("soffice", "LibreOffice Calc") and not calc.matches("soffice")
+    assert not calc.matches("soffice", "LibreOffice Writer")
     blender = load_profile({"id": "blender", "name": "Blender"})
     assert blender.docs_domains == ("docs.blender.org",)
     other = load_profile({"id": "gimp", "name": "GIMP"})

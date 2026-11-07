@@ -124,6 +124,12 @@ class Session:
         """Démarre l'étape si chaque précondition est confirmée par le capteur actif."""
         if self.status != "READY":
             return False
+        if not self.preconditions_hold(facts):
+            return False
+        self.transition("OBSERVING")
+        return True
+
+    def preconditions_hold(self, facts: Mapping[str, str | None]) -> bool:
         # Seules les préconditions lues par le capteur sont vérifiables ; les autres décrivent.
         for key, expected in self.step["preconditions"].items():
             if key not in facts:
@@ -136,7 +142,6 @@ class Session:
                     return False
             elif actual != expected:
                 return False
-        self.transition("OBSERVING")
         return True
 
     def accept(self, generation: int) -> bool:

@@ -22,7 +22,9 @@ class AppProfile:
         """Identité d'une fenêtre `app.focus` (id ou nom de processus, sans la casse)."""
         candidates = {self.id.casefold(), self.name.casefold(),
                       *(p.casefold() for p in self.process_names)}
-        return app_id.casefold() in candidates or name.casefold() in candidates
+        identity = {self.id.casefold(), self.name.casefold()}
+        return (name.casefold() in identity and app_id.casefold() in candidates
+                or app_id.casefold() == self.id.casefold() and not name)
 
     def service_context(self) -> dict:
         return {"app_id": self.id, "app_name": self.name, "context": self.jev_context}

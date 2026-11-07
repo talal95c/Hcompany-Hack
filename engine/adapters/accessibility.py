@@ -43,6 +43,12 @@ class AccessibilityAdapter:
         self.focus: dict | None = None
         self.permission = False
         self.last_error: str | None = None
+        self.focus_epoch = 0
+        self.request_epochs: dict[str, int] = {}
+
+    @property
+    def version(self) -> str:
+        return (self.focus.get("version") or "unknown") if self.focused else "unknown"
 
     @property
     def focused(self) -> bool:
@@ -68,25 +74,33 @@ class AccessibilityAdapter:
     def on_focus(self, payload: dict) -> bool:
         """Mémorise `app.focus` ; True si la fenêtre ou ses bornes ont changé."""
         changed = self.focus is None or any(
-            self.focus.get(k) != payload.get(k) for k in ("app_id", "window_bounds", "scale"))
+            self.focus.get(k) != payload.get(k) for k in (
+                "app_id", "name", "window_title", "window_bounds", "scale", "version"))
         self.focus = payload
         self.state.window_title = payload["window_title"] if self.focused else None
-        if not self.focused:
+        if changed:
+            self.focus_epoch += 1
+        if changed or not self.focused:
             self.invalidate()
         return changed
 
     def invalidate(self) -> None:
         self.state.complete = False
         self.state.latest_revision = self.state.revision + 1
+        self.state.lookups.clear()
 
     def resolve(self, payload: dict) -> bool:
         future = self.pending.get(payload["request_id"])
         if future is None or future.done():
             return False
+        if self.request_epochs[payload["request_id"]] != self.focus_epoch:
+            future.set_exception(ConnectionError("Fenêtre modifiée"))
+            return False
         future.set_result(payload)
         return True
 
     def disconnect(self) -> None:
+        self.focus_epoch += 1
         for future in self.pending.values():
             if not future.done():
                 future.set_exception(ConnectionError("Desktop déconnecté"))
@@ -101,6 +115,7 @@ class AccessibilityAdapter:
         payload = {"request_id": request_id, "op": op, "app": self.app_id, **fields}
         future = asyncio.get_running_loop().create_future()
         self.pending[request_id] = future
+        self.request_epochs[request_id] = self.focus_epoch
         start = time.perf_counter()
         try:
             await self.send("a11y.request", payload)
@@ -109,6 +124,7 @@ class AccessibilityAdapter:
             return result
         finally:
             self.pending.pop(request_id, None)
+            self.request_epochs.pop(request_id, None)
 
     async def find(self, target: dict) -> Lookup:
         query = query_for(target)
@@ -125,10 +141,16 @@ class AccessibilityAdapter:
         return Lookup(tuple(result["nodes"]), result["complete"], result["snapshot_id"], error)
 
     async def refresh(self, step: dict) -> AppState:
+        epoch = self.focus_epoch
         targets = {query_key(query_for(t)): t for t in step_targets(step)}
         focused = self.focused
-        lookups = dict(zip(targets, await asyncio.gather(
-            *(self.find(t) for t in targets.values())))) if focused else {}
+        try:
+            lookups = dict(zip(targets, await asyncio.gather(
+                *(self.find(t) for t in targets.values())))) if focused else {}
+        except ConnectionError:
+            return self.state
+        if epoch != self.focus_epoch:
+            return self.state
         errors = [lookup.error for lookup in lookups.values() if lookup.error]
         self.last_error = errors[0] if errors else (
             "INCOMPLETE_TREE" if any(not lookup.complete for lookup in lookups.values()) else None)
