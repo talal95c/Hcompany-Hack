@@ -26,3 +26,7 @@ corrélées par `watch_id` et séquence, et `a11y.cancel`. Les requêtes peuvent
 `generation`, `focus_epoch` et `deadline_ms`. Une notification invalide les valeurs
 précédentes et demande une lecture fraîche ; elle ne contient aucun texte de l'app.
 Un backend sans événements conserve le polling et les checks de fraîcheur.
+Le champ optionnel `a11y.event.scoped` indique qu'une ré-résolution ciblée peut
+être tentée malgré `reconcile=true`. Il n'autorise jamais à réutiliser une ref
+périmée : un `get` réussi retourne une nouvelle ref après validation du
+descripteur. En cas d'échec, le moteur conserve la réconciliation complète.

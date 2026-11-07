@@ -10,6 +10,7 @@ use std::{
     time::{Duration, Instant},
 };
 mod events;
+mod scoped;
 #[cfg(test)]
 mod tests;
 
@@ -165,6 +166,21 @@ pub struct App {
 }
 
 pub trait AccessibilitySensor: Send + Sync {
+    fn position<'a>(
+        &'a self,
+        _parent: &'a Handle,
+        _target: &'a Handle,
+    ) -> Task<'a, Option<scoped::Position>> {
+        Box::pin(async { Ok(None) })
+    }
+    fn scoped<'a>(
+        &'a self,
+        _binding: &'a scoped::Binding,
+        _deadline: Instant,
+        _budget: usize,
+    ) -> Task<'a, Tree> {
+        Box::pin(async { Err(Error::StaleRef) })
+    }
     fn supports_events(&self) -> bool {
         false
     }
@@ -548,6 +564,11 @@ impl Service {
                     .and_then(|q| q.path.as_deref())
                     .unwrap_or_default(),
             );
+            let bindings = if self.sensor.supports_events() {
+                self.prepare_bindings(&refs, &app).await
+            } else {
+                Vec::new()
+            };
             self.stop_watch();
             *self.watch.lock().unwrap() = Some(events::Watch {
                 id: r.watch_id.ok_or(Error::StaleRef)?,
@@ -555,6 +576,7 @@ impl Service {
                 refs,
                 request_id: r.request_id.clone(),
                 scopes,
+                bindings,
             });
             return Ok(json!({"request_id":r.request_id,"snapshot_id":"watch",
                 "complete":true,"nodes":[],"events_supported":self.sensor.supports_events()}));
@@ -574,11 +596,15 @@ impl Service {
             );
         }
         if r.op == "get" || r.op == "action" {
-            let (id, old, handle) = self
+            let found = self
                 .store
                 .lock()
                 .unwrap()
-                .get(r.reference.as_deref().ok_or(Error::StaleRef)?, &app)?;
+                .get(r.reference.as_deref().ok_or(Error::StaleRef)?, &app);
+            if found.is_err() && r.op == "get" {
+                return self.scoped_get(&r, &app, deadline).await;
+            }
+            let (id, old, handle) = found?;
             let mut node = if r.op == "action" {
                 self.act(
                     &handle,
@@ -588,7 +614,11 @@ impl Service {
                 )
                 .await?
             } else {
-                self.sensor.refresh(&handle).await?
+                match self.sensor.refresh(&handle).await {
+                    Ok(node) => node,
+                    Err(Error::StaleRef) => return self.scoped_get(&r, &app, deadline).await,
+                    Err(error) => return Err(error),
+                }
             };
             node.protect();
             node.reference = old.reference;

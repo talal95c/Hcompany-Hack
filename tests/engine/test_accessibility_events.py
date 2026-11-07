@@ -97,6 +97,49 @@ async def test_event_during_read_discards_the_abandoned_state():
     assert adapter.state.recent
 
 
+async def test_scoped_structural_resolution_updates_the_watched_ref_without_find():
+    adapter, step, calls, _ = adapter_fixture()
+    await adapter.refresh(step)
+    calls.clear()
+
+    async def send(kind, payload):
+        calls.append((kind, payload))
+        adapter.resolve({"request_id": payload["request_id"], "snapshot_id": "new-snapshot",
+                         "complete": True, "nodes": [{**node(value="42"), "ref": "new-ref"}]})
+
+    adapter.send = send
+    adapter.on_event({**event(adapter, reconcile=True), "scoped": True})
+    await adapter.refresh(step)
+    assert [p["op"] for _, p in calls] == ["get"]
+    assert evaluate("element_value", adapter.state, step["check"]["params"]).status == "pass"
+    assert adapter.target_lookup(step).snapshot_id == "new-snapshot"
+    calls.clear()
+    await adapter.refresh(step)
+    assert calls[0][1]["ref"] == "new-ref"
+
+
+async def test_scoped_ambiguity_falls_back_to_full_descriptor_resolution():
+    adapter, step, calls, _ = adapter_fixture()
+    await adapter.refresh(step)
+    original = adapter.send
+
+    async def send(kind, payload):
+        if kind == "a11y.request" and payload["op"] == "get":
+            calls.append((kind, payload))
+            adapter.resolve({"request_id": payload["request_id"], "snapshot_id": "old",
+                "complete": False, "nodes": [], "error": {
+                    "code": "AMBIGUOUS_TARGET", "message": "ambigu"}})
+        else:
+            await original(kind, payload)
+
+    adapter.send = send
+    calls.clear()
+    adapter.on_event({**event(adapter, reconcile=True), "scoped": True})
+    await adapter.refresh(step)
+    assert [p["op"] for k, p in calls if k == "a11y.request"][:3] == ["get", "find", "watch"]
+    assert not adapter.state.recent or not adapter.state.complete
+
+
 @pytest.mark.parametrize("reason", ["event", "generation", "focus"])
 async def test_superseded_observations_cancel_pending_native_reads(reason):
     adapter, step, calls, _ = adapter_fixture()

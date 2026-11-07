@@ -589,7 +589,8 @@
             "sequence": {"type": "integer", "minimum": 1},
             "refs": {"type": "array", "maxItems": 64, "items": {"type": "string", "minLength": 1}},
             "reconcile": {"type": "boolean"},
-            "events_supported": {"type": "boolean"}
+            "events_supported": {"type": "boolean"},
+            "scoped": {"type": "boolean"}
           },
           "required": ["watch_id", "sequence", "refs", "reconcile", "events_supported"],
           "additionalProperties": false

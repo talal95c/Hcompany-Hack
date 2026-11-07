@@ -6,6 +6,7 @@ pub struct Change {
     pub source: Handle,
     pub reconcile: bool,
     pub focus: bool,
+    pub scoped: bool,
 }
 
 #[derive(Clone)]
@@ -15,6 +16,7 @@ pub(super) struct Watch {
     pub refs: Vec<String>,
     pub request_id: String,
     pub scopes: Vec<String>,
+    pub bindings: Vec<scoped::Binding>,
 }
 
 impl Service {
@@ -58,6 +60,42 @@ impl Service {
     pub(super) fn change(&self, watch: &Watch, change: &Change) -> bool {
         if change.source.bus != watch.app.bus {
             return false;
+        }
+        if !watch.bindings.is_empty() {
+            if watch.bindings.iter().any(|b| {
+                std::iter::once(&b.handle)
+                    .chain(b.ancestors.iter().map(|(_, h)| h))
+                    .any(|h| h.bus == change.source.bus && h.path == change.source.path)
+            }) {
+                return true;
+            }
+            let store = self.store.lock().unwrap();
+            return store.snapshots.iter().any(|s| {
+                let Some((node, _)) = s
+                    .nodes
+                    .iter()
+                    .find(|(_, h)| h.bus == change.source.bus && h.path == change.source.path)
+                else {
+                    return false;
+                };
+                let mut parent = node.parent_ref.as_deref();
+                for _ in 0..s.nodes.len() {
+                    let Some((node, handle)) =
+                        parent.and_then(|r| s.nodes.iter().find(|(n, _)| n.reference == r))
+                    else {
+                        break;
+                    };
+                    if watch.bindings.iter().any(|b| {
+                        b.ancestors
+                            .last()
+                            .is_some_and(|(_, h)| h.bus == handle.bus && h.path == handle.path)
+                    }) {
+                        return true;
+                    }
+                    parent = node.parent_ref.as_deref();
+                }
+                false
+            });
         }
         if (change.reconcile && watch.scopes.is_empty()) || watch.refs.is_empty() {
             return true;
@@ -182,22 +220,36 @@ impl Service {
                     }
                     change = rx.recv() => {
                         let Some(change) = change else { break; };
+                        let Some(watch) = owner.a11y.watch.lock().unwrap().clone().filter(|w| w.id == watch.id) else { break; };
                         if change.source.bus == watch.app.bus {
                             owner.a11y.invalidate_collection();
                         }
                         if change.focus {
                             crate::discovery::poll(&owner, &mut None).await;
                         }
-                        if !owner.a11y.change(&watch, &change) { continue; }
+                        let accepted = owner.a11y.change(&watch, &change);
+                        if change.reconcile && std::env::var_os("RIO_A11Y_TRACE").is_some() {
+                            let store = owner.a11y.store.lock().unwrap();
+                            let role = store.snapshots.iter().flat_map(|s| &s.nodes)
+                                .find(|(_, h)| h.bus == change.source.bus && h.path == change.source.path)
+                                .map(|(n, _)| n.role.as_str()).unwrap_or("unmapped");
+                            eprintln!("a11y structural accepted={accepted} role={role} source={}:{}", change.source.bus, change.source.path);
+                        }
+                        if !accepted { continue; }
+                        let scoped = change.scoped && !watch.bindings.is_empty()
+                            && watch.bindings.len() == watch.refs.len();
                         if change.reconcile {
                             let mut store = owner.a11y.store.lock().unwrap();
                             store.snapshots.clear();
                             store.epoch = store.epoch.wrapping_add(1);
                         }
+                        if change.reconcile && !scoped {
+                            if let Some(watch) = owner.a11y.watch.lock().unwrap().as_mut() { watch.bindings.clear(); }
+                        }
                         sequence += 1;
                         let _ = owner.send("a11y.event", json!({"watch_id":watch.id,
                             "sequence":sequence,"refs":watch.refs,"reconcile":change.reconcile,
-                            "events_supported":true}), None);
+                            "events_supported":true,"scoped":scoped}), None);
                     }
                 }
             }

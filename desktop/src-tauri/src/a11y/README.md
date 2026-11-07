@@ -20,8 +20,37 @@ les modifications structurelles l'anticipent.
 Pour les cibles à chemin descriptif, `watch.query.path` transmet leur préfixe
 commun : les modifications structurelles hors de ce scope ne reconstruisent pas
 la feuille à cause d'une barre d'outils sans rapport. Un scope vide reste global.
-Une édition qui invalide la structure surveillée impose toujours une collecte
-complète ; les événements seuls ne garantissent donc pas une décision sous 100 ms.
+Une invalidation structurelle qui ne peut pas être résolue dans le scope impose
+une collecte complète ; les événements seuls ne garantissent pas une latence maximale.
+
+### Ré-résolution ciblée
+
+Un watcher conserve désormais les descripteurs et la chaîne de parents des
+cibles, distincts des refs de snapshot. `scoped=true` sur un événement structurel
+autorise le moteur à demander une nouvelle résolution par `get`, mais ne rend
+aucune ancienne ref valide. La réponse réussie contient une **nouvelle** ref et un
+nouveau snapshot ; les anciennes refs ne sont jamais réutilisées pour une action.
+Un client qui ignore le champ optionnel continue à réconcilier intégralement.
+
+Linux relit les parents et vérifie leurs rôles et liens natifs. Si un parent a
+été recréé, il le recherche parmi les enfants de l'ancêtre stable, avec unicité
+du rôle et du nom. Pour une cellule de table, le descripteur comprend la position
+native ligne/colonne : l'API Table donne un candidat unique à cette adresse et
+son index est revérifié. Les dimensions doivent rester identiques. Les autres
+conteneurs sont énumérés entièrement dans le budget disponible. Le rôle et le
+nom de la cible, ainsi que la requête et son chemin sur les parents frais, doivent
+correspondre sans ambiguïté.
+
+Le budget inclut les lectures de parents et de candidats : 64 nœuds, 16 parents,
+75 ms au plus pour une tentative ciblée. Une absence, ambiguïté, identité
+différente, parent périmé non résolu ou dépassement retourne une erreur et le
+moteur reconstruit l'arbre. Les changements de fenêtre, focus, lignes ou colonnes
+continuent à imposer une réconciliation intégrale ; le timer de quatre secondes
+reste actif. Un résultat incomplet ou abandonné n'est jamais un succès.
+
+`RIO_A11Y_TRACE=1` active des traces de catégories AT-SPI, propriétés structurelles
+autorisées, sources opaques et résolutions ciblées. Aucun nom, texte ou valeur du
+document n'est écrit. Les backends sans résolution ciblée utilisent le fallback.
 
 Linux implémente `AccessibilitySensor::subscribe` avec AT-SPI (texte, état,
 propriétés, enfants, focus et fenêtres). Les descendants et ancêtres connus des
