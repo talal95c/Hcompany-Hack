@@ -36,7 +36,7 @@ export function Wave({ level, done, size }: { level: number; done: boolean; size
             className="wave__bar"
             style={{ opacity: 0.35 + 0.65 * s }}
             animate={{ height: Math.max(3, Math.round(h * max)) }}
-            transition={{ type: "spring", duration: 0.2, bounce: 0 }}
+            transition={{ duration: still ? 0 : 0.12, ease: EASE }}
           />
         );
       })}
@@ -50,6 +50,7 @@ export const tail = (s: string, n: number) => (s.length <= n ? s : "… " + s.sl
 /** Words morph in (blur + scale) as Gladia refines the partial transcript; a
  *  corrected word cross-fades in place and its neighbours glide to make room. */
 export function Transcript({ text, placeholder, className }: { text: string; placeholder: string; className: string }) {
+  const still = useReducedMotion();
   const seen = new Map<string, number>();
   const words = text
     .split(/\s+/)
@@ -70,11 +71,11 @@ export function Transcript({ text, placeholder, className }: { text: string; pla
           words.map(({ w, key }) => (
             <motion.span
               key={key}
-              layout="position"
-              initial={{ opacity: 0, scale: 0.95, filter: "blur(6px)" }}
+              layout={still ? false : "position"}
+              initial={still ? { opacity: 0 } : { opacity: 0, scale: 0.95, filter: "blur(6px)" }}
               animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, scale: 0.95, filter: "blur(6px)", transition: { duration: 0.15, ease: EASE } }}
-              transition={{ duration: 0.26, ease: EASE, layout: { type: "spring", duration: 0.4, bounce: 0 } }}
+              exit={still ? { opacity: 0 } : { opacity: 0, scale: 0.95, filter: "blur(6px)", transition: { duration: 0.15, ease: EASE } }}
+              transition={{ duration: 0.22, ease: EASE }}
             >
               {w}
             </motion.span>

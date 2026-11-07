@@ -8,7 +8,6 @@ import { api, errorText, speak, stopSpeaking, type Imported, type QaAnswer, type
 import {
   IconCheck,
   IconClose,
-  IconEnter,
   IconGrid,
   IconKeyboard,
   IconMic,
@@ -414,7 +413,7 @@ export default function App() {
   const busy = stepState === "thinking";
 
   return (
-    <div className="shell" ref={barRef}>
+    <div className={`shell ${paletteOpen && phase === "home" ? "shell--library" : ""}`} ref={barRef}>
       {paletteOpen && phase === "home" && (
         <Palette
           tutorials={library}
@@ -429,7 +428,7 @@ export default function App() {
         />
       )}
     <div className="bar">
-      {phase === "home" && qa && (
+      {phase === "home" && qa && (qa.result || qa.error) && (
         <div className="explain qa">
           <div className="explain__q">
             “{qa.question}”
@@ -493,7 +492,7 @@ export default function App() {
       {(phase === "home" || phase === "planning" || phase === "importing") && (
         <>
           <form
-            className="row row--input"
+            className="row row--input composer"
             onSubmit={(e) => {
               e.preventDefault();
               startTutorial();
@@ -509,7 +508,7 @@ export default function App() {
                 className="dicta-inline"
                 initial={{ opacity: 0, filter: "blur(6px)" }}
                 animate={{ opacity: 1, filter: "blur(0px)" }}
-                transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+                transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
               >
                 <Wave level={level} done={voiceText.final} size="sm" />
                 <Transcript text={tail(voiceText.text, 44)} placeholder="Je t'écoute…" className="dicta-inline__text" />
@@ -525,6 +524,8 @@ export default function App() {
                 spellCheck={false}
               />
             )}
+            <div className="composer__foot">
+            <span className="agent-label">Agent · Holo</span>
             {phase === "importing" ? (
               <span className="hint shimmer">{importStage}</span>
             ) : phase === "planning" ? (
@@ -548,11 +549,24 @@ export default function App() {
                   <IconMic />
                 </button>
                 <button className="key" type="submit" disabled={!goal.trim()} title="Lancer">
-                  <IconEnter />
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5m-6 6 6-6 6 6" /></svg>
                 </button>
               </>
             )}
+            </div>
           </form>
+          {phase === "home" && qa && !qa.result && !qa.error && (
+            <div className="job-card">
+              <div><p className="thinking-line"><span className="pulse" />Holo réfléchit…</p><span className="job-card__detail">{thinking || "Holo lit ta demande…"}</span></div>
+              <span className="job-card__tag">holo</span>
+            </div>
+          )}
+          {(phase === "importing" || phase === "planning") && (
+            <div className="job-card">
+              <div><p>{phase === "importing" ? "Import du tutoriel" : "Création du plan"}</p><span className="job-card__detail">{phase === "importing" ? importStage : planning ? "Holo prépare les étapes…" : "Démarrage…"}</span></div>
+              <span className="job-card__tag">{phase === "importing" ? "youtube" : "plan"}</span>
+            </div>
+          )}
           {homeError && <div className="note note--error">{homeError}</div>}
           {status && !status.has_key && !homeError && (
             <div className="note note--error">HAI_API_KEY manque dans .env</div>
@@ -565,7 +579,7 @@ export default function App() {
           className="run"
           initial={{ opacity: 0, y: 8, filter: "blur(6px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+          transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
         >
           <div className="row row--meta">
             <div className="segments" aria-label="Étapes">
@@ -655,14 +669,14 @@ export default function App() {
             className={`instruction ${busy || explain ? "instruction--dim" : ""}`}
             initial={{ opacity: 0, y: 6, filter: "blur(6px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+            transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
           >
             {step.instruction}
           </motion.p>
           {step.teach && !busy && !explain && <div className="teach">{step.teach}</div>}
           {step.milestone?.video_url && !explain && (
             <button className="video-link" onClick={() => openUrl(step.milestone!.video_url!)} title="Ouvrir la vidéo à ce moment">
-              ▶ Voir ce passage dans la vidéo
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true"><path d="m2 1 7 4-7 4Z" /></svg> Voir ce passage dans la vidéo
             </button>
           )}
           {step.kind === "write" && step.text && !busy && (
