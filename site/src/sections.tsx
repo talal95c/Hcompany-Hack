@@ -606,7 +606,7 @@ export function Process() {
 
 /* ---------------- Pricing ---------------- */
 
-const PLANS = [
+export const PLANS = [
   { name: "Learner", price: 0, tagline: "One app at a time.", f: ["Tutorial library", "Typed goals", "Ghost cursor", "Community support"] },
   { name: "Pro", price: 12, tagline: "Unlimited live coaching.", f: ["Unlimited goals", "Voice questions", "Save as tutorial", "Priority support"] },
   { name: "Team", price: 29, tagline: "Onboard a whole team.", f: ["Shared library", "Session journals", "Admin seats", "Slack support"], dark: true },
@@ -764,7 +764,7 @@ export function FaqInsights() {
 
 /* ---------------- Features ---------------- */
 
-const FEATURES = [
+export const FEATURES = [
   { k: "cursor", t: "See where to click", d: "An orange cursor points to the exact button, menu or field you need next." },
   { k: "steps", t: "Checked on screen", d: "After every action Rio looks at your screen and only moves on when the step is done." },
   { k: "voice", t: "Ask out loud", d: "Speak mid-task. Gladia transcribes it live and Rio answers in context." },
@@ -773,7 +773,7 @@ const FEATURES = [
   { k: "journal", t: "Every lesson saved", d: "Sessions are journaled as milestone tutorials you can replay or share." },
 ] as const;
 
-function FeatIcon({ k }: { k: (typeof FEATURES)[number]["k"] }) {
+export function FeatIcon({ k }: { k: (typeof FEATURES)[number]["k"] }) {
   if (k === "cursor")
     return (
       <div className="fi fi-cursor">

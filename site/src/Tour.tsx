@@ -4,14 +4,13 @@ import { RioArrow } from "./cursor";
 
 const STEPS: { sel: string; text: string }[] = [
   { sel: ".nav-logo", text: "This is Rio's logo" },
-  { sel: ".h-hero", text: "The title: what Rio does" },
-  { sel: ".hero .btn", text: "Start a live lesson here" },
-  { sel: ".tv-screen", text: "Rio points, you click" },
-  { sel: ".hero-logos", text: "Works on top of your apps" },
-  { sel: ".toggle-row", text: "Switch monthly or annual billing" },
-  { sel: ".plan-dark", text: "Team plan, for a whole team" },
-  { sel: ".plan", text: "Free plan to get started" },
-  { sel: ".rf", text: "What Rio does for you" },
+  { sel: ".story-hero.on .h-hero", text: "The title: what Rio does" },
+  { sel: ".story-hero.on .btn", text: "Start a live lesson here" },
+  { sel: ".story-logos.on .hero-logos", text: "Works on top of your apps" },
+  { sel: ".story-feat.on .sf", text: "What Rio does for you" },
+  { sel: ".story-plans.on .sp-hot", text: "Team plan, for a whole team" },
+  { sel: ".story-plans.on .sp", text: "Free plan to get started" },
+  { sel: ".story-try.on .try-btn", text: "Click to launch Rio" },
   { sel: ".footer form, .footer input", text: "Get Rio news by email" },
   { sel: ".footer-cols", text: "All the links live here" },
 ];
