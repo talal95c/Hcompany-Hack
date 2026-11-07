@@ -48,6 +48,12 @@ export const IconReplay = () => (
     <path d="M3 3v5h5" />
   </svg>
 );
+export const IconSound = () => (
+  <svg {...base}><path d="M11 5L6 9H3v6h3l5 4zM15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14" /></svg>
+);
+export const IconSoundOff = () => (
+  <svg {...base}><path d="M11 5L6 9H3v6h3l5 4zM16 9l6 6M22 9l-6 6" /></svg>
+);
 export const IconSkip = () => (
   <svg {...base} width={15} height={15}>
     <path d="M5 12h13M13 6l6 6-6 6" />

@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { MotionConfig, motion, useMotionTemplate, useSpring, useTransform, useVelocity } from "motion/react";
 import "@fontsource-variable/geist";
 import "./overlay.css";
+import { sfx } from "../sound";
 
 /** `rect`: the real UI element under the point (accessibility), when known. */
 type Pointer = { x: number; y: number; label: string; rect: [number, number, number, number] | null };
@@ -76,7 +77,7 @@ function Overlay() {
         labelTimer = window.setTimeout(() => setShowLabel(false), LABEL_MS);
       }),
       listen("pointer:thinking", () => setMode((m) => (m === "shown" ? "thinking" : m))),
-      listen("pointer:hit", () => setMode("hit")),
+      listen("pointer:hit", () => { sfx.hit(); setMode("hit"); }),
       listen("pointer:hide", () => setMode((m) => (m === "hit" ? m : "hidden"))),
     ];
     return () => {
