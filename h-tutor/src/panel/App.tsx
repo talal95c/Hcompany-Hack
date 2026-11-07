@@ -568,7 +568,7 @@ export default function App() {
           transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
         >
           <div className="row row--meta">
-            <div className="segments" aria-label="Étapes">
+            <div className="segments" aria-label="Milestones">
               {progress.map((m) => (
                 <span
                   key={m.id}
@@ -591,7 +591,7 @@ export default function App() {
               <button
                 className={`tool ${asking ? "tool--on" : ""}`}
                 onClick={() => setAsking((a) => !a)}
-                title="Écrire une question"
+                title="Type a question"
               >
                 <IconKeyboard />
               </button>
@@ -644,7 +644,7 @@ export default function App() {
                   </button>
                 )}
                 <button className="pill pill--light" onClick={continueTutorial}>
-                  Continuer
+                  Continue
                 </button>
               </div>
             </div>
@@ -667,17 +667,17 @@ export default function App() {
           )}
           {step.kind === "write" && step.text && !busy && (
             <div className="chip">
-              Tape <code>{step.text}</code>
+              Type <code>{step.text}</code>
             </div>
           )}
           {step.kind === "press_key" && step.keys && !busy && (
             <div className="chip">
-              Appuie sur <kbd>{step.keys}</kbd>
+              Press <kbd>{step.keys}</kbd>
             </div>
           )}
 
           {voiceText ? null : explain ? (
-            <div className="status">En pause pendant qu'on parle.</div>
+            <div className="status">Paused while we talk.</div>
           ) : busy ? (
             thinking ? (
               <div className="status status--thinking" title={thinking}>
@@ -697,7 +697,7 @@ export default function App() {
                 (step.kind === "click"
                   ? "Go where I'm pointing. I'm watching your screen."
                   : step.kind === "write"
-                    ? "Tape-le dans le champ que je pointe."
+                    ? "Type it in the field I'm pointing at."
                     : "Go ahead, I'm watching your screen.")}
             </div>
           )}
@@ -749,7 +749,7 @@ export default function App() {
             {imported.title} <span className="dim">· {imported.app} · {imported.milestones} milestones</span>
           </span>
           <button className="pill" onClick={() => setPhase("home")}>
-            Plus tard
+            Later
           </button>
           <button className="pill pill--light" onClick={() => startTutorial(imported.title, null, imported.id)}>
             Start
@@ -781,7 +781,7 @@ export default function App() {
               setPhase("home");
             }}
           >
-            Nouveau
+            New
           </button>
         </div>
       )}

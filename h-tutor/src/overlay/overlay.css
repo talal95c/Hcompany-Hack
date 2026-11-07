@@ -1,8 +1,9 @@
-/* Black and white ghost: a white arrow with a thin dark edge (readable on any background), no glow. */
+/* The ghost is the product's only colour: an orange arrow with a thin dark edge (readable on any
+   background), no glow. Everything around it stays black and white. */
 :root {
-  --g1: #ffffff;
-  --g2: #ffffff;
-  --g3: #ffffff;
+  --g1: #ffc078;
+  --g2: #ff7a1a;
+  --g3: #d9420b;
   --ok: #ffffff;
 }
 
@@ -40,9 +41,9 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 122, 26, 0.55);
 }
-.ghost--hit .ghost__halo { border-color: #ffffff; }
+.ghost--hit .ghost__halo { border-color: var(--g2); }
 
 .ghost__label {
   position: absolute;

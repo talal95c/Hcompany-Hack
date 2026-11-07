@@ -117,7 +117,7 @@ export default function Palette({ tutorials, onStart, onClose }: Props) {
             <span className="nav-dot">
               <IconGrid />
             </span>
-            Tous
+            All
             <span className="nav-count">{tutorials.length}</span>
           </button>
           {apps.map(([name, count]) => (
@@ -167,14 +167,14 @@ export default function Palette({ tutorials, onStart, onClose }: Props) {
 
       <div className="palette__foot">
         <span>
-          <kbd>↵</kbd> lancer
+          <kbd>↵</kbd> start
         </span>
         <span>
           <kbd>↑</kbd>
-          <kbd>↓</kbd> naviguer
+          <kbd>↓</kbd> move
         </span>
         <span>
-          <kbd>esc</kbd> fermer
+          <kbd>esc</kbd> close
         </span>
       </div>
     </motion.div>

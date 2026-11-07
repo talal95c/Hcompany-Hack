@@ -1,45 +1,48 @@
-:root { color-scheme: dark; font: 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+/* Same DA as the Rio bar (h-tutor): black glass, white text, pills, no tint. Only the pointer is orange. */
+:root { color-scheme: dark; font: 13px/1.4 "Geist Variable", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: transparent; overflow: hidden; }
 [hidden] { display: none !important; }
 button, input { font: inherit; }
-button { background: #293343; color: #edf0f6; border: 1px solid #455063; border-radius: 7px; padding: 6px 10px; cursor: pointer; }
-button:hover { background: #3a475b; }
+button { background: rgba(255, 255, 255, 0.07); color: #fff; border: 0; border-radius: 999px; padding: 7px 14px; font-weight: 500; cursor: default; transition: background 120ms; }
+button:hover { background: rgba(255, 255, 255, 0.14); }
 button:disabled { opacity: .4; cursor: default; }
-button:focus-visible, input:focus-visible { outline: 2px solid #ffcd7c; outline-offset: 2px; }
-#pill { margin: 7px; min-height: calc(100vh - 14px); padding: 12px; border: 1px solid #536077; border-radius: 16px; background: #151c28; color: #f5f6fa; box-shadow: 0 6px 16px #0005; }
+button:focus-visible, input:focus-visible { outline: 1.5px solid #fff; outline-offset: 2px; }
+#pill { margin: 7px; min-height: calc(100vh - 14px); padding: 12px; border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 16px; background: rgba(11, 11, 11, 0.94); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); color: #fff; box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.6); }
 header, nav, footer { display: flex; align-items: center; gap: 8px; }
 header strong { font-size: 13px; }
-#status { margin-left: auto; color: #b3bdcf; font-size: 11px; }
-#expand { padding: 0 7px; font-size: 19px; }
-.dot { background: #788092; width: 7px; height: 7px; border-radius: 50%; }
-.dot.online { background: #7edeb4; box-shadow: 0 0 8px #7edeb444; }
-#instruction { margin: 9px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#status { margin-left: auto; color: rgba(255, 255, 255, 0.62); font-size: 11px; }
+#expand { padding: 0 9px; font-size: 17px; line-height: 26px; border-radius: 8px; background: none; color: rgba(255, 255, 255, 0.62); }
+#expand:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+.dot { background: rgba(255, 255, 255, 0.36); width: 7px; height: 7px; border-radius: 50%; }
+.dot.online { background: #fff; }
+#instruction { margin: 9px 0; font-size: 15px; font-weight: 500; letter-spacing: -0.015em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 nav button { flex: 1; }
-.stop { color: #ffbdba; border-color: #80504f; background: #3c252d; }
-#mic.active { color: #111; background: #a5e5cb; }
+.stop { color: #0b0b0b; background: #fff; }
+.stop:hover { background: rgba(255, 255, 255, 0.86); }
+#mic.active { color: #0b0b0b; background: #fff; }
 #panel { max-height: 400px; overflow-y: auto; padding-right: 3px; }
-.muted, legend { color: #a7b3c7; font-size: 11px; }
-fieldset { border: 1px solid #3b4659; border-radius: 8px; padding: 8px; margin: 9px 0; }
+.muted, legend { color: rgba(255, 255, 255, 0.62); font-size: 11px; }
+fieldset { border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 8px; margin: 9px 0; }
 #permissions { display: flex; gap: 5px; }
 #permissions button { flex: 1; padding: 5px 2px; font-size: 11px; }
 .coordinates { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 7px; }
-label { color: #b7c2d5; font-size: 11px; }
-input { width: 100%; min-width: 0; background: #0c1320; color: #fff; border: 1px solid #455063; border-radius: 5px; padding: 6px; }
+label { color: rgba(255, 255, 255, 0.62); font-size: 11px; }
+input { width: 100%; min-width: 0; background: rgba(255, 255, 255, 0.04); color: #fff; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 6px 8px; outline: 0; }
 .consent { display: flex; align-items: center; gap: 7px; margin: 10px 0; }
 input[type=checkbox] { width: auto; }
 #delegate { width: 100%; }
 #question { display: flex; gap: 5px; margin: 10px 0; }
-#error { color: #ffb1aa; font-size: 11px; margin: 7px 0; }
+#error { color: #ff6961; font-size: 11px; margin: 7px 0; }
 footer { justify-content: space-between; }
 footer button { font-size: 11px; }
 #guide { position: fixed; inset: 0; pointer-events: none; }
-#highlight { position: absolute; border: 3px solid; border-radius: 8px; box-shadow: 0 0 0 1px #151c2880; }
-#highlight-label { position: absolute; left: 2px; top: 2px; max-width: 100%; padding: 2px 6px; border-radius: 4px; background: #151c28ed; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#highlight { position: absolute; border: 3px solid; border-radius: 8px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); }
+#highlight-label { position: absolute; left: 2px; top: 2px; max-width: 100%; padding: 2px 6px; border-radius: 4px; background: rgba(11, 11, 11, 0.92); color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #highlight-label:empty { display: none; }
 #pointer { position: absolute; width: 36px; height: 44px; filter: drop-shadow(0 2px 3px #000b); }
 #pointer svg { width: 100%; height: 100%; overflow: visible; }
-#pointer path { fill: #ffd086; stroke: #151c28; stroke-width: 2.5; stroke-linejoin: round; }
-#zone { position: absolute; border: 2px solid #ffd086; border-radius: 8px; background: #ffd0860b; box-shadow: 0 0 0 2px #151c2866; }
-#success { position: absolute; left: 50%; bottom: 72px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 12px 22px; border-radius: 14px; background: #142d27ed; border: 1px solid #7edeb4; color: #b7ffe0; }
-#success span { font-size: 30px; }
+#pointer path { fill: #ff7a1a; stroke: #0b0b0b; stroke-width: 2.5; stroke-linejoin: round; }
+#zone { position: absolute; border: 1.5px solid rgba(255, 255, 255, 0.85); border-radius: 10px; background: rgba(255, 255, 255, 0.04); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); }
+#success { position: absolute; left: 50%; bottom: 72px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 12px 22px; border-radius: 16px; background: rgba(11, 11, 11, 0.94); border: 1px solid rgba(255, 255, 255, 0.09); color: #fff; -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }
+#success span { font-size: 20px; }
