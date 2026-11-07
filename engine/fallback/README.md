@@ -13,4 +13,11 @@ règles, clavier, texte ou pause.
 Contrats v1, interfaces documentées et composants amont ; aucune dépendance de modèle local. Les appels bpy restent dans addon et les accès natifs dans desktop. Voir [conception détaillée](../../docs/architecture/engine.md) et [guide des agents](../../AGENTS.md).
 
 ## État et validation
-Pas encore de code. Les modules décrits sont une cible, pas une implémentation disponible. Ajouter tests nominal/vide/erreur et timeout avant intégration ; ne pas remplacer un check par une déclaration de modèle.
+`with_fallback()` borne un appel et propage l'annulation. `Fallback.call()` ajoute
+santé par service, backoff exponentiel borné et latence mesurée dans un callback
+de debug, sans enregistrer arguments, exceptions fournisseur ou secrets.
+L'appelant fournit une fabrique : aucun appel réseau n'est créé pendant le backoff.
+Jev utilise une règle locale ; Holo reste au palier ②. `transcribe()` signale le
+clavier si le final est vide, absent ou tardif ; `synthesize()` retourne `None`
+pour garder le texte en absence d'audio. Le callback relaie erreurs et latences.
+Tests : `pytest -q tests/engine/test_fallback.py`.
