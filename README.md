@@ -30,14 +30,14 @@ Les assistants « je vois ton écran, je te montre le bouton » (Clicky, HeyBraz
 Tous les services IA sont dans le cloud ; rien ne tourne en local à part notre code.
 
 ## Plateformes
-Démo sur **macOS**. Tout est prévu pour tourner aussi sous **Windows** : Python, add-on Blender, Electron. Les spécificités de chaque OS (permissions, mise à l'échelle de l'écran, capture) sont isolées dans `overlay/` et `engine/platform/`.
+Démo sur **macOS**. Tout est prévu pour tourner aussi sous **Windows** : Python, add-on Blender, Tauri v2. Les spécificités de chaque OS (permissions, mise à l'échelle de l'écran, capture) sont isolées dans `desktop/` et `engine/platform/`.
 
 ## Le dépôt
 ```
 contracts/  formats partagés (leçon, événements, ordres) — figés en premier
 engine/     orchestrateur Python (la boucle en direct)
 addon/      add-on Blender « Œil » (capteur + surlignage)
-overlay/    overlay Electron (pointeur, pastille, ✓)
+desktop/    overlay Tauri v2 (pointeur, pastille, ✓)
 prep/       préparation : tuto → leçon prouvée
 agent/      face Agent : H Skills + serveur MCP
 lessons/    leçons prouvées (donut…)
@@ -49,3 +49,7 @@ Le détail est dans [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## État
 Architecture et arborescence posées, **pas encore de code**.
+
+
+## Conception détaillée et statut
+La référence d'implémentation est l'[index du design](docs/README.md). Desktop est une app Tauri v2 : Rust possède deux fenêtres, capture avec exclusion explicite, injection enigo, permissions et sidecar Python ; web reste sans politique pédagogique. Tous les services IA sont cloud, Holo sert aussi de LLM. TTS reste ouvert : Gladia ne synthétise pas la voix. Les inventaires décrivent notre code existant porté à adapter, pas du code déjà livré ici. Les durées sont des objectifs (est.) sauf les mesures publiques explicitement identifiées. Les schémas SVG historiques sont conservés sans régénération ; les documents détaillés et ADR font foi en cas d'écart.

@@ -22,7 +22,7 @@ Deux faces d'une même leçon prouvée :
 | Persona | Besoin | Ce qu'on lui donne |
 |---|---|---|
 | **Léa, débutante Blender** | suivre un tuto sans se perdre et retenir | leçon guidée, prof proactif, défi final |
-| **Créateur pressé** | ne pas apprendre ce qui l'ennuie | « fais-le », débloqué une fois la compétence acquise |
+| **Créateur pressé** | ne pas apprendre ce qui l'ennuie | « fais-le », débloqué après défi sans aide ; toujours disponible sur demande pour ce qu'on ne veut pas apprendre |
 | **Équipe en entreprise** | former les nouveaux arrivants et automatiser les procédures internes | bibliothèque de procédures prouvées, servies aux humains et aux agents (en slide pendant la démo) |
 
 ## 4. Objectifs et non-objectifs
@@ -57,7 +57,7 @@ Tous les services IA sont dans le cloud. Seul notre code tourne sur le Mac.
 | F2 | **Add-on « Œil »** : flux d'événements et état de la scène | P0 | une action dans Blender apparaît sur la page de debug en ≤ 100 ms |
 | F3 | **Prof proactif** : erreur, blocage, réussite, avec des seuils pour ne pas agacer | P0 | cube au lieu de tore → correction en < 1 s ; 20 s sans progrès → palier suivant ; pas plus d'une intervention toutes les 30 s |
 | F4 | **Paliers d'aide** ① voix → ② zone surlignée dans Blender → ③ pointeur Holo → ④ démo | P0 | chaque palier se déclenche dans l'ordre et l'aide utilisée baisse sur la leçon |
-| F5 | **Pointage Holo** : capture recadrée, cible de l'étape suivante calculée en avance, cache | P0 | le pointeur tombe sur le bon élément sur Retina ; ≈ 0 s quand la cible est en cache |
+| F5 | **Pointage Holo** : capture recadrée, cible de l'étape suivante calculée en avance, cache | P0 | le pointeur tombe sur le bon élément sur Retina ; < 50 ms (est.) quand la cible est en cache valide |
 | F6 | **Voix en entrée** : Gladia en direct + intention par Jev (question, « fais-le », frustration, « chut ») | P0 | 20 phrases réelles classées correctement à ≥ 90 % |
 | F7 | **Voix en sortie** : phrases pré-générées + réponses aux « pourquoi » | P0 | consignes et « pourquoi » prévus joués instantanément |
 | F8 | **« Fais-le »** : Holo pilote la souris et le clavier sur le Mac, avec la leçon comme contexte | P0 | l'étape est faite et le test passe ; relecture `bpy` en secours |
@@ -72,9 +72,9 @@ Tous les services IA sont dans le cloud. Seul notre code tourne sur le Mac.
 - **Latence (estimations à mesurer)** : erreur signalée < 0,6 s ; zone surlignée ≈ 0,3 s ; « pourquoi » prévu < 1 s.
 - **Coût** : < 0,30 € par leçon de 20 min (estimation, tarifs publics).
 - **Quotas** : Codiv à 60 req/min, donc on déclenche sur événement et on n'interroge pas en boucle.
-- **macOS (Apple Silicon)** : Blender 5.x ; permissions Enregistrement de l'écran et Accessibilité vérifiées au premier lancement ; échelle Retina gérée.
-- **Windows** : pas de code propre à macOS en dehors de `engine/platform/` et `overlay/`.
-- **Confidentialité** : on envoie seulement des captures recadrées, rien n'est stocké côté serveur, et l'overlay est exclu des captures.
+- **macOS (Apple Silicon)** : version Blender exacte à geler M0 ; permissions Enregistrement de l'écran et Accessibilité vérifiées au premier lancement ; échelle Retina gérée.
+- **Windows** : pas de code propre à macOS en dehors de `engine/platform/` et `desktop/`.
+- **Confidentialité** : on envoie seulement des captures recadrées, la rétention des fournisseurs reste à vérifier ; desktop est exclu explicitement par le backend de capture.
 - **Mode dégradé** : Jev > 800 ms → une règle ; sans Gladia → clavier ; sans réseau → partage 4G et vidéo de secours.
 
 ## 8. Inventaire : ce qu'on a, ce qu'on modifie, ce qu'on crée
@@ -82,7 +82,7 @@ Notre code interne existant (moteur de preuve en sandbox, overlay, vérificateur
 
 | Composant | Dossier | Déjà disponible | À modifier | À créer |
 |---|---|---|---|---|
-| Overlay | `overlay/` | Electron transparent, laisse passer les clics, exclu des captures, raccourci pour parler, marqueur en coordonnées normalisées | packaging macOS, permissions micro et écran, ✓ et pastille | protocole WebSocket avec l'engine |
+| Overlay | `desktop/` | notre code existant porté pour le comportement de guidage ; aucun backend Tauri encore livré | réécriture Rust Tauri v2 : fenêtres, ScreenCaptureKit avec exclusion explicite, enigo, permissions, hotkey, sidecar ; web pointer/pill/✓ | protocole WebSocket avec l'engine |
 | Add-on | `addon/` | serveur dans Blender (timers, socket) qui expose l'état de la scène (objets, modificateurs, matériaux, mode, rendu) | passer de « question → réponse » à un **flux poussé** | `operators`, `msgbus`, `depsgraph`, rectangles des zones, `draw_handler`, `wm.call_menu`, relecture `bpy` |
 | Tests | `engine/checks/` | 10 tests « état → (ok, détail) » | paramétrables par leçon (noms, valeurs) | ~5 tests pour le donut (tore, subdivision, lissage, matériau, glaçage…) |
 | Pointage | `engine/services/holo/` | localisation d'un élément sur une capture (thinking off, temperature 0) | capture recadrée, coordonnées Retina | travail en avance, cache |
@@ -121,3 +121,7 @@ Notre code interne existant (moteur de preuve en sandbox, overlay, vérificateur
 1. Synthèse vocale : quel service ? (Gladia n'en fait pas.)
 2. Version exacte de Blender et modèle du Mac de démo.
 3. Nom du produit.
+
+
+## Conception détaillée et statut
+La référence d'implémentation est l'[index du design](docs/README.md). Desktop est une app Tauri v2 : Rust possède deux fenêtres, capture avec exclusion explicite, injection enigo, permissions et sidecar Python ; web reste sans politique pédagogique. Tous les services IA sont cloud, Holo sert aussi de LLM. TTS reste ouvert : Gladia ne synthétise pas la voix. Les inventaires décrivent notre code existant porté à adapter, pas du code déjà livré ici. Les durées sont des objectifs (est.) sauf les mesures publiques explicitement identifiées. Les schémas SVG historiques sont conservés sans régénération ; les documents détaillés et ADR font foi en cas d'écart.

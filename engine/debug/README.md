@@ -1,5 +1,16 @@
-# `engine/debug/`
+# engine/debug/
 
-Page web locale de debug : événements de l'add-on, décisions Jev, latences, en direct. Sert à tester chaque brique.
+## Responsabilité
+Observabilité locale.
 
-_Pas encore de code._
+## Entrées
+traces expurgées.
+
+## Sorties
+chronologie checks/policy/services.
+
+## Dépend de
+Contrats v1, interfaces documentées et composants amont ; aucune dépendance de modèle local. Les appels bpy restent dans addon et les accès natifs dans desktop. Voir [conception détaillée](../../docs/architecture/engine.md) et [guide des agents](../../AGENTS.md).
+
+## État et validation
+Pas encore de code. Les modules décrits sont une cible, pas une implémentation disponible. Ajouter tests nominal/vide/erreur et timeout avant intégration ; ne pas remplacer un check par une déclaration de modèle.

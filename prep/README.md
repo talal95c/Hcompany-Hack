@@ -1,5 +1,16 @@
-# `prep/`
+# prep/
 
-Préparation : tuto → leçon prouvée, sur une machine Linux dans le cloud (Blender dans un écran virtuel). Sous-dossiers prévus : `ingest/` (Gladia), `compile/` (Holo en LLM), `ui_map/` (carte des menus par version), `prover/` (preuve par différence + planificateur), `sandbox/`, `docs_search/` (Linkup), `repair/` (Devin).
+## Responsabilité
+Pipeline de préparation Linux cloud.
 
-_Pas encore de code._
+## Entrées
+tutoriel et version cible.
+
+## Sorties
+leçon prouvée ou rapport pending.
+
+## Dépend de
+Contrats v1, interfaces documentées et composants amont ; aucune dépendance de modèle local. Les appels bpy restent dans addon et les accès natifs dans desktop. Voir [conception détaillée](../docs/architecture/preparation.md) et [guide des agents](../AGENTS.md).
+
+## État et validation
+Pas encore de code. Les modules décrits sont une cible, pas une implémentation disponible. Ajouter tests nominal/vide/erreur et timeout avant intégration ; ne pas remplacer un check par une déclaration de modèle.

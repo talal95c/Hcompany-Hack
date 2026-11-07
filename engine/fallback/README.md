@@ -1,5 +1,16 @@
-# `engine/fallback/`
+# engine/fallback/
 
-Mode dégradé automatique quand un service est lent ou absent.
+## Responsabilité
+Secours déterministes.
 
-_Pas encore de code._
+## Entrées
+timeouts et état des services.
+
+## Sorties
+règles, clavier, texte ou pause.
+
+## Dépend de
+Contrats v1, interfaces documentées et composants amont ; aucune dépendance de modèle local. Les appels bpy restent dans addon et les accès natifs dans desktop. Voir [conception détaillée](../../docs/architecture/engine.md) et [guide des agents](../../AGENTS.md).
+
+## État et validation
+Pas encore de code. Les modules décrits sont une cible, pas une implémentation disponible. Ajouter tests nominal/vide/erreur et timeout avant intégration ; ne pas remplacer un check par une déclaration de modèle.

@@ -1,5 +1,16 @@
-# `engine/checks/`
+# engine/checks/
 
-Bibliothèque d'environ 15 tests réutilisables « état → (ok, détail) » sur l'état de Blender (objet, modificateur, matériau, mode, maillage…). Exécution < 10 ms.
+## Responsabilité
+Bibliothèque de vérification.
 
-_Pas encore de code._
+## Entrées
+snapshot et paramètres.
+
+## Sorties
+pass/fail/unknown et détail.
+
+## Dépend de
+Contrats v1, interfaces documentées et composants amont ; aucune dépendance de modèle local. Les appels bpy restent dans addon et les accès natifs dans desktop. Voir [conception détaillée](../../docs/architecture/engine.md) et [guide des agents](../../AGENTS.md).
+
+## État et validation
+Pas encore de code. Les modules décrits sont une cible, pas une implémentation disponible. Ajouter tests nominal/vide/erreur et timeout avant intégration ; ne pas remplacer un check par une déclaration de modèle.
