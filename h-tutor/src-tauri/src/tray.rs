@@ -84,7 +84,7 @@ fn inside(poly: &[(f64, f64)], x: f64, y: f64) -> bool {
 }
 
 pub fn setup(app: &tauri::App) -> tauri::Result<()> {
-    let quit = MenuItem::with_id(app, "quit", "Quit Rio", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quitter Rio", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&quit])?;
 
     TrayIconBuilder::with_id(TRAY_ID)
