@@ -1,0 +1,546 @@
+{
+  "step_id": "save_document",
+  "app_version": "LibreOffice 7.3.7.2 30(Build:2)",
+  "ui_path_verified": true,
+  "before": [
+    {
+      "target": {
+        "description": "Document de rédaction vierge",
+        "role": "document text",
+        "name": "Sans nom 1 - Document LibreOffice",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": [
+        {
+          "role": "document text",
+          "name": "Sans nom 1 - Document LibreOffice",
+          "value": null,
+          "states": [
+            "editable",
+            "enabled",
+            "visible"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Unique paragraphe du document encore sans style de titre",
+        "role": "paragraph",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:",
+          "document text:Sans nom 1 - Document LibreOffice"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": []
+    },
+    {
+      "target": {
+        "description": "Texte du sélecteur Style de paragraphe de Formatage",
+        "role": "text",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "tool bar:Formatage",
+          "panel:Style de paragraphe",
+          "panel:",
+          "filler:",
+          "panel:",
+          "panel:",
+          "filler:",
+          "filler:"
+        ],
+        "app_region": "panel:Style de paragraphe"
+      },
+      "nodes": [
+        {
+          "role": "text",
+          "name": "",
+          "value": "Titre 1",
+          "states": [
+            "editable",
+            "enabled",
+            "visible"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Commande Enregistrer sous de la barre Standard",
+        "role": "push button",
+        "name": "Enregistrer sous...",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "tool bar:Standard"
+        ],
+        "app_region": "tool bar:Standard"
+      },
+      "nodes": [
+        {
+          "role": "push button",
+          "name": "Enregistrer sous...",
+          "value": 0.0,
+          "states": [
+            "enabled"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    }
+  ],
+  "after": [
+    {
+      "target": {
+        "description": "Document de rédaction vierge",
+        "role": "document text",
+        "name": "Sans nom 1 - Document LibreOffice",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": []
+    },
+    {
+      "target": {
+        "description": "Unique paragraphe du document encore sans style de titre",
+        "role": "paragraph",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "scroll pane:",
+          "document text:Sans nom 1 - Document LibreOffice"
+        ],
+        "app_region": "scroll pane:"
+      },
+      "nodes": []
+    },
+    {
+      "target": {
+        "description": "Texte du sélecteur Style de paragraphe de Formatage",
+        "role": "text",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "tool bar:Formatage",
+          "panel:Style de paragraphe",
+          "panel:",
+          "filler:",
+          "panel:",
+          "panel:",
+          "filler:",
+          "filler:"
+        ],
+        "app_region": "panel:Style de paragraphe"
+      },
+      "nodes": []
+    },
+    {
+      "target": {
+        "description": "Commande Enregistrer sous de la barre Standard",
+        "role": "push button",
+        "name": "Enregistrer sous...",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Writer",
+          "panel:",
+          "tool bar:Standard"
+        ],
+        "app_region": "tool bar:Standard"
+      },
+      "nodes": []
+    }
+  ],
+  "actions": [
+    {
+      "kind": "key",
+      "keys": "ctrl+shift+s"
+    },
+    {
+      "kind": "key",
+      "keys": "ctrl+l"
+    },
+    {
+      "kind": "type",
+      "text": "{output_dir}/rapport-mensuel.odt"
+    },
+    {
+      "kind": "key",
+      "keys": "Return"
+    },
+    {
+      "kind": "key",
+      "keys": "Return"
+    },
+    {
+      "kind": "key",
+      "keys": "ctrl+s"
+    }
+  ],
+  "checks": [
+    {
+      "name": "window_title",
+      "params": {
+        "value": "rapport-mensuel.odt"
+      }
+    }
+  ],
+  "before_checks": [
+    "fail"
+  ],
+  "after_checks": [
+    "pass"
+  ],
+  "before_results": [
+    {
+      "status": "fail",
+      "seconds": 0.0009402910000062548,
+      "read_seconds": [
+        0.0009361229999740317
+      ],
+      "visual": null,
+      "observed": "Sans nom 1 - LibreOffice Writer"
+    }
+  ],
+  "after_results": [
+    {
+      "status": "pass",
+      "seconds": 0.008700243000021146,
+      "read_seconds": [
+        0.008694368000305985
+      ],
+      "visual": null,
+      "observed": "rapport-mensuel.odt - LibreOffice Writer"
+    }
+  ],
+  "known_errors": [
+    "fail"
+  ],
+  "error_proofs": [
+    {
+      "code": "wrong_filename",
+      "check": {
+        "name": "window_title",
+        "params": {
+          "value": "brouillon.odt"
+        }
+      },
+      "actions": [
+        {
+          "kind": "key",
+          "keys": "ctrl+shift+s"
+        },
+        {
+          "kind": "key",
+          "keys": "ctrl+l"
+        },
+        {
+          "kind": "type",
+          "text": "{output_dir}/brouillon.odt"
+        },
+        {
+          "kind": "key",
+          "keys": "Return"
+        },
+        {
+          "kind": "key",
+          "keys": "Return"
+        },
+        {
+          "kind": "key",
+          "keys": "ctrl+s"
+        }
+      ],
+      "before": [
+        {
+          "target": {
+            "description": "Document de rédaction vierge",
+            "role": "document text",
+            "name": "Sans nom 1 - Document LibreOffice",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": [
+            {
+              "role": "document text",
+              "name": "Sans nom 1 - Document LibreOffice",
+              "value": null,
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Unique paragraphe du document encore sans style de titre",
+            "role": "paragraph",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": []
+        },
+        {
+          "target": {
+            "description": "Texte du sélecteur Style de paragraphe de Formatage",
+            "role": "text",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "tool bar:Formatage",
+              "panel:Style de paragraphe",
+              "panel:",
+              "filler:",
+              "panel:",
+              "panel:",
+              "filler:",
+              "filler:"
+            ],
+            "app_region": "panel:Style de paragraphe"
+          },
+          "nodes": [
+            {
+              "role": "text",
+              "name": "",
+              "value": "Titre 1",
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Commande Enregistrer sous de la barre Standard",
+            "role": "push button",
+            "name": "Enregistrer sous...",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "tool bar:Standard"
+            ],
+            "app_region": "tool bar:Standard"
+          },
+          "nodes": [
+            {
+              "role": "push button",
+              "name": "Enregistrer sous...",
+              "value": 0.0,
+              "states": [
+                "enabled"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "target": {
+            "description": "Document de rédaction vierge",
+            "role": "document text",
+            "name": "Sans nom 1 - Document LibreOffice",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": []
+        },
+        {
+          "target": {
+            "description": "Unique paragraphe du document encore sans style de titre",
+            "role": "paragraph",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "scroll pane:",
+              "document text:Sans nom 1 - Document LibreOffice"
+            ],
+            "app_region": "scroll pane:"
+          },
+          "nodes": []
+        },
+        {
+          "target": {
+            "description": "Texte du sélecteur Style de paragraphe de Formatage",
+            "role": "text",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "tool bar:Formatage",
+              "panel:Style de paragraphe",
+              "panel:",
+              "filler:",
+              "panel:",
+              "panel:",
+              "filler:",
+              "filler:"
+            ],
+            "app_region": "panel:Style de paragraphe"
+          },
+          "nodes": []
+        },
+        {
+          "target": {
+            "description": "Commande Enregistrer sous de la barre Standard",
+            "role": "push button",
+            "name": "Enregistrer sous...",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Writer",
+              "panel:",
+              "tool bar:Standard"
+            ],
+            "app_region": "tool bar:Standard"
+          },
+          "nodes": []
+        }
+      ],
+      "on_mistake": "pass",
+      "mistake_result": {
+        "status": "pass",
+        "seconds": 0.053869052000209194,
+        "read_seconds": [
+          0.05386040200028219
+        ],
+        "visual": null,
+        "observed": "brouillon.odt - LibreOffice Writer"
+      },
+      "artifact_before": [
+        {
+          "file": "rapport-mensuel.odt",
+          "status": "fail",
+          "exists": false
+        }
+      ],
+      "artifact_on_mistake": [
+        {
+          "file": "rapport-mensuel.odt",
+          "status": "fail",
+          "exists": false
+        }
+      ],
+      "step_checks_on_mistake": [
+        "fail"
+      ],
+      "step_check_results": [
+        {
+          "status": "fail",
+          "seconds": 0.014214113999969413,
+          "read_seconds": [
+            0.014209350000328413
+          ],
+          "visual": null,
+          "observed": "brouillon.odt - LibreOffice Writer"
+        }
+      ],
+      "on_correct_path": "fail",
+      "correct_result": {
+        "status": "fail",
+        "seconds": 0.000902626999959466,
+        "read_seconds": [
+          0.0009004529997582722
+        ],
+        "visual": null,
+        "observed": "rapport-mensuel.odt - LibreOffice Writer"
+      }
+    }
+  ],
+  "seconds": 20.532328162999875,
+  "artifact_results": [
+    {
+      "file": "rapport-mensuel.odt",
+      "exists": true,
+      "sha256": "f6b64b3b5ff6f0529f8b4476f8ada3c58d780ec47b106a6fba9aa1ebdade27ce",
+      "status": "pass",
+      "mimetype": "application/vnd.oasis.opendocument.text",
+      "headings": [
+        {
+          "text": "Rapport mensuel",
+          "style_name": "Heading_20_1",
+          "outline_level": "1"
+        }
+      ],
+      "content_sha256": "9c7f12dd4c167db53d9f762a7d0fc8fd99c68244607583a9535398514c8a73fb",
+      "evidence_ref": "proof/save_document-rapport-mensuel.odt"
+    }
+  ]
+}

@@ -1,0 +1,1283 @@
+{
+  "step_id": "saisir_valeurs",
+  "app_version": "LibreOffice 7.3.7.2 30(Build:2)",
+  "ui_path_verified": true,
+  "before": [
+    {
+      "target": {
+        "description": "Cellule A1 de la première feuille",
+        "role": "table cell",
+        "name": "A1",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "scroll pane:",
+          "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+          "table:Feuille Feuille1"
+        ],
+        "app_region": "table:Feuille Feuille1"
+      },
+      "nodes": [
+        {
+          "role": "table cell",
+          "name": "A1",
+          "value": "Montant",
+          "states": [
+            "editable",
+            "enabled",
+            "selected",
+            "visible"
+          ],
+          "unsupported_states": [
+            "selected"
+          ]
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Cellule A2 de la première feuille",
+        "role": "table cell",
+        "name": "A2",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "scroll pane:",
+          "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+          "table:Feuille Feuille1"
+        ],
+        "app_region": "table:Feuille Feuille1"
+      },
+      "nodes": [
+        {
+          "role": "table cell",
+          "name": "A2",
+          "value": "",
+          "states": [
+            "editable",
+            "enabled",
+            "selected",
+            "visible"
+          ],
+          "unsupported_states": [
+            "selected"
+          ]
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Cellule A3 de la première feuille",
+        "role": "table cell",
+        "name": "A3",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "scroll pane:",
+          "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+          "table:Feuille Feuille1"
+        ],
+        "app_region": "table:Feuille Feuille1"
+      },
+      "nodes": [
+        {
+          "role": "table cell",
+          "name": "A3",
+          "value": "",
+          "states": [
+            "editable",
+            "enabled",
+            "selected",
+            "visible"
+          ],
+          "unsupported_states": [
+            "selected"
+          ]
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Cellule A4 de la première feuille",
+        "role": "table cell",
+        "name": "A4",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "scroll pane:",
+          "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+          "table:Feuille Feuille1"
+        ],
+        "app_region": "table:Feuille Feuille1"
+      },
+      "nodes": [
+        {
+          "role": "table cell",
+          "name": "A4",
+          "value": "",
+          "states": [
+            "editable",
+            "enabled",
+            "selected",
+            "visible"
+          ],
+          "unsupported_states": [
+            "selected"
+          ]
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Cellule A5 de la première feuille",
+        "role": "table cell",
+        "name": "A5",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "scroll pane:",
+          "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+          "table:Feuille Feuille1"
+        ],
+        "app_region": "table:Feuille Feuille1"
+      },
+      "nodes": [
+        {
+          "role": "table cell",
+          "name": "A5",
+          "value": "",
+          "states": [
+            "editable",
+            "enabled",
+            "selected",
+            "visible"
+          ],
+          "unsupported_states": [
+            "selected"
+          ]
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Bouton Gras de la barre Formatage",
+        "role": "toggle button",
+        "name": "Gras",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "tool bar:Formatage"
+        ],
+        "app_region": "tool bar:Formatage"
+      },
+      "nodes": [
+        {
+          "role": "toggle button",
+          "name": "Gras",
+          "value": 0.0,
+          "states": [
+            "enabled",
+            "visible"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Bouton Monnaie de la barre Formatage",
+        "role": "push button",
+        "name": "Monnaie",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "tool bar:Formatage"
+        ],
+        "app_region": "tool bar:Formatage"
+      },
+      "nodes": [
+        {
+          "role": "push button",
+          "name": "Monnaie",
+          "value": 0.0,
+          "states": [
+            "enabled",
+            "visible"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    }
+  ],
+  "after": [
+    {
+      "target": {
+        "description": "Cellule A1 de la première feuille",
+        "role": "table cell",
+        "name": "A1",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "scroll pane:",
+          "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+          "table:Feuille Feuille1"
+        ],
+        "app_region": "table:Feuille Feuille1"
+      },
+      "nodes": [
+        {
+          "role": "table cell",
+          "name": "A1",
+          "value": "Montant",
+          "states": [
+            "editable",
+            "enabled",
+            "visible"
+          ],
+          "unsupported_states": [
+            "selected"
+          ]
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Cellule A2 de la première feuille",
+        "role": "table cell",
+        "name": "A2",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "scroll pane:",
+          "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+          "table:Feuille Feuille1"
+        ],
+        "app_region": "table:Feuille Feuille1"
+      },
+      "nodes": [
+        {
+          "role": "table cell",
+          "name": "A2",
+          "value": "12",
+          "states": [
+            "editable",
+            "enabled",
+            "visible"
+          ],
+          "unsupported_states": [
+            "selected"
+          ]
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Cellule A3 de la première feuille",
+        "role": "table cell",
+        "name": "A3",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "scroll pane:",
+          "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+          "table:Feuille Feuille1"
+        ],
+        "app_region": "table:Feuille Feuille1"
+      },
+      "nodes": [
+        {
+          "role": "table cell",
+          "name": "A3",
+          "value": "30",
+          "states": [
+            "editable",
+            "enabled",
+            "visible"
+          ],
+          "unsupported_states": [
+            "selected"
+          ]
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Cellule A4 de la première feuille",
+        "role": "table cell",
+        "name": "A4",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "scroll pane:",
+          "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+          "table:Feuille Feuille1"
+        ],
+        "app_region": "table:Feuille Feuille1"
+      },
+      "nodes": [
+        {
+          "role": "table cell",
+          "name": "A4",
+          "value": "8",
+          "states": [
+            "editable",
+            "enabled",
+            "visible"
+          ],
+          "unsupported_states": [
+            "selected"
+          ]
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Cellule A5 de la première feuille",
+        "role": "table cell",
+        "name": "A5",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "scroll pane:",
+          "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+          "table:Feuille Feuille1"
+        ],
+        "app_region": "table:Feuille Feuille1"
+      },
+      "nodes": [
+        {
+          "role": "table cell",
+          "name": "A5",
+          "value": "",
+          "states": [
+            "editable",
+            "enabled",
+            "visible"
+          ],
+          "unsupported_states": [
+            "selected"
+          ]
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Bouton Gras de la barre Formatage",
+        "role": "toggle button",
+        "name": "Gras",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "tool bar:Formatage"
+        ],
+        "app_region": "tool bar:Formatage"
+      },
+      "nodes": [
+        {
+          "role": "toggle button",
+          "name": "Gras",
+          "value": 0.0,
+          "states": [
+            "enabled",
+            "visible"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    },
+    {
+      "target": {
+        "description": "Bouton Monnaie de la barre Formatage",
+        "role": "push button",
+        "name": "Monnaie",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "tool bar:Formatage"
+        ],
+        "app_region": "tool bar:Formatage"
+      },
+      "nodes": [
+        {
+          "role": "push button",
+          "name": "Monnaie",
+          "value": 0.0,
+          "states": [
+            "enabled",
+            "visible"
+          ],
+          "unsupported_states": []
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "kind": "click",
+      "target": {
+        "description": "Cellule A2 de la première feuille",
+        "role": "table cell",
+        "name": "A2",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "scroll pane:",
+          "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+          "table:Feuille Feuille1"
+        ],
+        "app_region": "table:Feuille Feuille1"
+      }
+    },
+    {
+      "kind": "type",
+      "text": "12"
+    },
+    {
+      "kind": "key",
+      "keys": "Return"
+    },
+    {
+      "kind": "click",
+      "target": {
+        "description": "Cellule A3 de la première feuille",
+        "role": "table cell",
+        "name": "A3",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "scroll pane:",
+          "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+          "table:Feuille Feuille1"
+        ],
+        "app_region": "table:Feuille Feuille1"
+      }
+    },
+    {
+      "kind": "type",
+      "text": "30"
+    },
+    {
+      "kind": "key",
+      "keys": "Return"
+    },
+    {
+      "kind": "click",
+      "target": {
+        "description": "Cellule A4 de la première feuille",
+        "role": "table cell",
+        "name": "A4",
+        "path": [
+          "frame:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "panel:",
+          "root pane:Sans nom 1 - LibreOffice Calc",
+          "panel:",
+          "scroll pane:",
+          "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+          "table:Feuille Feuille1"
+        ],
+        "app_region": "table:Feuille Feuille1"
+      }
+    },
+    {
+      "kind": "type",
+      "text": "8"
+    },
+    {
+      "kind": "key",
+      "keys": "Return"
+    }
+  ],
+  "checks": [
+    {
+      "name": "element_value",
+      "params": {
+        "target": {
+          "description": "Cellule A2 de la première feuille",
+          "role": "table cell",
+          "name": "A2",
+          "path": [
+            "frame:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "panel:",
+            "root pane:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "scroll pane:",
+            "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+            "table:Feuille Feuille1"
+          ],
+          "app_region": "table:Feuille Feuille1"
+        },
+        "value": "12"
+      }
+    },
+    {
+      "name": "element_value",
+      "params": {
+        "target": {
+          "description": "Cellule A3 de la première feuille",
+          "role": "table cell",
+          "name": "A3",
+          "path": [
+            "frame:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "panel:",
+            "root pane:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "scroll pane:",
+            "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+            "table:Feuille Feuille1"
+          ],
+          "app_region": "table:Feuille Feuille1"
+        },
+        "value": "30"
+      }
+    },
+    {
+      "name": "element_value",
+      "params": {
+        "target": {
+          "description": "Cellule A4 de la première feuille",
+          "role": "table cell",
+          "name": "A4",
+          "path": [
+            "frame:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "panel:",
+            "root pane:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "scroll pane:",
+            "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+            "table:Feuille Feuille1"
+          ],
+          "app_region": "table:Feuille Feuille1"
+        },
+        "value": "8"
+      }
+    }
+  ],
+  "before_checks": [
+    "fail",
+    "fail",
+    "fail"
+  ],
+  "after_checks": [
+    "pass",
+    "pass",
+    "pass"
+  ],
+  "before_results": [
+    {
+      "status": "fail",
+      "seconds": 0.02132279199986442,
+      "read_seconds": [
+        0.021318635000170616
+      ],
+      "visual": null
+    },
+    {
+      "status": "fail",
+      "seconds": 0.022782627999959004,
+      "read_seconds": [
+        0.02277978400002212
+      ],
+      "visual": null
+    },
+    {
+      "status": "fail",
+      "seconds": 0.026480171999992308,
+      "read_seconds": [
+        0.026477615000203514
+      ],
+      "visual": null
+    }
+  ],
+  "after_results": [
+    {
+      "status": "pass",
+      "seconds": 0.030971446999956243,
+      "read_seconds": [
+        0.030965481000066575
+      ],
+      "visual": null
+    },
+    {
+      "status": "pass",
+      "seconds": 0.02390476799996577,
+      "read_seconds": [
+        0.023902653000050123
+      ],
+      "visual": null
+    },
+    {
+      "status": "pass",
+      "seconds": 0.02308828600007473,
+      "read_seconds": [
+        0.023086123999974006
+      ],
+      "visual": null
+    }
+  ],
+  "known_errors": [
+    "fail"
+  ],
+  "error_proofs": [
+    {
+      "code": "wrong_value",
+      "check": {
+        "name": "element_value",
+        "params": {
+          "target": {
+            "description": "Cellule A3 de la première feuille",
+            "role": "table cell",
+            "name": "A3",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          },
+          "value": "3"
+        }
+      },
+      "actions": [
+        {
+          "kind": "click",
+          "target": {
+            "description": "Cellule A2 de la première feuille",
+            "role": "table cell",
+            "name": "A2",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          }
+        },
+        {
+          "kind": "type",
+          "text": "12"
+        },
+        {
+          "kind": "key",
+          "keys": "Return"
+        },
+        {
+          "kind": "click",
+          "target": {
+            "description": "Cellule A3 de la première feuille",
+            "role": "table cell",
+            "name": "A3",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          }
+        },
+        {
+          "kind": "type",
+          "text": "3"
+        },
+        {
+          "kind": "key",
+          "keys": "Return"
+        },
+        {
+          "kind": "click",
+          "target": {
+            "description": "Cellule A4 de la première feuille",
+            "role": "table cell",
+            "name": "A4",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          }
+        },
+        {
+          "kind": "type",
+          "text": "8"
+        },
+        {
+          "kind": "key",
+          "keys": "Return"
+        }
+      ],
+      "before": [
+        {
+          "target": {
+            "description": "Cellule A1 de la première feuille",
+            "role": "table cell",
+            "name": "A1",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          },
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A1",
+              "value": "Montant",
+              "states": [
+                "editable",
+                "enabled",
+                "selected",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Cellule A2 de la première feuille",
+            "role": "table cell",
+            "name": "A2",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          },
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A2",
+              "value": "",
+              "states": [
+                "editable",
+                "enabled",
+                "selected",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Cellule A3 de la première feuille",
+            "role": "table cell",
+            "name": "A3",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          },
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A3",
+              "value": "",
+              "states": [
+                "editable",
+                "enabled",
+                "selected",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Cellule A4 de la première feuille",
+            "role": "table cell",
+            "name": "A4",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          },
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A4",
+              "value": "",
+              "states": [
+                "editable",
+                "enabled",
+                "selected",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Cellule A5 de la première feuille",
+            "role": "table cell",
+            "name": "A5",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          },
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A5",
+              "value": "",
+              "states": [
+                "editable",
+                "enabled",
+                "selected",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Bouton Gras de la barre Formatage",
+            "role": "toggle button",
+            "name": "Gras",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "tool bar:Formatage"
+            ],
+            "app_region": "tool bar:Formatage"
+          },
+          "nodes": [
+            {
+              "role": "toggle button",
+              "name": "Gras",
+              "value": 0.0,
+              "states": [
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Bouton Monnaie de la barre Formatage",
+            "role": "push button",
+            "name": "Monnaie",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "tool bar:Formatage"
+            ],
+            "app_region": "tool bar:Formatage"
+          },
+          "nodes": [
+            {
+              "role": "push button",
+              "name": "Monnaie",
+              "value": 0.0,
+              "states": [
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "target": {
+            "description": "Cellule A1 de la première feuille",
+            "role": "table cell",
+            "name": "A1",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          },
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A1",
+              "value": "Montant",
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Cellule A2 de la première feuille",
+            "role": "table cell",
+            "name": "A2",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          },
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A2",
+              "value": "12",
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Cellule A3 de la première feuille",
+            "role": "table cell",
+            "name": "A3",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          },
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A3",
+              "value": "3",
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Cellule A4 de la première feuille",
+            "role": "table cell",
+            "name": "A4",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          },
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A4",
+              "value": "8",
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Cellule A5 de la première feuille",
+            "role": "table cell",
+            "name": "A5",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          },
+          "nodes": [
+            {
+              "role": "table cell",
+              "name": "A5",
+              "value": "",
+              "states": [
+                "editable",
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": [
+                "selected"
+              ]
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Bouton Gras de la barre Formatage",
+            "role": "toggle button",
+            "name": "Gras",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "tool bar:Formatage"
+            ],
+            "app_region": "tool bar:Formatage"
+          },
+          "nodes": [
+            {
+              "role": "toggle button",
+              "name": "Gras",
+              "value": 0.0,
+              "states": [
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        },
+        {
+          "target": {
+            "description": "Bouton Monnaie de la barre Formatage",
+            "role": "push button",
+            "name": "Monnaie",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "tool bar:Formatage"
+            ],
+            "app_region": "tool bar:Formatage"
+          },
+          "nodes": [
+            {
+              "role": "push button",
+              "name": "Monnaie",
+              "value": 0.0,
+              "states": [
+                "enabled",
+                "visible"
+              ],
+              "unsupported_states": []
+            }
+          ]
+        }
+      ],
+      "on_mistake": "pass",
+      "mistake_result": {
+        "status": "pass",
+        "seconds": 0.0215925889999653,
+        "read_seconds": [
+          0.02158604200008085
+        ],
+        "visual": null
+      },
+      "step_checks_on_mistake": [
+        "pass",
+        "fail",
+        "pass"
+      ],
+      "step_check_results": [
+        {
+          "status": "pass",
+          "seconds": 0.021495985999990808,
+          "read_seconds": [
+            0.021494193000080486
+          ],
+          "visual": null
+        },
+        {
+          "status": "fail",
+          "seconds": 0.023575406999952975,
+          "read_seconds": [
+            0.02357268900004783
+          ],
+          "visual": null
+        },
+        {
+          "status": "pass",
+          "seconds": 0.023668881000048714,
+          "read_seconds": [
+            0.023666905000027327
+          ],
+          "visual": null
+        }
+      ],
+      "on_correct_path": "fail",
+      "correct_result": {
+        "status": "fail",
+        "seconds": 0.02545799400013493,
+        "read_seconds": [
+          0.025455749999991895
+        ],
+        "visual": null
+      }
+    }
+  ],
+  "seconds": 13.955944554000098
+}

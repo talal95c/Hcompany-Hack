@@ -1,0 +1,675 @@
+{
+  "saisir_entete": {
+    "goal": "Saisis Montant en A1.",
+    "help_ladder": {
+      "1": "① Voix : Saisis Montant en A1.",
+      "2": "② Surlignage et menu : repère Cellule A1 de la première feuille ; consulte le menu Format pour les mises en forme.",
+      "3": "③ Pointeur : suis le repère sur Cellule A1 de la première feuille, puis fais le geste.",
+      "4": "④ Démo : avec ton accord, je rejoue cette étape dans une copie, puis tu recommences sans aide."
+    },
+    "expected_actions": [
+      {
+        "kind": "click",
+        "target": {
+          "description": "Cellule A1 de la première feuille",
+          "role": "table cell",
+          "name": "A1",
+          "path": [
+            "frame:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "panel:",
+            "root pane:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "scroll pane:",
+            "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+            "table:Feuille Feuille1"
+          ],
+          "app_region": "table:Feuille Feuille1"
+        }
+      },
+      {
+        "kind": "type",
+        "text": "Montant"
+      },
+      {
+        "kind": "key",
+        "keys": "Return"
+      }
+    ],
+    "checks": [],
+    "known_errors_extra": [],
+    "mistake_actions": {
+      "wrong_header": [
+        {
+          "kind": "click",
+          "target": {
+            "description": "Cellule A1 de la première feuille",
+            "role": "table cell",
+            "name": "A1",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          }
+        },
+        {
+          "kind": "type",
+          "text": "Total"
+        },
+        {
+          "kind": "key",
+          "keys": "Return"
+        }
+      ]
+    }
+  },
+  "saisir_valeurs": {
+    "goal": "Saisis 12 en A2, 30 en A3 et 8 en A4.",
+    "help_ladder": {
+      "1": "① Voix : Saisis 12 en A2, 30 en A3 et 8 en A4.",
+      "2": "② Surlignage et menu : repère Cellule A2 de la première feuille ; consulte le menu Format pour les mises en forme.",
+      "3": "③ Pointeur : suis le repère sur Cellule A2 de la première feuille, puis fais le geste.",
+      "4": "④ Démo : avec ton accord, je rejoue cette étape dans une copie, puis tu recommences sans aide."
+    },
+    "expected_actions": [
+      {
+        "kind": "click",
+        "target": {
+          "description": "Cellule A2 de la première feuille",
+          "role": "table cell",
+          "name": "A2",
+          "path": [
+            "frame:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "panel:",
+            "root pane:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "scroll pane:",
+            "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+            "table:Feuille Feuille1"
+          ],
+          "app_region": "table:Feuille Feuille1"
+        }
+      },
+      {
+        "kind": "type",
+        "text": "12"
+      },
+      {
+        "kind": "key",
+        "keys": "Return"
+      },
+      {
+        "kind": "click",
+        "target": {
+          "description": "Cellule A3 de la première feuille",
+          "role": "table cell",
+          "name": "A3",
+          "path": [
+            "frame:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "panel:",
+            "root pane:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "scroll pane:",
+            "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+            "table:Feuille Feuille1"
+          ],
+          "app_region": "table:Feuille Feuille1"
+        }
+      },
+      {
+        "kind": "type",
+        "text": "30"
+      },
+      {
+        "kind": "key",
+        "keys": "Return"
+      },
+      {
+        "kind": "click",
+        "target": {
+          "description": "Cellule A4 de la première feuille",
+          "role": "table cell",
+          "name": "A4",
+          "path": [
+            "frame:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "panel:",
+            "root pane:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "scroll pane:",
+            "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+            "table:Feuille Feuille1"
+          ],
+          "app_region": "table:Feuille Feuille1"
+        }
+      },
+      {
+        "kind": "type",
+        "text": "8"
+      },
+      {
+        "kind": "key",
+        "keys": "Return"
+      }
+    ],
+    "checks": [
+      {
+        "name": "element_value",
+        "params": {
+          "target": {
+            "description": "Cellule A3 de la première feuille",
+            "role": "table cell",
+            "name": "A3",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          },
+          "value": "30"
+        }
+      },
+      {
+        "name": "element_value",
+        "params": {
+          "target": {
+            "description": "Cellule A4 de la première feuille",
+            "role": "table cell",
+            "name": "A4",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          },
+          "value": "8"
+        }
+      }
+    ],
+    "known_errors_extra": [],
+    "mistake_actions": {
+      "wrong_value": [
+        {
+          "kind": "click",
+          "target": {
+            "description": "Cellule A2 de la première feuille",
+            "role": "table cell",
+            "name": "A2",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          }
+        },
+        {
+          "kind": "type",
+          "text": "12"
+        },
+        {
+          "kind": "key",
+          "keys": "Return"
+        },
+        {
+          "kind": "click",
+          "target": {
+            "description": "Cellule A3 de la première feuille",
+            "role": "table cell",
+            "name": "A3",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          }
+        },
+        {
+          "kind": "type",
+          "text": "3"
+        },
+        {
+          "kind": "key",
+          "keys": "Return"
+        },
+        {
+          "kind": "click",
+          "target": {
+            "description": "Cellule A4 de la première feuille",
+            "role": "table cell",
+            "name": "A4",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          }
+        },
+        {
+          "kind": "type",
+          "text": "8"
+        },
+        {
+          "kind": "key",
+          "keys": "Return"
+        }
+      ]
+    }
+  },
+  "formule_somme": {
+    "goal": "En A5, saisis =SOMME(A2:A4) : le résultat est 50. Dans Excel ou LibreOffice en anglais, SOMME se nomme SUM.",
+    "help_ladder": {
+      "1": "① Voix : En A5, saisis =SOMME(A2:A4) : le résultat est 50. Dans Excel ou LibreOffice en anglais, SOMME se nomme SUM.",
+      "2": "② Surlignage et menu : repère Cellule A5 de la première feuille ; consulte le menu Format pour les mises en forme.",
+      "3": "③ Pointeur : suis le repère sur Cellule A5 de la première feuille, puis fais le geste.",
+      "4": "④ Démo : avec ton accord, je rejoue cette étape dans une copie, puis tu recommences sans aide."
+    },
+    "expected_actions": [
+      {
+        "kind": "click",
+        "target": {
+          "description": "Cellule A5 de la première feuille",
+          "role": "table cell",
+          "name": "A5",
+          "path": [
+            "frame:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "panel:",
+            "root pane:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "scroll pane:",
+            "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+            "table:Feuille Feuille1"
+          ],
+          "app_region": "table:Feuille Feuille1"
+        }
+      },
+      {
+        "kind": "type",
+        "text": "=SOMME(A2:A4)"
+      },
+      {
+        "kind": "key",
+        "keys": "Return"
+      }
+    ],
+    "checks": [],
+    "known_errors_extra": [],
+    "mistake_actions": {
+      "missing_equals": [
+        {
+          "kind": "click",
+          "target": {
+            "description": "Cellule A5 de la première feuille",
+            "role": "table cell",
+            "name": "A5",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          }
+        },
+        {
+          "kind": "type",
+          "text": "SOMME(A2:A4)"
+        },
+        {
+          "kind": "key",
+          "keys": "Return"
+        }
+      ],
+      "wrong_range": [
+        {
+          "kind": "click",
+          "target": {
+            "description": "Cellule A5 de la première feuille",
+            "role": "table cell",
+            "name": "A5",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          }
+        },
+        {
+          "kind": "type",
+          "text": "=SOMME(A2:A3)"
+        },
+        {
+          "kind": "key",
+          "keys": "Return"
+        }
+      ]
+    }
+  },
+  "entete_gras": {
+    "goal": "Sélectionne A1 et active Gras (Ctrl+G dans Calc/Excel en français).",
+    "help_ladder": {
+      "1": "① Voix : Sélectionne A1 et active Gras (Ctrl+G dans Calc/Excel en français).",
+      "2": "② Surlignage et menu : repère Bouton Gras de la barre Formatage ; consulte le menu Format pour les mises en forme.",
+      "3": "③ Pointeur : suis le repère sur Bouton Gras de la barre Formatage, puis fais le geste.",
+      "4": "④ Démo : avec ton accord, je rejoue cette étape dans une copie, puis tu recommences sans aide."
+    },
+    "expected_actions": [
+      {
+        "kind": "click",
+        "target": {
+          "description": "Cellule A1 de la première feuille",
+          "role": "table cell",
+          "name": "A1",
+          "path": [
+            "frame:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "panel:",
+            "root pane:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "scroll pane:",
+            "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+            "table:Feuille Feuille1"
+          ],
+          "app_region": "table:Feuille Feuille1"
+        }
+      },
+      {
+        "kind": "key",
+        "keys": "ctrl+g"
+      }
+    ],
+    "checks": [
+      {
+        "name": "element_value",
+        "params": {
+          "target": {
+            "description": "Cellule A1 de la première feuille",
+            "role": "table cell",
+            "name": "A1",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          },
+          "value": "Montant"
+        }
+      }
+    ],
+    "known_errors_extra": [],
+    "mistake_actions": {
+      "wrong_bold_cell": [
+        {
+          "kind": "click",
+          "target": {
+            "description": "Cellule A2 de la première feuille",
+            "role": "table cell",
+            "name": "A2",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          }
+        },
+        {
+          "kind": "key",
+          "keys": "ctrl+g"
+        },
+        {
+          "kind": "click",
+          "target": {
+            "description": "Cellule A1 de la première feuille",
+            "role": "table cell",
+            "name": "A1",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          }
+        }
+      ]
+    }
+  },
+  "format_monetaire": {
+    "goal": "Sélectionne A2:A5 puis le bouton Monnaie de Formatage (Format monétaire) : A5 doit afficher 50,00 €.",
+    "help_ladder": {
+      "1": "① Voix : Sélectionne A2:A5 puis le bouton Monnaie de Formatage (Format monétaire) : A5 doit afficher 50,00 €.",
+      "2": "② Surlignage et menu : repère Bouton Monnaie de la barre Formatage ; consulte le menu Format pour les mises en forme.",
+      "3": "③ Pointeur : suis le repère sur Bouton Monnaie de la barre Formatage, puis fais le geste.",
+      "4": "④ Démo : avec ton accord, je rejoue cette étape dans une copie, puis tu recommences sans aide."
+    },
+    "expected_actions": [
+      {
+        "kind": "click",
+        "target": {
+          "description": "Cellule A2 de la première feuille",
+          "role": "table cell",
+          "name": "A2",
+          "path": [
+            "frame:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "panel:",
+            "root pane:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "scroll pane:",
+            "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+            "table:Feuille Feuille1"
+          ],
+          "app_region": "table:Feuille Feuille1"
+        }
+      },
+      {
+        "kind": "click",
+        "target": {
+          "description": "Cellule A5 de la première feuille",
+          "role": "table cell",
+          "name": "A5",
+          "path": [
+            "frame:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "panel:",
+            "root pane:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "scroll pane:",
+            "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+            "table:Feuille Feuille1"
+          ],
+          "app_region": "table:Feuille Feuille1"
+        },
+        "modifiers": [
+          "shift"
+        ]
+      },
+      {
+        "kind": "click",
+        "target": {
+          "description": "Bouton Monnaie de la barre Formatage",
+          "role": "push button",
+          "name": "Monnaie",
+          "path": [
+            "frame:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "panel:",
+            "root pane:Sans nom 1 - LibreOffice Calc",
+            "panel:",
+            "tool bar:Formatage"
+          ],
+          "app_region": "tool bar:Formatage"
+        }
+      }
+    ],
+    "checks": [
+      {
+        "name": "visual_assert",
+        "params": {
+          "assertion": "La cellule A2 affiche-t-elle exactement 12,00 € avec deux décimales et un symbole € ?",
+          "min_confidence": 0.8,
+          "region": {
+            "x": 0,
+            "y": 140,
+            "w": 250,
+            "h": 220
+          }
+        }
+      },
+      {
+        "name": "visual_assert",
+        "params": {
+          "assertion": "La cellule A3 affiche-t-elle exactement 30,00 € avec deux décimales et un symbole € ?",
+          "min_confidence": 0.8,
+          "region": {
+            "x": 0,
+            "y": 140,
+            "w": 250,
+            "h": 220
+          }
+        }
+      },
+      {
+        "name": "visual_assert",
+        "params": {
+          "assertion": "La cellule A4 affiche-t-elle exactement 8,00 € avec deux décimales et un symbole € ?",
+          "min_confidence": 0.8,
+          "region": {
+            "x": 0,
+            "y": 140,
+            "w": 250,
+            "h": 220
+          }
+        }
+      },
+      {
+        "name": "element_value",
+        "params": {
+          "target": {
+            "description": "Cellule A5 de la première feuille",
+            "role": "table cell",
+            "name": "A5",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          },
+          "value": "50"
+        }
+      }
+    ],
+    "known_errors_extra": [],
+    "mistake_actions": {
+      "only_total_formatted": [
+        {
+          "kind": "click",
+          "target": {
+            "description": "Cellule A5 de la première feuille",
+            "role": "table cell",
+            "name": "A5",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "scroll pane:",
+              "document spreadsheet:Sans nom 1 - Classeurs LibreOffice",
+              "table:Feuille Feuille1"
+            ],
+            "app_region": "table:Feuille Feuille1"
+          }
+        },
+        {
+          "kind": "click",
+          "target": {
+            "description": "Bouton Monnaie de la barre Formatage",
+            "role": "push button",
+            "name": "Monnaie",
+            "path": [
+              "frame:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "panel:",
+              "root pane:Sans nom 1 - LibreOffice Calc",
+              "panel:",
+              "tool bar:Formatage"
+            ],
+            "app_region": "tool bar:Formatage"
+          }
+        }
+      ]
+    }
+  }
+}

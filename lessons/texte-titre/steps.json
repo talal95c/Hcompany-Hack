@@ -1,0 +1,158 @@
+{
+  "type_title": {
+    "goal": "Saisis Rapport mensuel dans le document vierge.",
+    "help_ladder": {
+      "1": "① Voix : Saisis Rapport mensuel dans le document vierge.",
+      "2": "② Surlignage et menu : repère Document de rédaction vierge.",
+      "3": "③ Pointeur : suis le repère, puis effectue le geste toi-même.",
+      "4": "④ Démo : avec ton accord, je montre ce geste dans une copie, puis tu le refais."
+    },
+    "expected_actions": [
+      {
+        "kind": "type",
+        "text": "Rapport mensuel"
+      }
+    ],
+    "checks": [],
+    "known_errors_extra": [],
+    "mistake_actions": {
+      "wrong_title": [
+        {
+          "kind": "type",
+          "text": "Brouillon"
+        }
+      ]
+    }
+  },
+  "apply_heading": {
+    "goal": "Place le curseur dans le titre et applique Titre 1 avec Ctrl+1.",
+    "help_ladder": {
+      "1": "① Voix : Place le curseur dans le titre et applique Titre 1 avec Ctrl+1.",
+      "2": "② Surlignage et menu : repère Texte du sélecteur Style de paragraphe de Formatage.",
+      "3": "③ Pointeur : suis le repère, puis effectue le geste toi-même.",
+      "4": "④ Démo : avec ton accord, je montre ce geste dans une copie, puis tu le refais."
+    },
+    "expected_actions": [
+      {
+        "kind": "key",
+        "keys": "ctrl+Home"
+      },
+      {
+        "kind": "key",
+        "keys": "ctrl+1"
+      }
+    ],
+    "checks": [],
+    "known_errors_extra": [],
+    "mistake_actions": {
+      "bold_only": [
+        {
+          "kind": "key",
+          "keys": "ctrl+Home"
+        },
+        {
+          "kind": "key",
+          "keys": "ctrl+g"
+        }
+      ],
+      "wrong_paragraph": [
+        {
+          "kind": "key",
+          "keys": "ctrl+End"
+        },
+        {
+          "kind": "key",
+          "keys": "Return"
+        },
+        {
+          "kind": "type",
+          "text": "Corps du rapport."
+        },
+        {
+          "kind": "key",
+          "keys": "ctrl+1"
+        },
+        {
+          "kind": "key",
+          "keys": "ctrl+Home"
+        }
+      ]
+    }
+  },
+  "save_document": {
+    "goal": "Enregistre sous rapport-mensuel.odt avec Ctrl+Maj+S. Garde le format Texte ODF (.odt).",
+    "help_ladder": {
+      "1": "① Voix : Enregistre sous rapport-mensuel.odt avec Ctrl+Maj+S. Garde le format Texte ODF (.odt).",
+      "2": "② Surlignage et menu : repère Commande Enregistrer sous de la barre Standard.",
+      "3": "③ Pointeur : suis le repère, puis effectue le geste toi-même.",
+      "4": "④ Démo : avec ton accord, je montre ce geste dans une copie, puis tu le refais."
+    },
+    "expected_actions": [
+      {
+        "kind": "key",
+        "keys": "ctrl+shift+s"
+      },
+      {
+        "kind": "key",
+        "keys": "ctrl+l"
+      },
+      {
+        "kind": "type",
+        "text": "{output_dir}/rapport-mensuel.odt"
+      },
+      {
+        "kind": "key",
+        "keys": "Return"
+      },
+      {
+        "kind": "key",
+        "keys": "Return"
+      },
+      {
+        "kind": "key",
+        "keys": "ctrl+s"
+      }
+    ],
+    "checks": [],
+    "known_errors_extra": [],
+    "mistake_actions": {
+      "wrong_filename": [
+        {
+          "kind": "key",
+          "keys": "ctrl+shift+s"
+        },
+        {
+          "kind": "key",
+          "keys": "ctrl+l"
+        },
+        {
+          "kind": "type",
+          "text": "{output_dir}/brouillon.odt"
+        },
+        {
+          "kind": "key",
+          "keys": "Return"
+        },
+        {
+          "kind": "key",
+          "keys": "Return"
+        },
+        {
+          "kind": "key",
+          "keys": "ctrl+s"
+        }
+      ]
+    },
+    "artifact_checks": [
+      {
+        "filename": "rapport-mensuel.odt",
+        "mimetype": "application/vnd.oasis.opendocument.text",
+        "heading": {
+          "text": "Rapport mensuel",
+          "outline_level": 1,
+          "style_name": "Heading_20_1"
+        }
+      }
+    ]
+  }
+}

@@ -10,6 +10,14 @@ La migration explicite porte les deux leçons à la révision 2, avec
 Les noms de checks historiques sont conservés : le registre actuel du moteur
 (`engine/checks/__init__.py`) ne reconnaît pas encore les alias `blender.*`.
 
+Une leçon multi-app séparée, [tableur-somme](tableur-somme/README.md), enseigne
+une somme dans LibreOffice Calc 7.3.7 avec AT-SPI et Holo. Son compagnon strict
+est `generic-steps.schema.json` ; sa reproduction utilise `build_generic.py`
+et `tests/lessons/prove_generic.py`, sans modifier les parcours ci-dessous.
+Elle reste brouillon pendant l'indisponibilité cloud. La leçon
+[texte-titre](texte-titre/README.md) réutilise ce compagnon et ce pilote pour
+Writer : titre structuré et enregistrement ODT, vérifiés sans vision cloud.
+
 ## Reproduction depuis la racine
 
 ```sh

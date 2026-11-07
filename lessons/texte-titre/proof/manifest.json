@@ -1,0 +1,25 @@
+{
+  "lesson_id": "texte-titre",
+  "app_version": "LibreOffice 7.3.7.2 30(Build:2)",
+  "ui_path_verified": true,
+  "native_only": false,
+  "app_start_seconds": [
+    2.6441596599997865,
+    1.5498502489999737,
+    1.7679271449997032,
+    1.5201542599997993,
+    1.5017204069999934,
+    1.5308966070001588,
+    1.5839027600000009
+  ],
+  "seconds": 42.815924575999816,
+  "sha256": {
+    "lesson.json": "d7f3e5322432969994f06def083bae79336f62b30402a6583342bb7512ae7e69",
+    "steps.json": "42418331627b9656cd44a550bb672b6da10c4869a9e51831c50ae27a590e686f",
+    "SOURCE.md": "0f9884ec607bca67daa1b964d267afe73d5b94ed29db11738358d32610aa9eb0",
+    "proof/type_title.json": "d0733b650e7a9026d4009788924612326f3407e558d1026e17839ddcc47e0217",
+    "proof/apply_heading.json": "d41b609a6459032d039550f789cfc4363c78a61f214c285e78e8e4c9be695234",
+    "proof/save_document.json": "322bf2de0a72e33f7ec1ac22d9a75c7d1a2fbdc0f118527416194ad85da2a5b9",
+    "proof/save_document-rapport-mensuel.odt": "f6b64b3b5ff6f0529f8b4476f8ada3c58d780ec47b106a6fba9aa1ebdade27ce"
+  }
+}

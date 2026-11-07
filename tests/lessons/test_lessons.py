@@ -101,7 +101,7 @@ def test_vocabulary() -> None:
     for directory in [LESSONS, ROOT / "tests" / "lessons"]:
         for path in directory.rglob("*"):
             if path.is_file() and "__pycache__" not in path.parts:
-                assert forbidden not in path.read_text().lower(), path
+                assert forbidden.encode() not in path.read_bytes().lower(), path
 
 
 @pytest.mark.blender
