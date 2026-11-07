@@ -2,7 +2,9 @@
 //! software (where a feature lives in the current version, shortcuts,
 //! changes between versions), callable by Holo as a tool.
 //!
-//! Backends:
+//! Backends, in order:
+//! - The organization's knowledge base on the Rio platform, when
+//!   `RIO_API_URL` and `RIO_API_TOKEN` are set (see platform.rs).
 //! - Linkup web search, when `LINKUP_API_KEY` is set (real, sourced).
 //! - Otherwise a simulated search: Holo answers as a documentation search
 //!   engine from its own knowledge. Results are labelled as simulated so
@@ -10,7 +12,41 @@
 
 use crate::holo::{self, Holo};
 use serde::Serialize;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
+use std::collections::HashMap;
+use std::sync::{LazyLock, Mutex};
+use std::time::{Duration, Instant};
+
+/// One HTTP client for every Linkup call (keeps connections warm).
+static HTTP: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
+
+/// Documentation answers rarely change within a session (est.).
+const CACHE_TTL: Duration = Duration::from_secs(3600);
+const CACHE_MAX: usize = 200;
+
+/// Recent results by normalized "app|query".
+static CACHE: LazyLock<Mutex<HashMap<String, (Instant, SearchResult)>>> = LazyLock::new(Default::default);
+
+fn cache_key(app_name: &str, query: &str) -> String {
+    let norm = |s: &str| s.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase();
+    format!("{}|{}", norm(app_name), norm(query))
+}
+
+fn cached(key: &str, now: Instant) -> Option<SearchResult> {
+    let cache = CACHE.lock().unwrap();
+    cache.get(key).filter(|(at, _)| now.duration_since(*at) < CACHE_TTL).map(|(_, r)| r.clone())
+}
+
+fn remember(key: String, r: &SearchResult, now: Instant) {
+    let mut cache = CACHE.lock().unwrap();
+    cache.retain(|_, (at, _)| now.duration_since(*at) < CACHE_TTL);
+    if cache.len() >= CACHE_MAX
+        && let Some(oldest) = cache.iter().min_by_key(|(_, (at, _))| *at).map(|(k, _)| k.clone())
+    {
+        cache.remove(&oldest);
+    }
+    cache.insert(key, (now, r.clone()));
+}
 
 #[derive(Serialize, Clone, Debug)]
 pub struct Source {
@@ -20,15 +56,34 @@ pub struct Source {
 
 #[derive(Serialize, Clone, Debug)]
 pub struct SearchResult {
-    /// "linkup" or "simulated"
+    /// "rio", "linkup", "simulated", or "unavailable" (not cached)
     pub backend: String,
     /// Text handed to Holo as the tool result.
     pub text: String,
     pub sources: Vec<Source>,
 }
 
-/// Runs the search, falling back to the simulated backend if Linkup fails.
+/// Runs the search (cached per app and query), falling back to the
+/// simulated backend if the others fail. Failures are never cached.
 pub async fn run(holo: &Holo, app_name: &str, query: &str) -> SearchResult {
+    let key = cache_key(app_name, query);
+    if let Some(r) = cached(&key, Instant::now()) {
+        crate::journal::event("search_cached", json!({ "app": app_name, "query": query, "backend": r.backend }));
+        return r;
+    }
+    let r = search(holo, app_name, query).await;
+    if r.backend != "unavailable" {
+        remember(key, &r, Instant::now());
+    }
+    r
+}
+
+async fn search(holo: &Holo, app_name: &str, query: &str) -> SearchResult {
+    match crate::platform::search(app_name, query).await {
+        Ok(Some(r)) => return log(app_name, query, r),
+        Ok(None) => {}
+        Err(e) => eprintln!("[search] {e}, using the other backends"),
+    }
     if let Some(key) = std::env::var("LINKUP_API_KEY").ok().filter(|k| !k.trim().is_empty()) {
         match linkup(&key, app_name, query).await {
             Ok(r) => return log(app_name, query, r),
@@ -36,7 +91,7 @@ pub async fn run(holo: &Holo, app_name: &str, query: &str) -> SearchResult {
         }
     }
     let r = simulated(holo, app_name, query).await.unwrap_or_else(|e| SearchResult {
-        backend: "simulated".into(),
+        backend: "unavailable".into(),
         text: format!("Search unavailable ({e}). Rely on what is visible on screen."),
         sources: Vec::new(),
     });
@@ -53,7 +108,7 @@ fn log(app_name: &str, query: &str, r: SearchResult) -> SearchResult {
 
 /// Linkup sourced answer (https://docs.linkup.so).
 async fn linkup(key: &str, app_name: &str, query: &str) -> Result<SearchResult, String> {
-    let v: Value = reqwest::Client::new()
+    let v: Value = HTTP
         .post("https://api.linkup.so/v1/search")
         .bearer_auth(key)
         .timeout(std::time::Duration::from_secs(25))
@@ -120,14 +175,14 @@ async fn simulated(holo: &Holo, app_name: &str, query: &str) -> Result<SearchRes
 pub fn tool() -> Value {
     json!({ "type": "function", "function": {
         "name": "search",
-        "description": "Search up-to-date documentation and tutorials about a piece of software: where a feature \
+        "description": "Search the organization's knowledge base and up-to-date documentation and tutorials about a piece of software: where a feature \
             lives in the current version, menu paths, shortcuts, changes between versions. Use it when you are \
             unsure how to do the task in this app or version, or when the known path did not work. The learner \
             does nothing during a search.",
         "parameters": { "type": "object",
             "properties": {
                 "app_name": { "type": "string", "description": "The software, with its version if visible (e.g. \"Blender 4.2\")" },
-                "query": { "type": "string", "description": "What to find, e.g. \"add a subdivision surface modifier\"" }
+                "query": { "type": "string", "description": "What to find, in English, e.g. \"add a subdivision surface modifier\"" }
             },
             "required": ["app_name", "query"] }
     }})
@@ -135,6 +190,21 @@ pub fn tool() -> Value {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    fn result(text: &str) -> SearchResult {
+        SearchResult { backend: "linkup".into(), text: text.into(), sources: Vec::new() }
+    }
+
+    #[test]
+    fn cache_normalizes_and_expires() {
+        let key = cache_key("Blender  4.2", " Add   Torus ");
+        assert_eq!(key, cache_key("blender 4.2", "add torus"));
+        let t0 = Instant::now();
+        remember(key.clone(), &result("menu Add > Mesh > Torus"), t0);
+        assert_eq!(cached(&key, t0 + Duration::from_secs(60)).unwrap().text, "menu Add > Mesh > Torus");
+        assert!(cached(&key, t0 + CACHE_TTL + Duration::from_secs(1)).is_none());
+    }
     /// `cargo test --lib search -- --ignored --nocapture`
     #[test]
     #[ignore]

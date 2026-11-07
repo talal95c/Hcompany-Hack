@@ -51,10 +51,7 @@ pub struct Proposal {
 }
 
 pub fn now() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs()
+    SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs()
 }
 
 fn dir() -> PathBuf {
@@ -65,9 +62,7 @@ fn path(root: &Path, id: &str) -> Result<PathBuf, String> {
     if id.is_empty()
         || id == "."
         || id == ".."
-        || !id
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+        || !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
     {
         return Err("Identifiant de skill invalide".into());
     }
@@ -78,7 +73,7 @@ fn read(root: &Path, id: &str) -> Result<Skill, String> {
     let bytes = std::fs::read(path(root, id)?).map_err(|e| e.to_string())?;
     let skill: Skill = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
     if skill.tutorial_id != id {
-        return Err("Identifiant de skill incohérent".into());
+        return Err("Inconsistent skill id".into());
     }
     skill.graph.validate()?;
     Ok(skill)
@@ -150,7 +145,7 @@ fn record_at(root: &Path, mut graph: Tutorial, run: Run) -> Result<Skill, String
                 .graph
                 .version
                 .checked_add(1)
-                .ok_or("Version de skill épuisée")?
+                .ok_or("Skill version exhausted")?
         };
         skill.title = graph.title.clone();
         skill.goal = graph.goal.clone();
@@ -163,26 +158,35 @@ fn record_at(root: &Path, mut graph: Tutorial, run: Run) -> Result<Skill, String
     Ok(skill)
 }
 
-pub fn record_run(graph: Tutorial, run: Run) -> Result<Skill, String> {
+pub fn record_run(mut graph: Tutorial, run: Run) -> Result<Skill, String> {
+    // Platform tutorials have ids like "rio:org:<uuid>": keep the skill's
+    // folder name to safe characters.
+    graph.id = safe_id(&graph.id);
     let succeeded = run.outcome == "completed";
     let skill = {
         let _guard = STORE.lock().unwrap();
         record_at(&dir(), graph, run)?
     };
-    if succeeded { crate::devin::auto_compile(&skill); }
+    if succeeded {
+        crate::devin::auto_compile(&skill);
+    }
     Ok(skill)
 }
 
 pub fn save_compilation(id: &str, artifact: &crate::devin::Compiled) -> Result<(), String> {
     let _guard = STORE.lock().unwrap();
     let mut skill = read(&dir(), id)?;
-    let value = serde_json::to_value(artifact).map_err(|_| "Compilation non sérialisable")?;
+    let value = serde_json::to_value(artifact).map_err(|_| "Compilation cannot be serialized")?;
     if let Some(old) = skill.compiled.iter_mut().find(|v| v["session_id"] == artifact.session_id) {
         *old = value;
     } else {
         skill.compiled.push(value);
     }
     write(&dir(), &skill)
+}
+
+fn safe_id(id: &str) -> String {
+    id.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect()
 }
 
 pub fn load(id: &str) -> Result<Skill, String> {
@@ -223,8 +227,7 @@ pub fn decline(id: &str) -> Result<(), String> {
 }
 
 fn eligible(skill: &Skill, now: u64) -> bool {
-    skill.runs.iter().any(|r| r.outcome == "completed")
-        && skill.muted_until.is_none_or(|until| now >= until)
+    skill.runs.iter().any(|r| r.outcome == "completed") && skill.muted_until.is_none_or(|until| now >= until)
 }
 
 fn app_key(app: &App) -> String {
@@ -232,10 +235,7 @@ fn app_key(app: &App) -> String {
 }
 
 fn ready(skill: &Skill, last: &HashMap<String, u64>, now: u64, cooldown: u64) -> bool {
-    eligible(skill, now)
-        && last
-            .get(&app_key(&skill.app))
-            .is_none_or(|t| now.saturating_sub(*t) >= cooldown)
+    eligible(skill, now) && last.get(&app_key(&skill.app)).is_none_or(|t| now.saturating_sub(*t) >= cooldown)
 }
 
 fn emit(app: &AppHandle, skill: &Skill) -> Result<(), String> {
@@ -266,12 +266,10 @@ pub fn skill_decline(skill_id: String) -> Result<(), String> {
 pub fn skill_propose_now(app: AppHandle, skill_id: String) -> Result<(), String> {
     let skill = load(&skill_id)?;
     if !skill.runs.iter().any(|r| r.outcome == "completed") {
-        return Err("Ce skill n'a pas encore réussi".into());
+        return Err("This skill has not succeeded yet".into());
     }
     emit(&app, &skill)?;
-    PROPOSALS.lock().unwrap()
-        .get_or_insert_with(HashMap::new)
-        .insert(app_key(&skill.app), now());
+    PROPOSALS.lock().unwrap().get_or_insert_with(HashMap::new).insert(app_key(&skill.app), now());
     Ok(())
 }
 
@@ -296,10 +294,8 @@ pub fn spawn(app: AppHandle) {
                 let Ok(windows) = xcap::Window::all() else {
                     continue;
                 };
-                let Some(name) = windows
-                    .iter()
-                    .find(|w| w.is_focused().unwrap_or(false))
-                    .and_then(|w| w.app_name().ok())
+                let Some(name) =
+                    windows.iter().find(|w| w.is_focused().unwrap_or(false)).and_then(|w| w.app_name().ok())
                 else {
                     continue;
                 };
@@ -334,26 +330,13 @@ mod tests {
             id: "example".into(),
             title: "Exemple".into(),
             goal: "Créer".into(),
-            app: App {
-                name: "Blender".into(),
-                ..Default::default()
-            },
-            milestones: vec![Milestone {
-                id: "first".into(),
-                hints: vec!["Cliquer".into()],
-                ..Default::default()
-            }],
+            app: App { name: "Blender".into(), ..Default::default() },
+            milestones: vec![Milestone { id: "first".into(), hints: vec!["Cliquer".into()], ..Default::default() }],
             ..Default::default()
         }
     }
     fn run(outcome: &str) -> Run {
-        Run {
-            date: 100,
-            mode: Mode::Learner,
-            outcome: outcome.into(),
-            duration_s: 12,
-            session_id: "session".into(),
-        }
+        Run { date: 100, mode: Mode::Learner, outcome: outcome.into(), duration_s: 12, session_id: "session".into() }
     }
     #[test]
     fn skills_record_creates_updates_and_replaces_atomically() {
@@ -366,12 +349,7 @@ mod tests {
         updated.milestones[0].hints.push("Écrire".into());
         let second = record_at(&root, updated, run("completed")).unwrap();
         assert_eq!(second.runs.len(), 2);
-        assert_eq!(
-            read(&root, "example").unwrap().graph.milestones[0]
-                .hints
-                .len(),
-            2
-        );
+        assert_eq!(read(&root, "example").unwrap().graph.milestones[0].hints.len(), 2);
         let old: Skill = serde_json::from_reader(old_file).unwrap();
         assert_eq!(old.runs.len(), 1);
         assert!(!target.with_extension("json.tmp").exists());
@@ -409,6 +387,7 @@ mod tests {
         assert!(!ready(&skill, &last, 1901 + MUTE_SECONDS - 1, 1800));
         assert!(ready(&skill, &last, 1901 + MUTE_SECONDS, 1800));
         assert!(path(Path::new("."), "../escape").is_err());
+        assert_eq!(safe_id("rio:org:5f2a-9c"), "rio_org_5f2a-9c");
     }
 
     #[test]

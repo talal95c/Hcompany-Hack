@@ -12,8 +12,9 @@ pub const LEVEL_OVERLAY: isize = 101; // NSPopUpMenuWindowLevel
 #[cfg(target_os = "macos")]
 mod imp {
     use objc2::{
-        msg_send, sel,
+        msg_send,
         runtime::{AnyClass, AnyObject, Bool, ClassBuilder, Sel},
+        sel,
     };
     use std::ffi::CStr;
     use std::sync::OnceLock;
@@ -30,11 +31,7 @@ mod imp {
     fn panel_class(can_key: bool) -> &'static AnyClass {
         static KEY: OnceLock<&'static AnyClass> = OnceLock::new();
         static PASSIVE: OnceLock<&'static AnyClass> = OnceLock::new();
-        let (cell, name): (_, &CStr) = if can_key {
-            (&KEY, c"HoloKeyPanel")
-        } else {
-            (&PASSIVE, c"HoloPassivePanel")
-        };
+        let (cell, name): (_, &CStr) = if can_key { (&KEY, c"HoloKeyPanel") } else { (&PASSIVE, c"HoloPassivePanel") };
         cell.get_or_init(|| {
             let superclass = AnyClass::get(c"NSPanel").expect("NSPanel");
             let mut b = ClassBuilder::new(name, superclass).expect("unique class name");

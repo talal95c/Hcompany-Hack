@@ -12,9 +12,9 @@
 
 use crate::holo::{self, Holo};
 use crate::tutorial::{self, App, Milestone, Tutorial};
-use base64::{engine::general_purpose::STANDARD, Engine};
+use base64::{Engine, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tauri::{AppHandle, Emitter};
@@ -54,10 +54,10 @@ fn tool(name: &str) -> PathBuf {
 }
 
 fn run(cmd: &mut Command, what: &str) -> Result<Vec<u8>, String> {
-    let out = cmd.output().map_err(|e| format!("{what} : {e} (est-il installé ? brew install yt-dlp ffmpeg)"))?;
+    let out = cmd.output().map_err(|e| format!("{what}: {e} (is it installed? brew install yt-dlp ffmpeg)"))?;
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stderr);
-        return Err(format!("{what} a échoué : {}", err.lines().last().unwrap_or("").trim()));
+        return Err(format!("{what} failed: {}", err.lines().last().unwrap_or("").trim()));
     }
     Ok(out.stdout)
 }
@@ -82,10 +82,10 @@ fn metadata(url: &str) -> Result<Video, String> {
     let m: Value = serde_json::from_slice(&out).map_err(|e| format!("yt-dlp : {e}"))?;
     let duration = m["duration"].as_f64().unwrap_or(0.0);
     if duration <= 0.0 {
-        return Err("Cette vidéo n'a pas de durée (diffusion en direct ?)".into());
+        return Err("This video has no duration (a live stream?)".into());
     }
     if duration > MAX_DURATION {
-        return Err(format!("Vidéo trop longue ({} min) : 45 min maximum", (duration / 60.0).round()));
+        return Err(format!("Video too long ({} min): 45 min maximum", (duration / 60.0).round()));
     }
     let mut segments: Vec<Segment> = m["chapters"]
         .as_array()
@@ -142,9 +142,11 @@ fn download(url: &str, dir: &Path) -> Result<(PathBuf, PathBuf), String> {
     let audio = dir.join("audio.mp3");
     if !audio.exists() {
         run(
-            Command::new(tool("ffmpeg")).args(["-loglevel", "error", "-y", "-i"]).arg(&video).args([
-                "-vn", "-ac", "1", "-ar", "16000", "-c:a", "libmp3lame", "-b:a", "32k",
-            ]).arg(&audio),
+            Command::new(tool("ffmpeg"))
+                .args(["-loglevel", "error", "-y", "-i"])
+                .arg(&video)
+                .args(["-vn", "-ac", "1", "-ar", "16000", "-c:a", "libmp3lame", "-b:a", "32k"])
+                .arg(&audio),
             "ffmpeg audio",
         )?;
     }
@@ -181,12 +183,15 @@ struct Utterance {
 
 /// Gladia pre-recorded transcription: upload, create the job, poll.
 async fn transcribe(audio: &Path) -> Result<(Vec<Utterance>, Option<String>), String> {
-    let key = std::env::var("GLADIA_API_KEY").map_err(|_| "La clé GLADIA_API_KEY manque dans .env")?;
+    let key = std::env::var("GLADIA_API_KEY").map_err(|_| "GLADIA_API_KEY is missing from .env")?;
     let http = reqwest::Client::new();
     let bytes = tokio::fs::read(audio).await.map_err(|e| e.to_string())?;
     let form = reqwest::multipart::Form::new().part(
         "audio",
-        reqwest::multipart::Part::bytes(bytes).file_name("audio.mp3").mime_str("audio/mpeg").map_err(|e| e.to_string())?,
+        reqwest::multipart::Part::bytes(bytes)
+            .file_name("audio.mp3")
+            .mime_str("audio/mpeg")
+            .map_err(|e| e.to_string())?,
     );
     let up: Value = http
         .post("https://api.gladia.io/v2/upload")
@@ -228,11 +233,11 @@ async fn transcribe(audio: &Path) -> Result<(Vec<Utterance>, Option<String>), St
                 let lang = t["languages"][0].as_str().map(String::from);
                 return Ok((utterances, lang));
             }
-            Some("error") => return Err(format!("Échec de la transcription Gladia : {}", r["error_code"])),
+            Some("error") => return Err(format!("Gladia transcription failed: {}", r["error_code"])),
             _ => {}
         }
     }
-    Err("Délai dépassé pour la transcription Gladia".into())
+    Err("Gladia transcription timed out".into())
 }
 
 fn narration(utt: &[Utterance], s: &Segment, limit: usize) -> String {
@@ -384,7 +389,7 @@ async fn design(holo: &Holo, v: &Video, notes: &[FrameNote]) -> Result<Plan, Str
         "reasoning_effort": "low",
     });
     let (msg, ms) = holo.chat(&body).await?;
-    let raw = msg["content"].as_str().ok_or("Holo n'a renvoyé aucun tuto")?;
+    let raw = msg["content"].as_str().ok_or("Holo returned no tutorial")?;
     crate::debug::record("yt_design", &holo::smart_model(), &[], &prompt, raw, ms);
     serde_json::from_str(raw.trim().trim_start_matches("```json").trim_end_matches("```"))
         .map_err(|e| format!("JSON de tuto inattendu ({e})"))
@@ -406,19 +411,18 @@ pub async fn run_import(
     report: impl Fn(&'static str, String),
 ) -> Result<(Tutorial, Option<String>), String> {
     if !is_youtube(url) {
-        return Err("Ce n'est pas un lien YouTube".into());
+        return Err("This is not a YouTube link".into());
     }
-    report("video", "Lecture de la vidéo…".into());
+    report("video", "Reading the video…".into());
     let u = url.to_string();
     let video = tauri::async_runtime::spawn_blocking(move || metadata(&u)).await.map_err(|e| e.to_string())??;
-    let dir = std::env::temp_dir().join("h-tutor-youtube").join(tutorial::slug(&video.id));
+    let dir = std::env::temp_dir().join("rio-youtube").join(tutorial::slug(&video.id));
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
 
-    report("video", format!("Téléchargement de « {} »…", video.title));
+    report("video", format!("Downloading “{}”…", video.title));
     let (u, d) = (video.url.clone(), dir.clone());
-    let (video_file, audio) = tauri::async_runtime::spawn_blocking(move || download(&u, &d))
-        .await
-        .map_err(|e| e.to_string())??;
+    let (video_file, audio) =
+        tauri::async_runtime::spawn_blocking(move || download(&u, &d)).await.map_err(|e| e.to_string())??;
 
     report("transcript", "Transcription avec Gladia…".into());
     let segments = video.segments.clone();
@@ -427,10 +431,10 @@ pub async fn run_import(
     let (utterances, language) = transcribe(&audio).await?;
     let frames = frames_task.await.map_err(|e| e.to_string())??;
 
-    report("reading", format!("Holo regarde les {} moments clés…", frames.len()));
+    report("reading", format!("Holo is watching the {} key moments…", frames.len()));
     let notes = read_frames(holo, &frames, &video.segments, &utterances).await?;
 
-    report("designing", "Holo construit les étapes…".into());
+    report("designing", "Holo is planning milestones…".into());
     let plan = design(holo, &video, &notes).await?;
 
     let milestones: Vec<Milestone> = plan
@@ -460,13 +464,17 @@ pub async fn run_import(
         milestones,
     };
     tutorial::save(&t)?;
-    report("saved", format!("« {} » est dans ta bibliothèque", t.title));
+    report("saved", format!("“{}” is in your library", t.title));
     Ok((t, language))
 }
 
 /// Imports a YouTube video, reporting each stage to the bar.
 #[tauri::command]
-pub async fn import_youtube(url: String, app: AppHandle, state: tauri::State<'_, crate::AppState>) -> Result<Imported, String> {
+pub async fn import_youtube(
+    url: String,
+    app: AppHandle,
+    state: tauri::State<'_, crate::AppState>,
+) -> Result<Imported, String> {
     let (t, language) = run_import(&state.holo, &url, |stage, detail| progress(&app, stage, detail)).await?;
     Ok(Imported { id: t.id, title: t.title, app: t.app.name, milestones: t.milestones.len(), language })
 }

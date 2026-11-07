@@ -1,4 +1,4 @@
-/* Shape rule: surfaces 16, cards 12, controls 8, buttons pill. Neutral black and white, one orange accent (as the cursor), no glow. */
+/* Shape rule: surfaces 16, cards 12, controls 8, buttons pill. Black and white only, no tint, no glow. */
 :root {
   --bar: #0b0b0b;
   --line: rgba(255, 255, 255, 0.08);
@@ -8,9 +8,9 @@
   --dim: rgba(255, 255, 255, 0.62);
   --faint: rgba(255, 255, 255, 0.36);
   --ink: #0b0b0b;
-  --accent: #ff9a4d;
-  --grad: linear-gradient(90deg, #ffc078, #ff7a1a);
-  --ok: #b4c7a6;
+  --accent: #ffffff;
+  --grad: #ffffff;
+  --ok: #ffffff;
   --display: "Geist Variable", -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
   --danger: #ff6961;
   color-scheme: dark;
@@ -43,26 +43,16 @@ p { margin: 0; }
 }
 @keyframes rise { from { opacity: 0; transform: translateY(10px) scale(0.98); filter: blur(8px); } }
 
-/* Black glass: a grey-to-black gradient, an even dot grid, one hairline border. */
+/* Flat black glass, one hairline border. */
 .bar, .palette {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background: linear-gradient(rgba(28, 28, 28, 0.94) 0%, rgba(10, 10, 10, 0.96) 55%, rgba(0, 0, 0, 0.97) 100%);
+  background: rgba(11, 11, 11, 0.94);
   border: 1px solid rgba(255, 255, 255, 0.09);
   -webkit-backdrop-filter: blur(24px);
   backdrop-filter: blur(24px);
   box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.6);
-}
-.bar::before, .palette::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.11) 0.9px, transparent 1.4px);
-  background-size: 16px 16px;
-  background-position: 8px 8px;
 }
 
 .row { display: flex; align-items: center; gap: 10px; }
@@ -94,6 +84,15 @@ p { margin: 0; }
   user-select: text;
 }
 .row--input input::placeholder { color: var(--faint); }
+.row-status {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .row--input input:disabled { color: var(--dim); }
 
 .key {
@@ -134,7 +133,7 @@ p { margin: 0; }
   transition: background 200ms, width 300ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 .seg--done { background: var(--text); }
-.seg--now { width: 26px; background: var(--grad); }
+.seg--now { width: 26px; background: var(--text); }
 
 .count { font-size: 11.5px; color: var(--dim); font-variant-numeric: tabular-nums; }
 
@@ -201,7 +200,7 @@ p { margin: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .shimmer {
-  background: linear-gradient(90deg, var(--dim) 0%, var(--dim) 30%, #ffd2a8 50%, var(--dim) 70%, var(--dim) 100%);
+  background: linear-gradient(90deg, var(--dim) 0%, var(--dim) 30%, #ffffff 50%, var(--dim) 70%, var(--dim) 100%);
   background-size: 250% 100%;
   -webkit-background-clip: text;
   background-clip: text;
@@ -211,7 +210,7 @@ p { margin: 0; }
 @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -150% 0; } }
 
 /* ---------- Voice ---------- */
-.tool--rec, .tool--rec:hover:not(:disabled) { color: var(--ink); background: var(--grad); }
+.tool--rec, .tool--rec:hover:not(:disabled) { color: var(--ink); background: var(--text); }
 .tool--rec svg { animation: rec 1.2s ease-in-out infinite; }
 @keyframes rec { 50% { opacity: 0.45; } }
 
@@ -240,9 +239,8 @@ p { margin: 0; }
   margin: 4px 0 10px;
   padding: 12px 12px 10px;
   border-radius: 12px;
-  background: linear-gradient(180deg, #1a1a1a 0%, #050505 100%);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .explain__q { font-size: 12px; color: var(--dim); margin-bottom: 6px; }
 .explain__a { font-family: var(--display); font-size: 15px; line-height: 1.45; letter-spacing: -0.015em; margin: 0; user-select: text; }
@@ -254,7 +252,7 @@ p { margin: 0; }
   color: var(--text);
   user-select: text;
 }
-.explain__list li::marker { color: var(--accent); }
+.explain__list li::marker { color: var(--faint); }
 .explain__actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
 
 .ask { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
@@ -365,8 +363,8 @@ p { margin: 0; }
   transition: background 120ms ease-out, box-shadow 120ms ease-out;
 }
 .card[data-selected="true"] {
-  background: rgba(255, 154, 77, 0.06);
-  box-shadow: inset 0 0 0 1px rgba(255, 170, 110, 0.55);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
 }
 .card__title {
   font-size: 13.5px;

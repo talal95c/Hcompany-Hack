@@ -58,7 +58,7 @@ export type AutopilotView = {
 
 /** One action for the learner, decided by Holo from the live screen. */
 export type Step = {
-  kind: "click" | "write" | "scroll" | "press_key" | "done";
+  kind: "click" | "write" | "scroll" | "press_key" | "ask_learner" | "done" | "pending";
   instruction: string;
   element: string;
   point: [number, number] | null;
@@ -71,12 +71,18 @@ export type Step = {
   /** Milestones closed while computing this step. */
   completed: string[];
   teach: string | null;
+  /** The learner finds the element alone: no pointer until they ask. */
+  hint_only: boolean;
+  /** Answer choices when Holo asks the learner a question. */
+  options: string[];
 };
 export type Answer = {
   answer: string;
   details: string[];
   action: "point" | "next" | "repeat" | "none";
   target: string;
+  /** The pointer is already on the target. */
+  pointed: boolean;
 };
 export type Status = {
   has_key: boolean;
@@ -108,12 +114,13 @@ export const api = {
   /** YouTube video → tutorial in the library (progress on "import:progress"). */
   importYoutube: (url: string) => invoke<Imported>("import_youtube", { url }),
   /** Real icons of installed apps, keyed by app name. */
-  appIcons: (apps: [string, string | null][]) => invoke<Record<string, AppIcon>>("app_icons", { apps }),
   /** Saves the run as a tutorial in the library; returns its title. */
   saveTutorial: () => invoke<string>("save_tutorial"),
   tutorNext: (event: string, lang: string | null, onlyIfChanged = false) =>
     invoke<Step>("tutor_next", { event, onlyIfChanged, lang }),
   tutorRepoint: () => invoke("tutor_repoint"),
+  /** Shows the element of a step the learner was meant to find alone. */
+  tutorReveal: () => invoke("tutor_reveal"),
   /** Ends a question pause: shows the step again and watches the screen. */
   tutorResume: () => invoke("tutor_resume"),
   tutorStop: () => invoke("tutor_stop"),

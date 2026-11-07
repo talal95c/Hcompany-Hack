@@ -1,0 +1,8 @@
+# Local secrets for `wrangler dev` (never commit .dev.vars)
+BETTER_AUTH_SECRET=   # openssl rand -base64 32
+BETTER_AUTH_URL=http://127.0.0.1:8787
+GOOGLE_CLIENT_ID=      # optional: Google sign-in (see README)
+GOOGLE_CLIENT_SECRET=
+HAI_API_KEY=
+GLADIA_API_KEY=
+LINKUP_API_KEY=

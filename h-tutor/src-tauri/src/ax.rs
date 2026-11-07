@@ -25,7 +25,10 @@ pub struct Element {
 
 impl Element {
     pub fn contains(&self, px: f64, py: f64, margin: f64) -> bool {
-        px >= self.x - margin && px <= self.x + self.w + margin && py >= self.y - margin && py <= self.y + self.h + margin
+        px >= self.x - margin
+            && px <= self.x + self.w + margin
+            && py >= self.y - margin
+            && py <= self.y + self.h + margin
     }
 }
 
@@ -90,17 +93,17 @@ fn collect(node: &Value, out: &mut Vec<Element>) {
         let b = &node["bounds"];
         if let (Some(x), Some(y), Some(w), Some(h)) =
             (b["x"].as_f64(), b["y"].as_f64(), b["width"].as_f64(), b["height"].as_f64())
+            && w > 2.0
+            && h > 2.0
         {
-            if w > 2.0 && h > 2.0 {
-                out.push(Element {
-                    role: node["role"].as_str().unwrap_or("").to_string(),
-                    name: node["name"].as_str().or(node["description"].as_str()).unwrap_or("").to_string(),
-                    x,
-                    y,
-                    w,
-                    h,
-                });
-            }
+            out.push(Element {
+                role: node["role"].as_str().unwrap_or("").to_string(),
+                name: node["name"].as_str().or(node["description"].as_str()).unwrap_or("").to_string(),
+                x,
+                y,
+                w,
+                h,
+            });
         }
     }
     for c in node["children"].as_array().into_iter().flatten() {

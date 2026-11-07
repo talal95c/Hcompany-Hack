@@ -14,10 +14,10 @@ pub enum Failure {
 impl std::fmt::Display for Failure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::NotEligible => f.write_str("Aucun script éligible"),
+            Self::NotEligible => f.write_str("No eligible script"),
             Self::Failed(message) => f.write_str(message),
-            Self::TimedOut => f.write_str("Le script a dépassé son délai"),
-            Self::Stopped => f.write_str("Arrêt demandé"),
+            Self::TimedOut => f.write_str("The script timed out"),
+            Self::Stopped => f.write_str("Stop requested"),
         }
     }
 }
@@ -88,14 +88,14 @@ pub async fn run(artifact: &devin::Compiled) -> Result<(), Failure> {
     );
     let mut child = command
         .spawn()
-        .map_err(|e| Failure::Failed(format!("Script impossible à démarrer : {e}")))?;
+        .map_err(|e| Failure::Failed(format!("Could not start the script: {e}")))?;
     let pid = child.id();
     let result = tokio::select! {
         _ = wait_stop() => { kill_process(&mut child, pid).await; Err(Failure::Stopped) },
         result = tokio::time::timeout(Duration::from_secs(std::env::var("RIO_SCRIPT_TIMEOUT_SECONDS").ok().and_then(|v| v.parse().ok()).unwrap_or(300)), child.wait()) => match result {
             Ok(Ok(status)) if status.success() => Ok(()),
-            Ok(Ok(status)) => Err(Failure::Failed(format!("Le script s'est arrêté avec {status}"))),
-            Ok(Err(e)) => Err(Failure::Failed(format!("Erreur d'exécution du script : {e}"))),
+            Ok(Ok(status)) => Err(Failure::Failed(format!("The script exited with {status}"))),
+            Ok(Err(e)) => Err(Failure::Failed(format!("Script error: {e}"))),
             Err(_) => { kill_process(&mut child, pid).await; Err(Failure::TimedOut) },
         }
     };

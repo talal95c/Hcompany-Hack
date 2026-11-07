@@ -1,0 +1,31 @@
+{
+  "id": "discord-create-a-new-tab-in-discord",
+  "version": 2,
+  "title": "Create a New Tab in Discord",
+  "app": {
+    "name": "Discord"
+  },
+  "goal": "Create a new tab",
+  "language": "fr",
+  "source": "recorded",
+  "milestones": [
+    {
+      "id": "m1",
+      "goal": "Locate the new tab button in the browser.",
+      "done_when": "The cursor is hovering over the new tab button, indicated by a plus sign, next to the existing tabs.",
+      "hints": [
+        "click New tab button (plus sign) at the right end of the tab bar"
+      ],
+      "teach": "The new tab button is typically represented by a plus sign and is located next to the existing tabs."
+    },
+    {
+      "id": "m2",
+      "goal": "Click the new tab button to open a new tab.",
+      "done_when": "A new blank tab is open and visible in the browser.",
+      "hints": [
+        "click The plus sign (+) new tab button at the right end of the tab bar"
+      ],
+      "teach": "Clicking the new tab button opens a new tab, allowing you to visit a different website without closing the current one."
+    }
+  ]
+}

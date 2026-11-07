@@ -71,7 +71,7 @@ async fn drive<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failu
                 );
                 if failures >= limits.failures {
                     return Err(Failure::Failed(
-                        format!("Impossible de vérifier la réussite après plusieurs essais : {error}"),
+                        format!("Could not verify success after several tries: {error}"),
                     ));
                 }
                 driver.pause().await;
@@ -92,7 +92,7 @@ async fn drive<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failu
             );
             if failures >= limits.failures {
                 return Err(Failure::Failed(
-                    "L'écran ou le jalon ne progresse pas après les actions de Rio".into(),
+                    "The screen or the milestone does not move after Rio's actions".into(),
                 ));
             }
         } else {
@@ -106,7 +106,7 @@ async fn drive<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failu
             step.kind.as_str(),
             "click" | "write" | "scroll" | "press_key"
         ) {
-            return Err(Failure::Failed("Holo a renvoyé une action inconnue".into()));
+            return Err(Failure::Failed("Holo returned an unknown action".into()));
         }
         let milestone = step
             .milestone
@@ -115,11 +115,11 @@ async fn drive<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failu
         let count = counts.entry(milestone.id.clone()).or_default();
         if *count >= limits.per_milestone {
             return Err(Failure::Failed(
-                "Limite d'actions atteinte pour ce jalon".into(),
+                "Action limit reached for this milestone".into(),
             ));
         }
         if total >= limits.total {
-            return Err(Failure::Failed("Limite globale d'actions atteinte".into()));
+            return Err(Failure::Failed("Global action limit reached".into()));
         }
         if driver.stopped() {
             return Err(Failure::Stopped);
@@ -134,7 +134,7 @@ async fn drive<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failu
 async fn bounded<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failure> {
     tokio::time::timeout(limits.timeout, drive(driver, limits))
         .await
-        .map_err(|_| Failure::Failed("Le délai maximal d'exécution est dépassé".into()))?
+        .map_err(|_| Failure::Failed("The maximum run time was exceeded".into()))?
 }
 
 async fn after_script<D: Driver>(
@@ -153,9 +153,9 @@ async fn after_script<D: Driver>(
             }
             Ok(step) => {
                 driver.replay(step);
-                Some("La vérification Holo demande encore des actions".into())
+                Some("Holo's check still asks for actions".into())
             }
-            Err(error) => Some(format!("Vérification Holo échouée : {error}")),
+            Err(error) => Some(format!("Holo's check failed: {error}")),
         },
         Err(crate::script::Failure::Stopped) => return Err(Failure::Stopped),
         Err(crate::script::Failure::NotEligible) => None,
@@ -198,7 +198,7 @@ impl Driver for LiveDriver<'_> {
         let after_action = std::mem::take(&mut self.after_action);
         let before = self.session.before.as_ref().map(|s| s.thumb.clone());
         let event = after_action.then(|| {
-            "Rio a exécuté l'action ; vérifie le résultat sur cette nouvelle capture".into()
+            "Rio ran the action; check the result on this new screenshot".into()
         });
         let step = agent::advance(self.holo, &mut self.session, event, false).await?;
         self.progressed = !after_action
@@ -233,7 +233,7 @@ impl Driver for LiveDriver<'_> {
             )
             .map_err(|e| e.to_string())?;
         if self.stopped() {
-            return Err("Arrêt demandé".into());
+            return Err("Stop requested".into());
         }
         journal::event(
             "rio_action",
@@ -291,7 +291,7 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
         };
         let result = if journal::current_dir().is_none() {
             Err(Failure::Failed(
-                "Impossible d'ouvrir le journal ; aucune action exécutée".into(),
+                "Could not open the journal; no action was run".into(),
             ))
         } else {
             let script_result = if let Some(ref artifact) = candidate {
@@ -304,16 +304,16 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
                 biased;
                 _ = wait_stop() => Err(Failure::Stopped),
                 result = tokio::time::timeout(Limits::default().timeout, after_script(&mut driver, script_result, &mut run_mode)) => {
-                    result.unwrap_or_else(|_| Err(Failure::Failed("Le délai maximal d'exécution est dépassé".into())))
+                    result.unwrap_or_else(|_| Err(Failure::Failed("The maximum run time was exceeded".into())))
                 }
             }
         };
         let (outcome, message) = if autopilot::stop_requested() {
-            ("stopped", Some("Arrêté".into()))
+            ("stopped", Some("Stopped".into()))
         } else {
             match result {
                 Ok(_) => ("completed", None),
-                Err(Failure::Stopped) => ("stopped", Some("Arrêté".into())),
+                Err(Failure::Stopped) => ("stopped", Some("Stopped".into())),
                 Err(Failure::Failed(message)) => ("failed", Some(message)),
             }
         };
@@ -516,7 +516,7 @@ mod tests {
 
     #[tokio::test]
     async fn autopilot_driver_caps_milestone_and_global_actions() {
-        for (per_milestone, total, expected) in [(1, 20, "ce jalon"), (20, 1, "globale")] {
+        for (per_milestone, total, expected) in [(1, 20, "this milestone"), (20, 1, "Global")] {
             let mut fake = Fake {
                 steps: [action(100.0, "a"), action(200.0, "a"), done()].into(),
                 ..Default::default()
@@ -549,7 +549,7 @@ mod tests {
             ..Default::default()
         };
         assert!(
-            matches!(bounded(&mut fake, Limits::default()).await, Err(Failure::Failed(message)) if message.contains("ne progresse pas"))
+            matches!(bounded(&mut fake, Limits::default()).await, Err(Failure::Failed(message)) if message.contains("does not move"))
         );
         let mut unchanged = action(200.0, "a").unwrap();
         unchanged.unchanged = true;
@@ -613,14 +613,14 @@ mod tests {
             ..Default::default()
         };
         assert!(
-            matches!(bounded(&mut unknown, Limits::default()).await, Err(Failure::Failed(message)) if message.contains("inconnue"))
+            matches!(bounded(&mut unknown, Limits::default()).await, Err(Failure::Failed(message)) if message.contains("unknown"))
         );
         let mut pending = Fake {
             pending: true,
             ..Default::default()
         };
         assert!(
-            matches!(bounded(&mut pending, Limits { timeout: Duration::from_millis(1), ..Default::default() }).await, Err(Failure::Failed(message)) if message.contains("délai"))
+            matches!(bounded(&mut pending, Limits { timeout: Duration::from_millis(1), ..Default::default() }).await, Err(Failure::Failed(message)) if message.contains("run time"))
         );
     }
 
@@ -639,7 +639,7 @@ mod tests {
             ..Default::default()
         };
         assert!(
-            matches!(bounded(&mut fake, Limits::default()).await, Err(Failure::Failed(message)) if message.contains("ne progresse pas"))
+            matches!(bounded(&mut fake, Limits::default()).await, Err(Failure::Failed(message)) if message.contains("does not move"))
         );
         assert_eq!(fake.executed, 3);
     }

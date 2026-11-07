@@ -1,5 +1,6 @@
-//! Real application icons (and their dominant colour) for the tutorial
-//! palette, read from the installed apps through NSWorkspace.
+//! Extracts application icons (and their dominant colour) from the installed
+//! apps through NSWorkspace. Used once, by `export_icons`, to write the icons
+//! the palette ships in `src/assets/apps/`; the app never runs this.
 
 use serde::Serialize;
 use std::collections::HashMap;
@@ -19,19 +20,16 @@ static CACHE: Mutex<Option<HashMap<String, Option<AppIcon>>>> = Mutex::new(None)
 
 fn mdfind(query: &str) -> Option<PathBuf> {
     let out = Command::new("mdfind").arg(query).output().ok()?;
-    String::from_utf8_lossy(&out.stdout)
-        .lines()
-        .find(|l| l.ends_with(".app"))
-        .map(PathBuf::from)
+    String::from_utf8_lossy(&out.stdout).lines().find(|l| l.ends_with(".app")).map(PathBuf::from)
 }
 
 /// Finds an installed app by bundle id, then by name ("Docker Desktop" also
 /// tries "Docker").
 fn find_app(name: &str, bundle_id: Option<&str>) -> Option<PathBuf> {
-    if let Some(id) = bundle_id.filter(|id| !id.contains('\'')) {
-        if let Some(p) = mdfind(&format!("kMDItemCFBundleIdentifier == '{id}'")) {
-            return Some(p);
-        }
+    if let Some(id) = bundle_id.filter(|id| !id.contains('\''))
+        && let Some(p) = mdfind(&format!("kMDItemCFBundleIdentifier == '{id}'"))
+    {
+        return Some(p);
     }
     let mut names = vec![name.trim().to_string()];
     if let Some(first) = name.split_whitespace().next().filter(|f| *f != name.trim()) {
@@ -44,6 +42,7 @@ fn find_app(name: &str, bundle_id: Option<&str>) -> Option<PathBuf> {
         "/System/Applications/Utilities".to_string(),
         "/Applications/Utilities".to_string(),
         "/System/Library/CoreServices".to_string(),
+        "/Applications/DaVinci Resolve".to_string(),
         format!("{home}/Applications"),
     ];
     for n in &names {
@@ -55,9 +54,7 @@ fn find_app(name: &str, bundle_id: Option<&str>) -> Option<PathBuf> {
         }
     }
     names.iter().filter(|n| !n.contains('\'')).find_map(|n| {
-        mdfind(&format!(
-            "kMDItemContentType == 'com.apple.application-bundle' && kMDItemDisplayName == '{n}'cd"
-        ))
+        mdfind(&format!("kMDItemContentType == 'com.apple.application-bundle' && kMDItemDisplayName == '{n}'cd"))
     })
 }
 
@@ -67,7 +64,7 @@ fn icon_png(path: &Path) -> Option<Vec<u8>> {
     use objc2::rc::autoreleasepool;
     use objc2::runtime::AnyObject;
     use objc2::{class, msg_send};
-    use std::ffi::{c_void, CString};
+    use std::ffi::{CString, c_void};
 
     let cpath = CString::new(path.to_str()?).ok()?;
     autoreleasepool(|_| unsafe {
@@ -142,7 +139,7 @@ fn dominant(img: &image::RgbaImage) -> String {
 }
 
 fn load(name: &str, bundle_id: Option<&str>) -> Option<AppIcon> {
-    use base64::{engine::general_purpose::STANDARD, Engine};
+    use base64::{Engine, engine::general_purpose::STANDARD};
     let path = find_app(name, bundle_id)?;
     let png = icon_png(&path)?;
     let img = image::load_from_memory(&png).ok()?;
@@ -153,9 +150,7 @@ fn load(name: &str, bundle_id: Option<&str>) -> Option<AppIcon> {
     Some(AppIcon { data_uri: format!("data:image/png;base64,{}", STANDARD.encode(out.into_inner())), color })
 }
 
-/// Icons for the given apps (`[name, bundle_id?]`), keyed by name. Apps not
-/// installed are left out.
-#[tauri::command]
+#[allow(dead_code)]
 pub async fn app_icons(apps: Vec<(String, Option<String>)>) -> HashMap<String, AppIcon> {
     tauri::async_runtime::spawn_blocking(move || {
         let mut out = HashMap::new();
@@ -181,14 +176,42 @@ pub async fn app_icons(apps: Vec<(String, Option<String>)>) -> HashMap<String, A
 
 #[cfg(test)]
 mod tests {
+    /// One-off export of the apps' icons into the frontend (`src/assets/apps/`),
+    /// so the palette ships them and never reads the computer:
+    /// `cargo test --lib app_icons -- --ignored --nocapture`
     #[test]
-    fn reads_installed_app_icons() {
-        for (name, id) in [("Finder", Some("com.apple.finder")), ("Docker Desktop", None), ("Blender", None)] {
-            let icon = super::load(name, id);
-            println!("{name}: {:?}", icon.as_ref().map(|i| (i.data_uri.len(), i.color.clone())));
-            if name == "Finder" {
-                assert!(icon.is_some());
-            }
+    #[ignore]
+    fn export_icons() {
+        use base64::{Engine, engine::general_purpose::STANDARD};
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../src/assets/apps");
+        std::fs::create_dir_all(&dir).unwrap();
+        let apps = [
+            ("Blender", Some("org.blenderfoundation.blender")),
+            ("Docker Desktop", Some("com.docker.docker")),
+            ("Finder", Some("com.apple.finder")),
+            ("Google Chrome", Some("com.google.Chrome")),
+            ("Safari", Some("com.apple.Safari")),
+            ("Visual Studio Code", Some("com.microsoft.VSCode")),
+            ("DaVinci Resolve", None),
+            ("Mail", Some("com.apple.mail")),
+            ("Notes", Some("com.apple.Notes")),
+            ("Calendar", Some("com.apple.iCal")),
+            ("Preview", Some("com.apple.Preview")),
+            ("Terminal", Some("com.apple.Terminal")),
+            ("System Settings", Some("com.apple.systempreferences")),
+        ];
+        let mut colors = serde_json::Map::new();
+        for (name, id) in apps {
+            let Some(icon) = super::load(name, id) else {
+                println!("{name}: not installed, skipped");
+                continue;
+            };
+            let slug = crate::tutorial::slug(name);
+            let png = STANDARD.decode(icon.data_uri.trim_start_matches("data:image/png;base64,")).unwrap();
+            std::fs::write(dir.join(format!("{slug}.png")), &png).unwrap();
+            println!("{name}: {slug}.png {} KB {}", png.len() / 1024, icon.color);
+            colors.insert(slug, icon.color.into());
         }
+        std::fs::write(dir.join("colors.json"), serde_json::to_string_pretty(&colors).unwrap()).unwrap();
     }
 }

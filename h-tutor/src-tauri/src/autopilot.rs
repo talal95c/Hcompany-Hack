@@ -40,7 +40,7 @@ struct Controller {
 impl Controller {
     fn accept(&mut self, skill: &skills::Skill, stop: &AtomicBool) -> Result<(), String> {
         if self.active.is_some() || self.declining {
-            return Err("Rio exécute déjà une tâche".into());
+            return Err("Rio is already running a task".into());
         }
         stop.store(false, Ordering::SeqCst);
         self.active = Some(skill.tutorial_id.clone());
@@ -51,7 +51,7 @@ impl Controller {
             title: skill.title.clone(),
             goal: skill.goal.clone(),
             total: skill.graph.milestones.len(),
-            label: "Observation de l'écran".into(),
+            label: "Watching the screen".into(),
             mode: crate::devin::mode(skill).into(),
             ..View::default()
         };
@@ -63,7 +63,7 @@ impl Controller {
         self.active.take().map(|skill_id| Done {
             skill_id,
             outcome: "stopped".into(),
-            message: Some("Arrêté".into()),
+            message: Some("Stopped".into()),
         })
     }
 
@@ -290,7 +290,7 @@ pub fn propose(app: &AppHandle, proposal: skills::Proposal) {
         (control.view.clone(), control.generation)
     };
     if let Err(error) = publish(app, &view) {
-        eprintln!("Impossible d'afficher la notch : {error}");
+        eprintln!("Could not show the notch: {error}");
         hide(app, Some(generation));
         return;
     }
@@ -319,29 +319,29 @@ pub fn autopilot_decline(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub fn autopilot_accept(app: AppHandle, skill_id: String) -> Result<(), String> {
     if is_running() {
-        return Err("Rio termine déjà une tâche".into());
+        return Err("Rio is already finishing a task".into());
     }
     let skill = skills::load(&skill_id)?;
     if skill.graph.milestones.is_empty() {
-        return Err("Ce skill ne contient aucun jalon".into());
+        return Err("This skill has no milestones".into());
     }
     skill
         .graph
         .validate()
         .map_err(|e| format!("Graphe de skill invalide : {e}"))?;
     if !skill.runs.iter().any(|run| run.outcome == "completed") {
-        return Err("Ce skill n'a pas encore réussi".into());
+        return Err("This skill has not succeeded yet".into());
     }
     let state = app.state::<crate::AppState>();
     let session = state
         .session
         .try_lock()
-        .map_err(|_| "Un tutoriel est en cours")?;
+        .map_err(|_| "A tutorial is in progress")?;
     if session.as_ref().is_some_and(|s| !s.finished) {
-        return Err("Un tutoriel est en cours".into());
+        return Err("A tutorial is in progress".into());
     }
     if is_running() {
-        return Err("Rio termine déjà une tâche".into());
+        return Err("Rio is already finishing a task".into());
     }
     let view = {
         let mut guard = CONTROL.lock().unwrap();
@@ -408,9 +408,9 @@ pub(crate) fn failure_message(label: &str) -> String {
         &short
     };
     if short.is_empty() {
-        "Étape bloquée".into()
+        "Step blocked".into()
     } else {
-        format!("Étape bloquée : {short}")
+        format!("Step blocked: {short}")
     }
 }
 
@@ -444,9 +444,9 @@ pub(crate) fn finish(app: &AppHandle, done: &Done) {
         } else {
             done.message.clone().unwrap_or_else(|| {
                 if done.outcome == "stopped" {
-                    "Arrêté".into()
+                    "Stopped".into()
                 } else {
-                    "La tâche a échoué".into()
+                    "The task failed".into()
                 }
             })
         });
@@ -540,7 +540,7 @@ pub fn mask_capture() -> Result<Option<CaptureMask>, String> {
     }
     let lock = VISIBILITY_LOCK
         .lock()
-        .map_err(|_| "Verrou de masquage indisponible")?;
+        .map_err(|_| "Hiding lock unavailable")?;
     let app = APP
         .get()
         .ok_or("Protection des captures indisponible")?
@@ -558,7 +558,7 @@ pub fn mask_capture() -> Result<Option<CaptureMask>, String> {
                 if let Some(window) = handle.get_webview_window(label) {
                     window
                         .hide()
-                        .map_err(|e| format!("Impossible de masquer Rio : {e}"))?;
+                        .map_err(|e| format!("Could not hide Rio: {e}"))?;
                 }
             }
             Ok::<_, String>(())
@@ -568,7 +568,7 @@ pub fn mask_capture() -> Result<Option<CaptureMask>, String> {
     .map_err(|e| e.to_string())?;
     receive
         .recv_timeout(Duration::from_secs(2))
-        .map_err(|_| "Le masquage des fenêtres Rio a expiré")??;
+        .map_err(|_| "Hiding Rio's windows timed out")??;
     std::thread::sleep(Duration::from_millis(120));
     Ok(Some(guard))
 }
@@ -595,13 +595,13 @@ mod tests {
 
     #[test]
     fn autopilot_failure_messages_are_short_and_failures_stay_longer() {
-        assert_eq!(failure_message("Créer le projet"), "Étape bloquée : Créer le projet");
-        assert_eq!(failure_message("  \n "), "Étape bloquée");
-        assert_eq!(failure_message("Créer   le\nprojet"), "Étape bloquée : Créer le projet");
+        assert_eq!(failure_message("Créer le projet"), "Step blocked: Créer le projet");
+        assert_eq!(failure_message("  \n "), "Step blocked");
+        assert_eq!(failure_message("Créer   le\nprojet"), "Step blocked: Créer le projet");
         let long = failure_message("Créer le projet avec un bouton désactivé et un service indisponible");
-        assert_eq!(long, "Étape bloquée : Créer le projet avec un bouton");
+        assert_eq!(long, "Step blocked: Créer le projet avec un bouton");
         assert!(!long.contains('…'));
-        assert_eq!(failure_message(&"é".repeat(80)).chars().count(), "Étape bloquée : ".chars().count() + 32);
+        assert_eq!(failure_message(&"é".repeat(80)).chars().count(), "Step blocked: ".chars().count() + 32);
         assert_eq!(result_duration("failed"), Duration::from_secs(6));
         assert_eq!(result_duration("completed"), Duration::from_secs(3));
         assert_eq!(result_duration("stopped"), Duration::from_secs(3));

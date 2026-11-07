@@ -7,10 +7,10 @@
 
 use futures_util::{SinkExt, StreamExt};
 use serde::Serialize;
-use serde_json::{json, Value};
-use std::sync::atomic::{AtomicBool, Ordering};
+use serde_json::{Value, json};
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, Emitter};
 use tokio::sync::mpsc;
 use tokio_tungstenite::tungstenite::Message;
@@ -45,7 +45,7 @@ pub fn listen_stop() {
 
 #[tauri::command]
 pub async fn listen_start(app: AppHandle) -> Result<(), String> {
-    let key = api_key().ok_or("La clé GLADIA_API_KEY manque dans .env")?;
+    let key = api_key().ok_or("GLADIA_API_KEY is missing from .env")?;
     listen_stop();
     let stop = Arc::new(AtomicBool::new(false));
     *CURRENT.lock().unwrap() = Some(stop.clone());
@@ -72,16 +72,14 @@ pub async fn listen_start(app: AppHandle) -> Result<(), String> {
     if !status.is_success() {
         return Err(format!("Gladia {status} : {body}"));
     }
-    let url = body["url"].as_str().ok_or("Gladia : pas d'URL de session")?.to_string();
+    let url = body["url"].as_str().ok_or("Gladia: no session URL")?.to_string();
 
     // 2. Start the microphone on its own thread (cpal streams are not Send).
     let (audio_tx, audio_rx) = mpsc::unbounded_channel::<Vec<u8>>();
     start_mic(audio_tx, stop.clone())?;
 
     // 3. Pump audio up and transcripts down.
-    let (ws, _) = tokio_tungstenite::connect_async(url.as_str())
-        .await
-        .map_err(|e| format!("WebSocket Gladia : {e}"))?;
+    let (ws, _) = tokio_tungstenite::connect_async(url.as_str()).await.map_err(|e| format!("Gladia WebSocket: {e}"))?;
     let (mut sink, mut source) = ws.split();
     app.emit_to("main", "stt:state", true).ok();
 
@@ -104,9 +102,7 @@ pub async fn listen_start(app: AppHandle) -> Result<(), String> {
                 Err(_) => {}
             }
         }
-        let _ = sink
-            .send(Message::Text(json!({ "type": "stop_recording" }).to_string().into()))
-            .await;
+        let _ = sink.send(Message::Text(json!({ "type": "stop_recording" }).to_string().into())).await;
     });
 
     let app_down = app.clone();
@@ -147,7 +143,9 @@ fn rms(pcm: &[u8]) -> f32 {
         return 0.0;
     }
     let sum: f64 = pcm
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|b| {
             let s = i16::from_le_bytes([b[0], b[1]]) as f64 / 32768.0;
             s * s
@@ -164,10 +162,8 @@ fn start_mic(tx: mpsc::UnboundedSender<Vec<u8>>, stop: Arc<AtomicBool>) -> Resul
     let (ready_tx, ready_rx) = std::sync::mpsc::channel::<Result<(), String>>();
     std::thread::spawn(move || {
         let setup = || -> Result<cpal::Stream, String> {
-            let device = cpal::default_host()
-                .default_input_device()
-                .ok_or("Aucun micro trouvé")?;
-            let config = device.default_input_config().map_err(|e| format!("Micro : {e}"))?;
+            let device = cpal::default_host().default_input_device().ok_or("No microphone found")?;
+            let config = device.default_input_config().map_err(|e| format!("Microphone: {e}"))?;
             let channels = config.channels() as usize;
             let rate = config.sample_rate() as f64;
             let mut resampler = Resampler::new(rate, TARGET_RATE as f64, channels, tx);
@@ -206,7 +202,7 @@ fn start_mic(tx: mpsc::UnboundedSender<Vec<u8>>, stop: Arc<AtomicBool>) -> Resul
             }
         }
     });
-    ready_rx.recv().map_err(|_| "Le fil du micro a échoué".to_string())?
+    ready_rx.recv().map_err(|_| "The microphone thread failed".to_string())?
 }
 
 /// Downmix + linear-interpolation resampling to 16 kHz, batched into PCM16 chunks.

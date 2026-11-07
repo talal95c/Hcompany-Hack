@@ -2,40 +2,45 @@ mod agent;
 mod act;
 mod autopilot;
 mod autopilot_driver;
+#[cfg(test)]
 mod app_icons;
 mod audio_out;
 mod ax;
+mod cancel;
 mod capture;
-mod debug;
 mod devin;
 mod script;
 mod clicks;
+mod debug;
 mod holo;
 mod journal;
-mod skills;
-mod planner;
-mod qa;
-mod tutorial;
 mod panel;
+mod planner;
+mod platform;
+mod qa;
 mod search;
+mod skills;
 mod stt;
+mod tray;
+mod tutorial;
 mod voice;
 mod watch;
 mod youtube;
-mod tray;
 
-use capture::{capture_primary, Shot};
+use capture::{Shot, capture_primary};
 use holo::Holo;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
-use std::sync::atomic::{AtomicU64, Ordering};
+use serde_json::{Value, json};
 use std::sync::Mutex;
-use tauri::{
-    AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder, WindowEvent,
-};
+use std::sync::atomic::{AtomicU64, Ordering};
+use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
 /// A click closer than this (in points) to Holo's target counts as the step done.
 const HIT_RADIUS: f64 = 48.0;
+
+/// Whether Rio's panel has keyboard focus, kept by window events so the key
+/// tap never has to query a window from its own thread.
+static PANEL_FOCUSED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 pub struct AppState {
     pub holo: Holo,
@@ -53,6 +58,8 @@ pub struct AppState {
     session: tauri::async_runtime::Mutex<Option<agent::Session>>,
     /// Bumped on every show/hide so a delayed hide never hides a newer pointer.
     overlay_gen: AtomicU64,
+    /// Bumped by Stop: in-flight steps of an older generation are dropped.
+    generation: cancel::Generation,
 }
 
 #[derive(Deserialize)]
@@ -97,12 +104,13 @@ struct Answer {
     /// "point" (show `target`), "next" (step is done / skip), "repeat" (show the step again) or "none".
     action: String,
     target: String,
+    /// True when the pointer is already on `target` (no need to locate it).
+    #[serde(default)]
+    pointed: bool,
 }
 
 async fn shoot() -> Result<Shot, String> {
-    tauri::async_runtime::spawn_blocking(capture_primary)
-        .await
-        .map_err(|e| e.to_string())?
+    tauri::async_runtime::spawn_blocking(capture_primary).await.map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -118,12 +126,7 @@ fn status() -> Status {
 
 /// Localizes `target` on screen with Holo and moves the ghost cursor there.
 #[tauri::command]
-async fn locate(
-    target: String,
-    label: String,
-    app: AppHandle,
-    state: State<'_, AppState>,
-) -> Result<Pointer, String> {
+async fn locate(target: String, label: String, app: AppHandle, state: State<'_, AppState>) -> Result<Pointer, String> {
     app.emit_to("overlay", "pointer:thinking", ()).ok();
     let shot = shoot().await?;
     let schema = json!({
@@ -158,34 +161,34 @@ async fn locate(
     Ok(pointer)
 }
 
+/// Shows the ghost pointer at a normalized point with a label (an element
+/// Holo shows while answering a question).
+fn show_point(app: &AppHandle, x: f64, y: f64, label: String) -> Result<(), String> {
+    let (pointer, _) = to_overlay_coords(app, x, y, label)?;
+    if let Some(state) = app.try_state::<AppState>() {
+        state.overlay_gen.fetch_add(1, Ordering::SeqCst);
+    }
+    set_overlay_visible(app, true);
+    app.emit_to("overlay", "pointer:show", pointer).ok();
+    Ok(())
+}
+
 /// Maps Holo's normalized (0..1000) point on the primary monitor to logical
 /// pixels inside the overlay window (which may be offset, e.g. by the menu bar).
 /// Also returns the point in global logical coordinates, to match real clicks.
-fn to_overlay_coords(
-    app: &AppHandle,
-    nx: f64,
-    ny: f64,
-    label: String,
-) -> Result<(Pointer, (f64, f64)), String> {
-    let monitor = app
-        .primary_monitor()
-        .map_err(|e| e.to_string())?
-        .ok_or("Aucun écran principal")?;
-    let overlay = app.get_webview_window("overlay").ok_or("Fenêtre de superposition introuvable")?;
+fn to_overlay_coords(app: &AppHandle, nx: f64, ny: f64, label: String) -> Result<(Pointer, (f64, f64)), String> {
+    let monitor = app.primary_monitor().map_err(|e| e.to_string())?.ok_or("No primary display")?;
+    let overlay = app.get_webview_window("overlay").ok_or("Overlay window missing")?;
     let origin = overlay.outer_position().map_err(|e| e.to_string())?;
     let scale = monitor.scale_factor();
     let (phys_x, phys_y) = normalized_screen_point(app, nx, ny)?;
-    let pointer = Pointer {
-        x: (phys_x - origin.x as f64) / scale,
-        y: (phys_y - origin.y as f64) / scale,
-        label,
-        rect: None,
-    };
+    let pointer =
+        Pointer { x: (phys_x - origin.x as f64) / scale, y: (phys_y - origin.y as f64) / scale, label, rect: None };
     Ok((pointer, (phys_x / scale, phys_y / scale)))
 }
 
 fn normalized_screen_point(app: &AppHandle, nx: f64, ny: f64) -> Result<(f64, f64), String> {
-    let monitor = app.primary_monitor().map_err(|e| e.to_string())?.ok_or("Écran principal introuvable")?;
+    let monitor = app.primary_monitor().map_err(|e| e.to_string())?.ok_or("Primary display not found")?;
     act::screen_point(nx, ny, monitor.position().x as f64, monitor.position().y as f64,
         monitor.size().width as f64, monitor.size().height as f64)
 }
@@ -206,6 +209,12 @@ fn apply_step(app: &AppHandle, state: &AppState, step: &agent::Step) -> Result<(
             *state.target.lock().unwrap() = (step.kind != "scroll").then_some(global);
             *state.target_rect.lock().unwrap() = rect.filter(|_| step.kind != "scroll");
             state.overlay_gen.fetch_add(1, Ordering::SeqCst);
+            // The learner finds it alone: the target still counts clicks,
+            // but nothing is shown until they ask (`tutor_reveal`).
+            if step.hint_only {
+                app.emit_to("overlay", "pointer:hide", ()).ok();
+                return Ok(());
+            }
             set_overlay_visible(app, true);
             app.emit_to("overlay", "pointer:show", pointer).ok();
         }
@@ -287,27 +296,77 @@ async fn tutor_start(
     app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<agent::Step, String> {
-    if autopilot::is_running() { return Err("Rio exécute déjà une tâche".into()); }
-    let mut guard = state.session.lock().await;
-    if autopilot::is_running() { return Err("Rio exécute déjà une tâche".into()); }
+    // Rio's autopilot drives the screen on its own: no tutorial meanwhile.
+    if autopilot::is_running() {
+        return Err("Rio is already running a task".into());
+    }
+    let generation = state.generation.current();
     // Both entries end up as a milestone graph: a saved tutorial, or one
     // planned by Holo from the goal and the current screen.
-    let tutorial = match (tutorial_id, goal) {
-        (Some(id), _) => tutorial::load(&id)?,
-        (None, Some(goal)) => {
-            app.emit_to("main", "tutor:planning", ()).ok();
-            let shot = shoot().await?;
-            planner::plan(&state.holo, &goal, &shot).await?
-        }
-        (None, None) => return Err("Rien à lancer".into()),
+    let planning = async {
+        Ok(match (tutorial_id, goal) {
+            (Some(id), _) if id.starts_with(platform::ID_PREFIX) => platform::tutorial(&id).await?,
+            (Some(id), _) => tutorial::load(&id)?,
+            (None, Some(goal)) => {
+                app.emit_to("main", "tutor:planning", ()).ok();
+                // The organization's knowledge base, looked up while the screen is captured.
+                let (shot, kb) = tokio::join!(shoot(), platform::search("", &goal));
+                let kb = kb.unwrap_or_else(|e| {
+                    eprintln!("[platform] {e}");
+                    None
+                });
+                if let Some(k) = &kb {
+                    journal::event(
+                        "knowledge",
+                        json!({ "goal": goal, "chars": k.text.len(), "sources": k.sources.len() }),
+                    );
+                }
+                planner::plan(&state.holo, &goal, &shot?, kb.as_ref().map(|k| k.text.as_str())).await?
+            }
+            (None, None) => return Err("Nothing to start".into()),
+        })
     };
+    let tutorial = state.generation.run(generation, cancel::STEP_DEADLINE, planning).await?;
+    let mut guard = state.session.lock().await;
+    if !state.generation.is_current(generation) {
+        return Err(cancel::STOPPED.into());
+    }
+    if autopilot::is_running() {
+        return Err("Rio is already running a task".into());
+    }
     let session = guard.insert(agent::Session::new(tutorial, lang.as_deref()));
     app.emit_to("main", "tutor:plan", session.progress()).ok();
     app.emit_to("overlay", "pointer:thinking", ()).ok();
-    let step = advance_step(&app, &state, session, None, false).await?;
-    apply_step(&app, &state, &step)?;
+    let step = guarded_step(&app, &state, session, None, false, generation).await?;
+    if !step.unchanged {
+        apply_step(&app, &state, &step)?;
+    }
     arm_watch(session, &step);
     Ok(step)
+}
+
+/// One step that Stop can interrupt at once and that cannot exceed the step
+/// deadline. On failure the pointer shows what the session really holds;
+/// after Stop nothing is shown or armed.
+async fn guarded_step(
+    app: &AppHandle,
+    state: &AppState,
+    session: &mut agent::Session,
+    event: Option<String>,
+    only_if_changed: bool,
+    generation: u64,
+) -> Result<agent::Step, String> {
+    let result = state
+        .generation
+        .run(generation, cancel::STEP_DEADLINE, advance_step(app, state, session, event, only_if_changed))
+        .await;
+    if !state.generation.is_current(generation) {
+        return Err(cancel::STOPPED.into());
+    }
+    if result.is_err() {
+        show_current(app, state, session);
+    }
+    result
 }
 
 /// Reports what the learner did and returns the next step. With
@@ -321,14 +380,15 @@ async fn tutor_next(
     app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<agent::Step, String> {
+    let generation = state.generation.current();
     let mut guard = state.session.lock().await;
-    let session = guard.as_mut().ok_or("Aucun tuto en cours")?;
+    let session = guard.as_mut().ok_or("No tutorial in progress")?;
     session.set_lang(lang.as_deref());
     watch::disarm();
     if !only_if_changed {
         app.emit_to("overlay", "pointer:thinking", ()).ok();
     }
-    let step = advance_step(&app, &state, session, Some(event), only_if_changed).await?;
+    let step = guarded_step(&app, &state, session, Some(event), only_if_changed, generation).await?;
     if !step.unchanged {
         apply_step(&app, &state, &step)?;
     }
@@ -336,11 +396,18 @@ async fn tutor_next(
     Ok(step)
 }
 
+/// After a failed step, shows what the session really holds: the previous
+/// action if the milestone did not change, otherwise nothing (a `pending`
+/// step hides the pointer of the closed milestone).
+fn show_current(app: &AppHandle, state: &AppState, session: &agent::Session) {
+    apply_step(app, state, &session.step).ok();
+}
+
 /// Watches the screen for the learner's action on this step.
 fn arm_watch(session: &agent::Session, step: &agent::Step) {
-    match (&session.before, step.kind.as_str()) {
-        (_, "done") | (None, _) => watch::disarm(),
-        (Some(before), kind) => watch::arm(before.thumb.clone(), kind == "write"),
+    match (&session.before, watch::Mode::for_kind(&step.kind)) {
+        (Some(before), Some(mode)) => watch::arm(before.thumb.clone(), mode),
+        _ => watch::disarm(),
     }
 }
 
@@ -351,11 +418,9 @@ async fn tutor_resume(app: AppHandle, state: State<'_, AppState>) -> Result<(), 
     let guard = state.session.lock().await;
     let Some(session) = guard.as_ref() else { return Ok(()) };
     apply_step(&app, &state, &session.step)?;
-    if session.step.kind != "done" {
-        let now = tauri::async_runtime::spawn_blocking(capture::capture_thumb)
-            .await
-            .map_err(|e| e.to_string())??;
-        watch::arm(now, session.step.kind == "write");
+    if let Some(mode) = watch::Mode::for_kind(&session.step.kind) {
+        let now = tauri::async_runtime::spawn_blocking(capture::capture_thumb).await.map_err(|e| e.to_string())??;
+        watch::arm(now, mode);
     }
     Ok(())
 }
@@ -368,12 +433,13 @@ async fn tutor_skip_milestone(
     state: State<'_, AppState>,
 ) -> Result<agent::Step, String> {
     watch::disarm();
+    let generation = state.generation.current();
     let mut guard = state.session.lock().await;
-    let session = guard.as_mut().ok_or("Aucun tuto en cours")?;
+    let session = guard.as_mut().ok_or("No tutorial in progress")?;
     session.set_lang(lang.as_deref());
     session.skip_milestone();
     app.emit_to("overlay", "pointer:thinking", ()).ok();
-    let step = advance_step(&app, &state, session, None, false).await?;
+    let step = guarded_step(&app, &state, session, None, false, generation).await?;
     apply_step(&app, &state, &step)?;
     arm_watch(session, &step);
     Ok(step)
@@ -393,8 +459,10 @@ fn resolve_lang(text: String, spoken: Option<String>, fallback: Option<String>) 
 }
 
 #[tauri::command]
-fn list_tutorials() -> Vec<tutorial::Summary> {
-    tutorial::list()
+async fn list_tutorials() -> Result<Vec<tutorial::Summary>, String> {
+    let mut list = tutorial::list();
+    list.extend(platform::tutorials().await);
+    Ok(list)
 }
 
 /// Saves the current (or just finished) run as a tutorial in the library,
@@ -402,11 +470,23 @@ fn list_tutorials() -> Vec<tutorial::Summary> {
 #[tauri::command]
 async fn save_tutorial(state: State<'_, AppState>) -> Result<String, String> {
     let guard = state.session.lock().await;
-    let session = guard.as_ref().ok_or("Aucun tuto à enregistrer")?;
+    let session = guard.as_ref().ok_or("No tutorial to save")?;
     let t = agent::to_tutorial(session);
     tutorial::save(&t)?;
     journal::event("saved_as_tutorial", json!({ "tutorial_id": t.id, "version": t.version }));
     Ok(t.title)
+}
+
+/// Shows where the current step's element is, for a step the learner was
+/// meant to find alone.
+#[tauri::command]
+async fn tutor_reveal(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    let guard = state.session.lock().await;
+    if let Some(session) = guard.as_ref() {
+        journal::event("reveal", json!({ "instruction": session.step.instruction }));
+        apply_step(&app, &state, &agent::Step { hint_only: false, ..session.step.clone() })?;
+    }
+    Ok(())
 }
 
 /// Shows the current step's pointer again, without asking Holo.
@@ -421,12 +501,18 @@ async fn tutor_repoint(app: AppHandle, state: State<'_, AppState>) -> Result<(),
 
 #[tauri::command]
 async fn tutor_stop(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    // Drops any in-flight step now: the lock below is released right away.
+    state.generation.bump();
     watch::disarm();
+    app.emit_to("overlay", "pointer:hide", ()).ok();
     let mut guard = state.session.lock().await;
-    if guard.as_ref().is_some_and(|s| !s.finished) {
+    if let Some(s) = guard.as_ref().filter(|s| !s.finished) {
         journal::end("abandoned");
+        platform::event("tutorial_abandoned", &s.tutorial, None);
     }
     *guard = None;
+    // A step that finished while Stop waited for the lock may have re-armed it.
+    watch::disarm();
     *state.target.lock().unwrap() = None;
     app.emit_to("overlay", "pointer:hide", ()).ok();
     Ok(())
@@ -448,7 +534,8 @@ pub fn emit_thinking(reasoning: &str) {
     }
     let Some(app) = APP.get() else { return };
     let text = reasoning.trim();
-    let sentences: Vec<&str> = text.split_inclusive(['.', '!', '?', '\n']).map(str::trim).filter(|s| !s.is_empty()).collect();
+    let sentences: Vec<&str> =
+        text.split_inclusive(['.', '!', '?', '\n']).map(str::trim).filter(|s| !s.is_empty()).collect();
     let mut snippet = sentences.last().copied().unwrap_or("").to_string();
     // A sentence just started: keep the previous one for context.
     if snippet.len() < 30 && sentences.len() > 1 {
@@ -520,10 +607,39 @@ async fn ask(
     instruction: Option<String>,
     target: Option<String>,
     lang: Option<String>,
+    app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<Answer, String> {
     // Questions pause the tutorial: exploring the screen is not doing the step.
     watch::disarm();
+    let generation = state.generation.current();
+    {
+        let mut guard = state.session.lock().await;
+        if let Some(session) = guard.as_mut().filter(|s| !s.finished && s.blocked.is_none()) {
+            // Inside a tutorial the question joins the milestone's conversation,
+            // so the next steps know what was asked and answered.
+            session.set_lang(lang.as_deref());
+            let ask = async {
+                let shot = shoot().await?;
+                agent::ask_in_loop(&state.holo, session, &question, shot).await
+            };
+            let reply = state.generation.run(generation, cancel::STEP_DEADLINE, ask).await?;
+            if !state.generation.is_current(generation) {
+                return Err(cancel::STOPPED.into());
+            }
+            let pointed = match reply.point {
+                Some((x, y)) => show_point(&app, x, y, reply.answer.clone()).is_ok(),
+                None => false,
+            };
+            return Ok(Answer {
+                answer: reply.answer,
+                details: reply.details,
+                action: reply.action,
+                target: reply.target,
+                pointed,
+            });
+        }
+    }
     let tutorial = state.session.lock().await.as_ref().map(|s| s.context()).unwrap_or_default();
     let shot = shoot().await?;
     let schema = json!({
@@ -540,10 +656,7 @@ async fn ask(
         (Some(i), Some(t)) => format!("{tutorial}The user is on this tutorial step: \"{i}\" (element: {t}).\n"),
         _ => tutorial,
     };
-    let language = lang
-        .as_deref()
-        .and_then(agent::language_name)
-        .unwrap_or("the same language as the user's question");
+    let language = lang.as_deref().and_then(agent::language_name).unwrap_or("the same language as the user's question");
     let prompt = format!(
         "You are a friendly software tutor guiding the user live. The screenshot shows their screen.\n\
          {context}The user paused the tutorial to ask: \"{question}\"\n\n\
@@ -557,10 +670,7 @@ async fn ask(
            step shown again, otherwise \"none\".\n\
          - target: precise English description of the element to point at with its location, or empty."
     );
-    state
-        .holo
-        .structured("ask", &holo::smart_model(), &[&shot.data_uri], &prompt, schema)
-        .await
+    state.holo.structured("ask", &holo::smart_model(), &[&shot.data_uri], &prompt, schema).await
 }
 
 #[tauri::command]
@@ -618,15 +728,13 @@ fn on_user_click(app: &AppHandle, click: clicks::Click) {
     if autopilot::is_running() { return; }
     let state = app.state::<AppState>();
 
-    if let Some(panel) = app.get_webview_window("main").filter(|p| p.is_visible().unwrap_or(false)) {
-        if let (Ok(pos), Ok(size), Ok(scale)) =
-            (panel.outer_position(), panel.outer_size(), panel.scale_factor())
-        {
-            let (px, py) = (pos.x as f64 / scale, pos.y as f64 / scale);
-            let (pw, ph) = (size.width as f64 / scale, size.height as f64 / scale);
-            if click.x >= px && click.x <= px + pw && click.y >= py && click.y <= py + ph {
-                return;
-            }
+    if let Some(panel) = app.get_webview_window("main").filter(|p| p.is_visible().unwrap_or(false))
+        && let (Ok(pos), Ok(size), Ok(scale)) = (panel.outer_position(), panel.outer_size(), panel.scale_factor())
+    {
+        let (px, py) = (pos.x as f64 / scale, pos.y as f64 / scale);
+        let (pw, ph) = (size.width as f64 / scale, size.height as f64 / scale);
+        if click.x >= px && click.x <= px + pw && click.y >= py && click.y <= py + ph {
+            return;
         }
     }
 
@@ -650,7 +758,7 @@ fn on_user_click(app: &AppHandle, click: clicks::Click) {
 }
 
 fn setup_windows(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let monitor = app.primary_monitor()?.ok_or("Aucun écran principal")?;
+    let monitor = app.primary_monitor()?.ok_or("No primary display")?;
     let scale = monitor.scale_factor();
     let pos = monitor.position().to_logical::<f64>(scale);
     let size = monitor.size().to_logical::<f64>(scale);
@@ -731,6 +839,7 @@ pub fn run() {
             target_rect: Mutex::new(None),
             last_rect: Mutex::new(None),
             overlay_gen: AtomicU64::new(0),
+            generation: cancel::Generation::default(),
             session: tauri::async_runtime::Mutex::new(None),
         })
         .setup(|app| {
@@ -742,14 +851,23 @@ pub fn run() {
             autopilot::setup(app.handle());
             tray::setup(app)?;
             let handle = app.handle().clone();
+            // Typing in Rio's own panel (a question) is not the learner's step.
+            clicks::watch_keys(|enter| {
+                if !PANEL_FOCUSED.load(Ordering::SeqCst) {
+                    watch::note_key(enter);
+                }
+            });
             clicks::watch(move |c| on_user_click(&handle, c));
             watch::spawn(app.handle().clone());
             skills::spawn(app.handle().clone());
             Ok(())
         })
         .on_window_event(|window, event| {
-            if window.label() == "main" {
-                if let WindowEvent::Focused(false) = event {
+            if window.label() == "main"
+                && let WindowEvent::Focused(focused) = event
+            {
+                PANEL_FOCUSED.store(*focused, Ordering::SeqCst);
+                if !focused {
                     tray::on_bar_blur(window.app_handle());
                 }
             }
@@ -775,13 +893,13 @@ pub fn run() {
             tutor_start,
             tutor_next,
             tutor_repoint,
+            tutor_reveal,
             tutor_resume,
             tutor_skip_milestone,
             list_tutorials,
             resolve_lang,
             qa::answer_question,
             youtube::import_youtube,
-            app_icons::app_icons,
             save_tutorial,
             tutor_stop,
             stt::listen_start,

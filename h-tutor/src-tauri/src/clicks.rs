@@ -4,6 +4,10 @@
 //! macOS: a listen-only CGEventTap receives every mouse-down as an event, even
 //! a trackpad tap shorter than any polling interval. If the tap cannot be
 //! created (permission), it falls back to polling the button state.
+//!
+//! Key presses go through the same tap, only when macOS already grants the
+//! listen permission (checked without prompting): the handler learns that a
+//! key was pressed and whether it was Enter, never which key.
 
 #[derive(Clone, Copy, Debug)]
 pub struct Click {
@@ -16,8 +20,8 @@ pub struct Click {
 mod imp {
     use super::Click;
     use std::ffi::c_void;
-    use std::sync::atomic::{AtomicPtr, Ordering};
     use std::sync::OnceLock;
+    use std::sync::atomic::{AtomicPtr, Ordering};
 
     #[repr(C)]
     #[derive(Clone, Copy)]
@@ -34,6 +38,10 @@ mod imp {
     const LEFT_DOWN: u32 = 1; // kCGEventLeftMouseDown
     const RIGHT_DOWN: u32 = 3; // kCGEventRightMouseDown
     const SOURCE_USER_DATA: u32 = 42;
+    const KEY_DOWN: u32 = 10; // kCGEventKeyDown
+    const KEYCODE_FIELD: u32 = 9; // kCGKeyboardEventKeycode
+    const RETURN: i64 = 36; // kVK_Return
+    const KEYPAD_ENTER: i64 = 76; // kVK_ANSI_KeypadEnter
     const TAP_DISABLED_BY_TIMEOUT: u32 = 0xFFFF_FFFE;
     const TAP_DISABLED_BY_USER: u32 = 0xFFFF_FFFF;
 
@@ -52,6 +60,7 @@ mod imp {
         fn CGEventGetIntegerValueField(event: *const c_void, field: u32) -> i64;
         fn CGEventSourceButtonState(state: i32, button: u32) -> bool;
         fn CGEventCreate(source: *const c_void) -> *mut c_void;
+        fn CGPreflightListenEventAccess() -> bool;
     }
 
     #[link(name = "CoreFoundation", kind = "framework")]
@@ -65,6 +74,7 @@ mod imp {
     }
 
     static HANDLER: OnceLock<Box<dyn Fn(Click) + Send + Sync>> = OnceLock::new();
+    static KEY_HANDLER: OnceLock<Box<dyn Fn(bool) + Send + Sync>> = OnceLock::new();
     static TAP: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
 
     extern "C" fn on_event(_proxy: *mut c_void, kind: u32, event: *mut c_void, _user: *mut c_void) -> *mut c_void {
@@ -85,6 +95,12 @@ mod imp {
                     h(Click { x: p.x, y: p.y });
                 }
             }
+            KEY_DOWN => {
+                if let Some(h) = KEY_HANDLER.get() {
+                    let code = unsafe { CGEventGetIntegerValueField(event, KEYCODE_FIELD) };
+                    h(code == RETURN || code == KEYPAD_ENTER);
+                }
+            }
             _ => {}
         }
         event
@@ -96,7 +112,13 @@ mod imp {
         std::thread::Builder::new()
             .name("click-tap".into())
             .spawn(move || unsafe {
-                let mask = (1u64 << LEFT_DOWN) | (1u64 << RIGHT_DOWN);
+                let mut mask = (1u64 << LEFT_DOWN) | (1u64 << RIGHT_DOWN);
+                // Keys only with a permission already granted: no new prompt.
+                let keys = KEY_HANDLER.get().is_some() && CGPreflightListenEventAccess();
+                if keys {
+                    mask |= 1u64 << KEY_DOWN;
+                }
+                eprintln!("[clicks] keyboard activity {}", if keys { "watched" } else { "not available" });
                 let tap = CGEventTapCreate(SESSION_TAP, HEAD_INSERT, LISTEN_ONLY, mask, on_event, std::ptr::null_mut());
                 if tap.is_null() {
                     let _ = ready_tx.send(false);
@@ -137,6 +159,11 @@ mod imp {
         });
     }
 
+    /// Registers the key handler; call before `watch`, which creates the tap.
+    pub fn watch_keys(on_key: impl Fn(bool) + Send + Sync + 'static) {
+        let _ = KEY_HANDLER.set(Box::new(on_key));
+    }
+
     pub fn watch(on_click: impl Fn(Click) + Send + Sync + 'static) {
         if HANDLER.set(Box::new(on_click)).is_err() {
             return;
@@ -154,6 +181,7 @@ mod imp {
 mod imp {
     use super::Click;
     pub fn watch(_on_click: impl Fn(Click) + Send + Sync + 'static) {}
+    pub fn watch_keys(_on_key: impl Fn(bool) + Send + Sync + 'static) {}
 }
 
-pub use imp::watch;
+pub use imp::{watch, watch_keys};

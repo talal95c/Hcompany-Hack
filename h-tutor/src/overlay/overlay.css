@@ -1,9 +1,9 @@
-/* Orange ghost with a fine grain, no outline; a soft dark shadow keeps it readable on any background. */
+/* Orange ghost: an orange arrow with a thin dark edge (readable on any background), no glow. */
 :root {
-  --g1: #ffc078;
-  --g2: #ff7a1a;
-  --g3: #d9420b;
-  --ok: #b4c7a6;
+  --g1: #ffb15c;
+  --g2: #ff8a1f;
+  --g3: #f26a00;
+  --ok: #ff8a1f;
 }
 
 .ghost {
@@ -39,7 +39,7 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 170, 110, 0.55);
+  border: 1px solid rgba(255, 138, 31, 0.55);
 }
 .ghost--hit .ghost__halo { border-color: var(--ok); }
 
@@ -65,14 +65,14 @@
 .ghost__label.is-left { left: auto; right: 10px; }
 .ghost__label.is-up { top: auto; bottom: 10px; }
 
-/* The real element (from the accessibility tree): a flat orange ring. */
+/* The real element (from the accessibility tree): a plain orange ring. */
 .ghost-box {
   position: fixed;
   left: 0;
   top: 0;
   pointer-events: none;
   border-radius: 10px;
-  border: 1.5px solid rgba(255, 154, 77, 0.9);
+  border: 1.5px solid rgba(255, 138, 31, 0.9);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
-.ghost-box--hit { border-color: var(--ok); background: rgba(180, 199, 166, 0.1); }
+.ghost-box--hit { border-color: var(--ok); background: rgba(255, 138, 31, 0.1); }
