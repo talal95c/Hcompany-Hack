@@ -23,7 +23,7 @@
         "windowEffects": {
           "effects": ["hudWindow", "acrylic"],
           "state": "active",
-          "radius": 20
+          "radius": 0
         },
         "shadow": true,
         "visible": false,
