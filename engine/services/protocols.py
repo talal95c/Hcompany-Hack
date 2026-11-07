@@ -44,6 +44,7 @@ class Location:
     y: float
     confidence: float
     request_id: str | None = None
+    target_visible: bool | None = None
 
     def as_tuple(self) -> tuple[float, float, float]:
         return (self.x, self.y, self.confidence)

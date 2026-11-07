@@ -39,6 +39,32 @@ pub async fn receive(app: &AppHandle, state: &Arc<State>, packet: Value) {
         "error" => {
             let _ = app.emit("native:error", payload["message"].clone());
         }
+        "capture.request" => {
+            let crop = if payload["crop"].is_null() {
+                crate::native::app_window_rect()
+            } else {
+                serde_json::from_value(payload["crop"].clone()).map_err(|e| e.to_string())
+            };
+            let crop = match crop {
+                Ok(crop) => crop,
+                Err(error) => {
+                    let _ = app.emit("native:error", error);
+                    return;
+                }
+            };
+            let request = payload["request_id"].as_str().unwrap().to_owned();
+            let revision = payload["ui_revision"].as_u64().unwrap();
+            let app = app.clone();
+            let state = state.clone();
+            tauri::async_runtime::spawn(async move {
+                if let Err(error) =
+                    crate::bridge::capture_requested(&app, &state, crop, Some((request, revision)))
+                        .await
+                {
+                    let _ = app.emit("native:error", error);
+                }
+            });
+        }
         "command" => {
             if payload["recipient"] != "desktop" {
                 return;

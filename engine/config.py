@@ -27,6 +27,7 @@ class EngineConfig:
     holo_timeout_s: float = 5
     stt_final_timeout_s: float = 2
     holo_model: str = "holo4-27b"
+    stt_vocabulary: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if any(not 0 <= p <= 65535 for p in (self.port, self.addon_port, self.debug_port)):
@@ -49,6 +50,9 @@ class EngineConfig:
             session_token=token,
             lesson=Path(os.environ["ENGINE_LESSON"]) if os.getenv("ENGINE_LESSON") else None,
             holo_model=os.getenv("ENGINE_HOLO_MODEL", "holo4-27b"),
+            stt_vocabulary=tuple(
+                v.strip() for v in os.getenv("ENGINE_STT_VOCABULARY", "").split(",") if v.strip()
+            ),
             learner_path=Path(os.getenv(
                 "ENGINE_LEARNER_PATH", str(Path.home() / ".local/share/hcompany-hack/learner.json")
             )).expanduser(),

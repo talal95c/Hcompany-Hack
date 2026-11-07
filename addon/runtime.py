@@ -300,6 +300,8 @@ class Runtime:
                 "region_id": str(r.as_pointer()),
                 "type": r.type,
                 "rect": {"x": r.x, "y": r.y, "width": r.width, "height": r.height},
+                "screen_rect": {"x": w.x + r.x, "y": w.y + w.height - r.y - r.height,
+                                "width": r.width, "height": r.height},
                 "scale": bpy.context.preferences.system.ui_scale,
                 "monitor_id": str(w.as_pointer()),
             }
@@ -414,9 +416,15 @@ class Runtime:
             if kind == "highlight":
                 self.highlight(area, region, payload)
             else:
-                if payload["menu_id"] not in {"VIEW3D_MT_mesh_add", "VIEW3D_MT_add"}:
+                if payload["menu_id"] not in {
+                    "VIEW3D_MT_mesh_add", "VIEW3D_MT_add", "TOPBAR_MT_edit",
+                    "VIEW3D_MT_object_shading", "VIEW3D_MT_transform",
+                    "VIEW3D_MT_edit_mesh", "OBJECT_MT_modifier_add_generate",
+                }:
                     raise Refused("permission_denied", "Menu non autorisé")
                 with bpy.context.temp_override(window=window, area=area, region=region):
+                    window.cursor_warp(region.x + region.width // 2,
+                                       region.y + region.height // 2)
                     if "CANCELLED" in bpy.ops.wm.call_menu(name=payload["menu_id"]):
                         raise Refused("bad_context", "Menu indisponible")
         elif kind == "replay":

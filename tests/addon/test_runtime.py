@@ -141,8 +141,9 @@ def test_timer_survives_observation_error(runtime):
 def test_menu_operator_results(runtime, status, expected):
     instance, bpy = runtime
     area = SimpleNamespace(as_pointer=lambda: 1)
-    region = SimpleNamespace(as_pointer=lambda: 2)
-    instance.region_contexts = lambda: [(object(), area, region)]
+    region = SimpleNamespace(as_pointer=lambda: 2, x=0, y=0, width=800, height=600)
+    window = SimpleNamespace(cursor_warp=Mock())
+    instance.region_contexts = lambda: [(window, area, region)]
     bpy.ops.wm.call_menu.return_value = status
     events = command(
         instance,

@@ -61,6 +61,7 @@ if (location.hash !== "#pill") {
   listeners.push(listen("permission:changed", ({ payload }) => permissions(payload)));
   listeners.push(listen("native:error", ({ payload }) => error(payload)));
   listeners.push(listen("lesson:state", ({ payload }) => {
+    if (payload.transcript !== undefined) $("transcript").textContent = payload.transcript;
     if (payload.step_id !== currentStep || payload.status === "COMPLETE") $("instruction").textContent = payload.instruction;
     currentStep = payload.step_id;
   }));

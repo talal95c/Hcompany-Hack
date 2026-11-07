@@ -1,4 +1,6 @@
 # Services IA cloud
+
+Évolution du direct : [capture corrélée et STT live](pointage-et-stt-live.md).
 ## Raccordement de production
 `python -m engine` construit les clients réels lorsque leurs clés sont présentes :
 `HAI_API_KEY`, `CODIV_API_KEY`, `GLADIA_API_KEY`, `LINKUP_API_KEY`. Les adaptateurs
@@ -10,9 +12,9 @@ le service concerné ; une dépendance manquante avec clé présente échoue exp
 Le pointage utilise `holo4-27b` par défaut ; `ENGINE_HOLO_MODEL` le remplace.
 Le choix est distinct du modèle de compilation. Les intentions texte non triviales
 passent par Jev ; `question` lit le pourquoi préécrit de l'étape sans appel LLM supplémentaire.
-Le STT du raccordement actuel convertit PCM mono en WAV et utilise le traitement fichier
-Gladia : ce n'est pas encore le streaming avec endpointing décrit ci-dessous, et le délai
-du direct peut donc expirer et proposer le clavier. Linkup est injecté dans le moteur
+Le STT du raccordement actuel transmet les chunks PCM mono à Gladia live, diffuse les
+partiels au desktop et transmet chaque final à Jev. Le traitement fichier reste disponible
+pour prep et bench. Linkup est injecté dans le moteur
 mais aucune recherche automatique n'est ajoutée sur le chemin critique.
 
 Tous les délais ci-dessous sont des politiques initiales (est.), pas des SLA mesurés. Les retries ont backoff et jitter, jamais de répétition aveugle d'action native. Propager timeout, unavailable, quota et invalid_response distinctement.

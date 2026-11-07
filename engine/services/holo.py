@@ -42,8 +42,9 @@ DEFAULT_MODEL = "holo4-35b-a3b"
 LOCATE_SYSTEM_PROMPT = (
     "You localize user-interface elements in screenshots of desktop applications. "
     "The user gives one screenshot and a description of a single target element. "
-    'Answer with the center of that element as JSON {"x": int, "y": int}, '
-    "coordinates normalized to 0-1000 relative to the image width (x) and height (y)."
+    'Answer as JSON {"x": int, "y": int, "visible": bool}. '
+    "Set visible=false and x=y=0 if the exact target is not visible. Never guess. "
+    "Otherwise return its center, coordinates normalized to 0-1000 on the image."
 )
 ACT_SYSTEM_PROMPT = (
     "You operate a desktop application for a learner, one action per turn. "
@@ -58,8 +59,9 @@ _POINT_SCHEMA: dict[str, Any] = {
     "properties": {
         "x": {"type": "integer", "minimum": 0, "maximum": NORMALIZED_MAX},
         "y": {"type": "integer", "minimum": 0, "maximum": NORMALIZED_MAX},
+        "visible": {"type": "boolean"},
     },
-    "required": ["x", "y"],
+    "required": ["x", "y", "visible"],
     "additionalProperties": False,
 }
 
@@ -262,7 +264,8 @@ class HoloCloudClient:
             x, y = _check_point(point.get("x"), point.get("y"), resp.id)
             if region is not None:
                 x, y = region.to_full(x, y)
-            return Location(x=x, y=y, confidence=_confidence(choice), request_id=resp.id)
+            return Location(x=x, y=y, confidence=_confidence(choice), request_id=resp.id,
+                            target_visible=point.get("visible"))
 
         return await with_retry(call, attempts=2)
 
