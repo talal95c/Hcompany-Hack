@@ -34,18 +34,33 @@ async def main(port: int, output: Path, sidecar: bool = False) -> None:
             file.write(json.dumps({"event": kind, **details}) + "\n")
 
     def envelope(kind: str, payload: dict) -> dict:
-        value = {"schema_version": "1.0", "session_id": session,
-                 "message_id": str(uuid.uuid4()), "reply_to": None,
-                 "type": kind, "payload": payload}
+        value = {
+            "schema_version": "1.0",
+            "session_id": session,
+            "message_id": str(uuid.uuid4()),
+            "reply_to": None,
+            "type": kind,
+            "payload": payload,
+        }
         VALIDATOR.validate(value)
         return value
 
     def command(kind: str, payload: dict, revision: int | None = None) -> dict:
-        return envelope("command", {"schema_version": "1.0", "session_id": session,
-                        "command_id": str(uuid.uuid4()), "step_id": "protocol-probe",
-                        "generation": 1, "recipient": "desktop", "type": kind,
-                        "deadline_ms": 5000, "expected_scene_revision": revision,
-                        "payload": payload})
+        return envelope(
+            "command",
+            {
+                "schema_version": "1.0",
+                "session_id": session,
+                "command_id": str(uuid.uuid4()),
+                "step_id": "protocol-probe",
+                "generation": 1,
+                "recipient": "desktop",
+                "type": kind,
+                "deadline_ms": 5000,
+                "expected_scene_revision": revision,
+                "payload": payload,
+            },
+        )
 
     async def authenticate(connection, request):
         if not hmac.compare_digest(request.headers.get("Authorization", ""), f"Bearer {token}"):
@@ -63,11 +78,19 @@ async def main(port: int, output: Path, sidecar: bool = False) -> None:
             kind, payload = packet["type"], packet["payload"]
             event(kind, **({"status": payload["status"]} if kind == "input.result" else {}))
             if kind == "hello":
-                await socket.send(json.dumps(envelope("lesson.state", {
-                    "step_id": "protocol-probe", "status": "OBSERVING",
-                    "instruction": "Test du transport natif — partagez une région.",
-                    "help_level": 3,
-                })))
+                await socket.send(
+                    json.dumps(
+                        envelope(
+                            "lesson.state",
+                            {
+                                "step_id": "protocol-probe",
+                                "status": "OBSERVING",
+                                "instruction": "Test du transport natif — partagez une région.",
+                                "help_level": 3,
+                            },
+                        )
+                    )
+                )
                 await socket.send('{"type":"command","payload":{}}')
                 event("invalid_fixture_sent")
             elif kind == "capture.result":
@@ -75,28 +98,58 @@ async def main(port: int, output: Path, sidecar: bool = False) -> None:
                 prefix, image = payload["image_ref"].split(",", 1)
                 assert prefix == "data:image/png;base64"
                 (output / "native-crop.png").write_bytes(base64.b64decode(image, validate=True))
-                await socket.send(json.dumps(command("pointer", {
-                    "capture_id": payload["capture_id"], "ui_revision": payload["ui_revision"],
-                    "x": 500, "y": 500,
-                })))
-                await socket.send(json.dumps(command("input.action", {
-                    "capture_id": payload["capture_id"], "consent_token": "invalid-fixture-token",
-                    "action": {"type": "click", "x": 500, "y": 500, "button": "left"},
-                })))
-                event("pointer_sent", elapsed_ms=(time.perf_counter() - start) * 1000,
-                      crop=payload["crop"], ui_revision=payload["ui_revision"])
+                await socket.send(
+                    json.dumps(
+                        command(
+                            "pointer",
+                            {
+                                "capture_id": payload["capture_id"],
+                                "ui_revision": payload["ui_revision"],
+                                "x": 500,
+                                "y": 500,
+                            },
+                        )
+                    )
+                )
+                await socket.send(
+                    json.dumps(
+                        command(
+                            "input.action",
+                            {
+                                "capture_id": payload["capture_id"],
+                                "consent_token": "invalid-fixture-token",
+                                "action": {"type": "click", "x": 500, "y": 500, "button": "left"},
+                            },
+                        )
+                    )
+                )
+                event(
+                    "pointer_sent",
+                    elapsed_ms=(time.perf_counter() - start) * 1000,
+                    crop=payload["crop"],
+                    ui_revision=payload["ui_revision"],
+                )
             elif kind == "user.intent" and payload["text"] == "stop":
                 await socket.send(json.dumps(command("stop", {"reason": "user stop"})))
             elif kind == "user.intent" and payload["text"] == "probe-success":
-                await socket.send(json.dumps(command("success", {
-                    "text": "Test du rendu vérifié — fixture de protocole uniquement.",
-                }, revision=1)))
+                await socket.send(
+                    json.dumps(
+                        command(
+                            "success",
+                            {
+                                "text": "Test du rendu vérifié — fixture de protocole uniquement.",
+                            },
+                            revision=1,
+                        )
+                    )
+                )
                 event("success_sent")
             elif kind == "ping":
                 await socket.send(json.dumps(envelope("pong", payload)))
 
-    async with serve(handler, "127.0.0.1", port, process_request=authenticate,
-                     max_size=8 * 1024**2):
+    async with serve(
+        handler, "127.0.0.1", port, process_request=authenticate, max_size=8 * 1024**2
+    ):
         if not sidecar:
             print(f"PROBE_READY {port}", flush=True)
             await asyncio.Future()

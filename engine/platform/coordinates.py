@@ -33,9 +33,12 @@ class Monitor:
 
     def contains(self, crop: Rect) -> bool:
         p = self.physical
-        return (p.x <= crop.x and p.y <= crop.y
-                and crop.x + crop.width <= p.x + p.width
-                and crop.y + crop.height <= p.y + p.height)
+        return (
+            p.x <= crop.x
+            and p.y <= crop.y
+            and crop.x + crop.width <= p.x + p.width
+            and crop.y + crop.height <= p.y + p.height
+        )
 
 
 def normalized_point(u: float, v: float, crop: Rect, monitor: Monitor) -> tuple[float, float]:
@@ -46,12 +49,15 @@ def normalized_point(u: float, v: float, crop: Rect, monitor: Monitor) -> tuple[
         raise ValueError("crop crosses monitor boundary")
     px = crop.x + min(u * crop.width / 1000, crop.width - 1)
     py = crop.y + min(v * crop.height / 1000, crop.height - 1)
-    return (monitor.logical_x + (px - monitor.physical.x) / monitor.scale,
-            monitor.logical_y + (py - monitor.physical.y) / monitor.scale)
+    return (
+        monitor.logical_x + (px - monitor.physical.x) / monitor.scale,
+        monitor.logical_y + (py - monitor.physical.y) / monitor.scale,
+    )
 
 
-def blender_region(x: float, y: float, width: float, height: float,
-                   window: Rect, scale: float) -> Rect:
+def blender_region(
+    x: float, y: float, width: float, height: float, window: Rect, scale: float
+) -> Rect:
     """Blender bottom-left logical region to global top-left physical crop."""
     if not math.isfinite(scale) or scale <= 0:
         raise ValueError("invalid scale")
@@ -59,5 +65,9 @@ def blender_region(x: float, y: float, width: float, height: float,
         raise ValueError("invalid region")
     if (x + width) * scale > window.width or (y + height) * scale > window.height:
         raise ValueError("region outside window")
-    return Rect(window.x + x * scale, window.y + window.height - (y + height) * scale,
-                width * scale, height * scale)
+    return Rect(
+        window.x + x * scale,
+        window.y + window.height - (y + height) * scale,
+        width * scale,
+        height * scale,
+    )

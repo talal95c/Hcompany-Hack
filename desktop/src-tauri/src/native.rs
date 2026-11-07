@@ -108,7 +108,9 @@ pub fn capture(crop: Rect, _monitor: &Monitor) -> Result<Vec<u8>, String> {
     }
     let rgba: Vec<u8> = reply
         .data
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .flat_map(|p| [p[2], p[1], p[0], 255])
         .collect();
     let image = image::RgbaImage::from_raw(width, height, rgba).ok_or("invalid image")?;

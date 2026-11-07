@@ -65,7 +65,8 @@ Pas de capture complète implicite, d'enregistrement disque ni de conservation p
   Screen Recording / Accessibility / Microphone sont contrôlés séparément ; un refus
   n'empêche pas l'entrée texte. Les explications Microphone sont intégrées au helper.
 - Linux : X11, lecture native de la région ; nos deux surfaces sont masquées durant
-  la capture puis réaffichées. Le délai compositor de 80 ms est une **temporisation
+  la capture puis réaffichées dans l'ordre guide, puis pill, pour garder les commandes
+  au-dessus du guide sans prendre le focus. Le délai compositor de 80 ms est une **temporisation
   configurée**, pas une mesure ni une garantie d'exclusion sur tous les compositeurs.
 - Windows : xcap, masquage des surfaces et protection du contenu en défense supplémentaire.
   Les tests Windows natifs et l'exclusion sous compositeur restent à réaliser.

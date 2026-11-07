@@ -13,9 +13,7 @@ def test_retina_negative_origin_and_last_pixel():
 
 
 def test_blender_y_flipped_once():
-    assert blender_region(10, 20, 100, 50, Rect(200, 100, 1000, 800), 2) == Rect(
-        220, 760, 200, 100
-    )
+    assert blender_region(10, 20, 100, 50, Rect(200, 100, 1000, 800), 2) == Rect(220, 760, 200, 100)
 
 
 @pytest.mark.parametrize("u", [-1, 1001, math.nan, math.inf])

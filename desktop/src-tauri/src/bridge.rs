@@ -196,8 +196,10 @@ pub async fn capture_region(
     let image =
         tokio::task::spawn_blocking(move || native::capture(crop, &monitor_for_capture)).await;
     #[cfg(not(target_os = "macos"))]
-    for window in app.webview_windows().values() {
-        let _ = window.show();
+    for label in ["guide", "pill"] {
+        if let Some(window) = app.get_webview_window(label) {
+            let _ = window.show();
+        }
     }
     let image = image.map_err(|e| e.to_string())??;
     eprintln!(
