@@ -58,12 +58,12 @@ function Overlay() {
     )}
     <div className={`ghost ghost--${mode}`} style={{ transform: `translate(${ptr.x}px, ${ptr.y}px)` }}>
       <span className="ghost__halo" />
-      <svg className="ghost__cursor" width="15" height="18" viewBox="0 0 15 18" aria-hidden>
+      <svg className="ghost__cursor" width="20" height="24" viewBox="0 0 15 18" aria-hidden>
         <path
           d="M1 1 L1 14.5 L4.6 11.2 L7.2 16.8 L9.6 15.7 L7.1 10.3 L12.2 10.3 Z"
           fill="var(--ghost)"
           stroke="white"
-          strokeWidth="1.3"
+          strokeWidth="1.2"
           strokeLinejoin="round"
         />
       </svg>

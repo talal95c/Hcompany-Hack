@@ -161,7 +161,7 @@ fn to_overlay_coords(
     let monitor = app
         .primary_monitor()
         .map_err(|e| e.to_string())?
-        .ok_or("No primary display")?;
+        .ok_or("Aucun écran principal")?;
     let overlay = app.get_webview_window("overlay").ok_or("Overlay window missing")?;
     let origin = overlay.outer_position().map_err(|e| e.to_string())?;
     let scale = monitor.scale_factor();
@@ -282,7 +282,7 @@ async fn tutor_start(
             let shot = shoot().await?;
             planner::plan(&state.holo, &goal, &shot).await?
         }
-        (None, None) => return Err("Nothing to start".into()),
+        (None, None) => return Err("Rien à lancer".into()),
     };
     let mut guard = state.session.lock().await;
     let session = guard.insert(agent::Session::new(tutorial, lang.as_deref()));
@@ -306,7 +306,7 @@ async fn tutor_next(
     state: State<'_, AppState>,
 ) -> Result<agent::Step, String> {
     let mut guard = state.session.lock().await;
-    let session = guard.as_mut().ok_or("No tutorial in progress")?;
+    let session = guard.as_mut().ok_or("Aucun tuto en cours")?;
     session.set_lang(lang.as_deref());
     watch::disarm();
     if !only_if_changed {
@@ -353,7 +353,7 @@ async fn tutor_skip_milestone(
 ) -> Result<agent::Step, String> {
     watch::disarm();
     let mut guard = state.session.lock().await;
-    let session = guard.as_mut().ok_or("No tutorial in progress")?;
+    let session = guard.as_mut().ok_or("Aucun tuto en cours")?;
     session.set_lang(lang.as_deref());
     session.skip_milestone();
     app.emit_to("overlay", "pointer:thinking", ()).ok();
@@ -373,7 +373,7 @@ fn resolve_lang(text: String, spoken: Option<String>, fallback: Option<String>) 
         .filter(supported)
         .or_else(|| voice::detect(&text).map(String::from))
         .or(fallback.filter(supported))
-        .unwrap_or_else(|| "en".into())
+        .unwrap_or_else(|| "fr".into())
 }
 
 #[tauri::command]
@@ -386,7 +386,7 @@ fn list_tutorials() -> Vec<tutorial::Summary> {
 #[tauri::command]
 async fn save_tutorial(state: State<'_, AppState>) -> Result<String, String> {
     let guard = state.session.lock().await;
-    let session = guard.as_ref().ok_or("No tutorial to save")?;
+    let session = guard.as_ref().ok_or("Aucun tuto à enregistrer")?;
     let t = agent::to_tutorial(session);
     tutorial::save(&t)?;
     journal::event("saved_as_tutorial", json!({ "tutorial_id": t.id, "version": t.version }));

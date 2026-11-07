@@ -454,7 +454,7 @@ async fn ask_holo(
         .as_array()
         .and_then(|c| c.first())
         .cloned()
-        .ok_or("Holo did not choose an action")?;
+        .ok_or("Holo n'a choisi aucune action")?;
 
     // Keep only the parsed action in history, never the reasoning.
     session.messages.push(json!({
