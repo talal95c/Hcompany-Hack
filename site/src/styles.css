@@ -492,3 +492,7 @@ ul { list-style: none; }
   .footer::before { content: ""; position: absolute; inset: 0; z-index: 0; background: rgba(10, 18, 10, 0.55); pointer-events: none; }
   .footer-inner { z-index: 1; }
 }
+@media (max-width: 700px) {
+  .hero-bg { top: auto; bottom: 0; height: 48%; object-position: 40% bottom; }
+  .footer-bg { opacity: 0.3; }
+}
