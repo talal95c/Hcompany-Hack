@@ -1,0 +1,348 @@
+{
+  "date": "2026-11-07T13:39:02+00:00",
+  "host": {
+    "os": "Linux-6.8.0-1061-aws-x86_64-with-glibc2.35",
+    "python": "3.11.17"
+  },
+  "measured": true,
+  "summary": {
+    "gladia.live_final_after_last_chunk": {
+      "n": 2,
+      "n_ok": 2,
+      "failures": {},
+      "p50_ms": 709.0,
+      "p95_ms": 760.2,
+      "min_ms": 652.2,
+      "max_ms": 765.8
+    },
+    "gladia.live_init": {
+      "n": 2,
+      "n_ok": 2,
+      "failures": {},
+      "p50_ms": 353.5,
+      "p95_ms": 499.2,
+      "min_ms": 191.7,
+      "max_ms": 515.4
+    },
+    "gladia.live_ws_connect": {
+      "n": 2,
+      "n_ok": 2,
+      "failures": {},
+      "p50_ms": 486.7,
+      "p95_ms": 489.4,
+      "min_ms": 483.7,
+      "max_ms": 489.7
+    },
+    "gladia.prerecorded_create": {
+      "n": 3,
+      "n_ok": 3,
+      "failures": {},
+      "p50_ms": 347.4,
+      "p95_ms": 768.6,
+      "min_ms": 326.7,
+      "max_ms": 815.4
+    },
+    "gladia.prerecorded_poll": {
+      "n": 8,
+      "n_ok": 8,
+      "failures": {},
+      "p50_ms": 185.8,
+      "p95_ms": 223.2,
+      "min_ms": 182.8,
+      "max_ms": 227.7
+    },
+    "gladia.transcribe_file_total": {
+      "n": 3,
+      "n_ok": 3,
+      "failures": {},
+      "p50_ms": 3255.9,
+      "p95_ms": 3505.7,
+      "min_ms": 2149.6,
+      "max_ms": 3533.5
+    },
+    "gladia.upload": {
+      "n": 3,
+      "n_ok": 3,
+      "failures": {},
+      "p50_ms": 909.6,
+      "p95_ms": 1534.9,
+      "min_ms": 850.4,
+      "max_ms": 1604.4
+    }
+  },
+  "calls": [
+    {
+      "service": "gladia",
+      "operation": "upload",
+      "duration_ms": 1604.4,
+      "status": "ok",
+      "request_id": null,
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_create",
+      "duration_ms": 347.35,
+      "status": "ok",
+      "request_id": "2565d8ca-1a03-489c-8364-4dd613ea53c7",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 183.25,
+      "status": "ok",
+      "request_id": "2565d8ca-1a03-489c-8364-4dd613ea53c7",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 185.82,
+      "status": "ok",
+      "request_id": "2565d8ca-1a03-489c-8364-4dd613ea53c7",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 207.45,
+      "status": "ok",
+      "request_id": "2565d8ca-1a03-489c-8364-4dd613ea53c7",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "transcribe_file_total",
+      "duration_ms": 3533.47,
+      "status": "ok",
+      "request_id": "2565d8ca-1a03-489c-8364-4dd613ea53c7",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "upload",
+      "duration_ms": 909.56,
+      "status": "ok",
+      "request_id": null,
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_create",
+      "duration_ms": 326.66,
+      "status": "ok",
+      "request_id": "8bce581b-240a-4af7-97e7-a58bc9452a94",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 182.83,
+      "status": "ok",
+      "request_id": "8bce581b-240a-4af7-97e7-a58bc9452a94",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 227.67,
+      "status": "ok",
+      "request_id": "8bce581b-240a-4af7-97e7-a58bc9452a94",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "transcribe_file_total",
+      "duration_ms": 2149.63,
+      "status": "ok",
+      "request_id": "8bce581b-240a-4af7-97e7-a58bc9452a94",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "upload",
+      "duration_ms": 850.4,
+      "status": "ok",
+      "request_id": null,
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_create",
+      "duration_ms": 815.41,
+      "status": "ok",
+      "request_id": "b760ac22-98e3-4188-a3a2-a40322a80833",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 185.87,
+      "status": "ok",
+      "request_id": "b760ac22-98e3-4188-a3a2-a40322a80833",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 183.71,
+      "status": "ok",
+      "request_id": "b760ac22-98e3-4188-a3a2-a40322a80833",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 215.0,
+      "status": "ok",
+      "request_id": "b760ac22-98e3-4188-a3a2-a40322a80833",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "transcribe_file_total",
+      "duration_ms": 3255.92,
+      "status": "ok",
+      "request_id": "b760ac22-98e3-4188-a3a2-a40322a80833",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "live_init",
+      "duration_ms": 191.68,
+      "status": "ok",
+      "request_id": "5d1cefba-8c7f-41af-903a-1cb83a3aa31e",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "live_ws_connect",
+      "duration_ms": 489.73,
+      "status": "ok",
+      "request_id": "5d1cefba-8c7f-41af-903a-1cb83a3aa31e",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "live_final_after_last_chunk",
+      "duration_ms": 765.83,
+      "status": "ok",
+      "request_id": "5d1cefba-8c7f-41af-903a-1cb83a3aa31e",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "live_init",
+      "duration_ms": 515.39,
+      "status": "ok",
+      "request_id": "253794ed-0c5a-4c42-b594-153a98b4cac7",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "live_ws_connect",
+      "duration_ms": 483.67,
+      "status": "ok",
+      "request_id": "253794ed-0c5a-4c42-b594-153a98b4cac7",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "live_final_after_last_chunk",
+      "duration_ms": 652.23,
+      "status": "ok",
+      "request_id": "253794ed-0c5a-4c42-b594-153a98b4cac7",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    }
+  ],
+  "fixture": "fr_ajoute_un_tore_16k.wav",
+  "fixture_audio_s": 3.6,
+  "reference_text": "Ajoute un tore dans la scène Blender, puis ouvre le menu « Ajouter ».",
+  "file_transcripts": [
+    "Ajoute un tore dans la scène Blender , puis ouvre le menu « Ajouter » .",
+    "Ajoute un tore dans la scène Blender , puis ouvre le menu « Ajouter » .",
+    "Ajoute un tore dans la scène Blender , puis ouvre le menu « Ajouter » ."
+  ],
+  "file_words_first": [
+    [
+      "Ajoute",
+      0.193,
+      0.495
+    ],
+    [
+      "un",
+      0.516,
+      0.636
+    ],
+    [
+      "tore",
+      0.656,
+      0.898
+    ],
+    [
+      "dans",
+      0.899,
+      1.019
+    ]
+  ],
+  "live_finals": [
+    [
+      "Ajoute un tore dans la scène Blender , puis ouvre le menu « Ajouter » ."
+    ],
+    [
+      "Ajoute un tore dans la scène Blender , puis ouvre le menu « Ajouter » ."
+    ]
+  ],
+  "live_partial_counts": [
+    7,
+    7
+  ],
+  "note": "live_final_after_last_chunk = délai entre le dernier chunk audio envoyé (audio temps réel, 1 s de silence final) et la réception du final"
+}

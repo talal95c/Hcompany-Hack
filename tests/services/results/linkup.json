@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-07T13:39:12+00:00",
+  "host": {
+    "os": "Linux-6.8.0-1061-aws-x86_64-with-glibc2.35",
+    "python": "3.11.17"
+  },
+  "measured": true,
+  "summary": {
+    "linkup.search": {
+      "n": 3,
+      "n_ok": 3,
+      "failures": {},
+      "p50_ms": 3239.9,
+      "p95_ms": 3550.0,
+      "min_ms": 3142.0,
+      "max_ms": 3584.5
+    }
+  },
+  "calls": [
+    {
+      "service": "linkup",
+      "operation": "search",
+      "duration_ms": 3584.48,
+      "status": "ok",
+      "request_id": null,
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "linkup",
+      "operation": "search",
+      "duration_ms": 3239.88,
+      "status": "ok",
+      "request_id": null,
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "linkup",
+      "operation": "search",
+      "duration_ms": 3142.01,
+      "status": "ok",
+      "request_id": null,
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    }
+  ],
+  "depth": "standard",
+  "results": [
+    {
+      "query": "How do I add a torus mesh in Blender 4.5?",
+      "answer": "In the 3D Viewport, press Shift+A and choose Mesh > Torus. The torus is added at the 3D Cursor. Adjust its dimensions and segment counts in the operator panel if needed.",
+      "data": {
+        "answer": "In the 3D Viewport, press Shift+A and choose Mesh > Torus. The torus is added at the 3D Cursor. Adjust its dimensions and segment counts in the operator panel if needed.",
+        "menu_path": "3D Viewport > Add > Mesh > Torus",
+        "shortcut": "Shift+A, then choose Mesh > Torus",
+        "blender_version": "The supplied instructions show Blender 5.1/5.2 documentation, not Blender 4.5; the exact 4.5 menu details aren’t confirmed."
+      },
+      "sources": [
+        "https://docs.blender.org/manual/en/2.81/_sources/modeling/meshes/primitives.rst.txt",
+        "https://docs.blender.org/api/current/bpy.ops.mesh.html",
+        "https://docs.blender.org/manual/en/dev/modeling/meshes/primitives.html",
+        "https://docs.blender.org/api/blender_python_api_2_60_4/bpy.ops.mesh.html",
+        "https://docs.blender.org/manual/en/latest/modeling/meshes/primitives.html"
+      ]
+    },
+    {
+      "query": "Blender 4.5 extrude faces shortcut in Edit Mode",
+      "answer": "In Edit Mode, select the face(s) and press **E** to extrude. Faces move along their averaged normal by default; click or press Enter to confirm.",
+      "data": {
+        "answer": "In Edit Mode, select the face(s) and press **E** to extrude. Faces move along their averaged normal by default; click or press Enter to confirm.",
+        "menu_path": "3D Viewport > Mesh > Extrude > Extrude Faces",
+        "shortcut": "E",
+        "blender_version": "4.5 LTS"
+      },
+      "sources": [
+        "https://docs.blender.org/manual/en/4.5/modeling/meshes/tools/extrude_region.html",
+        "https://docs.blender.org/manual/en/4.0/modeling/meshes/editing/mesh/extrude.html",
+        "https://docs.blender.org/manual/en/4.5/modeling/meshes/editing/edge/extrude_edges.html",
+        "https://docs.blender.org/manual/en/latest/modeling/meshes/editing/mesh/extrude.html",
+        "https://docs.blender.org/manual/en/4.0/modeling/meshes/editing/face/extrude_faces.html"
+      ]
+    },
+    {
+      "query": "Blender 4.5 Subdivision Surface modifier levels viewport",
+      "answer": "The Subdivision Surface modifier’s Viewport level controls how many subdivisions are evaluated in the 3D Viewport. In Blender 4.5, the API documents a range of 0–11, with a default of 1. To change it, select the object and adjust the modifier’s Levels Viewport value. You can also use Ctrl+1, Ctrl+2, and so on to set the level; this changes an existing Subdivision Surface modifier’s level or adds one if needed. Viewport levels are separate from Render levels.",
+      "data": {
+        "answer": "The Subdivision Surface modifier’s Viewport level controls how many subdivisions are evaluated in the 3D Viewport. In Blender 4.5, the API documents a range of 0–11, with a default of 1. To change it, select the object and adjust the modifier’s Levels Viewport value. You can also use Ctrl+1, Ctrl+2, and so on to set the level; this changes an existing Subdivision Surface modifier’s level or adds one if needed. Viewport levels are separate from Render levels.",
+        "menu_path": "Properties Editor > Modifiers > Subdivision Surface > Levels Viewport",
+        "shortcut": "Ctrl+1 through Ctrl+9 (sets the viewport level; adds the modifier if needed)",
+        "blender_version": "Blender 4.5"
+      },
+      "sources": [
+        "https://docs.blender.org/api/current/bpy.types.SubsurfModifier.html",
+        "https://docs.blender.org/manual/en/4.0/modeling/modifiers/generate/subdivision_surface.html",
+        "https://docs.blender.org/manual/en/5.0/modeling/modifiers/generate/subdivision_surface.html",
+        "https://docs.blender.org/manual/en/dev/modeling/modifiers/generate/subdivision_surface.html",
+        "https://docs.blender.org/manual/en/5.1/modeling/modifiers/generate/subdivision_surface.html"
+      ]
+    }
+  ]
+}
