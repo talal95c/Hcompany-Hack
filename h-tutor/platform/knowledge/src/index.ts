@@ -12,10 +12,13 @@
 
 import { norm } from "./core/inventory.ts";
 import type { Successor, Where } from "./core/inventory.ts";
+import { type IngestBody, ingest, listSources, removeSource } from "./ingest.ts";
 import { type Claim, type Grounding, type Lookup, type PathStep, type Skill, path, resolve } from "./core/retarget.ts";
 
 export interface Env {
   DB: D1Database;
+  HAI_API_KEY?: string;
+  HOLO_INGEST_MODEL?: string;
 }
 
 const json = (body: unknown, status = 200) =>
@@ -55,14 +58,15 @@ function resolveVersion(app: AppRow, versions: VersionRow[], hint?: string | nul
   return { id: pick.version, requested: m[0], exact: req.every((x, i) => have[i] === x) };
 }
 
+/** The apps an organization sees: the shared ones and its own internal tools. */
 class Apps {
-  constructor(private db: D1Database) {}
+  constructor(private db: D1Database, readonly ws: string | null) {}
   private cache?: Promise<{ apps: AppRow[]; versions: Map<string, VersionRow[]> }>;
   all() {
     return (this.cache ??= (async () => {
       const [a, v] = await this.db.batch([
-        this.db.prepare(`select * from app order by name`),
-        this.db.prepare(`select app, version, label, covers_from, year from app_version`),
+        this.db.prepare(`select * from app where workspace is null or workspace = ? order by name`).bind(this.ws),
+        this.db.prepare(`select v.app, v.version, v.label, v.covers_from, v.year from app_version v join app a on a.id = v.app where a.workspace is null or a.workspace = ?`).bind(this.ws),
       ]);
       const versions = new Map<string, VersionRow[]>();
       for (const r of v.results as (VersionRow & { app: string })[]) (versions.get(r.app) ?? versions.set(r.app, []).get(r.app)!).push(r);
@@ -86,12 +90,12 @@ class Apps {
 const grounding = (a: AppRow): Grounding => ({ nav_ops: [], routine_ops: [], menu_openers: [], confirm_ops: [], ...JSON.parse(a.grounding) });
 
 /** Everything needed to re-target some skills: their claims, and where their operators are in every version. */
-async function load(db: D1Database, app: AppRow, skillIds: string[]) {
+async function load(db: D1Database, app: AppRow, skillIds: string[], ws: string | null = null) {
   if (!skillIds.length) return { skills: new Map<string, Skill & { name: string }>(), claims: new Map<string, Claim>(), L: lookup(new Map(), new Map()) };
   const q = skillIds.map(() => "?").join(",");
   const [sk, seg, pr] = await db.batch([
-    db.prepare(`select * from skill where id in (${q})`).bind(...skillIds),
-    db.prepare(`select s.*, t.skill_id from segment s join teaches t on t.segment_id = s.id where t.skill_id in (${q})`).bind(...skillIds),
+    db.prepare(`select * from skill where id in (${q}) and (workspace is null or workspace = ?)`).bind(...skillIds, ws),
+    db.prepare(`select s.*, t.skill_id from segment s join teaches t on t.segment_id = s.id join source o on o.id = s.source_id where t.skill_id in (${q}) and (o.workspace is null or o.workspace = ?)`).bind(...skillIds, ws),
     db.prepare(`select * from proof where skill_id in (${q})`).bind(...skillIds),
   ]);
   const skills = new Map<string, Skill & { name: string; proofs: Record<string, string>; effect: string | null }>();
@@ -219,6 +223,7 @@ async function search(env: Env, apps: Apps, url: URL) {
       return { ...r, cover, score: Math.round(-r.rank * 100) / 100 };
     })
     .filter((r) => r.cover >= 0.5)
+    .filter((r, i, all) => all.findIndex((x) => x.skill_id === r.skill_id) === i)
     .slice(0, limit);
 
   const out = [];
@@ -226,7 +231,7 @@ async function search(env: Env, apps: Apps, url: URL) {
     const mine = scored.filter((r) => r.app === app.id);
     if (!mine.length) continue;
     const version = resolveVersion(app, versions.get(app.id) ?? [], p("version") || p("app"));
-    const { skills, claims, L } = await load(env.DB, app, mine.map((r) => r.skill_id));
+    const { skills, claims, L } = await load(env.DB, app, [...new Set(mine.map((r) => r.skill_id))], apps.ws);
     const g = grounding(app);
     const srcs = await sourcesOf(env.DB, [...new Set([...skills.values()].flatMap((s) => s.sources.map((x) => x.source)))]);
     for (const r of mine) {
@@ -252,15 +257,20 @@ async function search(env: Env, apps: Apps, url: URL) {
 // ---------------------------------------------------------------- skills, tutorials, atoms
 
 async function oneSkill(env: Env, apps: Apps, id: string, url: URL) {
-  const row = await env.DB.prepare(`select app from skill where id = ?`).bind(id).first<{ app: string }>();
+  const row = await env.DB.prepare(`select app from skill where id = ? and (workspace is null or workspace = ?)`).bind(id, apps.ws).first<{ app: string }>();
   if (!row) return null;
   const { apps: all, versions } = await apps.all();
-  const app = all.find((a) => a.id === row.app)!;
+  const app = all.find((a) => a.id === row.app);
+  if (!app) return null;
   const version = resolveVersion(app, versions.get(app.id) ?? [], url.searchParams.get("version"));
-  const { skills, claims, L } = await load(env.DB, app, [id]);
+  const { skills, claims, L } = await load(env.DB, app, [id], apps.ws);
   const s = skills.get(id)! as Skill & { name: string; proofs: Record<string, string> };
   const srcs = await sourcesOf(env.DB, s.sources.map((x) => x.source));
-  const { results: notes } = await env.DB.prepare(`select source_id, kind, text, t from note where skill_id = ?`).bind(id).all();
+  const { results: notes } = await env.DB.prepare(
+    `select n.source_id, n.kind, n.text, n.t from note n join source s on s.id = n.source_id where n.skill_id = ? and (s.workspace is null or s.workspace = ?)`,
+  )
+    .bind(id, apps.ws)
+    .all();
   return {
     id,
     app: app.id,
@@ -283,15 +293,15 @@ async function listSkills(env: Env, apps: Apps, url: URL) {
     ids = (await search(env, apps, new URL(`http://x/search?q=${encodeURIComponent(q)}&app=${app.id}&limit=10`))).results.map((r) => r.id);
   } else {
     const { results } = await env.DB.prepare(
-      `select s.id from skill s left join teaches t on t.skill_id = s.id where s.app = ? group by s.id order by count(t.segment_id) desc, s.name limit 200`,
+      `select s.id from skill s left join teaches t on t.skill_id = s.id where s.app = ? and (s.workspace is null or s.workspace = ?) group by s.id order by count(t.segment_id) desc, s.name limit 200`,
     )
-      .bind(app.id)
+      .bind(app.id, apps.ws)
       .all<{ id: string }>();
     ids = results.map((r) => r.id);
   }
   const { versions } = await apps.all();
   const vs = versions.get(app.id) ?? [];
-  const { skills, claims, L } = await load(env.DB, app, ids);
+  const { skills, claims, L } = await load(env.DB, app, ids, apps.ws);
   const g = grounding(app);
   const srcs = await sourcesOf(env.DB, [...new Set([...skills.values()].flatMap((s) => s.sources.map((x) => x.source)))]);
   return {
@@ -319,9 +329,9 @@ async function tutorials(env: Env, apps: Apps, url: URL) {
   const { results } = await env.DB.prepare(
     `select t.*, s.url, s.kind, s.title as source_title, s.author, s.language, a.name as app_name from tutorial t
      join source s on s.id = t.source_id join app a on a.id = t.app
-     where t.app in (${targets.map(() => "?").join(",")}) order by t.title`,
+     where t.app in (${targets.map(() => "?").join(",")}) and (t.workspace is null or t.workspace = ?) order by t.title`,
   )
-    .bind(...targets.map((a) => a.id))
+    .bind(...targets.map((a) => a.id), apps.ws)
     .all<{ id: string; app: string; app_name: string; title: string; version: string; skills_json: string; url: string; kind: string; author: string | null; language: string | null }>();
   return {
     tutorials: results.map((t) => ({
@@ -345,16 +355,17 @@ const BUNDLES: Record<string, string> = { blender: "org.blenderfoundation.blende
 async function oneTutorial(env: Env, apps: Apps, ref: string, url: URL) {
   const [, appId, tid] = ref.match(/^rio:([^:]+):(.+)$/) ?? [null, null, ref];
   const t = await env.DB.prepare(
-    `select t.*, s.url, s.kind, s.title as source_title from tutorial t join source s on s.id = t.source_id where t.id = ?${appId ? " and t.app = ?" : ""}`,
+    `select t.*, s.url, s.kind, s.title as source_title from tutorial t join source s on s.id = t.source_id where t.id = ? and (t.workspace is null or t.workspace = ?)${appId ? " and t.app = ?" : ""}`,
   )
-    .bind(...(appId ? [tid, appId] : [tid]))
+    .bind(...(appId ? [tid, apps.ws, appId] : [tid, apps.ws]))
     .first<{ id: string; app: string; source_id: string; title: string; version: string; skills_json: string; url: string; kind: string }>();
   if (!t) return null;
   const { apps: all, versions } = await apps.all();
-  const app = all.find((a) => a.id === t.app)!;
+  const app = all.find((a) => a.id === t.app);
+  if (!app) return null;
   const version = resolveVersion(app, versions.get(app.id) ?? [], url.searchParams.get("version"));
   const ids: string[] = JSON.parse(t.skills_json);
-  const { skills, claims, L } = await load(env.DB, app, ids);
+  const { skills, claims, L } = await load(env.DB, app, ids, apps.ws);
   const g = grounding(app);
   const parts = ids
     .map((id) => skills.get(id) as (Skill & { name: string; proofs: Record<string, string> }) | undefined)
@@ -423,11 +434,11 @@ async function locate(env: Env, apps: Apps, url: URL) {
 async function overview(env: Env, apps: Apps) {
   const { apps: all, versions } = await apps.all();
   const counts = await env.DB.batch([
-    env.DB.prepare(`select app, count(*) as n from skill group by app`),
-    env.DB.prepare(`select app, count(*) as n from source where workspace is null group by app`),
+    env.DB.prepare(`select app, count(*) as n from skill where workspace is null or workspace = ? group by app`).bind(apps.ws),
+    env.DB.prepare(`select app, count(*) as n from source where workspace is null or workspace = ? group by app`).bind(apps.ws),
     env.DB.prepare(`select s.app, count(distinct p.skill_id) as n from proof p join skill s on s.id = p.skill_id where p.status = 'PASS' group by s.app`),
     env.DB.prepare(`select app, count(*) as n from atom group by app`),
-    env.DB.prepare(`select app, count(*) as n from tutorial group by app`),
+    env.DB.prepare(`select app, count(*) as n from tutorial where workspace is null or workspace = ? group by app`).bind(apps.ws),
   ]);
   const by = (i: number) => new Map((counts[i].results as { app: string; n: number }[]).map((r) => [r.app, r.n]));
   const [skills, sources, proven, atoms, tuts] = [0, 1, 2, 3, 4].map(by);
@@ -435,6 +446,7 @@ async function overview(env: Env, apps: Apps) {
     apps: all.map((a) => ({
       id: a.id,
       name: a.name,
+      internal: !!(a as AppRow & { workspace?: string | null }).workspace,
       vendor: a.vendor,
       bundle_id: BUNDLES[a.id] ?? null,
       current_version: a.current_version,
@@ -461,10 +473,10 @@ async function graph(env: Env, apps: Apps, url: URL) {
   const [app] = await apps.match(url.searchParams.get("app"));
   if (!app) return { app: null, sources: [], skills: [], atoms: [] };
   const [sk, te, pr, so] = await env.DB.batch([
-    env.DB.prepare(`select id, name, ops_json from skill where app = ?`).bind(app.id),
-    env.DB.prepare(`select t.skill_id, s.source_id from teaches t join segment s on s.id = t.segment_id join skill k on k.id = t.skill_id where k.app = ?`).bind(app.id),
+    env.DB.prepare(`select id, name, ops_json from skill where app = ? and (workspace is null or workspace = ?)`).bind(app.id, apps.ws),
+    env.DB.prepare(`select t.skill_id, s.source_id from teaches t join segment s on s.id = t.segment_id join skill k on k.id = t.skill_id join source o on o.id = s.source_id where k.app = ? and (o.workspace is null or o.workspace = ?)`).bind(app.id, apps.ws),
     env.DB.prepare(`select p.skill_id from proof p join skill k on k.id = p.skill_id where k.app = ? and p.status = 'PASS'`).bind(app.id),
-    env.DB.prepare(`select id, title, kind, url from source where app = ? and workspace is null`).bind(app.id),
+    env.DB.prepare(`select id, title, kind, url from source where app = ? and (workspace is null or workspace = ?)`).bind(app.id, apps.ws),
   ]);
   const taught = new Map<string, Set<string>>();
   for (const r of te.results as { skill_id: string; source_id: string }[]) (taught.get(r.skill_id) ?? taught.set(r.skill_id, new Set()).get(r.skill_id)!).add(r.source_id);
@@ -493,11 +505,26 @@ async function graph(env: Env, apps: Apps, url: URL) {
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
+    const apps = new Apps(env.DB, url.searchParams.get("workspace"));
+    if (req.method === "POST" && url.pathname === "/ingest") {
+      const body = (await req.json()) as IngestBody;
+      if (!body.workspace || !body.app?.trim() || !body.text) return json({ error: "workspace, app and text are required" }, 400);
+      try {
+        return json(await ingest(env, body));
+      } catch (e) {
+        return json({ error: e instanceof Error ? e.message : String(e) }, 422);
+      }
+    }
+    const del = url.pathname.match(/^\/sources\/(.+)$/);
+    if (req.method === "DELETE" && del) {
+      if (!apps.ws) return json({ error: "workspace required" }, 400);
+      return (await removeSource(env.DB, apps.ws, decodeURIComponent(del[1]))) ? json({ ok: true }) : json({ error: "unknown source" }, 404);
+    }
     if (req.method !== "GET") return json({ error: "method not allowed" }, 405);
-    const apps = new Apps(env.DB);
     try {
       if (url.pathname === "/health") return json({ ok: true });
       if (url.pathname === "/apps") return json(await overview(env, apps));
+      if (url.pathname === "/sources") return json({ sources: apps.ws ? await listSources(env.DB, apps.ws) : [] });
       if (url.pathname === "/graph") return json(await graph(env, apps, url));
       if (url.pathname === "/search") return json(await search(env, apps, url));
       if (url.pathname === "/skills") return json(await listSkills(env, apps, url));

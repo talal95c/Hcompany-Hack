@@ -38,12 +38,15 @@ async function sha256(s: string): Promise<string> {
 
 // ------------------------------------------------------------------ knowledge
 
-/** The knowledge Worker (service binding): JSON, or null when it is unreachable (Rio keeps working on team tutorials). */
-async function kn<T>(env: Env, path: string, params: Record<string, string | null | undefined> = {}): Promise<T | null> {
-  const q = new URLSearchParams(Object.entries(params).filter((e): e is [string, string] => !!e[1]));
+/**
+ * The knowledge Worker (service binding), always scoped to the caller's organization: JSON, or null when it is
+ * unreachable (Rio keeps working on the team's tutorials).
+ */
+async function kn<T>(c: C, path: string, params: Record<string, string | null | undefined> = {}, init?: RequestInit): Promise<T | null> {
+  const q = new URLSearchParams(Object.entries({ ...params, workspace: c.get("org") }).filter((e): e is [string, string] => !!e[1]));
   try {
-    const r = await env.KNOWLEDGE.fetch(`https://knowledge${path}${q.size ? `?${q}` : ""}`);
-    return r.ok ? ((await r.json()) as T) : null;
+    const r = await c.env.KNOWLEDGE.fetch(`https://knowledge${path}?${q}`, init);
+    return (await r.json()) as T;
   } catch {
     return null;
   }
@@ -58,12 +61,20 @@ type GlobalHit = Omit<SearchHit, "version"> & { version: SearchHit["version"] };
 async function searchAll(c: C, q: string, o: { app?: string | null; version?: string | null; limit: number }) {
   const own = tutorialsAsKb(await readyTutorials(c.env, c.get("org")));
   const run = async (alt: string) => {
+    // With English keywords for a foreign question, the keywords lead (the question's own words would mismatch).
+    const foreign = !!alt && looksForeign(q);
     const [team, global] = await Promise.all([
-      Promise.resolve(search(own, alt ? [q, alt] : [q], { app: o.app, version: o.version, limit: 3 }).filter((r) => r.score >= 2)),
-      kn<{ results: GlobalHit[] }>(c.env, "/search", { q, alt, app: o.app, version: o.version, workspace: c.get("org"), limit: String(o.limit) }),
+      Promise.resolve(search(own, foreign ? [alt] : alt ? [q, alt] : [q], { app: o.app, version: o.version, limit: 3 }).filter((r) => r.score >= 2)),
+      kn<{ results: GlobalHit[] }>(c, "/search", { q: foreign ? alt : q, alt: foreign ? "" : alt, app: o.app, version: o.version, limit: String(o.limit) }),
     ]);
     return [...team.slice(0, 2), ...(global?.results ?? [])].slice(0, o.limit);
   };
+  // ReStep's rule: a question that is clearly not English is searched with English keywords (in the software's own
+  // words), otherwise French "commande" finds "Command" and the like.
+  if (looksForeign(q)) {
+    const keywords = await englishKeywords(c.env, q);
+    if (keywords) return { results: await run(keywords), keywords };
+  }
   let results = await run("");
   let keywords = "";
   if (results.length < 2) {
@@ -132,6 +143,11 @@ app.use("/v1/*", async (c, next) => {
   await next();
 });
 
+/** ReStep's hint words (kg/api.py FR_HINTS) and non-ASCII text: a question asked in another language. */
+const FOREIGN = new Set(["comment", "pour", "les", "des", "une", "mon", "mes", "dans", "faire", "veux", "est", "que", "sur", "avec", "supprimer",
+  "ajouter", "couper", "mettre", "trouve", "trouver", "quoi", "pourquoi", "cómo", "como", "wie", "créer", "creer", "marquer", "commande", "commandes"]);
+const looksForeign = (q: string) => /[^\x00-\x7F]/.test(q) || q.toLowerCase().split(/[^a-zà-ÿ]+/).some((w) => FOREIGN.has(w));
+
 const keywordCache = new Map<string, string>();
 
 /** A question in any language as English keywords in the software's vocabulary (one Holo call, cached). */
@@ -179,7 +195,7 @@ app.get("/v1/search", async (c) => {
 });
 
 app.get("/v1/tutorials", async (c) => {
-  const [own, global] = await Promise.all([readyTutorials(c.env, c.get("org")), kn<{ tutorials: GlobalTutorial[] }>(c.env, "/tutorials", { app: c.req.query("app") })]);
+  const [own, global] = await Promise.all([readyTutorials(c.env, c.get("org")), kn<{ tutorials: GlobalTutorial[] }>(c, "/tutorials", { app: c.req.query("app") })]);
   return c.json({ tutorials: [...own.map(summaryOf), ...(global?.tutorials ?? []).map(globalSummary)] });
 });
 
@@ -192,7 +208,8 @@ app.get("/v1/tutorials/:id", async (c) => {
       .first<{ data: string }>();
     t = row && JSON.parse(row.data);
   } else {
-    t = await kn(c.env, `/tutorials/${encodeURIComponent(id)}`, { format: "rio", version: c.req.query("version") });
+    const r = await kn<{ error?: string }>(c, `/tutorials/${encodeURIComponent(id)}`, { format: "rio", version: c.req.query("version") });
+    t = r && !r.error ? r : null;
   }
   return t ? c.json(t) : c.json({ error: "unknown tutorial" }, 404);
 });
@@ -429,17 +446,18 @@ app.get("/api/app/community", async (c) => {
 });
 
 // Knowledge: the global base (ReStep, versioned, in the knowledge Worker) and what the team created
-type KnowledgeApp = { id: string; name: string; bundle_id: string | null; current_version: string; versions: { id: string; label: string | null }[]; skills: number; sources: number; proven: number; atoms: number; tutorials: number };
+type KnowledgeApp = { id: string; name: string; internal?: boolean; bundle_id: string | null; current_version: string; versions: { id: string; label: string | null }[]; skills: number; sources: number; proven: number; atoms: number; tutorials: number };
 
 app.get("/api/app/knowledge", async (c) => {
   const [overview, tuts, own] = await Promise.all([
-    kn<{ apps: KnowledgeApp[] }>(c.env, "/apps"),
-    kn<{ tutorials: GlobalTutorial[] }>(c.env, "/tutorials"),
+    kn<{ apps: KnowledgeApp[] }>(c, "/apps"),
+    kn<{ tutorials: GlobalTutorial[] }>(c, "/tutorials"),
     teamTutorials(c),
   ]);
   return c.json({
     available: !!overview,
     global: (overview?.apps ?? []).map((a) => ({
+      internal: !!a.internal,
       app: { id: a.id, name: a.name, versions: a.versions, current_version: a.current_version },
       skills: a.skills,
       sources: a.sources,
@@ -457,19 +475,40 @@ async function teamTutorials(c: C): Promise<RioTutorial[]> {
 
 /** Skills of one global app (all, or matching `q`), each re-targeted to every version. */
 app.get("/api/app/knowledge/skills", async (c) => {
-  const r = await kn(c.env, "/skills", { app: c.req.query("app"), q: c.req.query("q") });
+  const r = await kn(c, "/skills", { app: c.req.query("app"), q: c.req.query("q") });
   return c.json(r ?? { app: null, skills: [] });
+});
+
+/** The organization's own documents (internal tools, private guides), ingested into the knowledge base. */
+app.get("/api/app/knowledge/docs", async (c) => c.json((await kn(c, "/sources")) ?? { sources: [] }));
+
+app.post("/api/app/knowledge/docs", async (c) => {
+  const b = await c.req.json<{ app?: string; version?: string; title?: string; text?: string; url?: string }>();
+  if (!b.app?.trim() || !b.text?.trim()) return c.json({ error: "Name the tool and add the document's text" }, 400);
+  const r = await kn<{ error?: string }>(c, "/ingest", {}, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ workspace: c.get("org"), app: b.app, version: b.version, title: b.title, text: b.text, url: b.url }),
+  });
+  if (!r) return c.json({ error: "The knowledge base is unreachable" }, 502);
+  return r.error ? c.json(r, 422) : c.json(r);
+});
+
+app.delete("/api/app/knowledge/docs/:id", async (c) => {
+  if (!canManage(c)) return forbidden(c);
+  const r = await kn<{ ok?: boolean; error?: string }>(c, `/sources/${encodeURIComponent(c.req.param("id"))}`, {}, { method: "DELETE" });
+  return r?.ok ? c.json({ ok: true }) : c.json({ error: r?.error ?? "Could not remove it" }, 404);
 });
 
 /** ReStep's graph view for one app: sources -> skills -> UI atoms. */
 app.get("/api/app/knowledge/graph", async (c) => {
-  const r = await kn(c.env, "/graph", { app: c.req.query("app") });
+  const r = await kn(c, "/graph", { app: c.req.query("app") });
   return c.json(r ?? { app: null, sources: [], skills: [], atoms: [] });
 });
 
 /** Where a UI element is now, under any name it has had ("Remove Doubles" -> Merge by Distance). */
 app.get("/api/app/knowledge/locate", async (c) => {
-  const r = await kn(c.env, "/locate", { app: c.req.query("app"), q: c.req.query("q"), version: c.req.query("version") });
+  const r = await kn(c, "/locate", { app: c.req.query("app"), q: c.req.query("q"), version: c.req.query("version") });
   return c.json(r ?? { results: [] });
 });
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { AppIcon, coverStyle } from "../appIcons";
 import { TutorialCard } from "../cards";
-import { type LibraryEntry, type TutorialRow, navigate, useApi } from "../lib";
+import { type LibraryEntry, type TutorialRow, ago, api, navigate, useApi } from "../lib";
 import { Head, I, Loading } from "../ui";
 
 type Step = { do: string; changed: boolean; was?: { version: string; label: string | null } | null; routine: boolean; missing: boolean };
@@ -9,14 +9,14 @@ type Source = { id: string; title: string | null; kind: string | null; url: stri
 type Skill = { id: string; intent: string; sources: Source[]; proofs: Record<string, string>; changed: boolean; steps: Record<string, Step[]> };
 type AppInfo = { id: string; name: string; versions: { id: string; label: string | null }[]; current_version: string };
 type Overview = {
-  global: { app: AppInfo; skills: number; sources: number; proven: number; tutorials: LibraryEntry[] }[];
+  global: { internal?: boolean; app: AppInfo; skills: number; sources: number; proven: number; atoms?: number; tutorials: LibraryEntry[] }[];
   created: { app: string; skills: number }[];
 };
 type Hit = { id: string; intent: string; app_name: string; score: number; proof: string | null; version: { id: string }; steps: { do: string }[]; sources: Source[] };
 
 export function KnowledgePage() {
   const { data } = useApi<Overview>("/knowledge");
-  const [tab, setTab] = useState<"global" | "created">("global");
+  const [tab, setTab] = useState<"global" | "created">(new URLSearchParams(window.location.search).get("tab") === "team" ? "created" : "global");
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<Hit[] | null>(null);
 
@@ -30,12 +30,13 @@ export function KnowledgePage() {
     return () => clearTimeout(t);
   }, [q]);
 
-  const createdTotal = data?.created.reduce((a, c) => a + c.skills, 0) ?? 0;
-  const globalTotal = data?.global.reduce((a, g) => a + g.skills, 0) ?? 0;
+  const shared = data ? { ...data, global: data.global.filter((g) => !g.internal) } : null;
+  const teamTotal = data?.global.filter((g) => g.internal).reduce((a, g) => a + g.skills, 0) ?? 0;
+  const globalTotal = shared?.global.reduce((a, g) => a + g.skills, 0) ?? 0;
 
   return (
     <>
-      <Head title="Knowledge" sub="Everything Rio knows when your team asks for help: the global base, and what your team created." />
+      <Head title="Knowledge" sub="What Rio knows when someone asks for help: the global base, and your team's own docs. Tutorials people follow live in the Library." />
       <div className="ask">
         <I.Search />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask anything, in any language: “comment supprimer les doublons ?”" aria-label="Search the knowledge" />
@@ -97,10 +98,10 @@ export function KnowledgePage() {
               Global knowledge<span className="count">{globalTotal}</span>
             </button>
             <button className={tab === "created" ? "is-on" : ""} onClick={() => setTab("created")}>
-              Created by your team<span className="count">{createdTotal}</span>
+              Your team's knowledge<span className="count">{teamTotal}</span>
             </button>
           </div>
-          {!data ? <Loading /> : tab === "global" ? <Global data={data} /> : <Created data={data} />}
+          {!data || !shared ? <Loading /> : tab === "global" ? <Global data={shared} /> : <TeamKnowledge data={data} />}
         </>
       )}
     </>
@@ -136,13 +137,21 @@ function Global({ data }: { data: Overview }) {
         </div>
         <div className="hero__body" style={{ paddingTop: 36 }}>
           <h2 className="hero__title" style={{ fontSize: 22 }}>{g.app.name}</h2>
-          <p className="hero__goal">Learned from {g.sources} {g.sources === 1 ? "source" : "videos, docs and threads"}, re-targeted to each version: where every action is now, and where it used to be.</p>
+          <p className="hero__goal">
+            {g.internal
+              ? `Learned from your team's ${g.sources === 1 ? "document" : `${g.sources} documents`}: every procedure tied to the buttons and menus they name. Only your organization sees it.`
+              : `Learned from ${g.sources} ${g.sources === 1 ? "source" : "videos, docs and threads"}, re-targeted to each version: where every action is now, and where it used to be.`}
+          </p>
         </div>
       </div>
       <div className="stats">
         <div className="stat"><div className="stat__value">{g.skills}</div><div className="stat__label">Skills</div></div>
         <div className="stat"><div className="stat__value">{g.sources}</div><div className="stat__label">Sources</div></div>
-        <div className="stat"><div className="stat__value">{g.proven}</div><div className="stat__label">Proven in a sandbox</div></div>
+        {g.internal ? (
+          <div className="stat"><div className="stat__value">{g.atoms ?? 0}</div><div className="stat__label">Buttons and menus</div></div>
+        ) : (
+          <div className="stat"><div className="stat__value">{g.proven}</div><div className="stat__label">Proven in a sandbox</div></div>
+        )}
         <div className="stat"><div className="stat__value">{g.app.versions.length}</div><div className="stat__label">Versions</div></div>
       </div>
 
@@ -231,17 +240,19 @@ function Global({ data }: { data: Overview }) {
       {g.tutorials.length > 0 && (
         <div className="section">
           <div className="section__title">
-            <h2>Source tutorials</h2>
-            <span>What the global base learned from</span>
+            <h2>Sources</h2>
+            <span>The videos, docs and threads this knowledge comes from</span>
           </div>
           <div className="skills">
             {g.tutorials.map((t) => (
               <div className="skill" key={t.id}>
                 <div className="skill__head" style={{ cursor: "default" }}>
-                  <span className="source__icon"><I.Play /></span>
+                  <span className="source__icon">{t.author_kind === "video" ? <I.Play /> : <I.Page />}</span>
                   <span className="skill__name">
                     {t.title}
-                    <small>{t.milestones} skills · recorded on {t.recorded_on ?? "?"}</small>
+                    <small>
+                      {t.milestones} skills{t.recorded_on && t.recorded_on !== "current" ? ` · made for ${t.recorded_on}` : ""}
+                    </small>
                   </span>
                   {t.source_url && (
                     <a className="link" href={t.source_url} target="_blank" rel="noreferrer">Open ↗</a>
@@ -256,32 +267,154 @@ function Global({ data }: { data: Overview }) {
   );
 }
 
-function Created({ data }: { data: Overview }) {
-  const team = useApi<{ tutorials: TutorialRow[] }>("/tutorials");
-  const published = team.data?.tutorials.filter((t) => t.status === "ready" && t.visibility !== "draft") ?? [];
-  if (!team.data) return <Loading />;
-  if (!published.length)
-    return (
-      <div className="empty">
-        <b>Your team hasn't published anything yet</b>
-        Published tutorials become knowledge: when someone asks Rio, Holo gets your team's way first.
-        <div>
-          <button className="btn btn--primary" onClick={() => navigate("/library")}>Go to the library</button>
-        </div>
-      </div>
-    );
+type Doc = { id: string; title: string; url: string | null; added_at: number; app_id: string; app_name: string; internal: boolean; skills: number; steps: number };
+type Ingested = { title: string; app: { name: string; internal: boolean }; skills: number; new_skills: number; merged_into_known: number; steps: number; grounded: number; elapsed_s: number };
+
+/** Your team's knowledge: docs about internal tools (or your way of using any tool), read into skills Rio uses first. */
+function TeamKnowledge({ data }: { data: Overview }) {
+  const docs = useApi<{ sources: Doc[] }>("/knowledge/docs");
+  const [done, setDone] = useState<Ingested | null>(null);
+  const internal = data.global.filter((g) => g.internal);
+  const tools = [...new Set([...data.global.map((g) => g.app.name)])];
   return (
     <>
-      <p className="note" style={{ margin: "0 0 16px" }}>
-        {data.created.reduce((a, c) => a + c.skills, 0)} milestones from {published.length} published tutorials. Each one answers
-        questions in Rio, before the global base and the web.
-      </p>
-      <div className="grid">
-        {published.map((t) => (
-          <TutorialCard key={t.id} t={t} />
-        ))}
+      <AddDoc tools={tools} onDone={(r) => { setDone(r); docs.reload(); }} />
+      {done && (
+        <div className="empty" style={{ textAlign: "left", marginTop: 12, borderStyle: "solid" }}>
+          <b>Rio learned {done.skills} procedures from “{done.title}”</b>
+          {done.grounded} of {done.steps} steps tied to {done.app.name}'s interface
+          {done.merged_into_known ? `, ${done.merged_into_known} merged with what Rio already knew` : ""} · {done.elapsed_s}s.
+          {done.app.internal ? ` ${done.app.name} is one of your internal tools: only your team sees it.` : ""}
+        </div>
+      )}
+      <div className="section">
+        <div className="section__title">
+          <h2>Documents</h2>
+          <span>Only your organization sees them</span>
+        </div>
+        {!docs.data ? (
+          <Loading />
+        ) : docs.data.sources.length === 0 ? (
+          <div className="empty">
+            <b>No documents yet</b>Add a guide about an internal tool above: Rio turns each procedure in it into knowledge.
+          </div>
+        ) : (
+          <div className="skills">
+            {docs.data.sources.map((d) => (
+              <div className="skill" key={d.id}>
+                <div className="skill__head" style={{ cursor: "default" }}>
+                  <AppIcon name={d.app_name} />
+                  <span className="skill__name">
+                    {d.title}
+                    <small>
+                      {d.app_name}
+                      {d.internal ? " (internal tool)" : ""} · {d.skills} procedures · {d.steps} steps · added {ago(d.added_at * 1000).toLowerCase()}
+                    </small>
+                  </span>
+                  <button
+                    className="btn btn--sm btn--ghost btn--danger"
+                    onClick={async () => {
+                      if (!confirm(`Remove “${d.title}”? What only this document taught goes with it.`)) return;
+                      await api(`/knowledge/docs/${encodeURIComponent(d.id)}`, { method: "DELETE" }).catch((e: Error) => alert(e.message));
+                      docs.reload();
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+      {internal.length > 0 && (
+        <div className="section">
+          <div className="section__title">
+            <h2>Your internal tools</h2>
+            <span>Their interface, as your docs describe it</span>
+          </div>
+          <Global data={{ ...data, global: internal }} />
+        </div>
+      )}
     </>
+  );
+}
+
+function AddDoc({ tools, onDone }: { tools: string[]; onDone: (r: Ingested) => void }) {
+  const [tool, setTool] = useState("");
+  const [version, setVersion] = useState("");
+  const [text, setText] = useState("");
+  const [title, setTitle] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function file(f: File | undefined) {
+    if (!f) return;
+    setText(await f.text());
+    setTitle(f.name.replace(/\.(md|markdown|txt)$/i, ""));
+  }
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await api<Ingested>("/knowledge/docs", { method: "POST", json: { app: tool, version: version || undefined, title: title || undefined, text } });
+      setText("");
+      setTitle("");
+      onDone(r);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <form className="card-box" onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Teach Rio your tools</h3>
+        <p className="note" style={{ margin: "4px 0 0" }}>
+          Paste or drop a Markdown guide. Rio reads every procedure in it, ties each step to the tool's buttons and menus, and uses it
+          first when someone on your team asks.
+        </p>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
+        <div className="field">
+          <label htmlFor="doc-tool">Tool</label>
+          <input id="doc-tool" className="input" list="doc-tools" required value={tool} onChange={(e) => setTool(e.target.value)} placeholder="Comptoir, our CRM, Blender…" />
+          <datalist id="doc-tools">
+            {tools.map((t) => (
+              <option key={t} value={t} />
+            ))}
+          </datalist>
+        </div>
+        <div className="field">
+          <label htmlFor="doc-version">Version (optional)</label>
+          <input id="doc-version" className="input" value={version} onChange={(e) => setVersion(e.target.value)} placeholder="2.0" />
+        </div>
+      </div>
+      <div
+        className="field"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          file(e.dataTransfer.files[0]);
+        }}
+      >
+        <label htmlFor="doc-text">
+          Document {title && <span className="faint">· {title}</span>}
+        </label>
+        <textarea id="doc-text" className="textarea" rows={7} required value={text} onChange={(e) => setText(e.target.value)} placeholder={"# Refund an order\n1. Open Orders › All orders…\n\nOr drop a .md file here."} style={{ fontFamily: "var(--mono)", fontSize: 12.5 }} />
+      </div>
+      {error && <div className="error">{error}</div>}
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <label className="btn" style={{ cursor: "pointer" }}>
+          <I.Page /> Choose a file
+          <input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onChange={(e) => file(e.target.files?.[0])} />
+        </label>
+        <button className="btn btn--primary" disabled={busy || !tool.trim() || text.trim().length < 80} style={{ marginLeft: "auto" }}>
+          {busy ? <><span className="spinner" /> Rio is reading it…</> : "Add to knowledge"}
+        </button>
+      </div>
+    </form>
   );
 }
 

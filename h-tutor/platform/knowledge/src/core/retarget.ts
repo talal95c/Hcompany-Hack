@@ -204,6 +204,9 @@ export function instruction(L: Lookup, g: Grounding, step: Claim, version: strin
   if (w.paths.length) {
     const chosen = pathHint ?? w.paths[0];
     if (chosen.startsWith("Page bar › ")) return `Go to the ${chosen.split(" › ").at(-1)} page${val}${note}`;
+    // a field or a lone button (back-offices, web apps): what you do with it, not "open"
+    if (step.action === "set" && step.value && !modal) return `Set ${chosen} to ${step.value}${note}`;
+    if (!chosen.includes(" › ") && (step.action === "click" || step.action === "set")) return `${step.action === "set" ? "Fill in" : "Click"} ${chosen}${val}${note}`;
     return `Open ${chosen}${val}${note}`;
   }
   if (w.via_keys.length) return `Press ${w.via_keys[0]}${val}${note}`;

@@ -101,6 +101,12 @@ pub async fn search(app_name: &str, query: &str) -> Result<Option<SearchResult>,
                 continue;
             }
             text += &format!("   - {}", s(&st["do"]));
+            // The shortcut the docs give, when the instruction does not already say it.
+            if let Some(k) = st["keys"].as_array().and_then(|k| k.first()).and_then(|k| k.as_str()) {
+                if !s(&st["do"]).contains(k) {
+                    text += &format!(" (shortcut {k})");
+                }
+            }
             if st["changed"].as_bool().unwrap_or(false) {
                 if let (Some(l), Some(v)) = (st["was"]["label"].as_str(), st["was"]["version"].as_str()) {
                     text += &format!(" (changed: it was \"{l}\" in {v})");
@@ -231,6 +237,20 @@ mod tests {
             let t = super::tutorial(&list[0].id).await.unwrap();
             println!("{}: {} milestones, first hints {:?}", t.title, t.milestones.len(), t.milestones[0].hints);
             assert!(!t.milestones.is_empty());
+        });
+    }
+
+    /// What Holo gets from an internal tool's docs ingested on the platform (needs a running platform):
+    /// `cargo test --lib platform::tests::finds_internal_docs -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn finds_internal_docs() {
+        tauri::async_runtime::block_on(async {
+            for (app, q) in [("Comptoir", "how do I refund an order"), ("", "comment marquer une commande comme expédiée")] {
+                let r = super::search(app, q).await.unwrap().expect("the organization's docs answer");
+                println!("--- {app:?} {q:?}\n{}", r.text);
+                assert!(r.text.contains("Comptoir"));
+            }
         });
     }
 
