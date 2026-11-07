@@ -31,6 +31,7 @@ fn main() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             bridge::frontend_ready,
+            bridge::render_ack,
             bridge::permission_status,
             bridge::permission_request,
             bridge::monitor_list,

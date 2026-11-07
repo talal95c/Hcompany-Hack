@@ -6,6 +6,8 @@ import re
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
+from jsonschema import Draft202012Validator
+
 from engine.bus.validation import validate
 
 TRANSITIONS = {
@@ -54,6 +56,9 @@ def load_lesson(
                 source_path = Path(unquote(uri.path))
             elif not uri.scheme:
                 source_path = _artifact(root, unquote(uri.path))
+            elif (uri.scheme == "authored" and uri.netloc == "lessons"
+                  and uri.path == f"/{root.name}/SOURCE.md"):
+                source_path = _artifact(root, "SOURCE.md")
             else:
                 raise ValueError("Archive locale source requise pour vérifier le SHA256")
         if not source_path.is_file():
@@ -63,6 +68,24 @@ def load_lesson(
         if actual != digest.lower():
             raise ValueError("SHA256 source incompatible")
     return lesson
+
+
+def load_verification(path: Path, lesson: dict) -> dict:
+    """Charge le compagnon seulement s'il est couvert par le manifeste de preuve."""
+    root = path.resolve().parent
+    manifest = json.loads(_artifact(root, lesson["proof"]["evidence_ref"]).read_text())
+    hashes = manifest.get("sha256", {})
+    if "steps.json" not in hashes:
+        return {}
+    for reference, digest in hashes.items():
+        if hashlib.sha256(_artifact(root, reference).read_bytes()).hexdigest() != digest:
+            raise ValueError(f"Preuve incompatible : {reference}")
+    companion = json.loads(_artifact(root, "steps.json").read_text())
+    schema = Path(__file__).resolve().parents[2] / "lessons/steps.schema.json"
+    Draft202012Validator(json.loads(schema.read_text())).validate(companion)
+    if set(companion) != {step["id"] for step in lesson["steps"]}:
+        raise ValueError("Compagnon incompatible avec la leçon")
+    return companion
 
 
 class Session:
@@ -88,6 +111,8 @@ class Session:
         self.status = target
 
     def observe(self, mode: str | None) -> bool:
+        if mode and mode.startswith("EDIT_"):
+            mode = "EDIT"
         if self.status == "READY" and mode == self.step["preconditions"]["mode"]:
             self.transition("OBSERVING")
             return True

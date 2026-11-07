@@ -14,12 +14,13 @@ httpx = pytest.importorskip("httpx", reason="Installer l'extra prep pour ces tes
 pytest.importorskip("openai", reason="Installer l'extra prep pour ces tests")
 
 from openai import RateLimitError
-from test_preparation import StubSandbox, lesson, ui_map
 
 from prep.compile import HoloCompiler
 from prep.compile.compiler import SCHEMA
 from prep.ingest import Transcript, TranscriptionTimeout, ingest, vocabulary_from_ui_map
 from prep.prover import prove_lesson
+
+from .test_preparation import StubSandbox, lesson, ui_map
 
 
 def transcript(text="Ajoute un cube."):

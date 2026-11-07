@@ -28,8 +28,12 @@ pub async fn receive(app: &AppHandle, state: &Arc<State>, packet: Value) {
             let _ = state.send("pong", payload.clone(), Some(&id));
         }
         "lesson.state" => {
-            state.captures.lock().unwrap().clear();
-            guide::clear(app);
+            if let Some(revision) = payload["ui_revision"].as_u64() {
+                if revision != state.revision.swap(revision, Ordering::SeqCst) {
+                    state.captures.lock().unwrap().clear();
+                    guide::clear(app);
+                }
+            }
             let _ = app.emit("lesson:state", payload);
         }
         "error" => {
@@ -61,14 +65,20 @@ pub async fn receive(app: &AppHandle, state: &Arc<State>, packet: Value) {
             }
             let p = &payload["payload"];
             match kind {
-                "pointer" => pointer(app, state, p, payload["deadline_ms"].as_f64().unwrap()),
+                "pointer" => pointer(
+                    app,
+                    state,
+                    p,
+                    payload["deadline_ms"].as_f64().unwrap(),
+                    &command,
+                ),
                 "success" => {
                     if !payload["expected_scene_revision"].is_null() {
                         let duration_ms = payload["deadline_ms"].as_f64().unwrap().min(2500.);
                         guide::show(
                             app,
                             "guide:success",
-                            json!({"text":p["text"],"duration_ms":duration_ms}),
+                            json!({"text":p["text"],"duration_ms":duration_ms,"command_id":command}),
                             duration_ms,
                         );
                     }
@@ -115,7 +125,7 @@ pub async fn receive(app: &AppHandle, state: &Arc<State>, packet: Value) {
     }
 }
 
-fn pointer(app: &AppHandle, state: &State, payload: &Value, budget: f64) {
+fn pointer(app: &AppHandle, state: &State, payload: &Value, budget: f64, command: &str) {
     let captures = state.captures.lock().unwrap();
     let Some(c) = captures.get(payload["capture_id"].as_str().unwrap()) else {
         return;
@@ -135,6 +145,7 @@ fn pointer(app: &AppHandle, state: &State, payload: &Value, budget: f64) {
     let Some(guide) = app.get_webview_window("guide") else {
         return;
     };
+    let mut pos = guide.outer_position().unwrap_or_default();
     if let Ok(monitors) = guide.available_monitors() {
         if let Some(m) = monitors.iter().find(|m| {
             m.position().x as f64 <= c.crop.x
@@ -144,10 +155,10 @@ fn pointer(app: &AppHandle, state: &State, payload: &Value, budget: f64) {
         }) {
             let _ = guide.set_position(*m.position());
             let _ = guide.set_size(*m.size());
+            pos = *m.position();
         }
     }
     let scale = guide.scale_factor().unwrap_or(1.);
-    let pos = guide.outer_position().unwrap_or_default();
     #[cfg(target_os = "macos")]
     let (css_x, css_y) = (x - c.monitor.logical_x, y - c.monitor.logical_y);
     #[cfg(not(target_os = "macos"))]
@@ -156,7 +167,7 @@ fn pointer(app: &AppHandle, state: &State, payload: &Value, budget: f64) {
     guide::show(
         app,
         "guide:pointer",
-        json!({"x":css_x,"y":css_y,"zone":zone,"duration_ms":budget.min(5000.)}),
+        json!({"x":css_x,"y":css_y,"zone":zone,"duration_ms":budget.min(5000.),"command_id":command}),
         budget.min(5000.),
     );
 }

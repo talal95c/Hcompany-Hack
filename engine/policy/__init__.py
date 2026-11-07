@@ -94,7 +94,7 @@ class HelpPolicy:
         decision = Decision(kind, reason, self.level, self.step["id"], self.generation,
                             self.clock.monotonic())
         await self.bus.publish(Topic.DECISION, decision)
-        self.debug({"kind": "decision", **asdict(decision)})
+        self.debug({**asdict(decision), "kind": "decision", "decision": kind})
         return decision
 
     async def _command(self, kind: str, payload: dict, *, revision: int = 0) -> None:
@@ -125,6 +125,21 @@ class HelpPolicy:
             async with self.lock:
                 return await self._help("explicit", self.step.get("why", self.step["instruction"]),
                                         context or HelpContext(), 0)
+        if text and self.step and self.jev:
+            generation = self.generation
+            answer = await self.fallback.call(
+                "jev_intent", lambda: self.jev.decide(
+                    {"utterance": text, "instruction": self.step["instruction"]},
+                    timeout_s=self.config.jev_timeout_s), self.config.jev_timeout_s,
+                lambda: JevDecision("other", None, 0))
+            if generation != self.generation or self.muted:
+                return None
+            if answer.action == "question":
+                await self._command("say", {"text": self.step.get("why", self.step["instruction"]),
+                                            "audio_ref": None})
+                return await self._decision("why", "intent:question")
+            if answer.action == "chut":
+                return await self.intent("chut", context)
         return None
 
     async def process(

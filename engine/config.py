@@ -26,6 +26,7 @@ class EngineConfig:
     jev_timeout_s: float = 0.8
     holo_timeout_s: float = 5
     stt_final_timeout_s: float = 2
+    holo_model: str = "holo4-27b"
 
     def __post_init__(self) -> None:
         if any(not 0 <= p <= 65535 for p in (self.port, self.addon_port, self.debug_port)):
@@ -47,6 +48,7 @@ class EngineConfig:
             session_id=os.getenv("ENGINE_SESSION_ID") or str(uuid4()),
             session_token=token,
             lesson=Path(os.environ["ENGINE_LESSON"]) if os.getenv("ENGINE_LESSON") else None,
+            holo_model=os.getenv("ENGINE_HOLO_MODEL", "holo4-27b"),
             learner_path=Path(os.getenv(
                 "ENGINE_LEARNER_PATH", str(Path.home() / ".local/share/hcompany-hack/learner.json")
             )).expanduser(),

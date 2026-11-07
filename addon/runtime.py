@@ -151,17 +151,37 @@ class Runtime:
                         "name": m.name,
                         "type": m.type,
                         **({"levels": m.levels} if m.type == "SUBSURF" else {}),
+                        **({"thickness": m.thickness} if m.type == "SOLIDIFY" else {}),
                     }
                     for m in obj.modifiers
                 ],
-                "materials": [m.name if m else None for m in getattr(obj.data, "materials", [])],
+                "materials": [self.material(m) for m in getattr(obj.data, "materials", [])],
             }
             if obj.type == "MESH":
-                data["mesh"] = {"verts": len(obj.data.vertices), "polys": len(obj.data.polygons)}
+                mesh = obj.data
+                data["mesh"] = {"verts": len(mesh.vertices), "edges": len(mesh.edges),
+                                "polys": len(mesh.polygons),
+                                "shading_smooth": bool(mesh.polygons) and all(
+                                    p.use_smooth for p in mesh.polygons)}
+                if len(mesh.vertices) <= 10000:
+                    data["mesh"]["vertices"] = [list(v.co) for v in mesh.vertices]
+                    data["mesh"]["world_vertices"] = [
+                        list(obj.matrix_world @ v.co) for v in mesh.vertices]
+                    data["mesh"]["faces"] = [list(p.vertices) for p in mesh.polygons]
+                data["rotation"] = list(obj.rotation_euler)
             if obj.get("_lesson_primitive"):
                 data["primitive_provenance"] = obj["_lesson_primitive"]
             result.append(data)
         return result
+
+    @staticmethod
+    def material(material: Any) -> dict:
+        if material and material.use_nodes:
+            for node in material.node_tree.nodes:
+                if node.type == "BSDF_PRINCIPLED":
+                    return {"name": material.name,
+                            "base_color": list(node.inputs["Base Color"].default_value)}
+        return {"name": material.name if material else ""}
 
     def active(self) -> str | None:
         obj = bpy.context.view_layer.objects.active
@@ -276,6 +296,7 @@ class Runtime:
         return [
             {
                 "area_id": str(a.as_pointer()),
+                "area_type": a.type,
                 "region_id": str(r.as_pointer()),
                 "type": r.type,
                 "rect": {"x": r.x, "y": r.y, "width": r.width, "height": r.height},
@@ -309,7 +330,7 @@ class Runtime:
             self.emit(
                 "hello",
                 {
-                    "blender_version": bpy.app.version_string,
+                    "blender_version": bpy.app.version_string.split()[0],
                     "capabilities": ["snapshot", "replay", "regions", "highlight"],
                 },
             )

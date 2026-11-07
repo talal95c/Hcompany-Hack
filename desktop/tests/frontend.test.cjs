@@ -28,6 +28,7 @@ function frontend(hash) {
       }) },
     } },
     setInterval() {},
+    requestAnimationFrame(callback) { callback(); },
     setTimeout(callback) { const id = ++timerId; timers.set(id, callback); return id; },
     clearTimeout(id) { timers.delete(id); },
   });
@@ -86,4 +87,25 @@ test("new guide events and stop cancel old expiry timers", () => {
   assert.equal(ui.get("pointer").hidden, true);
   assert.equal(ui.get("zone").hidden, true);
   assert.equal(ui.timers.size, 0);
+});
+
+test("same-step state preserves spoken feedback and next step replaces it", () => {
+  const ui = frontend("#pill");
+  const state = (step_id, instruction) => ui.listeners.get("lesson:state").callback({ payload: {
+    step_id, instruction, status: "OBSERVE",
+  } });
+  state("torus", "Ajoute un tore");
+  ui.listeners.get("speech:text").callback({ payload: "Pas un cube" });
+  state("torus", "Ajoute un tore");
+  assert.equal(ui.get("instruction").textContent, "Pas un cube");
+  state("smooth", "Lisse le tore");
+  assert.equal(ui.get("instruction").textContent, "Lisse le tore");
+});
+
+test("guide acknowledges a rendered command only when command_id exists", () => {
+  const ui = frontend("#guide");
+  ui.listeners.get("guide:success").callback({ payload: {
+    text: "Vérifié", duration_ms: 1000, command_id: "command",
+  } });
+  assert.equal(ui.calls.filter((name) => name === "render_ack").length, 1);
 });

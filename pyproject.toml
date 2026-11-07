@@ -31,7 +31,8 @@ where = ["."]
 include = ["engine*", "prep*", "agent*", "addon*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "bench/tests", "desktop/tests", "engine/platform"]
+addopts = "--import-mode=importlib -m 'not live'"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 

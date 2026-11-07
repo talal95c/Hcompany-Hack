@@ -7,7 +7,6 @@ import base64
 import wave
 
 import pytest
-from conftest import FIXTURES, RESULTS, contract_example, require_env, validate_contract
 
 from engine.services.gladia import GladiaSttClient, decode_audio_chunk
 from engine.services.holo import HoloCloudClient
@@ -15,6 +14,8 @@ from engine.services.jev import CodivJevClient
 from engine.services.latency import LatencyRecorder
 from engine.services.linkup import LinkupSearchClient
 from engine.services.protocols import HoloAction, Intent
+
+from .conftest import FIXTURES, RESULTS, contract_example, require_env, validate_contract
 
 pytestmark = pytest.mark.live
 

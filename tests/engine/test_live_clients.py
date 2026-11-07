@@ -12,7 +12,10 @@ httpx = pytest.importorskip(
 )
 pytest.importorskip("websockets", reason="Installez les dépendances : pip install -e '.[engine]'")
 
-from live_clients import (
+from engine.fallback import Fallback
+from engine.lesson.runtime import decode_capture
+
+from .live_clients import (
     CodivClient,
     GladiaHttpClient,
     HoloHttpClient,
@@ -20,9 +23,6 @@ from live_clients import (
     menu_png,
     silence_wav,
 )
-
-from engine.fallback import Fallback
-from engine.lesson.runtime import decode_capture
 
 
 def test_generated_png_and_wav():

@@ -24,9 +24,10 @@ Rust lance `python -u -m engine` avec `ENGINE_HOST=127.0.0.1`, un `ENGINE_PORT`
 éphémère, `ENGINE_SESSION_ID` et `ENGINE_SESSION_TOKEN`. Il attend au plus 10 s la ligne
 `ENGINE_READY {"ws_port":1234,"addon_port":1235}` avant la connexion WebSocket.
 Le client natif utilise `Authorization: Bearer …` et `Origin: tauri://localhost`.
-Le point d'entrée de production `engine/__main__.py` doit être fourni par engine-core :
-il est absent du socle `dev`, hors du périmètre de ce module. Sans lui, le lancement
-par défaut échoue explicitement ; la fixture de test ci-dessous n'est jamais un fallback.
+Le point d'entrée de production `engine/__main__.py` branche les adaptateurs cloud
+selon les clés présentes dans l'environnement. `ENGINE_LESSON` sélectionne la leçon prouvée ;
+`ENGINE_HOLO_MODEL` configure le modèle de pointage (défaut `holo4-27b`).
+La fixture de test ci-dessous n'est jamais un fallback.
 Le transport attend l'accusé `frontend_ready` des deux fenêtres, envoyé après
 l'installation de leurs listeners : la première instruction ne dépend pas de la
 vitesse de chargement des WebViews. Un échec de listener reste visible et ne lance

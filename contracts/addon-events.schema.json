@@ -249,6 +249,11 @@
                     "type": "string",
                     "minLength": 1
                   },
+                  "area_type": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Type Blender de l'éditeur, distinct du type WINDOW/HEADER de la région."
+                  },
                   "region_id": {
                     "type": "string",
                     "minLength": 1

@@ -13,7 +13,6 @@ import pytest
 pytest.importorskip("httpx", reason="Installez les dépendances : pip install -e '.[engine]'")
 pytest.importorskip("websockets", reason="Installez les dépendances : pip install -e '.[engine]'")
 
-from test_servers import capture, event, send_event, send_ws
 from websockets.asyncio.client import connect
 
 from engine.bus import Topic
@@ -23,6 +22,8 @@ from engine.interfaces import FakeClock, HoloClient, JevClient, JevDecision, Loc
 from engine.learner import LearnerMemory
 from engine.lesson import load_lesson
 from engine.lesson.runtime import EngineRuntime
+
+from .test_servers import capture, event, send_event, send_ws
 
 FIXTURES = Path(__file__).parent / "fixtures"
 

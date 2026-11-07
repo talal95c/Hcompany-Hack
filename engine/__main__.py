@@ -10,18 +10,13 @@ import threading
 
 from engine.config import EngineConfig
 from engine.lesson.runtime import EngineRuntime
+from engine.services.adapters import build_clients
 
 
 async def main() -> None:
     logging.basicConfig(stream=sys.stderr, level=logging.WARNING)
     config = EngineConfig.from_env()
-    clients = {}
-    try:
-        from engine.services import build_clients
-
-        clients = build_clients(config)
-    except ImportError:
-        pass
+    clients = build_clients(config)
     runtime = EngineRuntime(config, **(clients or {}))
     stopped = asyncio.Event()
     loop = asyncio.get_running_loop()
@@ -54,6 +49,7 @@ async def main() -> None:
         await stopped.wait()
     finally:
         await asyncio.wait_for(runtime.close(), 2.5)
+        await asyncio.gather(*(client.aclose() for client in clients.values()))
 
 
 if __name__ == "__main__":

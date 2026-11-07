@@ -33,7 +33,7 @@ async def test_graphical_blender_real_timers(tmp_path: Path) -> None:
     async def connected(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         await connections.put((reader, writer))
 
-    server = await asyncio.start_server(connected, "127.0.0.1", 0)
+    server = await asyncio.start_server(connected, "127.0.0.1", 0, limit=1024 * 1024)
     port = server.sockets[0].getsockname()[1]
     session = uuid.uuid4().hex
     process = await asyncio.create_subprocess_exec(
@@ -130,7 +130,7 @@ async def test_graphical_blender_real_timers(tmp_path: Path) -> None:
         writer.close()
         await writer.wait_closed()
         await asyncio.sleep(0.3)
-        server = await asyncio.start_server(connected, "127.0.0.1", port)
+        server = await asyncio.start_server(connected, "127.0.0.1", port, limit=1024 * 1024)
         reader, writer = await asyncio.wait_for(connections.get(), 10)
         sequence = 0
         assert (await receive("hello"))["seq"] == 1

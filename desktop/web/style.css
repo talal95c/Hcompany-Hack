@@ -38,5 +38,5 @@ footer button { font-size: 11px; }
 #pointer svg { width: 100%; height: 100%; overflow: visible; }
 #pointer path { fill: #ffd086; stroke: #151c28; stroke-width: 2.5; stroke-linejoin: round; }
 #zone { position: absolute; border: 2px solid #ffd086; border-radius: 8px; background: #ffd0860b; box-shadow: 0 0 0 2px #151c2866; }
-#success { position: absolute; left: 50%; top: 72px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 12px 22px; border-radius: 14px; background: #142d27ed; border: 1px solid #7edeb4; color: #b7ffe0; }
+#success { position: absolute; left: 50%; bottom: 72px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 12px 22px; border-radius: 14px; background: #142d27ed; border: 1px solid #7edeb4; color: #b7ffe0; }
 #success span { font-size: 30px; }

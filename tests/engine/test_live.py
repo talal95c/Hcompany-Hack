@@ -13,15 +13,6 @@ httpx = pytest.importorskip(
 )
 pytest.importorskip("websockets", reason="Installez les dépendances : pip install -e '.[engine]'")
 
-from live_clients import (
-    CodivClient,
-    GladiaHttpClient,
-    HoloHttpClient,
-    LinkupHttpClient,
-    menu_png,
-    spoken_wav,
-)
-
 from engine.bus import EventBus, Topic
 from engine.checks import SceneState, evaluate
 from engine.config import EngineConfig
@@ -37,6 +28,15 @@ from engine.interfaces import (
 )
 from engine.lesson import load_lesson
 from engine.policy import HelpPolicy
+
+from .live_clients import (
+    CodivClient,
+    GladiaHttpClient,
+    HoloHttpClient,
+    LinkupHttpClient,
+    menu_png,
+    spoken_wav,
+)
 
 pytestmark = pytest.mark.live
 

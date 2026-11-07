@@ -12,12 +12,12 @@ import pytest
 pytest.importorskip("websockets")
 pytest.importorskip("httpx")
 
-from test_e2e import replay
-from test_servers import capture, event, send_ws
-
 from engine.checks import SceneState, evaluate
 from engine.learner import LearnerMemory
 from engine.lesson import load_lesson
+
+from .test_e2e import replay
+from .test_servers import capture, event, send_ws
 
 FIXTURES = Path(__file__).parent / "fixtures"
 

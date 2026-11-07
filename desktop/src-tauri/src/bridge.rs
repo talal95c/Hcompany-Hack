@@ -20,6 +20,23 @@ fn pill(window: &WebviewWindow) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub fn render_ack(
+    window: WebviewWindow,
+    state: tauri::State<'_, Arc<State>>,
+    command_id: String,
+) -> Result<(), String> {
+    if window.label() != "guide" || uuid::Uuid::parse_str(&command_id).is_err() {
+        return Err("invalid render acknowledgement".into());
+    }
+    state.send(
+        "input.result",
+        json!({"command_id":command_id,"status":"ok",
+                                     "detail":"rendered"}),
+        None,
+    )
+}
+
+#[tauri::command]
 pub fn frontend_ready(
     window: WebviewWindow,
     state: tauri::State<'_, Arc<State>>,
@@ -203,7 +220,7 @@ pub async fn capture_region(
         started.elapsed().as_secs_f64() * 1000.
     );
     let id = uuid::Uuid::new_v4().to_string();
-    let revision = state.revision.fetch_add(1, Ordering::SeqCst) + 1;
+    let revision = state.revision.load(Ordering::SeqCst);
     let payload = json!({"capture_id":id, "ui_revision":revision, "crop":crop,
         "scale":monitor.scale, "monitor_id":monitor.id,
         "image_ref":format!("data:image/png;base64,{}", base64::engine::general_purpose::STANDARD.encode(image))});

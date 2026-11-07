@@ -2,11 +2,12 @@
 const $ = (id) => document.getElementById(id);
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
-let pointerTimer, successTimer;
+let pointerTimer, successTimer, currentStep;
 const listeners = [];
 const clear = () => { clearTimeout(pointerTimer); clearTimeout(successTimer); $("pointer").hidden = true; $("zone").hidden = true; $("success").hidden = true; };
 const error = (value) => { $("error").textContent = String(value); $("dismiss-error").hidden = !value; };
 const call = async (command, args) => { try { return await invoke(command, args); } catch (e) { error(e); return null; } };
+const rendered = (p) => { if (p.command_id) requestAnimationFrame(() => requestAnimationFrame(() => call("render_ack", { commandId: p.command_id }))); };
 
 if (location.hash !== "#pill") {
   listeners.push(listen("guide:clear", clear));
@@ -17,11 +18,13 @@ if (location.hash !== "#pill") {
       $("zone").style[{ x: "left", y: "top", width: "width", height: "height" }[field]] = `${p.zone[field]}px`;
     }
     $("pointer").hidden = false; $("zone").hidden = false;
+    rendered(p);
     pointerTimer = setTimeout(clear, p.duration_ms);
   }));
   listeners.push(listen("guide:success", ({ payload: p }) => {
     clearTimeout(successTimer); clear();
     $("success-text").textContent = p.text; $("success").hidden = false;
+    rendered(p);
     successTimer = setTimeout(clear, p.duration_ms);
   }));
 } else {
@@ -57,7 +60,10 @@ if (location.hash !== "#pill") {
   listeners.push(listen("sidecar:status", ({ payload }) => connection(payload === "connected")));
   listeners.push(listen("permission:changed", ({ payload }) => permissions(payload)));
   listeners.push(listen("native:error", ({ payload }) => error(payload)));
-  listeners.push(listen("lesson:state", ({ payload }) => { $("instruction").textContent = payload.instruction; }));
+  listeners.push(listen("lesson:state", ({ payload }) => {
+    if (payload.step_id !== currentStep || payload.status === "COMPLETE") $("instruction").textContent = payload.instruction;
+    currentStep = payload.step_id;
+  }));
   listeners.push(listen("speech:text", ({ payload }) => { $("instruction").textContent = payload; }));
   listeners.push(listen("audio:status", ({ payload }) => { $("mic").classList.toggle("active", payload); $("mic").textContent = payload ? "Je vous écoute…" : "Maintenir pour parler"; }));
   $("mic").onpointerdown = (event) => { event.currentTarget.setPointerCapture(event.pointerId); call("ptt", { active: true }); };

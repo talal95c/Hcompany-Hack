@@ -14,12 +14,13 @@ from engine.bus.servers import AddonServer, DesktopServer, EventBuffer, Seen
 from engine.bus.validation import validate
 from engine.cache import AudioCache, Preloader, TargetCache, TargetContext
 from engine.checks import SceneState, evaluate, require_check
+from engine.checks.lesson_steps import evaluate_verification
 from engine.config import EngineConfig
 from engine.debug.server import DebugServer
 from engine.fallback import Fallback
-from engine.interfaces import Clock, HoloClient, JevClient, SttClient, SystemClock
+from engine.interfaces import Clock, HoloClient, JevClient, SearchClient, SttClient, SystemClock
 from engine.learner import LearnerMemory
-from engine.lesson import Session, load_lesson
+from engine.lesson import Session, load_lesson, load_verification
 from engine.policy import HelpContext, HelpPolicy
 
 
@@ -63,7 +64,9 @@ class EngineRuntime:
         self, config: EngineConfig, *, lesson: dict | None = None,
         clock: Clock | None = None, holo: HoloClient | None = None,
         jev: JevClient | None = None, stt: SttClient | None = None,
+        search: SearchClient | None = None,
     ):
+        self.search = search
         self.config, self.clock, self.stt = config, clock or SystemClock(), stt
         self.debug = DebugServer(config.host, config.debug_port)
         self.bus = EventBus(report=self.debug.record)
@@ -72,6 +75,7 @@ class EngineRuntime:
         self.learner = LearnerMemory(config.learner_path)
         if lesson is None and config.lesson:
             lesson = load_lesson(config.lesson)
+        self.verification = load_verification(config.lesson, lesson) if config.lesson else {}
         self.session = Session(config.session_id, lesson) if lesson else None
         if lesson:
             validate("lesson", lesson)
@@ -104,6 +108,8 @@ class EngineRuntime:
         self.help_context = HelpContext()
         self.max_help = 0
         self.closed = False
+        self.last_desktop_state = None
+        self.render_pending = {}
         self.connection_epoch = 0
         self.commands = self.bus.subscribe(Topic.COMMAND)
         self.diagnostics = self.bus.subscribe(Topic.DEBUG)
@@ -211,6 +217,8 @@ class EngineRuntime:
                     continue
                 self.debug.record({"kind": "event", "type": event["type"],
                                    "scene_revision": event["scene_revision"]})
+                if event["type"] == "command.result":
+                    self.debug.record({"kind": "addon_result", **event["payload"]})
                 await self.bus.publish(Topic.EVENT, event)
                 if event["type"] == "hello":
                     self.blender_version = event["payload"]["blender_version"]
@@ -265,6 +273,8 @@ class EngineRuntime:
         generation = session.generation
         check = session.step["check"]
         result = evaluate(check["name"], self.state, check["params"])
+        result = evaluate_verification(
+            self.verification.get(session.step_id, {}).get("checks", []), self.state, result)
         self.debug.record({"kind": "check", **asdict(result)})
         await self.bus.publish(Topic.CHECK, result)
         checked_at = time.perf_counter()
@@ -280,6 +290,10 @@ class EngineRuntime:
         self.max_help = max(used_help, self.policy.level)
         if decision:
             self.metric("check→decision", (time.perf_counter() - checked_at) * 1000)
+            self.metric("event→decision", (time.perf_counter() - event["received_at"]) * 1000)
+            if "ts_monotonic_ms" in event:
+                self.metric("addon→decision", time.monotonic() * 1000
+                            - event["ts_monotonic_ms"])
         if result.status == "pass" and decision and decision.kind == "success":
             session.transition("PASSED")
             self.learner.review(session.step["skill_id"], passed=True, help_level=self.max_help,
@@ -298,7 +312,7 @@ class EngineRuntime:
             session.transition("OBSERVING")
         else:
             session.transition("OBSERVING")
-        await self.send_state()
+        await self.send_state(force=decision is not None)
 
     def metric(self, stage: str, latency_ms: float) -> None:
         self.debug.record({"kind": "latency", "stage": stage, "latency_ms": latency_ms})
@@ -318,14 +332,18 @@ class EngineRuntime:
             context = replace(context, area_id=region["area_id"], region_id=region["region_id"])
         return context
 
-    async def send_state(self, connection=None) -> None:
+    async def send_state(self, connection=None, *, force: bool = False) -> None:
         session = self.session
-        await self.desktop.send("lesson.state", {
+        payload = {
             "step_id": session.step_id if session and session.status != "COMPLETE" else None,
             "status": session.status if session else "READY",
             "instruction": session.step["instruction"] if session else "Aucune leçon chargée",
             "help_level": self.policy.level,
-        }, connection)
+            "ui_revision": self.ui_revision,
+        }
+        if force or connection is not None or payload != self.last_desktop_state:
+            await self.desktop.send("lesson.state", payload, connection)
+            self.last_desktop_state = payload
 
     async def forward_commands(self) -> None:
         while True:
@@ -345,6 +363,12 @@ class EngineRuntime:
                         await self.error("consent_required", "Utilisez le canal d'action sécurisé")
                         continue
                     await self.desktop.send("command", command)
+                    if command["type"] in {"pointer", "success"}:
+                        if len(self.render_pending) >= 512:
+                            self.render_pending.pop(next(iter(self.render_pending)))
+                        self.render_pending[command["command_id"]] = time.perf_counter()
+                    self.debug.record({"kind": "command_sent", "command_id": command["command_id"],
+                                       "type": command["type"]})
                 elif command["type"] == "replay":
                     self.spawn(self.run_demo(command, self.context()))
                 else:
@@ -394,6 +418,11 @@ class EngineRuntime:
                 await self.send_state(connection)
         elif kind == "capture.result":
             await self.accept_capture(payload)
+        elif kind == "input.result" and payload.get("detail") == "rendered":
+            started = self.render_pending.pop(payload["command_id"], None)
+            if started is not None:
+                self.metric("send→render_ack", (time.perf_counter() - started) * 1000)
+                self.debug.record({"kind": "render_ack", "command_id": payload["command_id"]})
         elif kind in {"ptt.start", "audio.chunk", "ptt.stop"}:
             await self.audio_message(kind, payload, connection)
 

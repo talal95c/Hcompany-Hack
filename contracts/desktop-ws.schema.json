@@ -302,6 +302,7 @@
           "properties": {
             "text": {
               "type": "string",
+              "description": "Texte utilisateur ; pour fais-le, source bouton et chaîne JSON {intent: fais-le, consent_token: UUID}, avec delegation_confirmed et wants_to_learn optionnels. Le token natif ne passe jamais par la WebView.",
               "minLength": 1
             },
             "source": {
@@ -362,6 +363,11 @@
               "type": "integer",
               "minimum": 0,
               "maximum": 4
+            },
+            "ui_revision": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Révision UI du capteur Blender ; le desktop la recopie dans capture.result sans incrément local."
             }
           },
           "required": [
