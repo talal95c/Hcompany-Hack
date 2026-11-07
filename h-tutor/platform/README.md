@@ -11,6 +11,7 @@ One Cloudflare Worker that does three jobs:
 | API tokens, tutorials, usage events | D1 (`migrations/0002_rio.sql`) |
 | Global knowledge (ReStep) | The `knowledge/` Worker (D1 and ReStep's core ported), through the `KNOWLEDGE` service binding |
 | Tutorial jobs | `src/ingest.ts`: one step per call, with a lease; run by console polls and a cron every minute |
+| Covers | A video's thumbnail; for a page or a goal, the `og:image` of the first source page that has one (read from its `<head>`, https only, 5 s at most per page) |
 | Console | `web/` (Vite + React), served as static assets |
 
 ## Rio API
