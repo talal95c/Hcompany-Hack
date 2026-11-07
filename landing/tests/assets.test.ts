@@ -30,7 +30,7 @@ describe("CRT assets", () => {
       readFileSync("public/crt/poster.png").subarray(1, 4).toString(),
     ).toBe("PNG");
     const html = readFileSync("index.html", "utf8");
-    expect(html).toContain("<noscript>");
+    expect(html).toMatch(/<noscript\s*>/);
     expect(html).toContain('href="https://www.google.com/"');
   });
 });
