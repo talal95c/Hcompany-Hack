@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { RioArrow } from "./cursor";
 import {
   asset,
   Asterisk,
@@ -66,9 +65,7 @@ export function Hero() {
           transition={{ duration: 1.6, ease: EASE }}
         />
         <div className="hero-shade" />
-        <div className="tv-screen" aria-hidden>
-          <span className="tv-cursor"><RioArrow size={20} /></span>
-        </div>
+        <div className="tv-screen" aria-hidden />
         <div className="hero-content">
           <h1 className="h-hero">
             <motion.span className="hero-l1" {...up(0.2)}>
