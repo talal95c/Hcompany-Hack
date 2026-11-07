@@ -275,6 +275,57 @@ pub fn skill_propose_now(app: AppHandle, skill_id: String) -> Result<(), String>
     Ok(())
 }
 
+#[cfg(any(target_os = "macos", test))]
+fn matches_app(skill: &App, foreground: &App) -> bool {
+    match (skill.bundle_id.as_deref(), foreground.bundle_id.as_deref()) {
+        (Some(expected), Some(actual)) if !expected.is_empty() && !actual.is_empty() => {
+            expected == actual
+        }
+        _ => !skill.name.trim().is_empty() && skill.name.eq_ignore_ascii_case(&foreground.name),
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn foreground_app(own_bundle_id: &str) -> Option<App> {
+    use objc2::rc::autoreleasepool;
+    use objc2::runtime::AnyObject;
+    use objc2::{class, msg_send};
+    use std::ffi::{CStr, c_char};
+
+    autoreleasepool(|_| unsafe {
+        let workspace: *mut AnyObject = msg_send![class!(NSWorkspace), sharedWorkspace];
+        let running: *mut AnyObject = msg_send![workspace, frontmostApplication];
+        if running.is_null() {
+            return None;
+        }
+        let pid: i32 = msg_send![running, processIdentifier];
+        if pid as u32 == std::process::id() {
+            return None;
+        }
+        let string = |value: *mut AnyObject| -> Option<String> {
+            if value.is_null() {
+                return None;
+            }
+            let utf8: *const c_char = msg_send![value, UTF8String];
+            if utf8.is_null() {
+                return None;
+            }
+            Some(CStr::from_ptr(utf8).to_string_lossy().into_owned())
+        };
+        let identifier: *mut AnyObject = msg_send![running, bundleIdentifier];
+        let bundle_id = string(identifier);
+        if bundle_id.as_deref() == Some(own_bundle_id) {
+            return None;
+        }
+        let name: *mut AnyObject = msg_send![running, localizedName];
+        Some(App {
+            name: string(name).unwrap_or_default(),
+            bundle_id,
+            ..Default::default()
+        })
+    })
+}
+
 pub fn spawn(app: AppHandle) {
     std::thread::Builder::new()
         .name("skill-context".into())
@@ -293,9 +344,15 @@ pub fn spawn(app: AppHandle) {
                 if session.as_ref().is_some_and(|s| !s.finished) {
                     continue;
                 }
+                #[cfg(target_os = "macos")]
+                let Some(foreground) = foreground_app(&app.config().identifier) else {
+                    continue;
+                };
+                #[cfg(not(target_os = "macos"))]
                 let Ok(windows) = xcap::Window::all() else {
                     continue;
                 };
+                #[cfg(not(target_os = "macos"))]
                 let Some(name) = windows
                     .iter()
                     .find(|w| w.is_focused().unwrap_or(false))
@@ -309,9 +366,12 @@ pub fn spawn(app: AppHandle) {
                     let mut guard = PROPOSALS.lock().unwrap();
                     let last = guard.get_or_insert_with(HashMap::new);
                     skills.iter().find(|s| {
-                        !s.app.name.trim().is_empty()
-                            && s.app.name.eq_ignore_ascii_case(&name)
-                            && ready(s, last, time, cooldown)
+                        #[cfg(target_os = "macos")]
+                        let matches = matches_app(&s.app, &foreground);
+                        #[cfg(not(target_os = "macos"))]
+                        let matches = !s.app.name.trim().is_empty()
+                            && s.app.name.eq_ignore_ascii_case(&name);
+                        matches && ready(s, last, time, cooldown)
                     })
                 };
                 if let Some(skill) = candidate && emit(&app, skill).is_ok()
@@ -328,6 +388,30 @@ pub fn spawn(app: AppHandle) {
 mod tests {
     use super::*;
     use crate::tutorial::Milestone;
+
+    #[test]
+    fn skills_match_bundle_before_name_and_fall_back_when_unavailable() {
+        let finder = App {
+            name: "Finder".into(),
+            bundle_id: Some("com.apple.finder".into()),
+            ..Default::default()
+        };
+        let mut foreground = finder.clone();
+        foreground.name = "Nom localisé".into();
+        assert!(matches_app(&finder, &foreground));
+        foreground.name = "Finder".into();
+        foreground.bundle_id = Some("com.example.other".into());
+        assert!(!matches_app(&finder, &foreground));
+        foreground.bundle_id = None;
+        foreground.name = "fInDeR".into();
+        assert!(matches_app(&finder, &foreground));
+        assert!(matches_app(&foreground, &finder));
+        foreground.bundle_id = Some(String::new());
+        assert!(matches_app(&finder, &foreground));
+        foreground.name = "Other".into();
+        assert!(!matches_app(&finder, &foreground));
+        assert!(!matches_app(&App::default(), &App::default()));
+    }
 
     fn graph() -> Tutorial {
         Tutorial {
