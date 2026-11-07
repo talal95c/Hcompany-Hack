@@ -235,6 +235,7 @@ pub fn spawn(app: AppHandle) {
                 .unwrap_or(30 * 60);
             loop {
                 std::thread::sleep(Duration::from_secs(3));
+                if crate::autopilot::is_running() { continue; }
                 let state = app.state::<crate::AppState>();
                 let Ok(session) = state.session.try_lock() else {
                     continue;

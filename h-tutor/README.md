@@ -60,19 +60,41 @@ Après 15 s sans réponse, « Pas maintenant » ou Échap, il enregistre un refu
 Échap est enregistré globalement uniquement pendant l'affichage de la notch.
 
 - `autopilot_accept({skillId})` prend le verrou exclusif et émet
-  `autopilot:started {skill_id, title, total}`. Le pilote n'est pas encore
-  implémenté : la notch attend, sans prétendre exécuter la tâche.
+  `autopilot:started {skill_id, title, total}`, puis lance le pilote voie A.
+  Il réutilise le graph, ses hints et `agent::advance` : chaque action Holo est
+  injectée par notre code existant porté vers `act.rs` (enigo), puis une nouvelle
+  capture vérifie les `done_when`. Seul le retour `done` autorise « Fait ✓ ».
 - `autopilot:progress {skill_id, index, total, label}` actualise la progression
   (index entre 0 et total). `autopilot:done {skill_id, outcome, message?}` termine
   l'affichage après 3 s ; seul `completed` affiche « Fait ✓ ».
 - `autopilot_stop()` positionne le drapeau `autopilot::stop_requested()`, libère
-  le verrou et émet `autopilot:done` avec `stopped`. Le futur pilote doit consulter
-  ce drapeau avant chaque action et après chaque attente.
+  le verrou d'affichage et émet `autopilot:done` avec `stopped`. Le pilote vérifie
+  l'arrêt avant chaque action et sous-étape ; aucun autre run ni tutoriel ne peut
+  démarrer avant la fin effective du nettoyage des entrées.
 - `autopilot_decline()` refuse la proposition affichée ; `autopilot_view()`
   fournit son état initial au front, ensuite relayé par `autopilot:view`.
 
 Le front ne décide ni du délai, ni de la fin, ni de l'acquisition du verrou.
-Les actions n'injectent encore aucune entrée sur le bureau.
+Le pilote est borné à 20 actions par jalon, 80 au total, 300 s et 3 échecs Holo
+ou tours sans progrès consécutifs. Le délai de stabilisation est de 650 ms
+(configuration, pas une mesure). Une session `mode: rio` et les événements
+`rio_action`, `rio_no_progress`, `rio_holo_failure`, `rio_done` sont journalisés ;
+chaque issue ajoute un run avec durée mesurée au skill. Le déclencheur de skills
+et les clics tuteur sont suspendus pendant l'exécution. Les fenêtres Rio sont
+masquées sur le thread UI avant chaque capture envoyée à Holo (y compris Linux),
+puis seule la notch est réaffichée. Elle est également masquée pendant l'injection
+pour ne pas intercepter un clic destiné à l'application. Un identifiant de run
+invalide les sous-actions retardées après un arrêt ; sur macOS, les événements
+injectés sont en plus marqués et ignorés par le capteur de clics utilisateur.
+Les événements `autopilot:done` reçus du front
+ne peuvent pas déclarer une réussite.
+
+Linux nécessite X11 (`DISPLAY`) ; Wayland est refusé explicitement. Sur macOS,
+il faut aussi autoriser Rio dans **Accessibilité**. Les raccourcis utilisent les
+touches et modificateurs connus ; textes vides, multilignes ou de plus de
+512 caractères, touches inconnues et actions non prises en charge sont refusés.
+Les coordonnées partagent la conversion du pointeur (origine du moniteur principal,
+pixels physiques, puis facteur d'échelle pour les coordonnées logiques macOS).
 
 ```
 Bar (React)                Rust (src-tauri)                          H Models API

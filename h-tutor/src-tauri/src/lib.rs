@@ -1,5 +1,7 @@
 mod agent;
+mod act;
 mod autopilot;
+mod autopilot_driver;
 mod app_icons;
 mod audio_out;
 mod ax;
@@ -170,8 +172,7 @@ fn to_overlay_coords(
     let overlay = app.get_webview_window("overlay").ok_or("Overlay window missing")?;
     let origin = overlay.outer_position().map_err(|e| e.to_string())?;
     let scale = monitor.scale_factor();
-    let phys_x = monitor.position().x as f64 + nx / 1000.0 * monitor.size().width as f64;
-    let phys_y = monitor.position().y as f64 + ny / 1000.0 * monitor.size().height as f64;
+    let (phys_x, phys_y) = normalized_screen_point(app, nx, ny)?;
     let pointer = Pointer {
         x: (phys_x - origin.x as f64) / scale,
         y: (phys_y - origin.y as f64) / scale,
@@ -179,6 +180,12 @@ fn to_overlay_coords(
         rect: None,
     };
     Ok((pointer, (phys_x / scale, phys_y / scale)))
+}
+
+fn normalized_screen_point(app: &AppHandle, nx: f64, ny: f64) -> Result<(f64, f64), String> {
+    let monitor = app.primary_monitor().map_err(|e| e.to_string())?.ok_or("Écran principal introuvable")?;
+    act::screen_point(nx, ny, monitor.position().x as f64, monitor.position().y as f64,
+        monitor.size().width as f64, monitor.size().height as f64)
 }
 
 /// Shows the step's pointer (click / write / scroll) or hides it.
@@ -278,6 +285,9 @@ async fn tutor_start(
     app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<agent::Step, String> {
+    if autopilot::is_running() { return Err("Rio exécute déjà une tâche".into()); }
+    let mut guard = state.session.lock().await;
+    if autopilot::is_running() { return Err("Rio exécute déjà une tâche".into()); }
     // Both entries end up as a milestone graph: a saved tutorial, or one
     // planned by Holo from the goal and the current screen.
     let tutorial = match (tutorial_id, goal) {
@@ -289,7 +299,6 @@ async fn tutor_start(
         }
         (None, None) => return Err("Nothing to start".into()),
     };
-    let mut guard = state.session.lock().await;
     let session = guard.insert(agent::Session::new(tutorial, lang.as_deref()));
     app.emit_to("main", "tutor:plan", session.progress()).ok();
     app.emit_to("overlay", "pointer:thinking", ()).ok();
@@ -600,6 +609,7 @@ fn set_overlay_visible(app: &AppHandle, visible: bool) {
 /// Called for every real left click on the machine. Clicks on the tutor panel
 /// are ignored; others are compared with the current target.
 fn on_user_click(app: &AppHandle, click: clicks::Click) {
+    if autopilot::is_running() { return; }
     let state = app.state::<AppState>();
 
     if let Some(panel) = app.get_webview_window("main").filter(|p| p.is_visible().unwrap_or(false)) {

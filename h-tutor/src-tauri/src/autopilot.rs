@@ -1,7 +1,7 @@
 use crate::{panel, skills};
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Listener, Manager};
 use tauri_plugin_global_shortcut::GlobalShortcutExt;
@@ -49,7 +49,7 @@ impl Controller {
             title: skill.title.clone(),
             goal: skill.goal.clone(),
             total: skill.graph.milestones.len(),
-            label: "En attente du pilote".into(),
+            label: "Observation de l'écran".into(),
             ..View::default()
         };
         Ok(())
@@ -67,10 +67,30 @@ impl Controller {
 
 static CONTROL: Mutex<Option<Controller>> = Mutex::new(None);
 static STOP_REQUESTED: AtomicBool = AtomicBool::new(true);
+static RUNNING: AtomicBool = AtomicBool::new(false);
+static CAPTURING: AtomicBool = AtomicBool::new(false);
+static APP: OnceLock<AppHandle> = OnceLock::new();
+static VISIBILITY_LOCK: Mutex<()> = Mutex::new(());
+static RUN_ID: AtomicU64 = AtomicU64::new(0);
 
-/// Entry point for the block 3 driver: check before every action and after await.
 pub fn stop_requested() -> bool {
     STOP_REQUESTED.load(Ordering::SeqCst)
+}
+
+pub(crate) fn request_stop() {
+    STOP_REQUESTED.store(true, Ordering::SeqCst);
+}
+
+pub fn is_running() -> bool {
+    RUNNING.load(Ordering::SeqCst)
+}
+
+pub(crate) fn run_id() -> u64 {
+    RUN_ID.load(Ordering::SeqCst)
+}
+
+pub(crate) fn driver_released() {
+    RUNNING.store(false, Ordering::SeqCst);
 }
 
 #[derive(Clone, Serialize)]
@@ -80,19 +100,19 @@ struct Started {
     total: usize,
 }
 
-#[derive(Deserialize)]
-struct Progress {
-    skill_id: String,
-    index: usize,
-    total: usize,
-    label: String,
+#[derive(Clone, Deserialize, Serialize)]
+pub(crate) struct Progress {
+    pub skill_id: String,
+    pub index: usize,
+    pub total: usize,
+    pub label: String,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
-struct Done {
-    skill_id: String,
-    outcome: String,
-    message: Option<String>,
+pub(crate) struct Done {
+    pub skill_id: String,
+    pub outcome: String,
+    pub message: Option<String>,
 }
 
 fn publish(app: &AppHandle, view: &View) -> Result<(), String> {
@@ -105,7 +125,14 @@ fn publish(app: &AppHandle, view: &View) -> Result<(), String> {
                 .register("Escape")
                 .map_err(|e| e.to_string())?;
         }
-        panel::show(&window, false, panel::LEVEL_OVERLAY);
+        let notch = window.clone();
+        app.run_on_main_thread(move || {
+            if !CAPTURING.load(Ordering::SeqCst) && !matches!(autopilot_view().phase, Phase::Hidden)
+            {
+                panel::show(&notch, false, panel::LEVEL_OVERLAY);
+            }
+        })
+        .map_err(|e| e.to_string())?;
         if let Some(monitor) = app.primary_monitor().map_err(|e| e.to_string())? {
             let scale = monitor.scale_factor();
             let origin = monitor.position().to_logical::<f64>(scale);
@@ -171,6 +198,9 @@ fn decline_current(app: &AppHandle, expected: Option<u64>) -> Result<(), String>
 }
 
 pub fn propose(app: &AppHandle, proposal: skills::Proposal) {
+    if is_running() {
+        return;
+    }
     let (view, generation) = {
         let mut guard = CONTROL.lock().unwrap();
         let control = guard.get_or_insert_with(Controller::default);
@@ -216,7 +246,17 @@ pub fn autopilot_decline(app: AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 pub fn autopilot_accept(app: AppHandle, skill_id: String) -> Result<(), String> {
+    if is_running() {
+        return Err("Rio termine déjà une tâche".into());
+    }
     let skill = skills::load(&skill_id)?;
+    if skill.graph.milestones.is_empty() {
+        return Err("Ce skill ne contient aucun jalon".into());
+    }
+    skill
+        .graph
+        .validate()
+        .map_err(|e| format!("Graphe de skill invalide : {e}"))?;
     if !skill.runs.iter().any(|run| run.outcome == "completed") {
         return Err("Ce skill n'a pas encore réussi".into());
     }
@@ -228,26 +268,39 @@ pub fn autopilot_accept(app: AppHandle, skill_id: String) -> Result<(), String> 
     if session.as_ref().is_some_and(|s| !s.finished) {
         return Err("Un tutoriel est en cours".into());
     }
+    if is_running() {
+        return Err("Rio termine déjà une tâche".into());
+    }
     let view = {
         let mut guard = CONTROL.lock().unwrap();
         let control = guard.get_or_insert_with(Controller::default);
         control.accept(&skill, &STOP_REQUESTED)?;
+        RUN_ID.fetch_add(1, Ordering::SeqCst);
+        RUNNING.store(true, Ordering::SeqCst);
         control.view.clone()
     };
     if let Err(error) = publish(&app, &view) {
         let _ = autopilot_stop(app.clone());
+        driver_released();
         return Err(error);
     }
-    // Block 3 starts the driver here, passing the skill graph and stop_requested.
-    app.emit(
+    if let Err(error) = app.emit(
         "autopilot:started",
         Started {
             skill_id: view.skill_id,
             title: view.title,
             total: view.total,
         },
-    )
-    .map_err(|e| e.to_string())
+    ) {
+        let _ = autopilot_stop(app.clone());
+        driver_released();
+        return Err(error.to_string());
+    }
+    crate::watch::disarm();
+    crate::set_overlay_visible(&app, false);
+    drop(session);
+    crate::autopilot_driver::spawn(app.clone(), skill);
+    Ok(())
 }
 
 #[tauri::command]
@@ -274,7 +327,7 @@ pub fn escape(app: &AppHandle) {
     }
 }
 
-fn finish(app: &AppHandle, done: &Done) {
+pub(crate) fn finish(app: &AppHandle, done: &Done) {
     if !matches!(done.outcome.as_str(), "completed" | "failed" | "stopped") {
         return;
     }
@@ -315,6 +368,7 @@ fn finish(app: &AppHandle, done: &Done) {
 }
 
 pub fn setup(app: &AppHandle) {
+    let _ = APP.set(app.clone());
     let handle = app.clone();
     app.listen("autopilot:propose", move |event| {
         if let Ok(proposal) = serde_json::from_str(event.payload()) {
@@ -344,12 +398,66 @@ pub fn setup(app: &AppHandle) {
         };
         let _ = publish(&handle, &view);
     });
+}
+
+pub struct CaptureMask {
+    app: AppHandle,
+    _lock: std::sync::MutexGuard<'static, ()>,
+}
+
+pub fn mask_capture() -> Result<Option<CaptureMask>, String> {
+    if !is_running() {
+        return Ok(None);
+    }
+    let lock = VISIBILITY_LOCK
+        .lock()
+        .map_err(|_| "Verrou de masquage indisponible")?;
+    let app = APP
+        .get()
+        .ok_or("Protection des captures indisponible")?
+        .clone();
+    CAPTURING.store(true, Ordering::SeqCst);
+    let guard = CaptureMask {
+        app: app.clone(),
+        _lock: lock,
+    };
+    let (send, receive) = std::sync::mpsc::sync_channel(1);
     let handle = app.clone();
-    app.listen("autopilot:done", move |event| {
-        if let Ok(done) = serde_json::from_str(event.payload()) {
-            finish(&handle, &done);
-        }
-    });
+    app.run_on_main_thread(move || {
+        let result = (|| {
+            for label in ["main", "overlay", "notch"] {
+                if let Some(window) = handle.get_webview_window(label) {
+                    window
+                        .hide()
+                        .map_err(|e| format!("Impossible de masquer Rio : {e}"))?;
+                }
+            }
+            Ok::<_, String>(())
+        })();
+        let _ = send.send(result);
+    })
+    .map_err(|e| e.to_string())?;
+    receive
+        .recv_timeout(Duration::from_secs(2))
+        .map_err(|_| "Le masquage des fenêtres Rio a expiré")??;
+    std::thread::sleep(Duration::from_millis(120));
+    Ok(Some(guard))
+}
+
+impl Drop for CaptureMask {
+    fn drop(&mut self) {
+        CAPTURING.store(false, Ordering::SeqCst);
+        let app = self.app.clone();
+        let handle = app.clone();
+        let _ = app.run_on_main_thread(move || {
+            if !CAPTURING.load(Ordering::SeqCst)
+                && !matches!(autopilot_view().phase, Phase::Hidden)
+                && let Some(window) = handle.get_webview_window("notch")
+            {
+                panel::show(&window, false, panel::LEVEL_OVERLAY);
+            }
+        });
+    }
 }
 
 #[cfg(test)]

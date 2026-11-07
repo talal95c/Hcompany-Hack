@@ -62,6 +62,16 @@ hidden, guide the learner step by step to reveal it.
 - Call answer as soon as the latest screenshot meets the current task's success criterion, even if that happened \
 before you acted. Only work on the current task, not the later ones.";
 
+const RIO_SYSTEM: &str = "You are Rio, a desktop agent executing the user's approved task through GUI actions. \
+Choose exactly one action per turn. Rio executes it and returns a new screenshot. \
+The <progress> block gives the overall goal, the current milestone and its success criterion. \
+Use hints as guidance, but trust the latest screenshot. Call answer ONLY when this screenshot proves the \
+current success criterion. Do not claim success based on an action being issued. Only work on the current milestone. \
+Use the graphical interface, not terminal commands, scripts or code. Do not delete, overwrite, send messages, \
+purchase or submit payments: these actions require a separate confirmation not available here. \
+If an action failed, recover using the visible screen. Use search when necessary. \
+Write short instructions in French, and element descriptions in English. Use ctrl on Linux, cmd on macOS.";
+
 fn tool(name: &str, desc: &str, mut props: Value, mut required: Vec<&str>) -> Value {
     props["instruction"] = json!({
         "type": "string",
@@ -122,6 +132,7 @@ pub struct Step {
     pub point: Option<(f64, f64)>,
     pub text: String,
     pub keys: String,
+    pub direction: String,
     /// True when the screen had not changed and no new step was computed.
     pub unchanged: bool,
     /// Current milestone and the whole graph's state.
@@ -133,6 +144,7 @@ pub struct Step {
 }
 
 pub struct Session {
+    pub rio: bool,
     pub tutorial: Tutorial,
     lang: Option<String>,
     status: HashMap<String, Status>,
@@ -152,9 +164,18 @@ pub struct Session {
 
 impl Session {
     pub fn new(tutorial: Tutorial, lang: Option<&str>) -> Self {
+        Self::with_driver(tutorial, lang, false)
+    }
+
+    pub fn new_rio(tutorial: Tutorial) -> Self {
+        Self::with_driver(tutorial, Some("fr"), true)
+    }
+
+    fn with_driver(tutorial: Tutorial, lang: Option<&str>, rio: bool) -> Self {
         let status = tutorial.milestones.iter().map(|m| (m.id.clone(), Status::Todo)).collect();
-        journal::begin(&tutorial, lang);
+        journal::begin(&tutorial, lang, if rio { "rio" } else { "learner" });
         let mut s = Self {
+            rio,
             tutorial,
             lang: lang.map(String::from),
             status,
@@ -201,12 +222,12 @@ impl Session {
             format!("\nKnown path (may be outdated, trust the screen): {}", m.hints.join("; "))
         };
         self.messages = vec![
-            json!({ "role": "system", "content": SYSTEM }),
+            json!({ "role": "system", "content": if self.rio { RIO_SYSTEM } else { SYSTEM } }),
             json!({ "role": "user", "content": format!(
-                "Task: Guide the learner until this is actually done on their screen: \"{}\"\n\
+                "Task: {} until this is actually done on screen: \"{}\"\n\
                  Success criterion: {}{hints}\n\
                  This is one milestone of the tutorial \"{}\" (overall goal: {}).",
-                m.goal, m.done_when, self.tutorial.title, self.tutorial.goal
+                if self.rio { "Execute the approved task" } else { "Guide the learner" }, m.goal, m.done_when, self.tutorial.title, self.tutorial.goal
             ) }),
         ];
         journal::event("milestone_start", json!({ "milestone": m.id, "goal": m.goal }));
@@ -342,6 +363,9 @@ pub async fn advance(
     only_if_changed: bool,
 ) -> Result<Step, String> {
     if session.finished {
+        if session.rio && session.step.kind != "done" {
+            return Err("Le graphe est bloqué : tous les jalons obligatoires doivent être vérifiés".into());
+        }
         return Ok(session.step.clone());
     }
     let shot = tauri::async_runtime::spawn_blocking(capture_primary)
@@ -356,7 +380,7 @@ pub async fn advance(
         }
     }
     if let Some(ev) = &event {
-        journal::event("learner", json!({ "milestone": session.current, "event": ev }));
+        journal::event(if session.rio { "rio_observation" } else { "learner" }, json!({ "milestone": session.current, "event": ev }));
     }
     let shot_path = journal::shot(&shot.data_uri);
 
@@ -384,13 +408,17 @@ pub async fn advance(
     if !session.finished {
         return Err("Trop de jalons enchaînés ; réessayez pour continuer".into());
     }
+    if session.rio && session.tutorial.milestones.iter().any(|m|
+        !m.optional && session.status.get(&m.id) != Some(&Status::Done)) {
+        return Err("Certains jalons obligatoires n'ont pas été vérifiés".into());
+    }
     journal::event("tutorial_done", json!({}));
-    if let Some(run) = journal::skill_run()
+    if !session.rio && let Some(run) = journal::skill_run(crate::skills::Mode::Learner, "completed")
         && let Err(error) = crate::skills::record_run(to_tutorial(session), run)
     {
         eprintln!("Impossible d'enregistrer le skill : {error}");
     }
-    journal::end("completed");
+    if !session.rio { journal::end("completed"); }
     let step = Step {
         kind: "done".into(),
         instruction: String::new(),
@@ -575,6 +603,7 @@ async fn ask_holo(
         point,
         text: s("content"),
         keys: s("keys"),
+        direction: s("direction"),
         unchanged: false,
         milestone: current.as_ref().map(|m| view(&session.tutorial, m, "current")),
         progress: session.progress(),
