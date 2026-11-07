@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Transcript, Wave, tail } from "./Dictaphone";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { listen } from "@tauri-apps/api/event";
-import { api, errorText, speak, stopSpeaking, type Imported, type MilestoneView, type Status, type Step, type TutorialSummary } from "./api";
+import { api, errorText, speak, stopSpeaking, type Imported, type QaAnswer, type MilestoneView, type Status, type Step, type TutorialSummary } from "./api";
 import {
   IconCheck,
   IconClose,
@@ -38,10 +38,11 @@ export default function App() {
   const [step, setStep] = useState<Step | null>(null);
   const [progress, setProgress] = useState<MilestoneView[]>([]);
   const [library, setLibrary] = useState<TutorialSummary[]>([]);
-  const [planning, setPlanning] = useState(false); // goal mode: Holo designs the milestones
+  const [planning, setPlanning] = useState(false); // Holo is designing the milestones
   const [saved, setSaved] = useState<string | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [importStage, setImportStage] = useState("");
+  const [qa, setQa] = useState<{ question: string; result?: QaAnswer; error?: string } | null>(null);
   const [imported, setImported] = useState<Imported | null>(null);
   const paletteRef = useRef(paletteOpen);
   paletteRef.current = paletteOpen;
@@ -55,6 +56,8 @@ export default function App() {
   const [asking, setAsking] = useState(false);
   const [explain, setExplain] = useState<Explain | null>(null);
   const [question, setQuestion] = useState("");
+  /** Holo's reasoning, streamed live while it decides the next step. */
+  const [thinking, setThinking] = useState("");
 
   /** Learner's language: updated by everything they say (Gladia) or type
    *  (text detection), sent to Holo with every step. Never taken from the screen. */
@@ -77,6 +80,7 @@ export default function App() {
   useEffect(() => {
     const offs = [
       listen("tutor:planning", () => setPlanning(true)),
+      listen<string>("holo:thinking", (e) => setThinking(e.payload)),
       listen<{ stage: string; detail: string }>("import:progress", (e) => setImportStage(e.payload.detail)),
       listen<MilestoneView[]>("tutor:plan", (e) => {
         setPlanning(false);
@@ -100,8 +104,8 @@ export default function App() {
   }, [paletteOpen]);
 
   useEffect(() => {
-    api.setSticky(phase === "running" || phase === "planning" || phase === "importing" || phase === "imported");
-  }, [phase]);
+    api.setSticky(phase === "running" || phase === "planning" || phase === "importing" || phase === "imported" || !!qa);
+  }, [phase, qa]);
 
   useEffect(() => {
     const onFocus = () => inputRef.current?.focus();
@@ -134,6 +138,7 @@ export default function App() {
       return;
     }
     setStep(s);
+    setThinking("");
     // A milestone just closed: say so briefly.
     const closed = s.completed.length ? liveRef.current.step?.milestone?.goal : null;
     setMessage(closed ? `✓ ${closed}` : "");
@@ -147,6 +152,7 @@ export default function App() {
       const { phase, stepState, explain } = liveRef.current;
       if (phase !== "running" || stepState === "thinking" || explain) return;
       setStepState("thinking");
+      setThinking("");
       api.hidePointer();
       try {
         const next = await api.tutorNext(event, langRef.current);
@@ -178,7 +184,7 @@ export default function App() {
       const prefix = stepState === "thinking" ? "…" : `${Math.min(n, total)}/${total}`;
       api.setTray(`${prefix} · ${step.instruction}`);
     } else if (phase === "done") {
-      api.setTray("✓ Terminé");
+      api.setTray("✓ Done");
       const t = setTimeout(() => api.setTray(null), 6000);
       return () => clearTimeout(t);
     } else {
@@ -189,7 +195,7 @@ export default function App() {
   async function importVideo(url: string) {
     setHomeError("");
     setImported(null);
-    setImportStage("Lecture de la vidéo…");
+    setImportStage("Reading the video…");
     setPhase("importing");
     try {
       const t = await api.importYoutube(url.trim());
@@ -203,10 +209,52 @@ export default function App() {
     }
   }
 
-  async function startTutorial(text = goal, lang: string | null = null, tutorialId: string | null = null) {
+  // ---------- The front door: Holo decides between answering and guiding ----------
+
+  async function askOnly(text: string, spoken: string | null = null) {
+    const q = text.trim();
+    if (!q) return;
+    stopSpeaking();
+    api.hidePointer();
+    setHomeError("");
+    setThinking("");
+    setQa({ question: q });
+    setGoal("");
+    langRef.current = await api.resolveLang(q, spoken, langRef.current);
+    try {
+      const result = await api.answerQuestion(q, langRef.current);
+      if (result.kind === "guide") {
+        // They want to do it: walk them through it.
+        setQa(null);
+        startTutorial(q, langRef.current, null, true);
+        return;
+      }
+      setQa((cur) => (cur?.question === q ? { question: q, result } : cur));
+      if (voiceRef.current && result.answer) speak(result.answer, langRef.current);
+    } catch (e) {
+      setQa((cur) => (cur?.question === q ? { question: q, error: errorText(e) } : cur));
+    }
+  }
+
+  function closeQa() {
+    stopSpeaking();
+    api.hidePointer();
+    setQa(null);
+    inputRef.current?.focus();
+  }
+
+  /** `direct`: skip the front door (Holo already chose to guide, or "Guide me"). */
+  async function startTutorial(
+    text = goal,
+    lang: string | null = null,
+    tutorialId: string | null = null,
+    direct = false,
+  ) {
     const g = text.trim();
     if (!g && !tutorialId) return;
     if (!tutorialId && isYoutube(g)) return importVideo(g);
+    if (!tutorialId && !direct) return askOnly(g, lang);
+    setQa(null);
     setHomeError("");
     setSaved(null);
     setProgress([]);
@@ -298,8 +346,12 @@ export default function App() {
       setExplain({ question: q, details: [], target: "", error: errorText(e) });
     }
   }
-  const askRef = useRef(askQuestion);
-  askRef.current = askQuestion;
+  /** A spoken sentence: a question during a tutorial, else a request for the front door. */
+  const askRef = useRef((text: string, spoken: string | null) =>
+    liveRef.current.phase === "running" ? askQuestion(text, spoken) : askOnly(text, spoken),
+  );
+  askRef.current = (text: string, spoken: string | null) =>
+    liveRef.current.phase === "running" ? askQuestion(text, spoken) : askOnly(text, spoken);
 
   function continueTutorial() {
     stopSpeaking();
@@ -329,8 +381,7 @@ export default function App() {
     async (text: string, lang: string | null) => {
       const { phase } = liveRef.current;
       if (phase === "home") {
-        setGoal(text);
-        startRef.current(text, lang);
+        askRef.current(text, lang);
         return;
       }
       if (phase === "running") askRef.current(text, lang);
@@ -378,6 +429,67 @@ export default function App() {
         />
       )}
     <div className="bar">
+      {phase === "home" && qa && (
+        <div className="explain qa">
+          <div className="explain__q">
+            “{qa.question}”
+            <button className="tool qa__close" onClick={closeQa} title="Close">
+              <IconClose />
+            </button>
+          </div>
+          {qa.error ? (
+            <p className="status status--error">{qa.error}</p>
+          ) : qa.result ? (
+            <>
+              <p className="explain__a">{qa.result.answer}</p>
+              {qa.result.details.length > 0 && (
+                <ul className="explain__list">
+                  {qa.result.details.map((d, i) => (
+                    <li key={i}>{d}</li>
+                  ))}
+                </ul>
+              )}
+              {(qa.result.sources.length > 0 || qa.result.searches.length > 0) && (
+                <div className="qa__sources">
+                  {qa.result.sources.length > 0
+                    ? qa.result.sources.map((s) => (
+                        <button key={s.url} className="video-link" onClick={() => openUrl(s.url)} title={s.url}>
+                          {s.title}
+                        </button>
+                      ))
+                    : qa.result.searches.map((s, i) => (
+                        <span key={i} className="qa__searched">
+                          Searched “{s.query}”{s.backend === "simulated" ? " · simulated docs" : ""}
+                        </span>
+                      ))}
+                </div>
+              )}
+              <div className="explain__actions">
+                {qa.result.target && (
+                  <button className="pill" onClick={() => api.locate(qa.result!.target, qa.result!.answer).catch(() => {})}>
+                    Show me
+                  </button>
+                )}
+                <button
+                  className="pill pill--light"
+                  onClick={() => {
+                    const q = qa.question;
+                    closeQa();
+                    startTutorial(q, langRef.current, null, true);
+                  }}
+                >
+                  Guide me
+                </button>
+              </div>
+            </>
+          ) : (
+            <p className="explain__a thinking-line">
+              <span className="pulse" />
+              <span className="thinking-text">{thinking || "Holo is reading your request…"}</span>
+            </p>
+          )}
+        </div>
+      )}
       {(phase === "home" || phase === "planning" || phase === "importing") && (
         <>
           <form
@@ -400,7 +512,7 @@ export default function App() {
                 transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
               >
                 <Wave level={level} done={voiceText.final} size="sm" />
-                <Transcript text={tail(voiceText.text, 44)} placeholder="Je t'écoute…" className="dicta-inline__text" />
+                <Transcript text={tail(voiceText.text, 44)} placeholder="Listening…" className="dicta-inline__text" />
               </motion.div>
             ) : (
               <input
@@ -409,21 +521,21 @@ export default function App() {
                 value={goal}
                 disabled={phase === "planning" || phase === "importing"}
                 onChange={(e) => setGoal(e.target.value)}
-                placeholder="Que veux-tu apprendre ? Ou colle un lien YouTube"
+                placeholder="Ask or learn anything, or paste a YouTube link"
                 spellCheck={false}
               />
             )}
             {phase === "importing" ? (
               <span className="hint shimmer">{importStage}</span>
             ) : phase === "planning" ? (
-              <span className="hint shimmer">{planning ? "Holo prépare les étapes…" : "Démarrage…"}</span>
+              <span className="hint shimmer">{planning ? "Holo is planning milestones…" : "Starting…"}</span>
             ) : (
               <>
                 <button
                   type="button"
                   className={`tool ${paletteOpen ? "tool--on" : ""}`}
                   onClick={() => setPaletteOpen((o) => !o)}
-                  title="Tutos (⌘K)"
+                  title="Tutorials (⌘K)"
                 >
                   <IconGrid />
                 </button>
@@ -431,11 +543,11 @@ export default function App() {
                   type="button"
                   className={`tool ${listening ? "tool--rec" : ""}`}
                   onClick={toggleMic}
-                  title={listening ? "Arrêter l'écoute" : "Parler"}
+                  title={listening ? "Stop listening" : "Speak (Gladia)"}
                 >
                   <IconMic />
                 </button>
-                <button className="key" type="submit" disabled={!goal.trim()} title="Lancer">
+                <button className="key" type="submit" disabled={!goal.trim()} title="Start">
                   <IconEnter />
                 </button>
               </>
@@ -443,7 +555,7 @@ export default function App() {
           </form>
           {homeError && <div className="note note--error">{homeError}</div>}
           {status && !status.has_key && !homeError && (
-            <div className="note note--error">HAI_API_KEY manque dans .env</div>
+            <div className="note note--error">HAI_API_KEY is missing from .env</div>
           )}
         </>
       )}
@@ -472,7 +584,7 @@ export default function App() {
               <button
                 className={`tool ${listening ? "tool--rec" : ""}`}
                 onClick={toggleMic}
-                title={listening ? "Arrêter l'écoute" : "Poser une question à voix haute"}
+                title={listening ? "Stop listening" : "Ask a question out loud"}
               >
                 <IconMic />
               </button>
@@ -483,24 +595,24 @@ export default function App() {
               >
                 <IconKeyboard />
               </button>
-              <button className="tool" onClick={() => api.tutorRepoint()} disabled={busy} title="Remontre-moi">
+              <button className="tool" onClick={() => api.tutorRepoint()} disabled={busy} title="Show me again">
                 <IconReplay />
               </button>
-              <button className="tool" onClick={iDidIt} disabled={busy} title="C'est fait">
+              <button className="tool" onClick={iDidIt} disabled={busy} title="I did it">
                 <IconCheck />
               </button>
               <button
                 className="tool"
                 onClick={skipMilestone}
                 disabled={busy}
-                title="Passer cette étape"
+                title="Skip this milestone"
               >
                 <IconSkip />
               </button>
-              <button className="tool" onClick={toggleVoice} title={voice ? "Couper la voix" : "Réactiver la voix"}>
+              <button className="tool" onClick={toggleVoice} title={voice ? "Mute voice" : "Unmute voice"}>
                 {voice ? <IconVolume /> : <IconVolumeOff />}
               </button>
-              <button className="tool" onClick={quit} title="Arrêter">
+              <button className="tool" onClick={quit} title="Stop">
                 <IconClose />
               </button>
             </div>
@@ -523,12 +635,12 @@ export default function App() {
                   )}
                 </>
               ) : (
-                <p className="explain__a shimmer">Holo réfléchit…</p>
+                <p className="explain__a shimmer">Holo is thinking…</p>
               )}
               <div className="explain__actions">
                 {explain.target && (
                   <button className="pill" onClick={() => api.locate(explain.target, explain.answer ?? "")}>
-                    Montre-moi
+                    Show me
                   </button>
                 )}
                 <button className="pill pill--light" onClick={continueTutorial}>
@@ -549,8 +661,8 @@ export default function App() {
           </motion.p>
           {step.teach && !busy && !explain && <div className="teach">{step.teach}</div>}
           {step.milestone?.video_url && !explain && (
-            <button className="video-link" onClick={() => openUrl(step.milestone!.video_url!)} title="Ouvrir la vidéo à ce moment">
-              ▶ Voir ce passage dans la vidéo
+            <button className="video-link" onClick={() => openUrl(step.milestone!.video_url!)} title="Open the video at this moment">
+              ▶ Watch this part in the video
             </button>
           )}
           {step.kind === "write" && step.text && !busy && (
@@ -567,7 +679,14 @@ export default function App() {
           {voiceText ? null : explain ? (
             <div className="status">En pause pendant qu'on parle.</div>
           ) : busy ? (
-            <div className="status shimmer">Holo regarde ton écran…</div>
+            thinking ? (
+              <div className="status status--thinking" title={thinking}>
+                <span className="pulse" />
+                <span className="thinking-text">{thinking}</span>
+              </div>
+            ) : (
+              <div className="status shimmer">Holo is looking at your screen…</div>
+            )
           ) : stepState === "error" ? (
             <div className="status status--error">{message}</div>
           ) : stepState === "success" ? (
@@ -576,10 +695,10 @@ export default function App() {
             <div className="status">
               {message ||
                 (step.kind === "click"
-                  ? "Va là où je pointe. Je regarde ton écran."
+                  ? "Go where I'm pointing. I'm watching your screen."
                   : step.kind === "write"
                     ? "Tape-le dans le champ que je pointe."
-                    : "Vas-y, je regarde ton écran.")}
+                    : "Go ahead, I'm watching your screen.")}
             </div>
           )}
           <AnimatePresence initial={false}>
@@ -593,7 +712,7 @@ export default function App() {
                 transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
               >
                 <Wave level={level} done={voiceText.final} size="lg" />
-                <Transcript text={tail(voiceText.text, 140)} placeholder="Je t'écoute…" className="dicta__text" />
+                <Transcript text={tail(voiceText.text, 140)} placeholder="Listening…" className="dicta__text" />
               </motion.div>
             ) : (
               asking && (
@@ -614,7 +733,7 @@ export default function App() {
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     onKeyDown={(e) => e.key === "Escape" && setAsking(false)}
-                    placeholder="Pose une question à Holo…"
+                    placeholder="Ask Holo anything…"
                     spellCheck={false}
                   />
                 </motion.form>
@@ -627,13 +746,13 @@ export default function App() {
       {phase === "imported" && imported && (
         <div className="row row--done">
           <span className="done-text">
-            {imported.title} <span className="dim">· {imported.app} · {imported.milestones} étapes</span>
+            {imported.title} <span className="dim">· {imported.app} · {imported.milestones} milestones</span>
           </span>
           <button className="pill" onClick={() => setPhase("home")}>
             Plus tard
           </button>
           <button className="pill pill--light" onClick={() => startTutorial(imported.title, null, imported.id)}>
-            Lancer
+            Start
           </button>
         </div>
       )}
@@ -644,15 +763,15 @@ export default function App() {
             <IconCheck />
           </span>
           <span className="done-text">
-            {saved ? "Ajouté à ta bibliothèque" : "Terminé"} <span className="dim">· {saved ?? title}</span>
+            {saved ? "Saved to your library" : "Done"} <span className="dim">· {saved ?? title}</span>
           </span>
           {!saved && (
             <button
               className="pill"
               onClick={() => api.saveTutorial().then(setSaved).catch((e) => setHomeError(errorText(e)))}
-              title="Garder ce parcours comme tuto réutilisable, avec le chemin que tu as pris comme indices"
+              title="Keep this run as a reusable tutorial, with the path you took as hints"
             >
-              Garder comme tuto
+              Save as tutorial
             </button>
           )}
           <button
@@ -672,9 +791,9 @@ export default function App() {
 }
 
 function doneLine(lang: string | null): string {
-  return lang === "en" ? "Well done, you finished the tutorial!" : "Bravo, tu as terminé le tuto !";
+  return lang === "fr" ? "Bravo, tu as terminé le tuto !" : "Well done, you finished the tutorial!";
 }
 
 function readyLine(title: string, milestones: number, lang: string | null): string {
-  return lang === "en" ? `${title}: ${milestones} milestones, ready.` : `${title} : ${milestones} étapes, c'est prêt.`;
+  return lang === "fr" ? `${title} : ${milestones} étapes, c'est prêt.` : `${title}: ${milestones} milestones, ready.`;
 }

@@ -1,7 +1,8 @@
+/* Black and white ghost: a white arrow with a thin dark edge (readable on any background), no glow. */
 :root {
-  --g1: #ffc078;
-  --g2: #ff7a1a;
-  --g3: #d9420b;
+  --g1: #ffffff;
+  --g2: #ffffff;
+  --g3: #ffffff;
   --ok: #ffffff;
 }
 
@@ -25,12 +26,11 @@
 }
 .ghost__cursor svg {
   display: block;
-  filter: drop-shadow(0 2px 6px rgba(255, 110, 20, 0.55));
+  overflow: visible;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
 }
-.ghost__grain {
-  opacity: 0.55;
-  mix-blend-mode: overlay;
-}
+.ghost__cursor svg path:first-of-type { stroke: #0b0b0b; stroke-width: 1.2; stroke-linejoin: round; }
+.ghost__grain { display: none; }
 .ghost--trail svg { position: absolute; left: -2px; top: -2px; }
 
 .ghost__halo {
@@ -40,9 +40,9 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 154, 77, 0.28) 0%, rgba(255, 154, 77, 0.07) 45%, transparent 70%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
-.ghost--hit .ghost__halo { background: radial-gradient(circle, rgba(180, 199, 166, 0.6) 0%, transparent 70%); }
+.ghost--hit .ghost__halo { border-color: #ffffff; }
 
 .ghost__label {
   position: absolute;
@@ -56,36 +56,22 @@
   font-size: 11.5px;
   line-height: 1.35;
   font-weight: 500;
-  background:
-    linear-gradient(135deg, rgba(255, 154, 77, 0.42), rgba(217, 66, 11, 0.3)),
-    rgba(28, 20, 14, 0.88);
-  border: 1px solid rgba(255, 170, 110, 0.5);
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
-  backdrop-filter: blur(14px) saturate(160%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  background: rgba(11, 11, 11, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }
 .ghost__label.is-left { left: auto; right: 10px; }
 .ghost__label.is-up { top: auto; bottom: 10px; }
 
-/* The real element (from the accessibility tree): a gradient ring. */
+/* The real element (from the accessibility tree): a plain white ring. */
 .ghost-box {
   position: fixed;
   left: 0;
   top: 0;
   pointer-events: none;
   border-radius: 10px;
-  background: rgba(255, 154, 77, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
-.ghost-box::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: linear-gradient(135deg, #ffc078, rgba(255, 122, 26, 0.45));
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-}
-.ghost-box--hit { background: rgba(180, 199, 166, 0.12); }
-.ghost-box--hit::before { background: #b4c7a6; }
+.ghost-box--hit { border-color: #ffffff; background: rgba(255, 255, 255, 0.08); }

@@ -53,6 +53,8 @@ It is read aloud. Write it in the learner language given in <progress>, using in
 Never infer the learner's language from the language of the application or the operating system on screen. \
 Element descriptions stay in English.
 - Teach through the application's graphical interface; avoid terminal commands unless the task requires them.
+- If you are unsure where something is in this application or version, or the known path did not work, call \
+search(app_name, query) first: it returns up-to-date documentation, and the learner does nothing meanwhile.
 - Only act on elements you can actually see in the latest observation. If the app is not open or the element is \
 hidden, guide the learner step by step to reveal it.
 - When the learner has to make a choice (a name, a file, an item in a list), point at a sensible default and say they can pick another one.
@@ -87,6 +89,7 @@ fn tools() -> Value {
             vec!["x", "y", "direction"]),
         tool("press_key", "Press a keyboard key or shortcut",
             json!({ "keys": { "type": "string", "description": "e.g. cmd+n, enter" } }), vec!["keys"]),
+        crate::search::tool(),
         { "type": "function", "function": {
             "name": "answer",
             "description": "Call when the latest screenshot shows the current task's success criterion is met.",
@@ -415,53 +418,89 @@ async fn ask_holo(
     session.trim_images();
 
     let model = holo::smart_model();
-    let mut body = json!({
-        "model": model,
-        "messages": session.messages,
-        "tools": tools(),
-        "tool_choice": "required",
-        "temperature": 0.8,
-        "reasoning_effort": std::env::var("HOLO_REASONING").unwrap_or_else(|_| "low".into()),
-    });
+    // Searches run inside the step: Holo asks, we fetch, Holo continues on
+    // the same screenshot, until it picks an action for the learner.
+    const MAX_SEARCHES: usize = 2;
+    let mut searches = 0;
+    let mut rounds = 0;
+    let (call, msg, ms, usage) = loop {
+        rounds += 1;
+        if rounds > MAX_SEARCHES + 2 {
+            return Err("Holo kept searching without choosing an action".into());
+        }
+        let mut body = json!({
+            "model": model,
+            "messages": session.messages,
+            "tools": tools(),
+            "tool_choice": "required",
+            "temperature": 0.8,
+            "reasoning_effort": std::env::var("HOLO_REASONING").unwrap_or_else(|_| "low".into()),
+            // A runaway reasoning trace must not stall the step: a cut answer
+            // (no tool call) is simply asked again below.
+            "max_tokens": 3072,
+        });
 
-    // A step without a tool call is not a stop: ask again (bounded). An
-    // `answer` that explains the procedure instead of finishing is refused once.
-    let mut msg = Value::Null;
-    let mut ms = 0;
-    let mut refused = false;
-    for _ in 0..3 {
-        let (m, t) = holo.chat(&body).await?;
-        ms += t;
-        msg = m;
-        let Some(first) = msg["tool_calls"].as_array().and_then(|c| c.first()).cloned() else { continue };
-        let text: String = first["function"]["arguments"]
-            .as_str()
-            .and_then(|a| serde_json::from_str::<Value>(a).ok())
-            .and_then(|a| a["content"].as_str().map(String::from))
-            .unwrap_or_default();
-        if first["function"]["name"] == "answer" && !refused && (text.len() > 240 || text.contains('\n')) {
-            refused = true;
-            let msgs = body["messages"].as_array_mut().expect("messages");
-            msgs.push(json!({ "role": "assistant", "content": "", "tool_calls": [first.clone()] }));
-            msgs.push(json!({ "role": "tool", "tool_call_id": first["id"], "content":
-                "Refused: do not explain the procedure. If the success criterion is met on the screenshot, \
-                 call answer with one short sentence of evidence; otherwise give the single next action." }));
+        // A step without a tool call is not a stop: ask again (bounded). An
+        // `answer` that explains the procedure instead of finishing is refused once.
+        let mut msg = Value::Null;
+        let mut ms = 0;
+        let mut usage = Value::Null;
+        let mut refused = false;
+        for _ in 0..3 {
+            // Streamed: the bar shows Holo's reasoning while it decides.
+            let (m, t, u) = holo.chat_stream(&body, &crate::emit_thinking).await?;
+            ms += t;
+            msg = m;
+            usage = u;
+            let Some(first) = msg["tool_calls"].as_array().and_then(|c| c.first()).cloned() else { continue };
+            let text: String = first["function"]["arguments"]
+                .as_str()
+                .and_then(|a| serde_json::from_str::<Value>(a).ok())
+                .and_then(|a| a["content"].as_str().map(String::from))
+                .unwrap_or_default();
+            if first["function"]["name"] == "answer" && !refused && (text.len() > 240 || text.contains('\n')) {
+                refused = true;
+                let msgs = body["messages"].as_array_mut().expect("messages");
+                msgs.push(json!({ "role": "assistant", "content": "", "tool_calls": [first.clone()] }));
+                msgs.push(json!({ "role": "tool", "tool_call_id": first["id"], "content":
+                    "Refused: do not explain the procedure. If the success criterion is met on the screenshot, \
+                     call answer with one short sentence of evidence; otherwise give the single next action." }));
+                continue;
+            }
+            break;
+        }
+        let call = msg["tool_calls"]
+            .as_array()
+            .and_then(|c| c.first())
+            .cloned()
+            .ok_or("Holo did not choose an action")?;
+
+        // Keep only the parsed action in history, never the reasoning.
+        session.messages.push(json!({
+            "role": "assistant",
+            "content": msg["content"].as_str().unwrap_or(""),
+            "tool_calls": [call.clone()],
+        }));
+
+        if call["function"]["name"] == "search" {
+            let args: Value = call["function"]["arguments"]
+                .as_str()
+                .and_then(|a| serde_json::from_str(a).ok())
+                .unwrap_or(json!({}));
+            let app_name = args["app_name"].as_str().unwrap_or(&session.tutorial.app.name).to_string();
+            let query = args["query"].as_str().unwrap_or("").to_string();
+            let result = if searches < MAX_SEARCHES && !query.is_empty() {
+                searches += 1;
+                crate::emit_status(&format!("Searching {app_name} docs: {query}"));
+                crate::search::run(holo, &app_name, &query).await.text
+            } else {
+                "Search limit reached for this step: act on what is visible on screen.".to_string()
+            };
+            session.messages.push(json!({ "role": "tool", "tool_call_id": call["id"], "content": result }));
             continue;
         }
-        break;
-    }
-    let call = msg["tool_calls"]
-        .as_array()
-        .and_then(|c| c.first())
-        .cloned()
-        .ok_or("Holo n'a choisi aucune action")?;
-
-    // Keep only the parsed action in history, never the reasoning.
-    session.messages.push(json!({
-        "role": "assistant",
-        "content": msg["content"].as_str().unwrap_or(""),
-        "tool_calls": [call.clone()],
-    }));
+        break (call, msg, ms, usage);
+    };
     session.pending_call = call["id"].as_str().map(String::from);
 
     let name = call["function"]["name"].as_str().unwrap_or("").to_string();
@@ -481,6 +520,13 @@ async fn ask_holo(
         "step",
         json!({
             "milestone": milestone_id, "model": model, "latency_ms": ms, "shot": shot_path,
+            "tokens": {
+                "prompt": usage["prompt_tokens"],
+                "cached": usage["prompt_tokens_details"]["cached_tokens"],
+                "reasoning": usage["completion_tokens_details"]["reasoning_tokens"],
+                "completion": usage["completion_tokens"],
+            },
+            "finish_reason": msg["finish_reason"],
             "action": { "name": name, "args": args }, "reasoning": reasoning,
         }),
     );

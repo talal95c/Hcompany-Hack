@@ -1,5 +1,6 @@
 mod agent;
 mod app_icons;
+mod audio_out;
 mod ax;
 mod capture;
 mod debug;
@@ -7,8 +8,10 @@ mod clicks;
 mod holo;
 mod journal;
 mod planner;
+mod qa;
 mod tutorial;
 mod panel;
+mod search;
 mod stt;
 mod voice;
 mod watch;
@@ -161,7 +164,7 @@ fn to_overlay_coords(
     let monitor = app
         .primary_monitor()
         .map_err(|e| e.to_string())?
-        .ok_or("Aucun écran principal")?;
+        .ok_or("No primary display")?;
     let overlay = app.get_webview_window("overlay").ok_or("Overlay window missing")?;
     let origin = overlay.outer_position().map_err(|e| e.to_string())?;
     let scale = monitor.scale_factor();
@@ -282,7 +285,7 @@ async fn tutor_start(
             let shot = shoot().await?;
             planner::plan(&state.holo, &goal, &shot).await?
         }
-        (None, None) => return Err("Rien à lancer".into()),
+        (None, None) => return Err("Nothing to start".into()),
     };
     let mut guard = state.session.lock().await;
     let session = guard.insert(agent::Session::new(tutorial, lang.as_deref()));
@@ -306,7 +309,7 @@ async fn tutor_next(
     state: State<'_, AppState>,
 ) -> Result<agent::Step, String> {
     let mut guard = state.session.lock().await;
-    let session = guard.as_mut().ok_or("Aucun tuto en cours")?;
+    let session = guard.as_mut().ok_or("No tutorial in progress")?;
     session.set_lang(lang.as_deref());
     watch::disarm();
     if !only_if_changed {
@@ -353,7 +356,7 @@ async fn tutor_skip_milestone(
 ) -> Result<agent::Step, String> {
     watch::disarm();
     let mut guard = state.session.lock().await;
-    let session = guard.as_mut().ok_or("Aucun tuto en cours")?;
+    let session = guard.as_mut().ok_or("No tutorial in progress")?;
     session.set_lang(lang.as_deref());
     session.skip_milestone();
     app.emit_to("overlay", "pointer:thinking", ()).ok();
@@ -373,7 +376,7 @@ fn resolve_lang(text: String, spoken: Option<String>, fallback: Option<String>) 
         .filter(supported)
         .or_else(|| voice::detect(&text).map(String::from))
         .or(fallback.filter(supported))
-        .unwrap_or_else(|| "fr".into())
+        .unwrap_or_else(|| "en".into())
 }
 
 #[tauri::command]
@@ -386,7 +389,7 @@ fn list_tutorials() -> Vec<tutorial::Summary> {
 #[tauri::command]
 async fn save_tutorial(state: State<'_, AppState>) -> Result<String, String> {
     let guard = state.session.lock().await;
-    let session = guard.as_ref().ok_or("Aucun tuto à enregistrer")?;
+    let session = guard.as_ref().ok_or("No tutorial to save")?;
     let t = agent::to_tutorial(session);
     tutorial::save(&t)?;
     journal::event("saved_as_tutorial", json!({ "tutorial_id": t.id, "version": t.version }));
@@ -414,6 +417,71 @@ async fn tutor_stop(app: AppHandle, state: State<'_, AppState>) -> Result<(), St
     *state.target.lock().unwrap() = None;
     app.emit_to("overlay", "pointer:hide", ()).ok();
     Ok(())
+}
+
+/// The app, for modules that emit UI events without a handle (live reasoning).
+pub static APP: std::sync::OnceLock<AppHandle> = std::sync::OnceLock::new();
+
+/// Shows what Holo is thinking about, live, while it decides the next step:
+/// the sentence being written, at most every 150 ms.
+pub fn emit_thinking(reasoning: &str) {
+    static LAST: Mutex<Option<std::time::Instant>> = Mutex::new(None);
+    {
+        let mut last = LAST.lock().unwrap();
+        if last.is_some_and(|t| t.elapsed() < std::time::Duration::from_millis(150)) {
+            return;
+        }
+        *last = Some(std::time::Instant::now());
+    }
+    let Some(app) = APP.get() else { return };
+    let text = reasoning.trim();
+    let sentences: Vec<&str> = text.split_inclusive(['.', '!', '?', '\n']).map(str::trim).filter(|s| !s.is_empty()).collect();
+    let mut snippet = sentences.last().copied().unwrap_or("").to_string();
+    // A sentence just started: keep the previous one for context.
+    if snippet.len() < 30 && sentences.len() > 1 {
+        snippet = format!("{} {snippet}", sentences[sentences.len() - 2]);
+    }
+    let chars: Vec<char> = snippet.chars().collect();
+    let snippet: String = if chars.len() > 150 {
+        format!("…{}", chars[chars.len() - 149..].iter().collect::<String>())
+    } else {
+        snippet
+    };
+    app.emit_to("main", "holo:thinking", snippet).ok();
+}
+
+/// A status line in the bar while Holo works (e.g. "Searching Blender docs…").
+pub fn emit_status(text: &str) {
+    if let Some(app) = APP.get() {
+        app.emit_to("main", "holo:thinking", text).ok();
+    }
+}
+
+/// Bumped by every `speak` / `stop_speaking`: a slow synthesis that was
+/// superseded meanwhile is dropped instead of played.
+static SPEECH_GEN: AtomicU64 = AtomicU64::new(0);
+
+/// Speaks `text` with Phonon, played natively (not through the webview,
+/// whose autoplay policy can silently mute the panel).
+#[tauri::command]
+async fn speak(text: String, lang: Option<String>, app: AppHandle) -> Result<(), String> {
+    let ticket = SPEECH_GEN.fetch_add(1, Ordering::SeqCst) + 1;
+    audio_out::stop();
+    let app2 = app.clone();
+    let (pcm, rate) = tauri::async_runtime::spawn_blocking(move || app2.state::<AppState>().tts.say(text, lang))
+        .await
+        .map_err(|e| e.to_string())?
+        .inspect_err(|e| eprintln!("[speak] {e}"))?;
+    if SPEECH_GEN.load(Ordering::SeqCst) == ticket {
+        audio_out::play(&pcm, rate).inspect_err(|e| eprintln!("[speak] {e}"))?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn stop_speaking() {
+    SPEECH_GEN.fetch_add(1, Ordering::SeqCst);
+    audio_out::stop();
 }
 
 /// Speaks `text` with Phonon. Returns raw audio: a little-endian u32 sample
@@ -625,6 +693,7 @@ pub fn run() {
             session: tauri::async_runtime::Mutex::new(None),
         })
         .setup(|app| {
+            let _ = APP.set(app.handle().clone());
             // Menu bar app: no Dock icon, no app switcher entry.
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
@@ -648,6 +717,8 @@ pub fn run() {
             tray::resize_bar,
             tray::set_bar_sticky,
             say,
+            speak,
+            stop_speaking,
             ask,
             tutor_start,
             tutor_next,
@@ -656,6 +727,7 @@ pub fn run() {
             tutor_skip_milestone,
             list_tutorials,
             resolve_lang,
+            qa::answer_question,
             youtube::import_youtube,
             app_icons::app_icons,
             save_tutorial,

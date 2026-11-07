@@ -193,3 +193,24 @@ impl Tts {
         rx.recv().map_err(|_| "TTS thread stopped".to_string())?
     }
 }
+
+#[cfg(test)]
+mod tests {
+    /// `cargo test --lib voice -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn speaks_both_languages() {
+        let tts = super::Tts::spawn();
+        for (text, lang) in [
+            ("Click the Images icon in the left sidebar.", Some("en")),
+            ("Clique sur l'icône Images dans la barre latérale.", Some("fr")),
+            ("Where is it?", None),
+        ] {
+            let t = std::time::Instant::now();
+            let r = tts.say(text.to_string(), lang.map(String::from));
+            println!("{text:?} -> {:?} in {:?} (detected {:?})", r.as_ref().map(|(p, sr)| (p.len(), *sr)), t.elapsed(), super::detect(text));
+            assert!(r.is_ok(), "{r:?}");
+        }
+        println!("state: {}", super::STATE.lock().unwrap());
+    }
+}
