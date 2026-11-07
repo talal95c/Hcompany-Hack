@@ -13,7 +13,7 @@ from prep.__main__ import parser, profile_for
 from prep.apps import GENERIC_CHECKS, PROFILES, get_profile
 from prep.compile.generic import GenericCompiler
 from prep.ingest import Transcript, vocabulary_from_ui_map
-from prep.prover.checks import describe_check, evaluate_check, evaluate_snapshot
+from prep.prover.checks import evaluate_check, evaluate_snapshot
 from prep.prover.generic import (
     VISUAL_DIALOG_QUESTION,
     drive_step,
@@ -479,7 +479,11 @@ async def test_generic_prover_nominal_and_reuse(tmp_path):
     assert manifest["artifacts_sha256"]["proof/sum_sales.json"] == file_sha256(
         out / "proof/sum_sales.json"
     )
-    assert desktop.opened == ["initial.json"]
+    assert desktop.opened == [
+        "initial.json",
+        "sum_sales-checkpoint.json",
+        "bold_header-checkpoint.json",
+    ]
     again = FakeOperator([])
     reused = await prove_generic_lesson(lesson, FakeDesktop(tmp_path), again, out, fixture=fixture)
     assert reused["status"] == "proven" and again.calls == 0
@@ -570,17 +574,17 @@ def test_open_dialogs_blocks_completion():
     assert open_dialogs(modal) == ["Save"]
 
 
-async def test_lost_accessibility_falls_back_to_vision():
+async def test_lost_accessibility_requires_explicit_visual_check():
     lost = Observer({"complete": False, "nodes": [], "error": {"code": "APP_NOT_FOUND"}})
     check = {"name": "element_exists", "params": {"target": {"description": "chart"}}}
-    verdict = await evaluate_check(check, lost, Judge("yes", 0.9), fallback="a chart is visible")
-    assert verdict["result"] == "pass" and verdict["a11y_error"] == "APP_NOT_FOUND"
+    visual = {"name": "visual_assert", "params": {"assertion": "Is a chart visible?"}}
+    verdict = await evaluate_check(visual, lost, Judge("yes", 0.9))
+    assert verdict["result"] == "pass"
     assert verdict["sensor"] == "vision"
-    assert (await evaluate_check(check, lost, Judge("yes", 0.9)))["result"] == "unknown"
-    assert (await evaluate_check(check, lost, Judge("yes", 0.4), fallback="x"))["result"] == (
-        "unknown"
-    )
-    assert describe_check(check) == "a chart is visible"
+    assert (await evaluate_check(check, lost, Judge("yes", 0.9), wait_for_pass=False))[
+        "result"
+    ] == "unknown"
+    assert (await evaluate_check(visual, lost, Judge("yes", 0.4)))["result"] == ("unknown")
 
 
 class NoA11yDesktop(FakeDesktop):

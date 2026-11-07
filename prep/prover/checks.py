@@ -59,6 +59,8 @@ def evaluate_snapshot(check: dict[str, Any], snapshot: dict[str, Any]) -> dict[s
     complete = bool(snapshot.get("complete")) and not snapshot.get("error")
     if snapshot.get("error"):
         return {"result": "unknown", "reason": snapshot["error"].get("code", "ERROR")}
+    if not complete:
+        return {"result": "unknown", "reason": "arbre incomplet"}
     if name == "window_title":
         titles = [clean_name(t) for t in snapshot.get("windows", [])]
         mode = params.get("match", "contains")
@@ -71,6 +73,8 @@ def evaluate_snapshot(check: dict[str, Any], snapshot: dict[str, Any]) -> dict[s
         return {"result": "unknown", "reason": "cible sans rôle ni nom : vision requise"}
     nodes = find_nodes(snapshot, target)
     evidence = {"matches": [_summary(node) for node in nodes[:5]], "match_count": len(nodes)}
+    if len(nodes) > 1:
+        return {**evidence, "result": "unknown", "reason": "AMBIGUOUS_TARGET"}
     if name == "element_exists":
         present = params.get("present", True)
         if nodes:
@@ -98,28 +102,6 @@ def evaluate_snapshot(check: dict[str, Any], snapshot: dict[str, Any]) -> dict[s
     return {**evidence, "result": "pass" if verdicts.pop() else "fail"}
 
 
-A11Y_LOST = {"APP_NOT_FOUND", "TIMEOUT"}
-
-
-def describe_check(check: dict[str, Any]) -> str:
-    """Énoncé visuel d'un check générique, pour le repli vision quand l'arbre est perdu."""
-    params = check.get("params", {})
-    target = params.get("target", {})
-    what = (
-        target.get("description")
-        or " ".join(str(target.get(k, "")) for k in ("role", "name")).strip()
-    )
-    if check.get("name") == "element_value":
-        return f"{what} shows the value {params.get('value')}"
-    if check.get("name") == "element_state":
-        return f"{what} is {', '.join(params.get('states', []))}"
-    if check.get("name") == "window_title":
-        return f"the window title contains {params.get('value')}"
-    if check.get("name") == "element_exists" and params.get("present", True) is False:
-        return f"no {what} is visible"
-    return f"a {what} is visible"
-
-
 async def evaluate_check(
     check: dict[str, Any],
     observer: Observer,
@@ -127,12 +109,11 @@ async def evaluate_check(
     *,
     wait_for_pass: bool = True,
     poll_interval: float = 0.5,
-    fallback: str | None = None,
 ) -> dict[str, Any]:
     """Check sur un état frais ; attend jusqu'à `timeout_ms` qu'il devienne vrai.
 
-    Si l'arbre d'accessibilité est perdu (application vivante mais désinscrite du bus),
-    `fallback` est vérifié par le juge visuel : palier vision, jamais un pass implicite.
+    Seul un check visual_assert autorise la vision. Les checks exacts ne sont jamais
+    remplacés par une assertion inventée lorsque l'accessibilité devient indisponible.
     """
     started = time.perf_counter()
     name, params = check.get("name"), check.get("params", {})
@@ -163,13 +144,6 @@ async def evaluate_check(
         if verdict["result"] == "pass" or time.monotonic() >= deadline:
             break
         await asyncio.sleep(poll_interval)
-    error = (snapshot.get("error") or {}).get("code")
-    if error in A11Y_LOST and fallback and judge is not None:
-        visual = {"name": "visual_assert", "params": {"assertion": fallback}}
-        verdict = await evaluate_check(visual, observer, judge)
-        verdict["a11y_error"] = error
-        verdict["duration"] = time.perf_counter() - started
-        return verdict
     verdict["sensor"] = "accessibility"
     verdict["snapshot_complete"] = bool(snapshot.get("complete"))
     verdict["duration"] = time.perf_counter() - started

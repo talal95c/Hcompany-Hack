@@ -103,11 +103,16 @@ def snapshot(args):
             return
         counter += 1
         ref = item["ref"]
-        result["nodes"].append(item)
+        bounded = item["bounds"]["w"] > 0 and item["bounds"]["h"] > 0
+        if bounded:
+            result["nodes"].append(item)
+        else:
+            ref = parent_ref
         if role in {"frame", "dialog", "alert", "file chooser"} and depth == 1:
             result["windows"].append(node.name or "")
         if managed:
-            result["managed_refs"].append(ref)
+            if bounded:
+                result["managed_refs"].append(ref)
             if role == "table" and cells:
                 table = node.queryTable()
                 for name in cells:
@@ -115,7 +120,9 @@ def snapshot(args):
                     if row < table.nRows and column < table.nColumns:
                         counter += 1
                         cell = table.getAccessibleAt(row, column)
-                        result["nodes"].append(describe(cell, f"e{counter}", ref, False))
+                        cell_item = describe(cell, f"e{counter}", ref, False)
+                        if cell_item["bounds"]["w"] > 0 and cell_item["bounds"]["h"] > 0:
+                            result["nodes"].append(cell_item)
             return
         for index in range(children):
             try:

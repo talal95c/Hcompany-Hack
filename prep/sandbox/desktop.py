@@ -20,10 +20,71 @@ import time
 from pathlib import Path
 from typing import Any
 
+import jsonschema
+
 from prep.apps import AppProfile
 
 LOGGER = logging.getLogger(__name__)
 WORKER = Path(__file__).with_name("atspi_worker.py")
+DESKTOP_SCHEMA = json.loads(
+    (Path(__file__).resolve().parents[2] / "contracts/desktop-ws.schema.json").read_text()
+)
+SNAPSHOT_SCHEMA = next(
+    branch["properties"]["payload"]
+    for branch in DESKTOP_SCHEMA["oneOf"]
+    if branch.get("properties", {}).get("type", {}).get("const") == "a11y.result"
+)
+WORKER_SCHEMA = {
+    **SNAPSHOT_SCHEMA,
+    "$defs": DESKTOP_SCHEMA["$defs"],
+    "properties": {
+        **{
+            k: v
+            for k, v in SNAPSHOT_SCHEMA["properties"].items()
+            if k not in {"request_id", "snapshot_id"}
+        },
+        "windows": {"type": "array", "items": {"type": "string"}},
+        "managed_refs": {"type": "array", "items": {"type": "string"}},
+        "apps": {"type": "array", "items": {"type": "string"}},
+        "duration": {"type": "number", "minimum": 0},
+        "stale_skipped": {"type": "integer", "minimum": 0},
+    },
+    "required": ["complete", "nodes", "windows"],
+    "else": {},
+}
+CHILD_ENV = frozenset(
+    {
+        "PATH",
+        "HOME",
+        "DISPLAY",
+        "LANG",
+        "LANGUAGE",
+        "LC_ALL",
+        "LC_CTYPE",
+        "LC_MESSAGES",
+        "LC_NUMERIC",
+        "LC_TIME",
+        "LC_COLLATE",
+        "LC_MONETARY",
+        "XDG_RUNTIME_DIR",
+        "XDG_CONFIG_HOME",
+        "XDG_DATA_HOME",
+        "XDG_CACHE_HOME",
+        "XDG_DATA_DIRS",
+        "XDG_CONFIG_DIRS",
+        "DBUS_SESSION_BUS_ADDRESS",
+        "AT_SPI_BUS_ADDRESS",
+        "AT_SPI_BUS",
+        "GTK_MODULES",
+        "SAL_USE_VCLPLUGIN",
+        "NO_AT_BRIDGE",
+        "TMPDIR",
+        "TMP",
+        "TEMP",
+        "TZ",
+        "XAUTHORITY",
+    }
+)
 KEYSYMS = {
     "ctrl": "ctrl",
     "shift": "shift",
@@ -70,13 +131,7 @@ def xdotool_chord(keys: list[str] | tuple[str, ...]) -> str:
 
 
 def scrubbed_env(extra: dict[str, str] | None = None) -> dict[str, str]:
-    env = {
-        k: v
-        for k, v in os.environ.items()
-        if not k.endswith(("_API_KEY", "_TOKEN", "_SECRET")) and k not in {"DISPLAY"}
-    }
-    env.update(extra or {})
-    return env
+    return {k: v for k, v in {**os.environ, **(extra or {})}.items() if k in CHILD_ENV}
 
 
 class DesktopSandbox:
@@ -199,7 +254,7 @@ class DesktopSandbox:
         address = (await asyncio.wait_for(bus.stdout.readline(), 10)).decode().strip()
         if not address:
             raise RuntimeError("Bus D-Bus de session indisponible")
-        self.env = {**base, "DBUS_SESSION_BUS_ADDRESS": address, **self.profile.env}
+        self.env = scrubbed_env({**base, "DBUS_SESSION_BUS_ADDRESS": address, **self.profile.env})
         launcher = next(
             (
                 p
@@ -409,7 +464,17 @@ class DesktopSandbox:
                 "windows": [],
                 "error": {"code": "PERMISSION_DENIED", "message": str(exc)[:300]},
             }
-        result = json.loads(raw)
+        try:
+            result = json.loads(raw)
+            jsonschema.Draft202012Validator(WORKER_SCHEMA).validate(result)
+        except (ValueError, UnicodeDecodeError, jsonschema.ValidationError):
+            self._measure("a11y_snapshot", started, error="INVALID_PACKET")
+            return {
+                "complete": False,
+                "nodes": [],
+                "windows": [],
+                "error": {"code": "INVALID_PACKET", "message": "Paquet AT-SPI invalide"},
+            }
         if (result.get("error") or {}).get("code") == "APP_NOT_FOUND":
             # Application désinscrite du bus (LibreOffice après certains assistants) :
             # le prochain open relance l'application pour retrouver l'arbre.
