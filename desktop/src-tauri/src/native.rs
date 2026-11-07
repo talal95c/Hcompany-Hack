@@ -8,6 +8,71 @@ pub struct Permissions {
     pub microphone: bool,
 }
 
+#[cfg(target_os = "linux")]
+pub fn app_window_rect() -> Result<Rect, String> {
+    use x11rb::{
+        connection::Connection,
+        protocol::xproto::{AtomEnum, ConnectionExt, MapState},
+    };
+    let (conn, screen) = connection()?;
+    let root = conn.setup().roots[screen].root;
+    let atom = conn
+        .intern_atom(false, b"_NET_WM_PID")
+        .map_err(|e| e.to_string())?
+        .reply()
+        .map_err(|e| e.to_string())?
+        .atom;
+    let windows = conn
+        .query_tree(root)
+        .map_err(|e| e.to_string())?
+        .reply()
+        .map_err(|e| e.to_string())?
+        .children;
+    for window in windows.into_iter().rev() {
+        let pid = conn
+            .get_property(false, window, atom, AtomEnum::CARDINAL, 0, 1)
+            .map_err(|e| e.to_string())?
+            .reply()
+            .map_err(|e| e.to_string())?;
+        let Some(pid) = pid.value32().and_then(|mut values| values.next()) else {
+            continue;
+        };
+        if pid == std::process::id() {
+            continue;
+        }
+        let attrs = conn
+            .get_window_attributes(window)
+            .map_err(|e| e.to_string())?
+            .reply()
+            .map_err(|e| e.to_string())?;
+        if attrs.map_state != MapState::VIEWABLE {
+            continue;
+        }
+        let geometry = conn
+            .get_geometry(window)
+            .map_err(|e| e.to_string())?
+            .reply()
+            .map_err(|e| e.to_string())?;
+        let position = conn
+            .translate_coordinates(window, root, 0, 0)
+            .map_err(|e| e.to_string())?
+            .reply()
+            .map_err(|e| e.to_string())?;
+        return Ok(Rect {
+            x: position.dst_x.into(),
+            y: position.dst_y.into(),
+            width: geometry.width.into(),
+            height: geometry.height.into(),
+        });
+    }
+    Err("Fenêtre applicative introuvable".into())
+}
+
+#[cfg(not(target_os = "linux"))]
+pub fn app_window_rect() -> Result<Rect, String> {
+    Err("L'adaptateur doit fournir le rectangle de la fenêtre sur cette plateforme".into())
+}
+
 pub fn permissions() -> Permissions {
     #[cfg(target_os = "macos")]
     {

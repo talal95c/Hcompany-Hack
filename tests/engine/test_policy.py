@@ -155,7 +155,7 @@ async def test_holo_failure_stays_level_two(mode):
     await policy.intent("aide", ctx)
     drain(commands)
     assert (await policy.intent("aide", ctx)).level == 2
-    assert commands.empty()
+    assert [command["type"] for command in drain(commands)] == ["highlight", "say"]
     assert policy.fallback.health["holo"].consecutive_failures == 1
     assert any(d["kind"] == "latency" and d["service"] == "holo" for d in debug)
 

@@ -216,10 +216,15 @@ def png(width=1, height=1):
 
 
 def capture(runtime, capture_id="cap"):
-    return {"capture_id": capture_id, "ui_revision": runtime.ui_revision,
+    payload = {"capture_id": capture_id, "ui_revision": runtime.ui_revision,
             "crop": {"x": 0, "y": 0, "width": 1, "height": 1}, "scale": 2,
             "monitor_id": "main", "image_ref": "data:image/png;base64,"
             + base64.b64encode(png()).decode()}
+    payload["request_id"] = str(uuid4())
+    runtime.pointer_request = {"request_id": payload["request_id"], "crop": payload["crop"],
+                               "generation": runtime.session.generation,
+                               "epoch": runtime.policy.capture_epoch, "at": time.monotonic()}
+    return payload
 
 
 async def permissions(ws):

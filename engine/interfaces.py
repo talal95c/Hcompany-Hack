@@ -11,6 +11,7 @@ class LocalizeResult:
     y: int
     confidence: float | None
     latency_ms: float
+    target_visible: bool | None = None
 
     def __post_init__(self) -> None:
         if not 0 <= self.x <= 1000 or not 0 <= self.y <= 1000:
