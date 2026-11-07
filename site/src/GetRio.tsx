@@ -68,6 +68,7 @@ export function GetRio() {
                   aria-label="How to install Rio, step by step"
                   autoPlay={!matchMedia("(prefers-reduced-motion: reduce)").matches}
                   controls={matchMedia("(prefers-reduced-motion: reduce)").matches}
+                  onClick={(e) => (e.currentTarget.paused ? e.currentTarget.play() : e.currentTarget.pause())}
                   muted
                   loop
                   playsInline
