@@ -96,7 +96,7 @@
             "additionalProperties": true
           },
           "check": {
-            "$ref": "#/$defs/check"
+            "$ref": "#/$defs/lesson_check"
           },
           "runtime_check": {
             "allOf": [
@@ -140,7 +140,7 @@
                   "minLength": 1
                 },
                 "check": {
-                  "$ref": "#/$defs/check"
+                  "$ref": "#/$defs/lesson_check"
                 },
                 "hint": {
                   "type": "string",
@@ -322,7 +322,13 @@
   ],
   "additionalProperties": false,
   "$defs": {
-    "check": {
+    "lesson_check": {
+      "oneOf": [
+        {"$ref": "#/$defs/check"},
+        {"$ref": "#/$defs/calc_check"}
+      ]
+    },
+    "calc_check": {
       "oneOf": [
         {
           "type": "object",
@@ -377,7 +383,11 @@
           },
           "required": ["name", "params"],
           "additionalProperties": false
-        },
+        }
+      ]
+    },
+    "check": {
+      "oneOf": [
         {
           "type": "object",
           "properties": {

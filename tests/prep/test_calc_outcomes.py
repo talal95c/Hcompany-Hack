@@ -93,7 +93,7 @@ def test_chart_must_not_include_total_row():
 
 def test_calc_contract_fixtures():
     schema = json.loads(SCHEMA.read_text())
-    fixtures = Path(SCHEMA).parent / "examples/lesson"
+    fixtures = Path(__file__).with_name("fixtures") / "contracts/lesson"
     for name in CalcAdapter.checks:
         valid = json.loads((fixtures / "valid" / f"{name}.json").read_text())
         jsonschema.validate(valid, schema)
