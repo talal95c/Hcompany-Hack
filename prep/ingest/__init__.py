@@ -240,6 +240,11 @@ async def ingest(
         for utterance in transcription["utterances"]
     ]
     detected = transcription.get("languages", [])
+    if not language:
+        LOGGER.warning(
+            "Langue Gladia détectée non vérifiée (%s) ; préciser --language pour la fixer",
+            detected[0] if detected else "und",
+        )
     return Transcript(
         text,
         language or (detected[0] if detected else "und"),

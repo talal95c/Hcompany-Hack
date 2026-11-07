@@ -11,7 +11,7 @@ from typing import Protocol
 
 from prep.docs_search import docs_search
 from prep.prover.planner import Mode, next_mode
-from prep.prover.procedures import CHECK_LIBRARY, PROCEDURE_LIBRARY
+from prep.prover.procedures import CHECK_LIBRARY, PROCEDURE_LIBRARY, target_description
 from prep.repair import write_repair_request
 from prep.ui_map import step_signature
 
@@ -171,6 +171,7 @@ async def prove_lesson(
                 old.get("hashes") == hashes
                 and old.get("target_signature") == target
                 and old.get("status") == "proven"
+                and old.get("selected_procedure", procedure) == procedure
                 and old.get("selected_procedure_hash")
                 == digest(PROCEDURE_LIBRARY.get(old.get("selected_procedure", procedure)))
                 and output.exists()
@@ -199,6 +200,29 @@ async def prove_lesson(
                             attempt = await sandbox.run_step(checkpoint, candidate, check, output)
                             evidence["attempts"].append(attempt)
                             evidence["selected_procedure"] = candidate
+                            if attempt["check_result"] == "pass":
+                                procedure = candidate
+                                step["procedure_ref"] = procedure
+                                step["preconditions"] = copy.deepcopy(
+                                    PROCEDURE_LIBRARY[procedure]["preconditions"]
+                                )
+                                operator_id = PROCEDURE_LIBRARY[procedure]["operator_id"]
+                                evidence["source_signature"] = step_signature(
+                                    source_map, operator_id
+                                )
+                                target = step_signature(target_map, operator_id)
+                                evidence["target_signature"] = target
+                                if target:
+                                    step["target"]["description"] = target_description(target)
+                                hashes["procedure"] = digest(
+                                    {"id": procedure, "definition": PROCEDURE_LIBRARY[procedure]}
+                                )
+                                hashes["params"] = digest(
+                                    {
+                                        "check": check.get("params"),
+                                        "preconditions": step["preconditions"],
+                                    }
+                                )
                     if attempt["check_result"] == "pass":
                         transition("success")
                         status = "proven"

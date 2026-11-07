@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import time
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
@@ -12,12 +13,24 @@ if TYPE_CHECKING:
     import httpx
 
 
-async def docs_search(query: str, *, client: httpx.AsyncClient | None = None) -> list[dict]:
+async def docs_search(
+    query: str,
+    *,
+    blender_version: str | None = None,
+    client: httpx.AsyncClient | None = None,
+) -> list[dict]:
     import httpx
 
     key = os.environ.get("LINKUP_API_KEY")
     if not key:
         raise RuntimeError("Clé Linkup absente")
+    match = re.search(r"\bBlender\s+(\d+\.\d+)(?:\.\d+)?\b", query, re.IGNORECASE)
+    version = blender_version or (match[1] if match else None)
+    if version:
+        if not re.fullmatch(r"\d+\.\d+(?:\.\d+)?", version):
+            raise ValueError("Version Blender invalide pour la recherche")
+        version = ".".join(version.split(".")[:2])
+    path_pattern = re.compile(rf"^/(?:manual/[^/]+|api)/{re.escape(version)}/") if version else None
     started = time.perf_counter()
 
     async def search(session: httpx.AsyncClient) -> list[dict]:
@@ -26,7 +39,11 @@ async def docs_search(query: str, *, client: httpx.AsyncClient | None = None) ->
                 "https://api.linkup.so/v1/search",
                 headers={"Authorization": f"Bearer {key}"},
                 json={
-                    "q": f"site:docs.blender.org {query}",
+                    "q": (
+                        f"site:docs.blender.org/manual/en/{version}/ {query}"
+                        if version
+                        else f"site:docs.blender.org {query}"
+                    ),
                     "depth": "standard",
                     "outputType": "searchResults",
                     "includeDomains": ["docs.blender.org"],
@@ -38,6 +55,8 @@ async def docs_search(query: str, *, client: httpx.AsyncClient | None = None) ->
                 {k: item.get(k, "") for k in ("name", "url", "content")}
                 for item in response.json().get("results", [])
                 if urlparse(item.get("url", "")).hostname == "docs.blender.org"
+                and urlparse(item.get("url", "")).scheme == "https"
+                and (path_pattern is None or path_pattern.match(urlparse(item.get("url", "")).path))
             ]
         except httpx.TimeoutException as exc:
             raise TimeoutError("Recherche Linkup : délai de 15 s dépassé") from exc

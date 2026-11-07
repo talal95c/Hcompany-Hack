@@ -31,6 +31,13 @@ def model_lesson():
     step = copy.deepcopy(source["steps"][0])
     for key in ("proof", "audio_ref"):
         step.pop(key)
+    step["known_errors"] = [
+        {
+            "code": "torus_instead_of_cube",
+            "check": {"name": "object_exists", "params": {"type": "MESH", "primitive": "torus"}},
+            "hint": "Choisis Cube plutôt que Tore.",
+        }
+    ]
     return {"title": "Créer un cube", "steps": [step]}
 
 
@@ -99,6 +106,11 @@ async def test_compile_rejected_handoff(tmp_path, field):
     )
     jsonschema.validate(compiled, json.loads(SCHEMA.read_text()))
     assert compiler.rejections["cube"]["original_step"][field] == raw["steps"][0][field]
+    assert compiled["steps"][0]["check"]["params"] == {
+        "type": "unresolved",
+        "primitive": "unresolved",
+    }
+    assert compiled["steps"][0]["known_errors"] == []
     result = await prove_lesson(
         compiled,
         StubSandbox(tmp_path),
@@ -139,6 +151,23 @@ async def test_compile_model_fallback():
     assert result["status"] == "draft"
     assert [call["model"] for call in client.calls] == ["holo4-35b-a3b", "holo4-27b"]
     assert compiler.metrics[0]["status_code"] == 429
+
+
+@pytest.mark.parametrize("invalid_error", ["empty", "same", "unknown"])
+async def test_compile_requires_actionable_known_errors(invalid_error):
+    raw = model_lesson()
+    if invalid_error == "empty":
+        raw["steps"][0]["known_errors"] = []
+    elif invalid_error == "same":
+        raw["steps"][0]["known_errors"][0]["check"] = raw["steps"][0]["check"]
+    else:
+        raw["steps"][0]["known_errors"][0]["check"]["params"]["primitive"] = "invented"
+    compiler = HoloCompiler(client=HoloStub([json.dumps(raw), json.dumps(model_lesson())]))
+    result = await compiler.compile(
+        transcript(), ui_map(), lesson_id="cube", blender_version="4.5.9"
+    )
+    assert len(compiler.client.calls) == 2
+    assert result["steps"][0]["known_errors"] == model_lesson()["steps"][0]["known_errors"]
 
 
 async def test_ingest_text_and_download(tmp_path):

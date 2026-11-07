@@ -13,23 +13,11 @@ import jsonschema
 from openai import APIStatusError, APITimeoutError, AsyncOpenAI
 
 from prep.ingest import Transcript
-from prep.prover.procedures import CHECK_LIBRARY, PRIMITIVES, PROCEDURE_LIBRARY
+from prep.prover.procedures import CHECK_LIBRARY, PRIMITIVES, PROCEDURE_LIBRARY, target_description
 from prep.ui_map import step_signature
 
 LOGGER = logging.getLogger(__name__)
 SCHEMA = Path(__file__).resolve().parents[2] / "contracts/lesson.schema.json"
-FRENCH_LABELS = {
-    "cube": "Cube",
-    "uv_sphere": "Sphère UV",
-    "ico_sphere": "Icosphère",
-    "cylinder": "Cylindre",
-    "cone": "Cône",
-    "torus": "Tore",
-    "plane": "Plan",
-    "monkey": "Singe",
-    "circle": "Cercle",
-    "grid": "Grille",
-}
 
 
 class HoloCompiler:
@@ -149,7 +137,10 @@ class HoloCompiler:
                     "target: {description: chemin UI français, "
                     "area_type: VIEW_3D, region_type: WINDOW}, "
                     "why: string, known_errors: [{code: string, check: check, hint: string}]}]}. "
-                    "known_errors peut être vide. Bibliothèque : "
+                    "Pour chaque étape réalisable, fournis au moins une erreur concrète : "
+                    "son check autorisé doit être différent du check de réussite. "
+                    "Pour une étape non prise en charge, known_errors peut être vide. "
+                    "Bibliothèque : "
                     + json.dumps(PROCEDURE_LIBRARY)
                     + "; checks : "
                     + json.dumps(CHECK_LIBRARY)
@@ -217,24 +208,31 @@ class HoloCompiler:
                     "original_step": original,
                 }
                 step["procedure_ref"] = procedure or "unresolved"
-                if not valid_check:
-                    step["check"] = {
-                        "name": "object_exists",
-                        "params": {
-                            "type": "unresolved",
-                            "primitive": "unresolved",
-                        },
-                    }
+                step["check"] = {
+                    "name": "object_exists",
+                    "params": {
+                        "type": "unresolved",
+                        "primitive": "unresolved",
+                    },
+                }
+                step["known_errors"] = []
             else:
+                errors = step.get("known_errors", [])
+                if not errors:
+                    raise ValueError("Une étape réalisable nécessite au moins une erreur connue")
+                for error in errors:
+                    error_check = error["check"]
+                    error_params = error_check.get("params", {})
+                    if (
+                        error_check.get("name") not in CHECK_LIBRARY
+                        or error_params.get("type") != "MESH"
+                        or error_params.get("primitive") not in PRIMITIVES
+                        or error_check == check
+                    ):
+                        raise ValueError("Check d'erreur non autorisé ou identique au succès")
                 signature = step_signature(ui_map, PROCEDURE_LIBRARY[procedure]["operator_id"])
                 if signature:
-                    labels = {"Add": "Ajouter", "Mesh": "Maillage", "UV Sphere": "Sphère UV"}
-                    for primitive, french in FRENCH_LABELS.items():
-                        labels[primitive.replace("_", " ").title()] = french
-                        labels[f"add_primitive/{primitive}"] = french
-                    step["target"]["description"] = " › ".join(
-                        labels.get(label, label) for label in signature["ui_paths"][0].split(" › ")
-                    )
+                    step["target"]["description"] = target_description(signature)
             step["audio_ref"] = None
             step["proof"] = {
                 "status": "draft",

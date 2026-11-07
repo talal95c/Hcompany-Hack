@@ -14,7 +14,7 @@ import pytest
 httpx = pytest.importorskip("httpx", reason="Installer l'extra prep pour ces tests")
 
 from prep.docs_search import docs_search
-from prep.prover import prove_lesson
+from prep.prover import digest, prove_lesson
 from prep.prover.planner import TRANSITIONS, Mode, next_mode
 from prep.prover.procedures import PROCEDURE_LIBRARY
 from prep.repair import write_repair_request
@@ -204,6 +204,57 @@ async def test_retry(tmp_path):
     assert evidence["sources"]
 
 
+async def test_retry_updates_export_and_replays_selected_procedure(tmp_path):
+    original = lesson(("monkey",))
+    original["steps"][0]["procedure_ref"] = "add_primitive/cube"
+
+    async def search(query):
+        return [{"url": "https://docs.blender.org/manual/en/4.5/modeling/meshes/primitives.html"}]
+
+    async def reselect(step, docs):
+        assert step["procedure_ref"] == "add_primitive/cube"
+        return "add_primitive/monkey"
+
+    sandbox = StubSandbox(tmp_path, ["fail", "pass"])
+    result = await prove_lesson(
+        original, sandbox, ui_map(), ui_map(), tmp_path, reselect=reselect, search=search
+    )
+    assert result["status"] == "proven"
+    exported = json.loads((tmp_path / "lesson.json").read_text())
+    jsonschema.validate(exported, json.loads(Path("contracts/lesson.schema.json").read_text()))
+    step = exported["steps"][0]
+    assert step["procedure_ref"] == "add_primitive/monkey"
+    assert step["target"]["description"] == "Ajouter › Singe"
+    assert step["preconditions"] == PROCEDURE_LIBRARY[step["procedure_ref"]]["preconditions"]
+    evidence = json.loads((tmp_path / "proof/monkey.json").read_text())
+    assert evidence["selected_procedure"] == step["procedure_ref"]
+    assert evidence["hashes"]["procedure"] == digest(
+        {"id": step["procedure_ref"], "definition": PROCEDURE_LIBRARY[step["procedure_ref"]]}
+    )
+    assert evidence["target_signature"] == step_signature(ui_map(), "mesh.primitive_monkey_add")
+    assert original["steps"][0]["procedure_ref"] == "add_primitive/cube"
+    replay = await prove_lesson(exported, sandbox, ui_map(), ui_map(), tmp_path)
+    assert replay["status"] == "proven"
+    assert sandbox.calls == 2
+    evidence = json.loads((tmp_path / "proof/monkey.json").read_text())
+    assert "REPLAY" in evidence["mode_trace"]
+
+
+async def test_legacy_mismatched_proof_is_not_reused(tmp_path):
+    data = lesson(("monkey",))
+    data["steps"][0]["procedure_ref"] = "add_primitive/cube"
+    sandbox = StubSandbox(tmp_path)
+    await prove_lesson(data, sandbox, ui_map(), ui_map(), tmp_path)
+    path = tmp_path / "proof/monkey.json"
+    evidence = json.loads(path.read_text())
+    evidence["selected_procedure"] = "add_primitive/monkey"
+    evidence["selected_procedure_hash"] = digest(PROCEDURE_LIBRARY["add_primitive/monkey"])
+    path.write_text(json.dumps(evidence))
+    await prove_lesson(data, sandbox, ui_map(), ui_map(), tmp_path)
+    assert sandbox.calls == 2
+    assert "REPLAY" not in json.loads(path.read_text())["mode_trace"]
+
+
 async def test_search_errors(monkeypatch):
     monkeypatch.delenv("LINKUP_API_KEY", raising=False)
     with pytest.raises(RuntimeError):
@@ -238,6 +289,34 @@ async def test_search_results(monkeypatch, results):
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         found = await docs_search("Blender", client=client)
     assert len(found) == (1 if results else 0)
+
+
+@pytest.mark.parametrize("explicit", [False, True])
+async def test_search_filters_blender_version(monkeypatch, explicit):
+    monkeypatch.setenv("LINKUP_API_KEY", "test")
+    paths = [
+        "/manual/en/4.5/modeling/meshes/primitives.html",
+        "/manual/fr/4.5/modeling/meshes/primitives.html",
+        "/api/4.5/bpy.ops.mesh.html",
+        "/manual/fr/2.79/modeling/meshes/primitives.html",
+        "/manual/en/latest/modeling/meshes/primitives.html",
+        "/manual/en/4.50/modeling/meshes/primitives.html",
+        "/api/current/bpy.ops.mesh.html",
+    ]
+
+    def handler(request):
+        assert "site:docs.blender.org/manual/en/4.5/" in json.loads(request.content)["q"]
+        return httpx.Response(
+            200, json={"results": [{"url": f"https://docs.blender.org{path}"} for path in paths]}
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        found = await docs_search(
+            "mesh primitives" if explicit else "Blender 4.5.9 mesh primitives",
+            blender_version="4.5.9" if explicit else None,
+            client=client,
+        )
+    assert [item["url"] for item in found] == [f"https://docs.blender.org{p}" for p in paths[:3]]
 
 
 async def test_retry_fails(tmp_path):
@@ -320,8 +399,9 @@ async def test_real_blender(tmp_path, caplog):
 @pytest.mark.skipif(not os.environ.get("LINKUP_API_KEY"), reason="Clé Linkup absente")
 async def test_live_linkup(caplog):
     caplog.set_level(logging.INFO)
-    results = await docs_search("Blender manual mesh torus primitive")
+    results = await docs_search("Blender 4.5.9 manual mesh torus primitive")
     assert results
     assert all(item["url"].startswith("https://docs.blender.org/") for item in results)
+    assert all("/4.5/" in item["url"] for item in results)
     assert "Linkup :" in caplog.text
     print(caplog.text)
