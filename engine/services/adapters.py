@@ -10,12 +10,16 @@ import wave
 
 from engine.config import EngineConfig
 from engine.interfaces import JevDecision, LocalizeResult, SearchHit, Transcript
+from engine.pointer import verify_point
 from engine.services.profiles import AppProfile, load_profile, profile_for_lesson
 
 
 class HoloAdapter:
     def __init__(self, client):
         self.client = client
+
+    async def verify_point(self, image_png, description, point, *, timeout_s):
+        return await verify_point(self.client, image_png, description, point, timeout_s=timeout_s)
 
     async def localize(self, image_png, description, *, timeout_s):
         start = time.perf_counter()

@@ -38,7 +38,10 @@ class FastHolo:
         self.calls += 1
         assert image_png.startswith(b"\x89PNG")
         assert "Sphère" in description
-        return LocalizeResult(500, 625, 0.99, 0)
+        return LocalizeResult(500, 625, 0.99, 0, True)
+
+    async def verify_point(self, *args, **kwargs):
+        return True
 
 
 class StubJev:
@@ -247,6 +250,10 @@ async def test_donut_replay_exact_decisions_and_latency(tmp_path):
                 assert not any(c["type"] == "pointer" for c, _ in h.commands)
                 await send_ws(h.ws, "capture.result", capture(h.runtime, "pointer-frame"))
                 await h.barrier()
+                if h.runtime.preloader.task:
+                    await h.runtime.preloader.task
+                if h.runtime.policy.level < 3:
+                    await h.intent("aide")
                 h.collect_decisions()
                 assert h.commands[-1][0]["type"] == "pointer"
                 assert holo.calls == 1

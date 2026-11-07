@@ -99,7 +99,9 @@ class BlenderAdapter:
             result = await runtime.addon.correlation.request(command, runtime.addon.send)
             if result["status"] != "ok":
                 raise ValueError("Dévoilement refusé par l'application")
-            region = next(r for r in self.regions if r["region_id"] == payload["region_id"])
+            region = next((r for r in self.regions if r["region_id"] == payload["region_id"]), None)
+            if region is None:
+                raise ValueError("Région absente après acquittement du menu")
             return region["screen_rect"]
 
         return reveal

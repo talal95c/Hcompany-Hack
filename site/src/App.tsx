@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FaqInsights, Footer, GET_RIO, Hero, Nav, Pricing } from "./sections";
 import { GetRio } from "./GetRio";
+import { UseCases } from "./usecases/UseCases";
 
 export default function App() {
   const [hash, setHash] = useState(location.hash);
@@ -22,6 +23,7 @@ export default function App() {
         ) : (
           <>
             <Hero />
+            <UseCases />
             <Pricing />
             <FaqInsights />
           </>

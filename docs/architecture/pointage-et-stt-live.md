@@ -22,11 +22,45 @@ adaptateur doit fournir le rectangle : échec explicite plutôt qu'une capture d
 entier. Le choix de l'application cible et les backends multi-app complets restent à
 formaliser dans la prochaine refonte ; l'évaluation pédagogique reste liée à l'add-on.
 
-Holo renvoie aussi `visible`. Aucun pointeur pour une cible explicitement invisible,
-un point sur/hors des bornes de la capture ou une confiance fournie inférieure à 0,5.
-Sans rectangle attendu d'adaptateur, confiance finie et visibilité explicite sont
-obligatoires. Sinon, nouvelle surbrillance et instruction textuelle. La limite de capture
-reste 1 048 576 pixels : les grandes fenêtres échouent explicitement.
+Holo renvoie aussi `visible` : il doit être explicitement vrai. Les coordonnées doivent
+être finies et strictement intérieures à la capture. La confiance logprob n'est pas
+une probabilité calibrée de bon pointage : elle ne suffit plus à accepter un point.
+Le moteur exige des bornes a11y prouvées contenant le point, ou une vérification locale
+indépendante qui identifie le rectangle de la cellule/ligne de menu demandée. Dans ce
+second cas, réponse `yes/direct`, rectangle valide et point intérieur avec une marge
+de deux pixels encodés sont tous requis ; réponse ambiguë ou malformée = refus.
+Les refus conservent la consigne textuelle et sont journalisés par motif, sans image.
+
+Au début d'étape et après dévoilement, la pré-localisation utilise la priorité
+spéculative uniquement après opt-in explicite de l'apprenant à l'assistance vision
+cloud : `ENGINE_CLOUD_VISION_PRELOAD=1` (ou `EngineConfig.cloud_vision_preload=True`).
+La valeur par défaut est désactivée ; la permission de capture écran n'est pas un
+consentement à cet envoi cloud. Sans opt-in, la pré-localisation a11y reste locale et
+Holo n'est appelé pour le pointage qu'à l'escalade demandant effectivement le pointeur.
+L'opt-in n'annule aucune vérification de permission, génération ou fraîcheur.
+La pré-localisation cloud consentie utilise la priorité
+spéculative du planificateur partagé. Le niveau 2 dévoile et prépare ; l'escalade
+suivante affiche le point si le cache est prêt. Le cache comprend cible, génération,
+révisions UI/capture et contexte de région, d'échelle et d'application. Une référence
+a11y fraîche a priorité sur un point visuel préchargé. Les changements observés
+annulent les spéculations. Juste avant affichage, le desktop relit la ref a11y, ou
+compare les pixels de la zone de preuve à la capture d'origine : un changement dans
+cette zone, même non signalé, invalide le point malgré un hit du cache.
+
+Les crops natifs peuvent atteindre 16 mégapixels mais le PNG transmis est réduit à
+1 048 576 pixels et 8192 pixels par axe, sans agrandissement. `crop` reste physique ;
+`image_size` décrit le PNG. Les coordonnées normalisées restent rapportées au crop
+physique, puis à l'origine intérieure et à l'échelle du WebView. Sous Linux, les
+bounds AT-SPI Window sont traduits par l'origine cliente native validée du frame ;
+les hit-tests de tables utilisent ce même repère Window.
+
+Limite de calibration : le petit jeu réel `tests/engine/fixtures/pointer-labelled.json`
+ne démontre pas encore une vérification visuelle utilisable. Le verdict seul a accepté
+deux négatifs ; la règle stricte par rectangle n'a accepté aucun positif. Ce verrou
+reste fermé : zéro faux accepté sur ces exemples n'est pas une garantie générale,
+et un rappel nul n'est pas une réussite du pointage Holo.
+Sans preuve locale, nouvelle surbrillance et instruction textuelle. La limite de
+1 048 576 pixels porte sur le PNG transmis, non sur le rectangle physique conservé.
 
 **Limites de validation :** le rectangle du popup lui-même n'est pas encore exposé ;
 la validation géométrique porte donc sur la région. La conversion écran de l'add-on

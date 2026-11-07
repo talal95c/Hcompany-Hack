@@ -84,8 +84,9 @@ class FakeCalc:
                 "crop": {"x": WINDOW["x"], "y": WINDOW["y"], "width": WINDOW["w"],
                          "height": WINDOW["h"]},
                 "scale": 1, "monitor_id": "main", "request_id": payload["request_id"],
+                "image_size": {"width": 1114, "height": 675},
                 "app": payload["app"], "image_ref": "data:image/png;base64,"
-                + base64.b64encode(png(WINDOW["w"], WINDOW["h"])).decode()})
+                + base64.b64encode(png(1114, 675)).decode()})
 
     async def collect(self) -> None:
         async for raw in self.ws:
@@ -194,8 +195,15 @@ async def test_calc_a11y_replay_help_ladder_and_success(tmp_path):
 
         desktop.values["B1"] = "42"
         runtime.clock.advance(31)
-        zone, pointer = await observe(runtime, desktop, ["highlight.rect", "pointer"],
-                                      latencies)
+        (zone,) = await observe(runtime, desktop, ["highlight.rect"], latencies)
+        async with asyncio.timeout(1):
+            while (not runtime.help_context.target
+                   or not runtime.targets.get_target(runtime.help_context.target)):
+                await asyncio.sleep(0)
+        before = len(desktop.commands)
+        await send_ws(desktop.ws, "user.intent", {"text": "aide", "source": "clavier"})
+        await desktop.wait_commands(before + 1)
+        pointer = desktop.commands[before]
         assert zone["payload"]["rect"] == {"x": 98, "y": 185, "w": 82, "h": 17}
         assert zone["payload"]["app"] == "libreoffice-calc"
         assert (pointer["payload"]["x"], pointer["payload"]["y"]) == (55, 159)

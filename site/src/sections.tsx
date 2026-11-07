@@ -23,8 +23,8 @@ const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Fi
 export const GET_RIO = "#/get-rio";
 
 export function Nav() {
-  const links = ["Pricing", "FAQ"];
-  const ids = ["pricing", "faq"];
+  const links = ["Use cases", "Pricing", "FAQ"];
+  const ids = ["use-cases", "pricing", "faq"];
   return (
     <motion.header
       className="nav"
@@ -70,15 +70,18 @@ export function Hero() {
         <div className="hero-content">
           <h1 className="h-hero">
             <motion.span className="hero-l1" {...up(0.2)}>
-              Learn any software.
+              Paste a YouTube tutorial.
             </motion.span>
             <motion.span className="hero-l2" {...up(0.32)}>
-              Live, on your screen.
+              Do it with Rio.
             </motion.span>
           </h1>
           <motion.p className="p-16 hero-sub" {...up(0.44)}>
-            Rio watches your screen, breaks any task into steps and shows you exactly where to click. You do it, Rio checks it.
+            Rio turns the video into steps, shows you where to click in your own app and checks each step. You do it for real.
           </motion.p>
+          <motion.div className="hero-link-demo" {...up(0.5)} aria-label="Illustration: paste a YouTube tutorial link to start a lesson">
+            <span className="hero-demo-url" aria-hidden>youtube.com/watch?v=your-first-donut</span><span className="hero-demo-start" aria-hidden>Start ↗</span>
+          </motion.div>
           <motion.div {...up(0.56)}>
             <Btn label="Try Rio" href={GET_RIO} />
           </motion.div>
@@ -773,6 +776,7 @@ export function Pricing() {
 /* ---------------- FAQ + Insights ---------------- */
 
 const FAQ = [
+  { q: "Can I use any YouTube tutorial?", a: "Paste a YouTube tutorial link and Rio turns it into a step-by-step lesson in your app. Blender is our starting point. A lesson needs to be checked against the app and version you use; not every video can become a verified lesson. You stay in control of the clicks." },
   { q: "Does Rio click for me?", a: "No. Rio points with a ghost cursor and you make every click. Learning sticks because you do it yourself." },
   { q: "Which apps does Rio work with?", a: "Any desktop app. Tutorials ship for Blender, LibreOffice Calc, Docker and Finder, and you can type a goal for anything else." },
   { q: "What does Rio see on my screen?", a: "A screenshot of your main display when it plans or checks a step. Rio's own windows are excluded from captures." },

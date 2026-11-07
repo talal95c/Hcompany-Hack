@@ -6,6 +6,8 @@ import { api, errorText, type AutopilotView } from "../panel/api";
 import "@fontsource-variable/geist";
 import "../panel/styles.css";
 import "./styles.css";
+import { sfx } from "../sound";
+import { Feedback } from "../feedback";
 
 const shapes = {
   closed: { width: 136, height: 32, borderRadius: 100 },
@@ -21,6 +23,24 @@ function Notch() {
   const surface = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
   const phase = !view || view.phase === "hidden" ? "closed" : view.outcome ? "final" : view.phase;
+  const previous = useRef({ phase: "closed", index: 0, outcome: view?.outcome });
+  useEffect(() => {
+    const prev = previous.current;
+    if (phase === "expanded" && prev.phase !== phase) sfx.open();
+    if (view && !view.outcome && view.index > prev.index) sfx.step();
+    if (view?.outcome && view.outcome !== prev.outcome) {
+      if (view.outcome === "completed") sfx.success();
+      else if (view.outcome === "failed") sfx.error();
+    }
+    previous.current = { phase, index: view?.index ?? 0, outcome: view?.outcome };
+  }, [phase, view]);
+  useEffect(() => {
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && phase === "expanded" && !busy) { sfx.dismiss(); void act(api.autopilotDecline); }
+    };
+    window.addEventListener("keydown", escape);
+    return () => window.removeEventListener("keydown", escape);
+  }, [phase, busy]);
 
   function reportSurface() {
     const element = surface.current;
@@ -76,22 +96,22 @@ function Notch() {
               <h1>Want me to do <span>{view?.title}</span>?</h1>
               <p className="notch__goal" title={view?.goal}>{view?.goal}</p>
               <div className="notch__actions">
-                <button className="notch__secondary" disabled={busy} onClick={() => act(api.autopilotDecline)}>Not now <kbd>esc</kbd></button>
-                <button className="notch__primary" disabled={busy} onClick={() => act(() => api.autopilotAccept(view!.skill_id))}>Yes</button>
+                <button className="notch__secondary" disabled={busy} onClick={() => { sfx.dismiss(); void act(api.autopilotDecline); }}>Not now <kbd>esc</kbd></button>
+                <button className="notch__primary" disabled={busy} onClick={() => { sfx.confirm(); void act(() => api.autopilotAccept(view!.skill_id)); }}>Yes</button>
               </div>
             </>
           ) : phase === "final" ? (
             <>
-              <h1 className="notch__result" title={view?.message ?? undefined}>{view?.message}</h1>
+              <h1 className="notch__result" title={view?.message ?? undefined}>{view?.outcome !== "stopped" && <Feedback key={view?.outcome} failed={view?.outcome === "failed"} />}{view?.message}</h1>
               <p className="notch__status" title={view?.title}>{view?.title}</p>
             </>
           ) : (
             <>
               <div className="notch__task">
                 <h1>{view?.title}</h1>
-                <button className="notch__stop" disabled={busy} onClick={() => act(api.autopilotStop)}>Stop</button>
+                <button className="notch__stop" disabled={busy} onClick={() => { sfx.dismiss(); void act(api.autopilotStop); }}>Stop</button>
               </div>
-              <p className="notch__status">Step {view?.index ?? 0}/{view?.total ?? 0} · {view?.label ?? ""}</p>
+              <motion.p key={view?.index} className="notch__status" initial={{ opacity: reduced ? 1 : 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.18 }}>Step {view?.index ?? 0}/{view?.total ?? 0} · {view?.label ?? ""}</motion.p>
               <div className="notch__progress" role="progressbar" aria-label="Task progress" aria-valuemin={0} aria-valuemax={view?.total || 1} aria-valuenow={view?.index ?? 0}>
                 <motion.span animate={{ width: `${100 * (view?.index ?? 0) / (view?.total || 1)}%` }} transition={{ duration: reduced ? 0 : 0.4, ease: [0.22, 1, 0.36, 1] }} />
               </div>

@@ -20,6 +20,11 @@
         "alwaysOnTop": true,
         "decorations": false,
         "transparent": true,
+        "windowEffects": {
+          "effects": ["hudWindow", "acrylic"],
+          "state": "active",
+          "radius": 20
+        },
         "shadow": true,
         "visible": false,
         "skipTaskbar": true,

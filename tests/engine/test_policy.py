@@ -126,7 +126,10 @@ async def test_ladder_capture_pointer_safe_demo_and_audio():
     class Holo:
         async def localize(self, image_png, description, *, timeout_s):
             assert image_png == b"png" and description == "Tore"
-            return LocalizeResult(123, 456, 0.9, 1)
+            return LocalizeResult(123, 456, 0.9, 1, True)
+
+        async def verify_point(self, *args, **kwargs):
+            return True
 
     policy, _, commands, _, _ = setup(holo=Holo())
     hint = policy.step["why"]
@@ -266,7 +269,8 @@ async def test_cached_pointer_does_not_call_holo():
 
     policy, _, commands, _, _ = setup(holo=Holo())
     ctx = help_context()
-    policy.targets.put_target(TargetEntry(context(), LocalizeResult(77, 88, None, 0), "cached"))
+    policy.targets.put_target(TargetEntry(context(), LocalizeResult(77, 88, None, 0, True),
+                                          "cached", True))
     await policy.intent("aide", ctx)
     await policy.intent("aide", ctx)
     drain(commands)
