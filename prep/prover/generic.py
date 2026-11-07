@@ -227,7 +227,8 @@ async def drive_step(
         await sandbox.execute(action.native(), image_size=size)
         await asyncio.sleep(DIALOG_SETTLE_SECONDS if dialog_open else 0.8)
         history.append(ActTurn(action, "executed"))
-        if accessible or check["name"] not in GENERIC_CHECKS:
+        # Check de document : lu seulement après « done » (sa lecture enregistre le fichier).
+        if accessible:
             verdict = await evaluate_check(check, sandbox, operator, wait_for_pass=False)
             record["check_after_action"] = verdict["result"]
             dialog_open = False
@@ -477,8 +478,16 @@ async def _execute(
     max_turns: int,
 ) -> tuple[str, str]:
     step_id, check = step["id"], step["check"]
-    sensor = "vision" if check["name"] == "visual_assert" else "accessibility"
+    sensor = (
+        "vision"
+        if check["name"] == "visual_assert"
+        else "accessibility"
+        if check["name"] in GENERIC_CHECKS
+        else "document"
+    )
     method = f"holo_sandbox+{sensor}"
+    if isinstance(getattr(sandbox, "harness_inputs", None), list):
+        sandbox.harness_inputs.clear()
     await sandbox.open(checkpoint, sha256=checkpoint_sha)
     baseline = (
         (await sandbox.snapshot()).get("windows", [])
@@ -538,6 +547,7 @@ async def _execute(
     if persisted["result"] != "pass":
         evidence["reason"] = "Résultat perdu à l'enregistrement du checkpoint"
         return "failed", method
+    evidence["harness_inputs"] = list(getattr(sandbox, "harness_inputs", []))
     evidence["ui_path_verified"] = any(
         turn["action"]["type"] != "done" for turn in attempt["turns"]
     )

@@ -24,7 +24,7 @@ COMPILER_RULES = (
     "Jamais l'état du bouton Gras, jamais une simple présence visuelle du graphique. "
     "sheet est le nom réel de la feuille, visible dans la carte (table:Sheet ventes signifie "
     "sheet ventes). L'instruction doit nommer les cellules/plages exactes du tutoriel. "
-    "L'adaptateur sélectionne cette plage dans la zone de nom AVANT le premier geste Holo. "
+    "Holo fait lui-même la sélection : l'instruction doit donc la décrire. "
 )
 CELL = re.compile(r"^([A-Z]{1,3})([1-9][0-9]{0,6})$")
 NS = {
@@ -239,29 +239,15 @@ class CalcAdapter:
         return evaluate_document(check, await self.sandbox.document_snapshot())
 
     async def prepare_step(self, check: dict[str, Any]) -> str:
+        """Contexte seulement : aucune entrée injectée, Holo sélectionne lui-même la cible."""
         params = check["params"]
         selection = params.get("cell") or params["range"]
-        snapshot = await self.sandbox.snapshot()
-        nodes = self.name_boxes(snapshot)
-        if not snapshot.get("complete") or snapshot.get("error") or len(nodes) != 1:
-            raise RuntimeError("Zone de nom indisponible ou ambiguë")
-        await self.sandbox.focus_text(ancestor_role="tool bar", ancestor_name="Formula Tool Bar")
-        await self.sandbox.key(["ctrl", "a"])
-        await self.sandbox.type_text(f"'{params['sheet']}'.{selection}")
-        await self.sandbox.key(["enter"])
-        selected = await self.sandbox.snapshot()
-        boxes = self.name_boxes(selected)
-        if (
-            not selected.get("complete")
-            or selected.get("error")
-            or len(boxes) != 1
-            or boxes[0].get("value") != selection
-        ):
-            raise RuntimeError("Sélection de la plage non confirmée par la zone de nom")
         return (
-            f"The exact target {params['sheet']}.{selection} is already selected in the Name Box. "
-            "Keep this selection; apply the operation, finish any wizard, then call done. "
-            "Do not select another cell/range or change the chart's data range."
+            f"The exact target is {params['sheet']}.{selection}. Select it yourself first "
+            "(a second plain click replaces the selection: for a range, type it in the Name "
+            "Box at the top left and press Enter, or click the first cell then shift+click the "
+            "last), apply the operation, commit any cell "
+            "edit with Enter, finish any wizard, then call done."
         )
 
     @staticmethod

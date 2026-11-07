@@ -158,43 +158,35 @@ def name_box(value="A1", *, complete=True, count=1):
 @pytest.mark.parametrize(
     "check,selection", [(CHECKS[0], "B6"), (CHECKS[1], "A1:B1"), (CHECKS[2], "A1:B5")]
 )
-async def test_exact_range_is_selected_and_confirmed(check, selection):
+async def test_prepare_step_injects_no_input(check, selection):
     sandbox = SimpleNamespace(
-        snapshot=AsyncMock(side_effect=[name_box(), name_box(selection)]),
-        focus_text=AsyncMock(),
-        type_text=AsyncMock(),
-        key=AsyncMock(),
+        snapshot=AsyncMock(), focus_text=AsyncMock(), type_text=AsyncMock(), key=AsyncMock()
     )
     context = await CalcAdapter(sandbox).prepare_step(check)
-    sandbox.focus_text.assert_awaited_once_with(
-        ancestor_role="tool bar", ancestor_name="Formula Tool Bar"
-    )
-    sandbox.type_text.assert_awaited_once_with(f"'ventes'.{selection}")
-    assert sandbox.key.await_args_list[0].args == (["ctrl", "a"],)
-    assert sandbox.key.await_args_list[1].args == (["enter"],)
-    assert f"ventes.{selection}" in context
+    for mock in (sandbox.snapshot, sandbox.focus_text, sandbox.type_text, sandbox.key):
+        mock.assert_not_awaited()
+    assert f"ventes.{selection}" in context and "yourself" in context
 
 
-@pytest.mark.parametrize(
-    "before,after",
-    [
-        (name_box(complete=False), name_box("A1:B1")),
-        (name_box(count=0), name_box("A1:B1")),
-        (name_box(count=2), name_box("A1:B1")),
-        (name_box(), name_box("B7")),
-        (name_box(), name_box("A1:B1", complete=False)),
-        (name_box(), name_box("A1:B1", count=2)),
-    ],
-)
-async def test_selection_fails_closed_when_unconfirmed(before, after):
-    sandbox = SimpleNamespace(
-        snapshot=AsyncMock(side_effect=[before, after]),
-        focus_text=AsyncMock(),
-        type_text=AsyncMock(),
-        key=AsyncMock(),
-    )
-    with pytest.raises(RuntimeError):
-        await CalcAdapter(sandbox).prepare_step(CHECKS[1])
+async def test_document_read_discards_uncommitted_edit_before_saving(tmp_path, monkeypatch):
+    sandbox = DesktopSandbox(get_profile("libreoffice-calc"))
+    path = tmp_path / "saved.ods"
+    path.write_bytes(ods())
+    sandbox._document = path
+    run = AsyncMock()
+    monkeypatch.setattr(sandbox, "_run", run)
+    monkeypatch.setattr(generic.asyncio, "sleep", AsyncMock())
+    try:
+        await sandbox.type_text("=SUM(B2:B5)")
+        await sandbox.document_snapshot()
+        chords = [call.args[-1] for call in run.await_args_list[1:]]
+        assert chords == ["Escape", "ctrl+s"]
+        assert [i["purpose"] for i in sandbox.harness_inputs] == [
+            "discard_uncommitted_edit",
+            "save_for_document_check",
+        ]
+    finally:
+        await sandbox.close()
 
 
 async def test_reopened_document_is_read_without_resaving(tmp_path, monkeypatch):
@@ -210,14 +202,14 @@ async def test_reopened_document_is_read_without_resaving(tmp_path, monkeypatch)
         run.assert_not_awaited()
         await sandbox.key(["ctrl", "b"])
         await sandbox.document_snapshot()
-        assert run.await_count == 2
+        assert run.await_count == 3
         await sandbox.document_snapshot()
-        assert run.await_count == 2
+        assert run.await_count == 3
     finally:
         await sandbox.close()
 
 
-async def test_document_outcome_stops_after_first_successful_action(tmp_path, monkeypatch):
+async def test_document_outcome_is_read_only_after_done(tmp_path, monkeypatch):
     class OutcomeDesktop(FakeDesktop):
         async def evaluate_app_check(self, check):
             return {"result": "pass" if self.state.get("bold") else "fail", "sensor": "document"}
@@ -233,5 +225,6 @@ async def test_document_outcome_stops_after_first_successful_action(tmp_path, mo
         max_turns=10,
     )
     assert result["check"]["result"] == "pass"
-    assert operator.calls == 1
-    assert result["turns"][0]["check_after_action"] == "pass"
+    assert operator.calls == 2
+    assert "check_after_action" not in result["turns"][0]
+    assert result["turns"][1]["check_after_done"] == "pass"

@@ -163,6 +163,8 @@ class DesktopSandbox:
         self._document_dirty = False
         self._opened_sha: str | None = None
         self.metrics: list[dict[str, Any]] = []
+        # Entrées injectées par le harnais (hors Holo), consignées dans les preuves.
+        self.harness_inputs: list[dict[str, Any]] = []
         self.outcomes = profile.outcome_adapter(self) if profile.outcome_adapter else None
 
     async def __aenter__(self) -> DesktopSandbox:
@@ -411,7 +413,15 @@ class DesktopSandbox:
             raise RuntimeError("Aucun document ouvert")
         if not self._document_dirty:
             return self._document.read_bytes()
-        await self.key(self.profile.save_keys)
+        # Échap d'abord : une saisie non validée est abandonnée, jamais validée par
+        # l'enregistrement (sinon le harnais ferait le geste à la place de Holo).
+        for keys, purpose in (
+            (["Escape"], "discard_uncommitted_edit"),
+            (list(self.profile.save_keys), "save_for_document_check"),
+        ):
+            self.harness_inputs.append({"keys": keys, "purpose": purpose})
+            await self.key(keys)
+            await asyncio.sleep(0.5)
         await asyncio.sleep(1)
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
