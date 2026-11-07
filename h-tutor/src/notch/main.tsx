@@ -11,7 +11,7 @@ const shapes = {
   closed: { width: 136, height: 32, borderRadius: 100 },
   expanded: { width: 480, height: 180, borderRadius: 20 },
   compact: { width: 400, height: 112, borderRadius: 16 },
-  final: { width: 320, height: 96, borderRadius: 16 },
+  final: { width: 320, height: 124, borderRadius: 16 },
 };
 
 function Notch() {

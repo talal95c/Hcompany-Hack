@@ -329,6 +329,11 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
             journal::event("skill_record_error", serde_json::json!({ "error": error }));
         }
         journal::end(outcome);
+        let message = if outcome == "failed" {
+            Some(autopilot::failure_message(&autopilot::autopilot_view().label))
+        } else {
+            message
+        };
         let done = autopilot::Done {
             skill_id: skill.tutorial_id,
             outcome: outcome.into(),

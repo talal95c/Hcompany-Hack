@@ -399,6 +399,25 @@ pub fn escape(app: &AppHandle) {
     }
 }
 
+pub(crate) fn failure_message(label: &str) -> String {
+    let label = label.split_whitespace().collect::<Vec<_>>().join(" ");
+    let short: String = label.chars().take(32).collect();
+    let short = if label.chars().count() > 32 {
+        short.rsplit_once(' ').map_or(short.as_str(), |(words, _)| words)
+    } else {
+        &short
+    };
+    if short.is_empty() {
+        "Étape bloquée".into()
+    } else {
+        format!("Étape bloquée : {short}")
+    }
+}
+
+fn result_duration(outcome: &str) -> Duration {
+    Duration::from_secs(if outcome == "failed" { 6 } else { 3 })
+}
+
 pub(crate) fn finish(app: &AppHandle, done: &Done) {
     if !matches!(done.outcome.as_str(), "completed" | "failed" | "stopped") {
         return;
@@ -420,6 +439,8 @@ pub(crate) fn finish(app: &AppHandle, done: &Done) {
         control.view.outcome = Some(done.outcome.clone());
         control.view.message = Some(if done.outcome == "completed" {
             "Fait ✓".into()
+        } else if done.outcome == "failed" {
+            failure_message(&control.view.label)
         } else {
             done.message.clone().unwrap_or_else(|| {
                 if done.outcome == "stopped" {
@@ -432,9 +453,10 @@ pub(crate) fn finish(app: &AppHandle, done: &Done) {
         (control.view.clone(), control.generation)
     };
     let _ = publish(app, &view);
+    let duration = result_duration(&done.outcome);
     let app = app.clone();
     std::thread::spawn(move || {
-        std::thread::sleep(Duration::from_secs(3));
+        std::thread::sleep(duration);
         hide(&app, Some(generation));
     });
 }
@@ -570,6 +592,20 @@ impl Drop for CaptureMask {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn autopilot_failure_messages_are_short_and_failures_stay_longer() {
+        assert_eq!(failure_message("Créer le projet"), "Étape bloquée : Créer le projet");
+        assert_eq!(failure_message("  \n "), "Étape bloquée");
+        assert_eq!(failure_message("Créer   le\nprojet"), "Étape bloquée : Créer le projet");
+        let long = failure_message("Créer le projet avec un bouton désactivé et un service indisponible");
+        assert_eq!(long, "Étape bloquée : Créer le projet avec un bouton");
+        assert!(!long.contains('…'));
+        assert_eq!(failure_message(&"é".repeat(80)).chars().count(), "Étape bloquée : ".chars().count() + 32);
+        assert_eq!(result_duration("failed"), Duration::from_secs(6));
+        assert_eq!(result_duration("completed"), Duration::from_secs(3));
+        assert_eq!(result_duration("stopped"), Duration::from_secs(3));
+    }
 
     #[test]
     fn autopilot_decline_is_idempotent_across_timeout_and_escape() {

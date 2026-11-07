@@ -35,7 +35,7 @@
 .notch__task h1 { white-space: nowrap; text-overflow: ellipsis; overflow: hidden; font-weight: 500; }
 .notch .notch__stop { flex: none; font-size: 11px; padding: 5px 12px; }
 .notch__badge { position: absolute; right: 0; top: -26px; color: var(--faint); font-size: 9px; white-space: nowrap; }
-.notch__result { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notch__result { white-space: normal; overflow-wrap: anywhere; max-height: 2.8em; overflow: hidden; text-wrap: pretty; }
 .notch__status { color: var(--dim); font-size: 12px; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .notch__progress { height: 2px; background: var(--chip); margin-top: 12px; border-radius: 100px; overflow: hidden; }
 .notch__progress > span { display: block; position: relative; height: 100%; border-radius: inherit; background: var(--text); overflow: hidden; }
