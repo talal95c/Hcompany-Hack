@@ -178,6 +178,19 @@ impl Browser {
         Ok(())
     }
 
+    /// True when the element at a normalized point already has the focus
+    /// (typing there must not click first: that would drop a selection).
+    pub async fn focused_at(&mut self, nx: f64, ny: f64) -> Result<bool, String> {
+        let (x, y) = Self::px(nx, ny);
+        let v = self
+            .eval(&format!(
+                "(() => {{ const e = document.elementFromPoint({x}, {y}); const a = document.activeElement; \
+                 return !!e && !!a && a !== document.body && (e === a || a.contains(e) || e.contains(a)); }})()"
+            ))
+            .await?;
+        Ok(v == serde_json::Value::Bool(true))
+    }
+
     /// Types text into the focused element.
     pub async fn type_text(&mut self, text: &str) -> Result<(), String> {
         self.call("Input.insertText", json!({ "text": text })).await.map(|_| ())

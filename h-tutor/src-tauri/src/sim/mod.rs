@@ -326,7 +326,11 @@ async fn perform(
                     .into_iter()
                     .find(|t| !t.trim().is_empty())
                     .unwrap_or("");
-                b.click(x, y).await?;
+                // Typing into the field that already has the focus (after
+                // cmd+a, say) does not click first, like a real learner.
+                if !b.focused_at(x, y).await? {
+                    b.click(x, y).await?;
+                }
                 b.type_text(text).await?;
                 keys = text.chars().count() as u32;
             }
@@ -413,6 +417,15 @@ mod tests {
             b.settle().await;
             assert_eq!(b.eval("app.notes[1].items[0].text").await.unwrap(), "Bread");
             assert_eq!(b.eval(&s.success).await.unwrap(), false, "not important yet");
+            // Rename: the dialog is prefilled; select all, then type replaces it.
+            b.eval("document.querySelector('[data-cmd=rename]').click()").await.unwrap();
+            b.settle().await;
+            assert!(b.focused_at(500.0, 490.0).await.unwrap(), "the dialog field has the focus");
+            b.press("cmd+a").await.unwrap();
+            b.type_text("Courses").await.unwrap();
+            b.press("enter").await.unwrap();
+            b.settle().await;
+            assert_eq!(b.eval("app.notes[app.current].name").await.unwrap(), "Courses");
         });
     }
 

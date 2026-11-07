@@ -33,6 +33,10 @@ impl std::fmt::Display for Failure {
     }
 }
 
+/// Streamed attempts on fresh connections before a step fails (the
+/// simulator saw a stream stay silent twice in a row).
+const STREAM_ATTEMPTS: u32 = 3;
+
 /// Waits honored on a 429 before giving up (the account's tier allows a
 /// fixed number of requests per minute: 30 on tier 1 for holo4-27b).
 const RATE_LIMIT_RETRIES: u32 = 4;
@@ -252,9 +256,9 @@ impl Holo {
                 Err(e) => {
                     failures += 1;
                     let e = e.to_string();
-                    eprintln!("[holo] stream attempt {failures}/2 failed: {e}");
+                    eprintln!("[holo] stream attempt {failures}/{STREAM_ATTEMPTS} failed: {e}");
                     crate::journal::event("holo_retry", json!({ "attempt": failures, "error": e, "stream": true }));
-                    if failures == 2 {
+                    if failures == STREAM_ATTEMPTS {
                         return Err(format!("Can't reach Holo: {e}"));
                     }
                     crate::emit_status(SLOW);
@@ -291,6 +295,7 @@ impl Holo {
         let mut stream = res.bytes_stream();
         let mut sse = Sse::default();
         let mut flowing = false;
+        let opened = std::time::Instant::now();
         loop {
             let limit = if flowing { STALL_GAP } else { STALL_FIRST };
             let chunk = match tokio::time::timeout(limit, stream.next()).await {
@@ -299,6 +304,10 @@ impl Holo {
                 Ok(Some(Err(e))) => return Err(describe(&e).into()),
                 Ok(Some(Ok(bytes))) => bytes,
             };
+            if !flowing {
+                // Time to first data, to calibrate STALL_FIRST on measures.
+                crate::journal::event("holo_first_chunk", json!({ "ms": opened.elapsed().as_millis() }));
+            }
             flowing = true;
             if sse.push(&chunk, on_reasoning) {
                 break;
