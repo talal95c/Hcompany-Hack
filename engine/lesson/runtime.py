@@ -403,6 +403,8 @@ class EngineRuntime:
             "action": action, "consent_token": consent[0], "capture_id": capture["capture_id"],
         }, "desktop")
         capture["consumed"] = True
+        self.help_context = replace(self.help_context, target=None, capture_id=None, image_png=None)
+        self.targets.invalidate()
         try:
             result = await self.desktop.correlation.request(
                 command, lambda c: self.desktop.send("command", c),

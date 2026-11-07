@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "lesson_id": "donut-replay",
+  "revision": 1,
+  "title": "Donut : base et glaçage",
+  "language": "fr-FR",
+  "blender_version": "4.5.9",
+  "status": "proven",
+  "source": {"uri": "fixture://donut-replay", "sha256": "fixture-synthetique"},
+  "skills": ["add_torus", "add_sphere"],
+  "steps": [
+    {
+      "id": "add_torus", "skill_id": "add_torus",
+      "instruction": "Ajoutez un tore pour la base du donut.",
+      "preconditions": {"mode": "OBJECT"},
+      "check": {"name": "object_exists", "params": {"type": "MESH", "primitive": "torus"}},
+      "target": {"description": "Ajouter › Maillage › Tore", "area_type": "VIEW_3D", "region_type": "WINDOW"},
+      "why": "La forme annulaire du tore fournit la base du donut.",
+      "audio_ref": null,
+      "known_errors": [{"code": "wrong_cube", "check": {"name": "object_exists", "params": {"type": "MESH", "primitive": "cube"}}, "hint": "Vous avez ajouté un cube ; choisissez Tore dans Maillage."}],
+      "procedure_ref": "donut/add_torus",
+      "proof": {"status": "proven", "method": "fixture", "evidence_ref": "fixtures/donut_session.jsonl", "ui_path_verified": false}
+    },
+    {
+      "id": "add_sphere", "skill_id": "add_sphere",
+      "instruction": "Ajoutez une sphère UV pour préparer le glaçage.",
+      "preconditions": {"mode": "OBJECT"},
+      "check": {"name": "object_exists", "params": {"type": "MESH", "primitive": "uv_sphere"}},
+      "target": {"description": "Ajouter › Maillage › Sphère UV", "area_type": "VIEW_3D", "region_type": "WINDOW"},
+      "why": "La sphère servira de volume de départ pour le glaçage.",
+      "audio_ref": null, "known_errors": [], "procedure_ref": "donut/add_sphere",
+      "proof": {"status": "proven", "method": "fixture", "evidence_ref": "fixtures/donut_session.jsonl", "ui_path_verified": false}
+    }
+  ],
+  "proof": {"method": "fixture", "evidence_ref": "fixtures/donut_session.jsonl", "ui_path_verified": false}
+}
