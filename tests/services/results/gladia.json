@@ -1,0 +1,358 @@
+{
+  "date": "2026-11-07T14:31:22+00:00",
+  "host": {
+    "os": "Linux-6.8.0-1061-aws-x86_64-with-glibc2.35",
+    "python": "3.11.17"
+  },
+  "measured": true,
+  "summary": {
+    "gladia.live_final_after_last_chunk": {
+      "n": 2,
+      "n_ok": 2,
+      "failures": {},
+      "p50_ms": 635.0,
+      "p95_ms": 648.2,
+      "min_ms": 620.3,
+      "max_ms": 649.7
+    },
+    "gladia.live_init": {
+      "n": 2,
+      "n_ok": 2,
+      "failures": {},
+      "p50_ms": 351.3,
+      "p95_ms": 495.8,
+      "min_ms": 190.8,
+      "max_ms": 511.8
+    },
+    "gladia.live_ws_connect": {
+      "n": 2,
+      "n_ok": 2,
+      "failures": {},
+      "p50_ms": 498.8,
+      "p95_ms": 500.3,
+      "min_ms": 497.2,
+      "max_ms": 500.5
+    },
+    "gladia.prerecorded_create": {
+      "n": 3,
+      "n_ok": 3,
+      "failures": {},
+      "p50_ms": 889.9,
+      "p95_ms": 1460.6,
+      "min_ms": 401.3,
+      "max_ms": 1524.0
+    },
+    "gladia.prerecorded_poll": {
+      "n": 9,
+      "n_ok": 9,
+      "failures": {},
+      "p50_ms": 186.6,
+      "p95_ms": 254.0,
+      "min_ms": 181.7,
+      "max_ms": 286.5
+    },
+    "gladia.transcribe_file_total": {
+      "n": 3,
+      "n_ok": 3,
+      "failures": {},
+      "p50_ms": 4409.5,
+      "p95_ms": 5985.5,
+      "min_ms": 4020.8,
+      "max_ms": 6160.6
+    },
+    "gladia.upload": {
+      "n": 3,
+      "n_ok": 3,
+      "failures": {},
+      "p50_ms": 2348.0,
+      "p95_ms": 2985.8,
+      "min_ms": 1548.0,
+      "max_ms": 3056.7
+    }
+  },
+  "calls": [
+    {
+      "service": "gladia",
+      "operation": "upload",
+      "duration_ms": 3056.7,
+      "status": "ok",
+      "request_id": null,
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_create",
+      "duration_ms": 1523.98,
+      "status": "ok",
+      "request_id": "e25f0756-365a-461b-91bc-2b0836a3a1ff",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 184.24,
+      "status": "ok",
+      "request_id": "e25f0756-365a-461b-91bc-2b0836a3a1ff",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 185.08,
+      "status": "ok",
+      "request_id": "e25f0756-365a-461b-91bc-2b0836a3a1ff",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 205.24,
+      "status": "ok",
+      "request_id": "e25f0756-365a-461b-91bc-2b0836a3a1ff",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "transcribe_file_total",
+      "duration_ms": 6160.65,
+      "status": "ok",
+      "request_id": "e25f0756-365a-461b-91bc-2b0836a3a1ff",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "upload",
+      "duration_ms": 2348.01,
+      "status": "ok",
+      "request_id": null,
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_create",
+      "duration_ms": 401.28,
+      "status": "ok",
+      "request_id": "831dd19e-999b-403f-9743-dbf81a4f628b",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 186.58,
+      "status": "ok",
+      "request_id": "831dd19e-999b-403f-9743-dbf81a4f628b",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 181.65,
+      "status": "ok",
+      "request_id": "831dd19e-999b-403f-9743-dbf81a4f628b",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 286.48,
+      "status": "ok",
+      "request_id": "831dd19e-999b-403f-9743-dbf81a4f628b",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "transcribe_file_total",
+      "duration_ms": 4409.54,
+      "status": "ok",
+      "request_id": "831dd19e-999b-403f-9743-dbf81a4f628b",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "upload",
+      "duration_ms": 1548.0,
+      "status": "ok",
+      "request_id": null,
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_create",
+      "duration_ms": 889.92,
+      "status": "ok",
+      "request_id": "9319cbe4-de8a-4e46-9ce0-65cef0519e16",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 188.4,
+      "status": "ok",
+      "request_id": "9319cbe4-de8a-4e46-9ce0-65cef0519e16",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 184.7,
+      "status": "ok",
+      "request_id": "9319cbe4-de8a-4e46-9ce0-65cef0519e16",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 204.32,
+      "status": "ok",
+      "request_id": "9319cbe4-de8a-4e46-9ce0-65cef0519e16",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "transcribe_file_total",
+      "duration_ms": 4020.79,
+      "status": "ok",
+      "request_id": "9319cbe4-de8a-4e46-9ce0-65cef0519e16",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "live_init",
+      "duration_ms": 190.85,
+      "status": "ok",
+      "request_id": "874e1ac6-50ce-49ea-90fd-37e6c489c384",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "live_ws_connect",
+      "duration_ms": 500.46,
+      "status": "ok",
+      "request_id": "874e1ac6-50ce-49ea-90fd-37e6c489c384",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "live_final_after_last_chunk",
+      "duration_ms": 649.7,
+      "status": "ok",
+      "request_id": "874e1ac6-50ce-49ea-90fd-37e6c489c384",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "live_init",
+      "duration_ms": 511.82,
+      "status": "ok",
+      "request_id": "119ec530-1dd0-4c0d-ac0d-ce6c6366d7c2",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "live_ws_connect",
+      "duration_ms": 497.21,
+      "status": "ok",
+      "request_id": "119ec530-1dd0-4c0d-ac0d-ce6c6366d7c2",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "live_final_after_last_chunk",
+      "duration_ms": 620.32,
+      "status": "ok",
+      "request_id": "119ec530-1dd0-4c0d-ac0d-ce6c6366d7c2",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    }
+  ],
+  "fixture": "fr_ajoute_un_tore_16k.wav",
+  "fixture_audio_s": 3.6,
+  "reference_text": "Ajoute un tore dans la scène Blender, puis ouvre le menu « Ajouter ».",
+  "file_transcripts": [
+    "Ajoute un tore dans la scène Blender , puis ouvre le menu « Ajouter » .",
+    "Ajoute un tore dans la scène Blender , puis ouvre le menu « Ajouter » .",
+    "Ajoute un tore dans la scène Blender , puis ouvre le menu « Ajouter » ."
+  ],
+  "file_words_first": [
+    [
+      "Ajoute",
+      0.193,
+      0.495
+    ],
+    [
+      "un",
+      0.516,
+      0.636
+    ],
+    [
+      "tore",
+      0.656,
+      0.898
+    ],
+    [
+      "dans",
+      0.899,
+      1.019
+    ]
+  ],
+  "live_finals": [
+    [
+      "Ajoute un tore dans la scène Blender , puis ouvre le menu « Ajouter » ."
+    ],
+    [
+      "Ajoute un tore dans la scène Blender , puis ouvre le menu « Ajouter » ."
+    ]
+  ],
+  "live_partial_counts": [
+    7,
+    7
+  ],
+  "note": "live_final_after_last_chunk = délai entre le dernier chunk audio envoyé (audio temps réel, 1 s de silence final) et la réception du final"
+}
