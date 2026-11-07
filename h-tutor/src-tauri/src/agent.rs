@@ -47,6 +47,8 @@ const MIN_TURNS: usize = 2;
 /// Milestones shown in full on each side of the current one in `<progress>`;
 /// the rest of a long tutorial is counted, not listed.
 const WINDOW: usize = 3;
+/// Times an `answer` with no effective action behind it is sent back.
+const MAX_CHALLENGES: u8 = 2;
 /// Two points closer than this (0..1000 units) are the same target.
 const SAME_TARGET: f64 = 30.0;
 /// Learner entries carried to later milestones' `<progress>`.
@@ -91,7 +93,9 @@ does not react after two tries, stop insisting on it: look for the command in th
 before you acted. Only work on the current task, not the later ones.
 Teaching:
 - The learner may pause and ask you something. You then receive their question and reply with explain: a short \
-spoken answer in their language, and the element to show when that helps. Then the current action resumes.
+spoken answer in their language, and the element to show when that helps. Then the current action resumes. \
+Be honest about what already failed (see \"tried in this task\"): never confirm a path that had no visible effect; \
+say so and suggest another way.
 - Make the learner think, not only click: at most once per task, and never for a trivial click, call ask_learner \
 to have them predict where an option lives or why a step matters. Their reply comes back as the tool result: \
 acknowledge it briefly in your next instruction.
@@ -279,8 +283,8 @@ pub struct Session {
     /// Actions given per milestone with what they did, used to turn this
     /// run into a tutorial with a verified known path.
     pub actions: HashMap<String, Vec<ActionRecord>>,
-    /// Milestone whose unproven `answer` was already challenged once.
-    challenged: Option<String>,
+    /// Unproven `answer`s already challenged in the current milestone.
+    challenged: (Option<String>, u8),
     /// The milestone closed last, whose path is recalled in `<progress>`.
     last_done: Option<String>,
     /// Durable learner choices ("typed \"MyDonut\" in Name field"), kept
@@ -313,7 +317,7 @@ impl Session {
             actions: HashMap::new(),
             facts: Vec::new(),
             last_done: None,
-            challenged: None,
+            challenged: (None, 0),
             evidence: HashMap::new(),
             step: Step::default(),
             before: None,
@@ -456,13 +460,14 @@ impl Session {
                 Some(Status::Current) => (
                     "→",
                     format!(
-                        " (current; done when: {}){}",
+                        " (current; done when: {}){}{}",
                         m.done_when,
                         if m.hints.is_empty() {
                             String::new()
                         } else {
                             format!("\n  known path: {}", m.hints.join("; "))
-                        }
+                        },
+                        self.tried().map(|t| format!("\n  tried in this task: {t}")).unwrap_or_default()
                     ),
                 ),
                 _ => ("·", if m.optional { " (optional)".to_string() } else { String::new() }),
@@ -519,6 +524,26 @@ impl Session {
             })
             .map(|(_, a)| a.path.clone())
             .collect()
+    }
+
+    /// The last actions of the current milestone with what they did, so
+    /// Holo (and its answers to questions) cannot ignore what already failed.
+    fn tried(&self) -> Option<String> {
+        let records = self.actions.get(self.current.as_deref()?)?;
+        let judged: Vec<String> = records
+            .iter()
+            .filter(|a| a.outcome != Outcome::Proposed && a.outcome != Outcome::Superseded)
+            .map(|a| {
+                let what = match a.outcome {
+                    Outcome::Changed => "screen changed",
+                    Outcome::NoEffect => "NO visible effect",
+                    _ => "effect too small to see",
+                };
+                format!("{} ({what})", a.path)
+            })
+            .collect();
+        let skip = judged.len().saturating_sub(5);
+        (!judged.is_empty()).then(|| judged[skip..].join("; "))
     }
 
     /// The learner acted in the current milestone but nothing they did
@@ -1204,9 +1229,13 @@ async fn ask_holo(
     let mut metrics = Metrics::default();
     let (mut call, mut action, mut msg) = choose(brain, session, tools, &mut metrics).await?;
     // Closing a task where nothing the learner did had any visible effect
-    // is often a misreading of the screen: challenged once per milestone.
-    if matches!(action, Action::Answer { .. }) && session.unproven() && session.challenged != session.current {
-        session.challenged = session.current.clone();
+    // is often a misreading of the screen: challenged up to twice per
+    // milestone (the simulator saw Holo insist once on a wrong claim).
+    if session.challenged.0 != session.current {
+        session.challenged = (session.current.clone(), 0);
+    }
+    if matches!(action, Action::Answer { .. }) && session.unproven() && session.challenged.1 < MAX_CHALLENGES {
+        session.challenged.1 += 1;
         journal::event("answer_challenged", json!({ "milestone": session.current }));
         if let Some(id) = session.pending_call.take() {
             session.messages.push(json!({ "role": "tool", "tool_call_id": id, "content":
@@ -1582,7 +1611,7 @@ mod tests {
             actions: HashMap::new(),
             facts: Vec::new(),
             last_done: None,
-            challenged: None,
+            challenged: (None, 0),
             evidence: HashMap::new(),
             step: Step::default(),
             before: None,
@@ -2143,7 +2172,7 @@ mod tests {
     }
 
     #[test]
-    fn an_unproven_answer_is_challenged_once() {
+    fn an_unproven_answer_is_challenged_twice() {
         let mut s = linear(2);
         step_on(&Fake::new(vec![click()]), &mut s, "start", 100);
         // Nothing moved, yet Holo says done: challenged, then a real action.
@@ -2153,10 +2182,24 @@ mod tests {
         assert_eq!(s.current.as_deref(), Some("m0"));
         let challenge = brain.bodies.lock().unwrap()[1]["messages"].as_array().unwrap().last().unwrap().clone();
         assert!(challenge["content"].as_str().unwrap().starts_with("Check before closing"));
-        // Insisting closes it: the challenge is only once per milestone.
-        let brain = Fake::new(vec![answer(), click()]);
-        step_on(&brain, &mut s, "clicked", 100);
+        // Challenged a second time, then insisting closes it.
+        step_on(&Fake::new(vec![answer(), click()]), &mut s, "clicked", 100);
+        assert_eq!(s.current.as_deref(), Some("m0"));
+        step_on(&Fake::new(vec![answer(), click()]), &mut s, "clicked", 100);
         assert_eq!(s.current.as_deref(), Some("m1"));
+    }
+
+    #[test]
+    fn progress_shows_what_was_tried_in_the_task() {
+        let mut s = linear(1);
+        step_on(&Fake::new(vec![click()]), &mut s, "start", 100);
+        step_on(&Fake::new(vec![write()]), &mut s, "clicked", 100);
+        step_on(&Fake::new(vec![click()]), &mut s, "typed", 100);
+        let p = s.progress_block();
+        assert!(
+            p.contains("tried in this task: click Add menu (NO visible effect); type \"MyDonut\" in Name field (effect too small to see)"),
+            "{p}"
+        );
     }
 
     #[test]

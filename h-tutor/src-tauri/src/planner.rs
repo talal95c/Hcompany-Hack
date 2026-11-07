@@ -61,10 +61,14 @@ pub async fn plan(holo: &Holo, request: &str, shot: &Shot, knowledge: Option<&st
          - done_when: the intended state, visible on screen once it is reached, concrete enough to check on a \
            screenshot (e.g. \"A Torus object is listed in the outliner\"). Describe the state, not a specific \
            object the learner may not have: the screen may not be a fresh app (\"no mesh left in the outliner\", \
-           not \"the default cube is gone\").\n\
+           not \"the default cube is gone\"). Describe the result the request asks for, never an interface \
+           mechanism you assume but cannot see (not \"the title field is active\" or \"the dialog is open\"): \
+           the app may name things in a dialog, a menu or inline.\n\
          - hints: up to 3 short known GUI paths (e.g. \"Add > Mesh > Torus\"), only if you are confident.\n\
          - teach: one sentence about the concept behind it, or empty.\n\
-         Use the application visible on screen when relevant. Keep the tutorial focused on the request."
+         Use the application visible on screen when relevant. Keep the tutorial focused on the request. Prefer \
+         outcome milestones (\"A note named Groceries exists\") over guessed procedures (\"Create a note\" then \
+         \"Rename it\"), and fewer milestones when one action may reach several outcomes."
     );
     let prompt = match knowledge {
         Some(k) => format!(
