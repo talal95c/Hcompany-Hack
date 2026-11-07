@@ -13,7 +13,8 @@ from urllib.parse import quote
 
 import httpx
 
-from agent.catalog import AgentError, Catalog
+from agent.catalog import AgentError, Catalog, lesson_app
+from agent.server import app_filters
 
 LOG = logging.getLogger(__name__)
 AGENTS_URL = "https://agp.eu.hcompany.ai/api/v2"
@@ -21,15 +22,25 @@ AGENTS_URL = "https://agp.eu.hcompany.ai/api/v2"
 
 def artifact(record: dict[str, Any]) -> dict[str, str]:
     lesson = record["lesson"]
-    identity = json.dumps([lesson["lesson_id"], lesson["blender_version"]])
-    name = "blender-lesson-" + hashlib.sha256(identity.encode()).hexdigest()[:32]
+    app = lesson_app(lesson)
+    identity = json.dumps(
+        [lesson["lesson_id"], app["version"]]
+        if app["id"] == "blender"
+        else [app["id"], lesson["lesson_id"], app["version"]]
+    )
+    name = app["id"] + "-lesson-" + hashlib.sha256(identity.encode()).hexdigest()[:32]
     context = {
         "objective": lesson["title"],
         "lesson_id": lesson["lesson_id"],
         "revision": lesson["revision"],
         "fingerprint": record["fingerprint"],
         "execution_context": {
-            "blender_version": lesson["blender_version"],
+            "app": app,
+            **(
+                {"blender_version": lesson["blender_version"]}
+                if "blender_version" in lesson
+                else {}
+            ),
             "language": lesson["language"],
             "consent_required": True,
             "checks_required": True,
@@ -59,14 +70,23 @@ def artifact(record: dict[str, Any]) -> dict[str, str]:
         + "\n\n```json\n"
         + json.dumps(context, ensure_ascii=False, indent=2)
         + "\n```\n",
-        "compatibility": "Blender " + lesson["blender_version"],
+        "compatibility": app["name"] + " " + app["version"],
     }
 
 
 def export(
-    catalog: Catalog, lesson_id: str, revision: int, blender_version: str, output: Path
+    catalog: Catalog,
+    lesson_id: str,
+    revision: int,
+    app_version: str | None = None,
+    output: Path | None = None,
+    app_id: str | None = None,
+    blender_version: str | None = None,
 ) -> tuple[Path, bool]:
-    record = catalog.get(lesson_id, revision, blender_version)
+    app_id, app_version = app_filters(app_id, app_version, blender_version)
+    if app_version is None or output is None:
+        raise AgentError("app_version_and_output_required")
+    record = catalog.get(lesson_id, revision, app_version, app_id)
     skill = artifact(record)
     output.mkdir(parents=True, exist_ok=True)
     path = output / (skill["name"] + f"-r{revision}.json")
@@ -84,6 +104,9 @@ def revision_context(skill: dict[str, Any]) -> dict[str, Any]:
     try:
         body = skill["body"]
         context = json.loads(body.split("\n\n```json\n", 1)[1].removesuffix("\n```\n"))
+        execution = context["execution_context"]
+        if "app" not in execution:
+            execution["app"] = lesson_app({"schema_version": "1.0", **execution})
         if (
             not isinstance(context["lesson_id"], str)
             or not context["lesson_id"]
@@ -92,7 +115,11 @@ def revision_context(skill: dict[str, Any]) -> dict[str, Any]:
             or not isinstance(context["fingerprint"], str)
             or len(context["fingerprint"]) != 64
             or any(c not in "0123456789abcdef" for c in context["fingerprint"])
-            or not isinstance(context["execution_context"]["blender_version"], str)
+            or not all(
+                isinstance(context["execution_context"]["app"][key], str)
+                and context["execution_context"]["app"][key]
+                for key in ("id", "name", "version", "sensor")
+            )
         ):
             raise ValueError
         return context
@@ -151,8 +178,11 @@ async def publish(
                 if (
                     remote.get("name") != skill["name"]
                     or previous["lesson_id"] != incoming["lesson_id"]
-                    or previous["execution_context"]["blender_version"]
-                    != incoming["execution_context"]["blender_version"]
+                    or any(
+                        previous["execution_context"]["app"][key]
+                        != incoming["execution_context"]["app"][key]
+                        for key in ("id", "version")
+                    )
                     or previous["revision"] >= incoming["revision"]
                 ):
                     raise AgentError("remote_revision_conflict")
@@ -181,13 +211,22 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("lesson_id")
     parser.add_argument("revision", type=int)
-    parser.add_argument("blender_version")
+    parser.add_argument("version", nargs="?")
+    parser.add_argument("--app-version")
+    parser.add_argument("--app-id")
+    parser.add_argument("--blender-version", help="Alias obsolète pour Blender.")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--publish", action="store_true")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
     path, changed = export(
-        Catalog(), args.lesson_id, args.revision, args.blender_version, args.output
+        Catalog(),
+        args.lesson_id,
+        args.revision,
+        args.app_version or args.version,
+        args.output,
+        args.app_id,
+        args.blender_version,
     )
     if args.publish:
         asyncio.run(publish(json.loads(path.read_text()), os.getenv("HAI_API_KEY", "")))

@@ -18,6 +18,17 @@ class AgentError(ValueError):
     pass
 
 
+def lesson_app(lesson: dict[str, Any]) -> dict[str, str]:
+    if lesson["schema_version"] == "2.0":
+        return lesson["app"]
+    return {
+        "id": "blender",
+        "name": "Blender",
+        "version": lesson["blender_version"],
+        "sensor": "addon",
+    }
+
+
 class Catalog:
     def __init__(self, root: Path | None = None, state: Path | None = None) -> None:
         self.root = (root or Path(os.getenv("AGENT_LESSONS_DIR", ROOT / "lessons"))).resolve()
@@ -40,10 +51,10 @@ class Catalog:
                     raise AgentError("outside_root")
                 raw = path.read_bytes()
                 lesson = json.loads(raw)
+                identity.update({k: lesson[k] for k in ("lesson_id", "revision") if k in lesson})
+                app = lesson_app(lesson)
+                identity.update(app_id=app["id"], app_version=app["version"])
                 VALIDATOR.validate(lesson)
-                identity.update(
-                    {k: lesson[k] for k in ("lesson_id", "revision", "blender_version")}
-                )
                 if lesson["status"] != "proven" or any(
                     s["proof"]["status"] != "proven" for s in lesson["steps"]
                 ):
@@ -72,33 +83,52 @@ class Catalog:
                 )
             except AgentError as error:
                 rejected.append({**identity, "reason": str(error)})
-            except (OSError, ValueError, ValidationError):
+            except (OSError, ValueError, KeyError, TypeError, ValidationError):
                 # Schema diagnostics can contain untrusted paths and values.
                 rejected.append({**identity, "reason": "invalid_schema_or_evidence"})
                 continue
         keys = [
-            (r["lesson"]["lesson_id"], r["lesson"]["revision"], r["lesson"]["blender_version"])
+            (
+                r["lesson"]["lesson_id"],
+                r["lesson"]["revision"],
+                lesson_app(r["lesson"])["id"],
+                lesson_app(r["lesson"])["version"],
+            )
             for r in accepted
         ]
         unique = []
         for record, key in zip(accepted, keys, strict=True):
             if keys.count(key) != 1:
                 rejected.append(
-                    {"lesson_id": key[0], "revision": key[1], "reason": "duplicate_revision"}
+                    {
+                        "lesson_id": key[0],
+                        "revision": key[1],
+                        "app_id": key[2],
+                        "app_version": key[3],
+                        "reason": "duplicate_revision",
+                    }
                 )
             else:
                 unique.append(record)
         return unique, rejected
 
-    def get(self, lesson_id: str, revision: int, blender_version: str) -> dict[str, Any]:
+    def get(
+        self, lesson_id: str, revision: int, app_version: str, app_id: str | None = None
+    ) -> dict[str, Any]:
+        matches = []
         for record in self.scan()[0]:
             lesson = record["lesson"]
-            if (lesson["lesson_id"], lesson["revision"], lesson["blender_version"]) == (
+            app = lesson_app(lesson)
+            if (lesson["lesson_id"], lesson["revision"], app["version"]) == (
                 lesson_id,
                 revision,
-                blender_version,
-            ):
-                return record
+                app_version,
+            ) and (app_id is None or app["id"] == app_id):
+                matches.append(record)
+        if len(matches) == 1:
+            return matches[0]
+        if matches:
+            raise AgentError("procedure_ambiguous: app_id required")
         raise AgentError("procedure_unavailable: absent, rejected or version mismatch")
 
     def report(

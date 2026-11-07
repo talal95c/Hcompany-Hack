@@ -10,10 +10,20 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-from agent.catalog import AgentError, Catalog
+from agent.catalog import AgentError, Catalog, lesson_app
 from agent.runner import EngineRunner, Runner
 
 LOG = logging.getLogger(__name__)
+
+
+def app_filters(
+    app_id: str | None, app_version: str | None, blender_version: str | None
+) -> tuple[str | None, str | None]:
+    if blender_version is not None:
+        if app_id not in (None, "blender") or app_version not in (None, blender_version):
+            raise AgentError("conflicting_app_filters")
+        return "blender", blender_version
+    return app_id, app_version
 
 
 def measured(function: Callable[..., Any]) -> Callable[..., Any]:
@@ -45,14 +55,27 @@ def create_server(
     @measured
     async def list_apps() -> dict[str, Any]:
         records, rejected = catalog.scan()
-        versions: dict[str, int] = {}
+        apps: dict[str, Any] = {}
         for record in records:
-            version = record["lesson"]["blender_version"]
-            versions[version] = versions.get(version, 0) + 1
+            app = lesson_app(record["lesson"])
+            entry = apps.setdefault(
+                app["id"],
+                {
+                    "app": app["id"],
+                    "name": app["name"],
+                    "sensors": [],
+                    "versions": {},
+                    "lesson_count": 0,
+                },
+            )
+            entry["lesson_count"] += 1
+            if app["sensor"] not in entry["sensors"]:
+                entry["sensors"].append(app["sensor"])
+                entry["sensors"].sort()
+            versions = entry["versions"]
+            versions[app["version"]] = versions.get(app["version"], 0) + 1
         return {
-            "apps": [{"app": "blender", "versions": versions, "lesson_count": len(records)}]
-            if records
-            else [],
+            "apps": [apps[key] for key in sorted(apps)],
             "rejected_count": len(rejected),
             "rejected": rejected,
         }
@@ -60,23 +83,38 @@ def create_server(
     @server.tool()
     @measured
     async def find_procedure(
-        query: str, blender_version: str, skill_id: str | None = None
+        query: str,
+        app_id: str | None = None,
+        app_version: str | None = None,
+        skill_id: str | None = None,
+        blender_version: str | None = None,
     ) -> list[dict[str, Any]]:
+        app_id, app_version = app_filters(app_id, app_version, blender_version)
         found = []
         for record in catalog.scan()[0]:
             lesson = record["lesson"]
-            if lesson["blender_version"] != blender_version:
+            app = lesson_app(lesson)
+            if (app_id is not None and app["id"] != app_id) or (
+                app_version is not None and app["version"] != app_version
+            ):
                 continue
             if skill_id is not None and skill_id not in lesson["skills"]:
                 continue
-            if query.casefold() not in (lesson["title"] + " " + lesson["lesson_id"]).casefold():
+            if (
+                query.casefold()
+                not in " ".join(
+                    [lesson["title"], lesson["lesson_id"], *lesson["skills"]]
+                ).casefold()
+            ):
                 continue
             found.append(
                 {
                     **{
                         k: lesson[k]
                         for k in ("lesson_id", "revision", "title", "blender_version", "status")
+                        if k in lesson
                     },
+                    "app": app,
                     "summary": lesson["steps"][0]["instruction"],
                     "fingerprint": record["fingerprint"],
                 }
@@ -85,20 +123,37 @@ def create_server(
 
     @server.tool()
     @measured
-    async def get_procedure(lesson_id: str, revision: int, blender_version: str) -> dict[str, Any]:
-        return catalog.get(lesson_id, revision, blender_version)
+    async def get_procedure(
+        lesson_id: str,
+        revision: int,
+        app_version: str | None = None,
+        app_id: str | None = None,
+        blender_version: str | None = None,
+    ) -> dict[str, Any]:
+        app_id, app_version = app_filters(app_id, app_version, blender_version)
+        if app_version is None:
+            raise AgentError("app_version_required")
+        return catalog.get(lesson_id, revision, app_version, app_id)
 
     @server.tool()
     @measured
     async def run_procedure(
-        lesson_id: str, revision: int, blender_version: str, session_id: str, consent_token: str
+        lesson_id: str,
+        revision: int,
+        app_version: str | None = None,
+        session_id: str = "",
+        consent_token: str = "",
+        app_id: str | None = None,
+        blender_version: str | None = None,
     ) -> dict[str, Any]:
         if not consent_token.strip() or not session_id.strip():
             raise AgentError("consent_required")
         if lock.locked():
             raise AgentError("busy")
         async with lock:
-            procedure = catalog.get(lesson_id, revision, blender_version)
+            procedure = await get_procedure(
+                lesson_id, revision, app_version, app_id, blender_version
+            )
             result = await runner.run(procedure, session_id, consent_token)
             if result.get("checks_passed") is not True or not result.get("run_id"):
                 raise AgentError("checks_not_passed")

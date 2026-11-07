@@ -108,7 +108,7 @@ pub fn consent_grant(
     if !state.connected.load(Ordering::SeqCst) {
         return Err("Engine déconnecté".into());
     }
-    let token = input::grant(&state);
+    let token = input::grant(&state)?;
     state.send("user.intent", json!({"text":json!({"intent":"fais-le","consent_token":token}).to_string(),"source":"bouton"}), None)
 }
 
@@ -186,7 +186,7 @@ pub async fn capture_region(
     crop: Rect,
 ) -> Result<Value, String> {
     pill(&window)?;
-    capture_requested(&app, state.inner(), crop, None).await
+    capture_requested(&app, state.inner(), crop, None, None).await
 }
 
 pub async fn capture_requested(
@@ -194,6 +194,7 @@ pub async fn capture_requested(
     state: &Arc<State>,
     crop: Rect,
     request: Option<(String, u64)>,
+    target: Option<String>,
 ) -> Result<Value, String> {
     let _lock = state.capture_lock.lock().await;
     if !state.connected.load(Ordering::SeqCst) || !native::permissions().screen {
@@ -206,12 +207,17 @@ pub async fn capture_requested(
         return Err("Capture périmée".into());
     }
     if !crop.valid()
-        || crop.width * crop.height > 1_048_576.0
+        || crop.width * crop.height
+            > if target.is_some() {
+                16_777_216.0
+            } else {
+                1_048_576.0
+            }
         || [crop.x, crop.y, crop.width, crop.height]
             .iter()
             .any(|v| v.fract() != 0.)
     {
-        return Err("Capture limitée à une région entière de 1 Mpx".into());
+        return Err("Capture trop grande ou rectangle non entier".into());
     }
     let monitor = native::monitors()?
         .into_iter()
@@ -245,6 +251,14 @@ pub async fn capture_requested(
         }
         payload["request_id"] = json!(request_id);
     }
+    if let Some(target) = target {
+        payload["app"] = json!(target);
+    }
+    if !capture_fits(&state.session, &payload) {
+        return Err(
+            "Capture trop volumineuse pour le transport ; partager une région plus petite".into(),
+        );
+    }
     let mut captures = state.captures.lock().unwrap();
     captures.clear();
     captures.insert(
@@ -261,4 +275,28 @@ pub async fn capture_requested(
     let result = json!({"ui_revision":revision, "crop":crop});
     let _ = app.emit("capture:result", &result);
     Ok(result)
+}
+
+fn capture_fits(session: &str, payload: &Value) -> bool {
+    crate::protocol::envelope(session, "capture.result", payload.clone(), None)
+        .to_string()
+        .len()
+        <= crate::protocol::MAX_MESSAGE
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn oversized_window_capture_cannot_exceed_transport_limit() {
+        assert!(capture_fits(
+            "s",
+            &json!({"image_ref":"data:image/png;base64,fixture"})
+        ));
+        assert!(capture_fits("s", &json!({})));
+        assert!(!capture_fits(
+            "s",
+            &json!({"image_ref":"x".repeat(crate::protocol::MAX_MESSAGE)})
+        ));
+    }
 }
