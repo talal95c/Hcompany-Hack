@@ -80,6 +80,7 @@ export type TutorialRow = {
   publishedAt: number | null;
   remixOf: string | null;
   agentViewUrl?: string | null;
+  thumbnail?: string | null;
   sources: { title: string; url: string }[];
   tutorial: RioTutorial | null;
   author: { id: string | null; name: string | null };
@@ -103,6 +104,7 @@ export type RioTutorial = {
   goal: string;
   language?: string;
   source_url?: string;
+  credit?: { kind: string; title?: string; author?: string; url: string; thumbnail?: string };
   milestones: { id: string; goal: string; done_when: string; hints?: string[]; teach?: string; video_at?: number }[];
 };
 

@@ -360,3 +360,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .riobar__key { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 999px; background: #fff; color: #0b0b0b; cursor: pointer; transition: opacity 120ms; }
 .riobar__key:disabled { opacity: 0.15; cursor: default; }
 .riobar .spinner { width: 13px; height: 13px; }
+
+/* Tutorials made from a video show its thumbnail, with the app as a small badge. */
+.card__cover--video { display: block; }
+.card__thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.card__app { position: absolute; right: 10px; bottom: 10px; }
+.card__app .app-icon { width: 28px; height: 28px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }
+.hero__cover--video { position: relative; height: 220px; }
+.hero__thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 20px 20px 0 0; }
+.hero__cover--video .app-icon { position: relative; }
+.credit { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 12px 0 0; font-size: 13px; color: var(--dim); }
+.credit svg { flex: none; }

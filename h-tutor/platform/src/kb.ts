@@ -303,6 +303,7 @@ export interface RioTutorial {
   app: { name: string; bundle_id?: string };
   goal: string;
   source_url?: string;
+  credit?: { kind: string; title?: string; author?: string; url: string; thumbnail?: string };
   milestones: { id: string; goal: string; done_when: string; hints?: string[]; teach?: string; video_at?: number }[];
 }
 

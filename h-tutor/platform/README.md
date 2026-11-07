@@ -3,13 +3,13 @@
 One Cloudflare Worker that does three jobs:
 - it serves **the console**, where an organization manages its tutorials, members, API tokens and usage (React + better-auth);
 - it serves **the Rio API** (`/v1`), which the desktop app calls with a token;
-- it **makes tutorials** from a YouTube link (Gladia, then Holo), a documentation page (Holo) or a goal (Linkup, then Holo).
+- it **makes tutorials** from a YouTube link (Gladia, then Holo), a documentation page or a goal (H web agent `h/web-surfer-pro` when needed, Linkup as fallback, then Holo).
 
 | Piece | Where |
 |---|---|
-| Accounts, organizations, members, invitations | better-auth on D1 (`src/auth.ts`, `migrations/0001_auth.sql`) |
+| Accounts (email + password, or Google), organizations, members, invitations | better-auth on D1 (`src/auth.ts`, `migrations/0001_auth.sql`) |
 | API tokens, tutorials, usage events | D1 (`migrations/0002_rio.sql`) |
-| ReStep knowledge (exports) | KV: `kb:shared:<app>` for every organization, `kb:<orgId>:<app>` for one |
+| Global knowledge (ReStep) | The `knowledge/` Worker (D1 and ReStep's core ported), through the `KNOWLEDGE` service binding |
 | Tutorial jobs | `src/ingest.ts`: one step per call, with a lease; run by console polls and a cron every minute |
 | Console | `web/` (Vite + React), served as static assets |
 
@@ -29,7 +29,8 @@ token is stored, and the token itself is shown once.
 npm install
 cp .dev.vars.example .dev.vars              # then fill in the keys
 npm run db:migrate:local
-node scripts/admin.mjs upload shared data/blender.json   # optional: ReStep knowledge
+(cd knowledge && npm run convert -- <restep checkout> data/knowledge.sql && npm run db:migrate:local && npm run db:load:local)
+(cd knowledge && npx wrangler dev --port 8788)   # global knowledge, in another terminal
 npm run dev                                 # console and API on http://127.0.0.1:8787
 npm test                                    # search, versions, tutorial conversion (offline)
 ```
@@ -40,19 +41,32 @@ Create an account, then an organization and a token. Put the token in Rio's `.en
 ```sh
 npx wrangler login
 npx wrangler d1 create rio                  # put the id in wrangler.toml
-npx wrangler kv namespace create KB         # same
+# deploy knowledge/ first (see knowledge/README.md): the platform binds to it
 npm run db:migrate
 for k in BETTER_AUTH_SECRET HAI_API_KEY GLADIA_API_KEY LINKUP_API_KEY; do npx wrangler secret put $k; done
 npx wrangler secret put BETTER_AUTH_URL     # https://rio-platform.<account>.workers.dev
 npm run deploy
 ```
 
+## Google sign-in (optional)
+The "Continue with Google" button shows only when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are both set.
+1. Google Cloud Console → APIs & Services → OAuth consent screen: user type *External* (or *Internal* for one Workspace),
+   scopes `openid`, `email`, `profile` only. These are non-sensitive, so *Publish app* takes effect without review.
+   A logo triggers brand verification: leave it out to publish at once.
+2. Credentials → Create OAuth client ID → *Web application*, with these authorized redirect URIs:
+   `http://127.0.0.1:8787/api/auth/callback/google` and `https://<your host>/api/auth/callback/google`.
+3. Put the ID and secret in `.dev.vars`, and in production:
+   `npx wrangler secret put GOOGLE_CLIENT_ID` then `npx wrangler secret put GOOGLE_CLIENT_SECRET`.
+
+Signing in with Google on an email that already has a password account links to that account.
+An invitation is for one email: the Google account must use that email to accept it.
+
 ## Data
-- `scripts/export_restep.py` exports a ReStep checkout, with each skill's steps re-targeted to every version by ReStep itself.
+- `knowledge/scripts/convert.ts` converts a ReStep checkout into the knowledge Worker's D1, using ReStep's core ported to TypeScript.
 - `npm run migration:auth` regenerates the better-auth SQL from its schema after a better-auth upgrade.
 
 ## Security
 - Each organization reads only its own data: every query is filtered by the organization of the session or the token.
 - Members can read. Owners and admins manage tutorials, members and tokens.
-- API keys are Worker secrets: they are never in D1, KV, responses or the console.
+- API keys are Worker secrets: they are never in D1, responses or the console.
 - There is no email service yet, so invitations are links shown in the console.

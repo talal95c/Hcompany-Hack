@@ -1,0 +1,12 @@
+name = "rio-knowledge"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+# No public URL: only the platform reaches it, through a service binding.
+workers_dev = false
+
+# `npx wrangler d1 create rio-knowledge` prints the id to put here.
+[[d1_databases]]
+binding = "DB"
+database_name = "rio-knowledge"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"

@@ -58,7 +58,8 @@ function Working({ t }: { t: TutorialRow }) {
   return (
     <>
       <div className="hero">
-        <div className="hero__cover" style={coverStyle(t.app)}>
+        <div className={`hero__cover ${t.thumbnail ? "hero__cover--video" : ""}`} style={coverStyle(t.app)}>
+          {t.thumbnail && <img className="hero__thumb" src={t.thumbnail} alt="" />}
           <AppIcon name={t.app} />
         </div>
         <div className="hero__body">
@@ -143,7 +144,8 @@ function Ready({ t, reload, say }: { t: TutorialRow; reload: () => void; say: (m
   return (
     <>
       <div className="hero">
-        <div className="hero__cover" style={coverStyle(t.app)}>
+        <div className={`hero__cover ${t.thumbnail ? "hero__cover--video" : ""}`} style={coverStyle(t.app)}>
+          {t.thumbnail && <img className="hero__thumb" src={t.thumbnail} alt="" />}
           <AppIcon name={t.app} />
         </div>
         <div className="hero__body">
@@ -156,6 +158,7 @@ function Ready({ t, reload, say }: { t: TutorialRow; reload: () => void; say: (m
             <>
               <h1 className="hero__title">{tut.title}</h1>
               <p className="hero__goal">{tut.goal}</p>
+              <Credit t={t} />
             </>
           )}
           <div className="hero__by">
@@ -372,5 +375,23 @@ function Publish({ t, onChange }: { t: TutorialRow; onChange: (v: Visibility) =>
         </div>
       )}
     </div>
+  );
+}
+
+/** Credit to the video a tutorial was made from: its title, its author, a link to watch it. */
+function Credit({ t }: { t: TutorialRow }) {
+  if (t.kind !== "youtube") return null;
+  const c = t.tutorial?.credit;
+  const [srcTitle, srcAuthor] = (t.sources[0]?.title ?? "").split(" · ");
+  const title = c?.title ?? srcTitle;
+  const author = c?.author ?? srcAuthor;
+  return (
+    <p className="credit">
+      <I.Play /> From the video{" "}
+      <a className="link" href={c?.url ?? t.input} target="_blank" rel="noreferrer">
+        {title ? `“${title}”` : "on YouTube"} ↗
+      </a>
+      {author ? ` by ${author}` : ""}
+    </p>
   );
 }

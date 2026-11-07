@@ -60,6 +60,11 @@ const AGENT = "h/web-surfer-pro";
 export const youtubeId = (url: string) =>
   url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/)?.[1] ?? null;
 
+export const youtubeThumbnail = (url: string) => {
+  const id = youtubeId(url);
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : undefined;
+};
+
 export function kindOf(input: string): Kind {
   const s = input.trim();
   if (youtubeId(s)) return "youtube";
@@ -401,11 +406,16 @@ async function design(env: IngestEnv, row: TutorialRow, job: Job): Promise<Parti
     id,
     version: 1,
     title: p.title,
-    app: { name: p.app || row.app || "Application", bundle_id: (p.bundle_id || job.bundleId || "").trim() || undefined },
+    app: { name: p.app || row.app || "Application", bundle_id: knownBundle(p.app || row.app) ?? ((p.bundle_id || job.bundleId || "").trim() || undefined) },
     goal: p.goal,
     language: job.language,
     source: "company",
     source_url: row.kind === "goal" ? undefined : row.input,
+    // Credit where it is due: the video the tutorial is made from, its author, its thumbnail.
+    credit:
+      row.kind === "youtube"
+        ? { kind: "youtube", title: row.title ?? undefined, author: job.author, url: row.input, thumbnail: youtubeThumbnail(row.input) }
+        : undefined,
     milestones: p.milestones.map((m, i) => ({
       id: `m${i + 1}`,
       goal: m.goal,
@@ -459,3 +469,21 @@ async function detectApp(env: IngestEnv, job: Job, text: string): Promise<string
     return null;
   }
 }
+
+/** Bundle ids read from the installed apps: models guess them close, but not exactly. */
+const BUNDLES: Record<string, string> = {
+  blender: "org.blenderfoundation.blender",
+  "davinci resolve": "com.blackmagic-design.DaVinciResolve",
+  "docker desktop": "com.docker.docker",
+  finder: "com.apple.finder",
+  "google chrome": "com.google.Chrome",
+  safari: "com.apple.Safari",
+  "visual studio code": "com.microsoft.VSCode",
+  mail: "com.apple.mail",
+  notes: "com.apple.Notes",
+  calendar: "com.apple.iCal",
+  preview: "com.apple.Preview",
+  terminal: "com.apple.Terminal",
+  "system settings": "com.apple.systempreferences",
+};
+const knownBundle = (app: string | null | undefined) => (app ? BUNDLES[app.trim().toLowerCase()] : undefined);

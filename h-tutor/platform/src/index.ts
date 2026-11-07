@@ -4,17 +4,18 @@
 //   /v1/*        the Rio app's API, with `Authorization: Bearer <api token>`
 //   everything else: the console (React, static assets)
 //
-// Knowledge: ReStep exports in KV (`kb:shared:<app>` for every organization,
-// `kb:<orgId>:<app>` for one), plus the organization's own tutorials in D1.
+// Knowledge: the global base lives in the rio-knowledge Worker (ReStep's graphs in D1,
+// ReStep's core ported), reached through the KNOWLEDGE service binding; the
+// organization's own tutorials live here, in D1.
 
 import { Hono, type Context } from "hono";
 import { createAuth } from "./auth.ts";
-import { type TutorialRow, advance, advancePending, kindOf } from "./ingest.ts";
-import { type AppData, type RioTutorial, listTutorials, rioTutorial, search, summaryOf, tutorialsAsKb } from "./kb.ts";
+import { type TutorialRow, advance, advancePending, kindOf, youtubeThumbnail } from "./ingest.ts";
+import { type RioTutorial, type SearchHit, search, summaryOf, tutorialsAsKb } from "./kb.ts";
 
 export interface Env {
   DB: D1Database;
-  KB: KVNamespace;
+  KNOWLEDGE: Fetcher;
   ASSETS: Fetcher;
   BETTER_AUTH_SECRET?: string;
   BETTER_AUTH_URL?: string;
@@ -37,20 +38,58 @@ async function sha256(s: string): Promise<string> {
 
 // ------------------------------------------------------------------ knowledge
 
-const kvCache = new Map<string, { at: number; data: AppData[] }>();
-
-/** ReStep knowledge for an organization: the shared bases and its own (KV, cached a minute per isolate). */
-async function kvKnowledge(env: Env, org: string): Promise<AppData[]> {
-  const hit = kvCache.get(org);
-  if (hit && Date.now() - hit.at < 60_000) return hit.data;
-  const load = async (scope: string) => {
-    const apps = (await env.KB.get<string[]>(`kb:${scope}:apps`, "json")) ?? [];
-    return Promise.all(apps.map((a) => env.KB.get<AppData>(`kb:${scope}:${a}`, "json")));
-  };
-  const data = [...(await load("shared")), ...(await load(org))].filter((d): d is AppData => !!d);
-  kvCache.set(org, { at: Date.now(), data });
-  return data;
+/** The knowledge Worker (service binding): JSON, or null when it is unreachable (Rio keeps working on team tutorials). */
+async function kn<T>(env: Env, path: string, params: Record<string, string | null | undefined> = {}): Promise<T | null> {
+  const q = new URLSearchParams(Object.entries(params).filter((e): e is [string, string] => !!e[1]));
+  try {
+    const r = await env.KNOWLEDGE.fetch(`https://knowledge${path}${q.size ? `?${q}` : ""}`);
+    return r.ok ? ((await r.json()) as T) : null;
+  } catch {
+    return null;
+  }
 }
+
+type GlobalHit = Omit<SearchHit, "version"> & { version: SearchHit["version"] };
+
+/**
+ * Everything Rio knows for a question: the team's own tutorials first (their way), then the global base.
+ * A weak match (often another language) is retried with English keywords from Holo.
+ */
+async function searchAll(c: C, q: string, o: { app?: string | null; version?: string | null; limit: number }) {
+  const own = tutorialsAsKb(await readyTutorials(c.env, c.get("org")));
+  const run = async (alt: string) => {
+    const [team, global] = await Promise.all([
+      Promise.resolve(search(own, alt ? [q, alt] : [q], { app: o.app, version: o.version, limit: 3 }).filter((r) => r.score >= 2)),
+      kn<{ results: GlobalHit[] }>(c.env, "/search", { q, alt, app: o.app, version: o.version, workspace: c.get("org"), limit: String(o.limit) }),
+    ]);
+    return [...team.slice(0, 2), ...(global?.results ?? [])].slice(0, o.limit);
+  };
+  let results = await run("");
+  let keywords = "";
+  if (results.length < 2) {
+    keywords = await englishKeywords(c.env, q);
+    if (keywords) {
+      const more = await run(keywords);
+      if (more.length > results.length) results = more;
+    }
+  }
+  return { results, keywords };
+}
+
+type GlobalTutorial = { id: string; title: string; app: string; bundle_id: string | null; skills: number; recorded_on: string | null; source_url: string | null; kind: string | null; author: string | null };
+
+const globalSummary = (t: GlobalTutorial) => ({
+  id: t.id,
+  title: t.title,
+  app: t.app,
+  bundle_id: t.bundle_id,
+  goal: t.title,
+  milestones: t.skills,
+  source: "company",
+  source_url: t.source_url,
+  author_kind: t.kind,
+  recorded_on: t.recorded_on,
+});
 
 async function readyTutorials(env: Env, org: string): Promise<RioTutorial[]> {
   const { results } = await env.DB.prepare(
@@ -93,12 +132,6 @@ app.use("/v1/*", async (c, next) => {
   await next();
 });
 
-/** Every base the organization searches: ReStep's (KV) and its own tutorials (D1). */
-async function knowledge(c: C) {
-  const [kv, own] = await Promise.all([kvKnowledge(c.env, c.get("org")), readyTutorials(c.env, c.get("org"))]);
-  return { kv, own, all: [...kv, ...tutorialsAsKb(own)] };
-}
-
 const keywordCache = new Map<string, string>();
 
 /** A question in any language as English keywords in the software's vocabulary (one Holo call, cached). */
@@ -140,23 +173,14 @@ async function englishKeywords(env: Env, q: string): Promise<string> {
 app.get("/v1/search", async (c) => {
   const q = (c.req.query("q") ?? "").trim();
   if (!q) return c.json({ error: "missing q" }, 400);
-  const { all } = await knowledge(c);
-  const opts = { app: c.req.query("app"), version: c.req.query("version"), limit: Math.min(Number(c.req.query("limit")) || 5, 10) };
-  let results = search(all, [q], opts);
-  let keywords = "";
-  // Weak or no match (often a question in another language): retry with English keywords.
-  if (!results.length || results[0].score < 2) {
-    keywords = await englishKeywords(c.env, q);
-    if (keywords) results = search(all, [q, keywords], opts);
-  }
-  logUsage(c, { kind: "search", query: q, app: opts.app, results: results.filter((r) => r.score >= 2).length });
+  const { results, keywords } = await searchAll(c, q, { app: c.req.query("app"), version: c.req.query("version"), limit: Math.min(Number(c.req.query("limit")) || 5, 10) });
+  logUsage(c, { kind: "search", query: q, app: c.req.query("app"), results: results.length });
   return c.json({ query: q, keywords: keywords || null, results });
 });
 
 app.get("/v1/tutorials", async (c) => {
-  const { kv, own } = await knowledge(c);
-  const list = [...own.map(summaryOf), ...listTutorials(kv, c.req.query("app"))];
-  return c.json({ tutorials: list });
+  const [own, global] = await Promise.all([readyTutorials(c.env, c.get("org")), kn<{ tutorials: GlobalTutorial[] }>(c.env, "/tutorials", { app: c.req.query("app") })]);
+  return c.json({ tutorials: [...own.map(summaryOf), ...(global?.tutorials ?? []).map(globalSummary)] });
 });
 
 app.get("/v1/tutorials/:id", async (c) => {
@@ -168,7 +192,7 @@ app.get("/v1/tutorials/:id", async (c) => {
       .first<{ data: string }>();
     t = row && JSON.parse(row.data);
   } else {
-    t = rioTutorial(await kvKnowledge(c.env, c.get("org")), id, c.req.query("version"));
+    t = await kn(c.env, `/tutorials/${encodeURIComponent(id)}`, { format: "rio", version: c.req.query("version") });
   }
   return t ? c.json(t) : c.json({ error: "unknown tutorial" }, 404);
 });
@@ -258,6 +282,7 @@ const publicRow = (r: RichRow, c?: C) => ({
   visibility: r.visibility,
   publishedAt: r.publishedAt,
   remixOf: r.remixOf,
+  thumbnail: r.kind === "youtube" ? (youtubeThumbnail(r.input) ?? null) : null,
   // While H's web agent reads the docs: its live view.
   agentViewUrl: r.status === "browsing" && r.job ? ((JSON.parse(r.job) as { agentViewUrl?: string }).agentViewUrl ?? null) : null,
   sources: r.sources ? JSON.parse(r.sources) : [],
@@ -403,64 +428,51 @@ app.get("/api/app/community", async (c) => {
   return c.json({ tutorials: rows.map((r) => publicRow(r, c)) });
 });
 
-// Knowledge: the global base (ReStep, versioned) and what the team created
+// Knowledge: the global base (ReStep, versioned, in the knowledge Worker) and what the team created
+type KnowledgeApp = { id: string; name: string; bundle_id: string | null; current_version: string; versions: { id: string; label: string | null }[]; skills: number; sources: number; proven: number; atoms: number; tutorials: number };
+
 app.get("/api/app/knowledge", async (c) => {
-  const kv = await kvKnowledge(c.env, c.get("org"));
-  const own = await teamTutorials(c);
+  const [overview, tuts, own] = await Promise.all([
+    kn<{ apps: KnowledgeApp[] }>(c.env, "/apps"),
+    kn<{ tutorials: GlobalTutorial[] }>(c.env, "/tutorials"),
+    teamTutorials(c),
+  ]);
   return c.json({
-    global: kv.map((d) => ({
-      app: d.app,
-      skills: Object.keys(d.skills).length,
-      sources: new Set(Object.values(d.skills).flatMap((s) => s.sources.map((x) => x.id))).size,
-      proven: Object.values(d.skills).filter((s) => Object.values(s.proofs).includes("PASS")).length,
-      tutorials: listTutorials([d]),
+    available: !!overview,
+    global: (overview?.apps ?? []).map((a) => ({
+      app: { id: a.id, name: a.name, versions: a.versions, current_version: a.current_version },
+      skills: a.skills,
+      sources: a.sources,
+      proven: a.proven,
+      atoms: a.atoms,
+      tutorials: (tuts?.tutorials ?? []).filter((t) => t.app === a.name).map(globalSummary),
     })),
     created: tutorialsAsKb(own).map((d) => ({ app: d.app.name, skills: Object.keys(d.skills).length })),
   });
 });
 
 async function teamTutorials(c: C): Promise<RioTutorial[]> {
-  const { results } = await c.env.DB.prepare(
-    `select "data" from "tutorial" where "organizationId" = ? and "status" = 'ready' and "visibility" != 'draft'`,
-  )
-    .bind(c.get("org"))
-    .all<{ data: string }>();
-  return results.map((r) => JSON.parse(r.data) as RioTutorial);
+  return readyTutorials(c.env, c.get("org"));
 }
 
-/** Skills of one global app (all, or matching `q`), with their versions, proofs and sources. */
+/** Skills of one global app (all, or matching `q`), each re-targeted to every version. */
 app.get("/api/app/knowledge/skills", async (c) => {
-  const kv = await kvKnowledge(c.env, c.get("org"));
-  const data = kv.find((d) => d.app.id === c.req.query("app")) ?? kv[0];
-  if (!data) return c.json({ app: null, skills: [] });
-  const q = (c.req.query("q") ?? "").trim();
-  const ids = q ? search([data], [q], { limit: 50 }).map((h) => h.id) : Object.keys(data.skills).sort((a, b) => data.skills[b].sources.length - data.skills[a].sources.length);
-  const skills = ids.map((id) => {
-    const s = data.skills[id];
-    return {
-      id,
-      intent: s.intent,
-      sources: s.sources,
-      proofs: s.proofs,
-      changed: Object.values(s.steps).some((st) => st.some((x) => x.changed)),
-      steps: s.steps,
-    };
-  });
-  return c.json({ app: data.app, skills });
+  const r = await kn(c.env, "/skills", { app: c.req.query("app"), q: c.req.query("q") });
+  return c.json(r ?? { app: null, skills: [] });
+});
+
+/** Where a UI element is now, under any name it has had ("Remove Doubles" -> Merge by Distance). */
+app.get("/api/app/knowledge/locate", async (c) => {
+  const r = await kn(c.env, "/locate", { app: c.req.query("app"), q: c.req.query("q"), version: c.req.query("version") });
+  return c.json(r ?? { results: [] });
 });
 
 /** One question across everything Rio knows for this team (what Holo gets when it searches). */
 app.get("/api/app/knowledge/search", async (c) => {
   const q = (c.req.query("q") ?? "").trim();
   if (!q) return c.json({ results: [] });
-  const kv = await kvKnowledge(c.env, c.get("org"));
-  const all = [...kv, ...tutorialsAsKb(await teamTutorials(c))];
-  let results = search(all, [q], { app: c.req.query("app"), limit: 8 });
-  if (!results.length || results[0].score < 2) {
-    const kw = await englishKeywords(c.env, q);
-    if (kw) results = search(all, [q, kw], { app: c.req.query("app"), limit: 8 });
-  }
-  return c.json({ results: results.filter((r) => r.score >= 2) });
+  const { results } = await searchAll(c, q, { app: c.req.query("app"), limit: 8 });
+  return c.json({ results });
 });
 
 // Usage

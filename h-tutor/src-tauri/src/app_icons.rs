@@ -45,6 +45,7 @@ fn find_app(name: &str, bundle_id: Option<&str>) -> Option<PathBuf> {
         "/System/Applications/Utilities".to_string(),
         "/Applications/Utilities".to_string(),
         "/System/Library/CoreServices".to_string(),
+        "/Applications/DaVinci Resolve".to_string(),
         format!("{home}/Applications"),
     ];
     for n in &names {
@@ -196,6 +197,7 @@ mod tests {
             ("Google Chrome", Some("com.google.Chrome")),
             ("Safari", Some("com.apple.Safari")),
             ("Visual Studio Code", Some("com.microsoft.VSCode")),
+            ("DaVinci Resolve", None),
             ("Mail", Some("com.apple.mail")),
             ("Notes", Some("com.apple.Notes")),
             ("Calendar", Some("com.apple.iCal")),

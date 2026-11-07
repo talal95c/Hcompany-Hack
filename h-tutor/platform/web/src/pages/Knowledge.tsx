@@ -145,6 +145,8 @@ function Global({ data }: { data: Overview }) {
         <div className="stat"><div className="stat__value">{g.app.versions.length}</div><div className="stat__label">Versions</div></div>
       </div>
 
+      <Atlas app={g.app} />
+
       <div className="section" style={{ marginTop: 28 }}>
         <div className="section__title">
           <h2>Skills</h2>
@@ -269,5 +271,59 @@ function Created({ data }: { data: Overview }) {
         ))}
       </div>
     </>
+  );
+}
+
+type Located = { op: string; label: string; where: { paths: string[]; keys: string[]; via_keys: string[] } | null; aka: string[]; replaced: { from: string; why: string } | null };
+
+/** ReStep's atlas: a UI element by any name it has had, and where it is now. */
+function Atlas({ app }: { app: AppInfo }) {
+  const [q, setQ] = useState("");
+  const [res, setRes] = useState<Located[] | null>(null);
+  useEffect(() => {
+    if (q.trim().length < 3) return setRes(null);
+    const t = setTimeout(() => {
+      fetch(`/api/app/knowledge/locate?app=${app.id}&q=${encodeURIComponent(q)}`, { credentials: "include" })
+        .then((r) => r.json())
+        .then((v: { results: Located[] }) => setRes(v.results));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q, app.id]);
+  return (
+    <div className="section" style={{ marginTop: 28 }}>
+      <div className="section__title">
+        <h2>Where is it now?</h2>
+        <span>Any name a button or menu has had, in any version</span>
+      </div>
+      <div className="ask">
+        <I.Search />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={app.id === "blender" ? "Remove Doubles, Move to Layer, Specials…" : `A ${app.name} menu or button`} aria-label="Find a UI element" />
+      </div>
+      {res && (
+        <div className="skills" style={{ marginTop: 10 }}>
+          {res.length === 0 && <p className="note">No UI element by that name.</p>}
+          {res.map((r) => (
+            <div className="skill" key={r.op}>
+              <div className="skill__head" style={{ cursor: "default", alignItems: "flex-start" }}>
+                <span className="skill__name">
+                  {r.label}
+                  {r.aka.length > 0 && <small>Formerly {r.aka.map((a) => `“${a}”`).join(", ")}</small>}
+                  {r.replaced && <small>Replaces {r.replaced.from} ({r.replaced.why})</small>}
+                </span>
+                <span className="hints" style={{ marginTop: 0, justifyContent: "flex-end" }}>
+                  {(r.where?.paths ?? []).slice(0, 2).map((p) => (
+                    <span className="hint" key={p}>{p}</span>
+                  ))}
+                  {(r.where?.keys ?? []).slice(0, 1).map((k) => (
+                    <span className="hint" key={k}>{k}</span>
+                  ))}
+                  {!r.where && <span className="tag tag--failed">Not in this version</span>}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

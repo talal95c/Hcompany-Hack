@@ -1,0 +1,15 @@
+{
+  "name": "rio-knowledge",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "convert": "node --experimental-strip-types --no-warnings scripts/convert.ts",
+    "test": "node --experimental-strip-types --no-warnings --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "db:migrate:local": "wrangler d1 migrations apply rio-knowledge --local",
+    "db:load:local": "wrangler d1 execute rio-knowledge --local --file data/knowledge.sql",
+    "db:migrate": "wrangler d1 migrations apply rio-knowledge --remote",
+    "db:load": "wrangler d1 execute rio-knowledge --remote --file data/knowledge.sql",
+    "deploy": "wrangler deploy"
+  }
+}

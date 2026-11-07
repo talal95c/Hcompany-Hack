@@ -17,10 +17,10 @@ database_name = "rio"
 database_id = "REPLACE_WITH_D1_DATABASE_ID"
 migrations_dir = "migrations"
 
-# `npx wrangler kv namespace create KB` prints the id to put here.
-[[kv_namespaces]]
-binding = "KB"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+# The global knowledge base (knowledge/: ReStep's graphs and core, search only).
+[[services]]
+binding = "KNOWLEDGE"
+service = "rio-knowledge"
 
 # Tutorial jobs (transcription, design) move along every minute.
 [triggers]

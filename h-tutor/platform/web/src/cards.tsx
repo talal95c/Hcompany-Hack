@@ -34,8 +34,15 @@ export function TutorialCard({ t, showOrg }: { t: TutorialRow; showOrg?: boolean
         navigate(`/t/${t.id}`);
       }}
     >
-      <div className="card__cover" style={coverStyle(t.app)}>
-        <AppIcon name={t.app} />
+      <div className={`card__cover ${t.thumbnail ? "card__cover--video" : ""}`} style={coverStyle(t.app)}>
+        {t.thumbnail ? (
+          <>
+            <img className="card__thumb" src={t.thumbnail} alt="" loading="lazy" />
+            <span className="card__app"><AppIcon name={t.app} /></span>
+          </>
+        ) : (
+          <AppIcon name={t.app} />
+        )}
         <span className="card__badge">
           <StatusTag t={t} glass />
         </span>
