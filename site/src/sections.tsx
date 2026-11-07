@@ -21,8 +21,8 @@ const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Fi
 /* ---------------- Nav ---------------- */
 
 export function Nav() {
-  const links = ["Use cases", "How it works", "Library", "Pricing", "About"];
-  const ids = ["works", "services", "insights", "pricing", "company"];
+  const links = ["Pricing", "FAQ"];
+  const ids = ["pricing", "faq"];
   return (
     <motion.header
       className="nav"
@@ -780,16 +780,11 @@ const FAQ = [
   { q: "Which platforms are supported?", a: "macOS first: Rio lives in the menu bar and floats over full-screen apps. More platforms are on the roadmap." },
 ];
 
-const ARTICLES = [
-  { cat: "Blender", title: "Your first donut in Blender, step by step", body: "From the default cube to a finished render, guided milestone by milestone.", author: "Rio library", img: "862JbA3xEJjbdSDVyKEwOZ0f2g.jpeg" },
-  { cat: "Docker", title: "Run your first container without memorising commands", body: "Pull an image, start it and check it is running, with every step verified on screen.", author: "Rio library", img: "YKAEpvQFebP2OETEJDVNip8UTg.jpeg", flip: true },
-  { cat: "Learning", title: "Why learning by doing beats watching tutorials", body: "Videos never match your screen. Guided practice on the real interface does.", author: "Rio team", img: "egDVD5dc2AvUIZKG0seuGXtH0.jpeg" },
-];
 
 export function FaqInsights() {
   const [open, setOpen] = useState(0);
   return (
-    <section className="faq-wrap" id="insights">
+    <section className="faq-wrap" id="faq">
       <div className="faq-card">
         <div className="faq">
           <div className="faq-left">
@@ -841,42 +836,6 @@ export function FaqInsights() {
           </div>
         </div>
 
-        <BigMarquee word="Library" star="#ffffff" />
-        <div className="insights-head">
-          <Reveal as="p" className="p-16">
-            Ready-made tutorials and guides to get productive in new software, fast. Every lesson runs live on your own screen.
-          </Reveal>
-          <Reveal delay={0.1}>
-            <Btn label="Browse library" href="#insights" />
-          </Reveal>
-        </div>
-        <div className="articles">
-          {ARTICLES.map((a, i) => (
-            <Reveal key={a.title} className={`article ${a.flip ? "flip" : ""}`} delay={i * 0.08}>
-              <a href="#insights" className="article-link">
-                <div className="article-img">
-                  <img src={asset(a.img)} alt="" />
-                </div>
-                <div className="article-body">
-                  <div>
-                    <p className="mono-12">{a.cat}</p>
-                    <h4 className="h4-20 article-title">{a.title}</h4>
-                    <p className="p-14l">{a.body}</p>
-                  </div>
-                  <div className="article-foot">
-                    <div>
-                      <p className="p-14">Written by</p>
-                      <p className="p-12">{a.author}</p>
-                    </div>
-                    <span className="article-go">
-                      <Icon name="arrowRight" size={25} />
-                    </span>
-                  </div>
-                </div>
-              </a>
-            </Reveal>
-          ))}
-        </div>
       </div>
     </section>
   );

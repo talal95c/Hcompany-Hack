@@ -1,4 +1,4 @@
-import { About, Capabilities, Experiences, FaqInsights, Footer, Hero, Nav, Pricing, Process, Video, Vision, Works } from "./sections";
+import { FaqInsights, Footer, Hero, Nav, Pricing } from "./sections";
 
 export default function App() {
   return (
@@ -6,17 +6,6 @@ export default function App() {
       <Nav />
       <main className="page">
         <Hero />
-        <About />
-        <Works />
-        <div className="dark-zone">
-          <Capabilities />
-          <Vision />
-        </div>
-        <Experiences />
-        <div className="dark-zone">
-          <Video />
-          <Process />
-        </div>
         <Pricing />
         <FaqInsights />
       </main>
