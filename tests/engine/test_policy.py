@@ -28,7 +28,7 @@ def snapshot(objects=None):
 
 def step():
     root = Path(__file__).resolve().parents[2]
-    paths = (root / "contracts/examples/lesson/valid").glob("*.json")
+    paths = [root / "contracts/examples/lesson/valid/donut.json"]
     return next(s["steps"][0] for p in paths if (s := json.loads(p.read_text()))["steps"][0][
         "known_errors"
     ])
@@ -66,7 +66,8 @@ def help_context(**kwargs):
 
 async def test_known_error_once_deferred_and_progress():
     policy, clock, commands, decisions, debug = setup()
-    cube = snapshot([{"id": "a", "type": "MESH", "primitive_provenance": "cube"}])
+    cube = snapshot([{"id": "a", "type": "MESH", "primitive_provenance": "cube",
+                      "mesh": {"verts": 8, "edges": 12, "polys": 6}}])
     decision = await process(policy, cube)
     assert decision.reason == "known_error:cube_instead_of_torus" and decision.level == 1
     assert drain(commands)[0]["payload"]["text"] == step()["known_errors"][0]["hint"]
@@ -103,7 +104,8 @@ async def test_no_progress_selection_undo_mute_explicit_and_success():
     # Sans capture, le troisième palier reste au deuxième.
     assert (await process(policy, state, context=help_context())).level == 2
     assert commands.empty()
-    torus = snapshot([{"id": "t", "type": "MESH", "primitive_provenance": "torus"}])
+    torus = snapshot([{"id": "t", "type": "MESH", "primitive_provenance": "torus",
+                       "mesh": {"verts": 576, "edges": 1152, "polys": 576}}])
     assert (await process(policy, torus)).kind == "success"
     assert [c["type"] for c in drain(commands)] == ["success"]
     assert policy.level == 0
@@ -265,3 +267,60 @@ async def test_cached_pointer_does_not_call_holo():
 
 async def process_empty(policy, state):
     return await policy.process(state, evaluate("object_exists", state, {}))
+
+
+@pytest.mark.parametrize("invalidation", ["chut", "capture"])
+async def test_inflight_spontaneous_holo_is_cancelled(invalidation):
+    started, cancelled = asyncio.Event(), asyncio.Event()
+
+    class Holo:
+        async def localize(self, *args, **kwargs):
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                cancelled.set()
+                raise
+
+    policy, clock, commands, decisions, _ = setup(holo=Holo())
+    policy.config = replace(policy.config, holo_timeout_s=2)
+    state = snapshot()
+    await process(policy, state)
+    policy.level = 2
+    clock.advance(20)
+    ctx = help_context(capture_id="before", image_png=b"png")
+    task = asyncio.create_task(process(policy, state, context=ctx))
+    await asyncio.wait_for(started.wait(), 1)
+    if invalidation == "chut":
+        await policy.intent("chut")
+    else:
+        policy.cancel_intervention(invalidate_capture=True)
+    assert await asyncio.wait_for(task, 1) is None
+    assert cancelled.is_set() and decisions.empty()
+    assert [c["type"] for c in drain(commands)] == (["stop"] if invalidation == "chut" else [])
+    assert policy.level == 2
+    if invalidation == "capture":
+        assert await policy.intent("aide", ctx) is None
+        assert commands.empty()
+
+
+async def test_chut_during_jev_cannot_start_help_after_resume():
+    started, release = asyncio.Event(), asyncio.Event()
+
+    class Jev:
+        async def decide(self, *args, **kwargs):
+            started.set()
+            await release.wait()
+            return JevDecision("intervene", None, 0)
+
+    policy, clock, commands, decisions, _ = setup(jev=Jev())
+    state = snapshot([{"id": "a", "type": "MESH"}])
+    await process(policy, state)
+    clock.advance(20)
+    task = asyncio.create_task(process(policy, state))
+    await started.wait()
+    await policy.intent("chut")
+    await policy.intent("reprends")
+    release.set()
+    assert await task is None and decisions.empty()
+    assert [c["type"] for c in drain(commands)] == ["stop"]

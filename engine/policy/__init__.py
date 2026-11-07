@@ -34,6 +34,7 @@ class HelpContext:
     image_png: bytes | None = None
     safe_demo: bool = False
     checkpoint_id: str | None = None
+    capture_epoch: int = 0
 
 
 class HelpPolicy:
@@ -65,8 +66,20 @@ class HelpPolicy:
         self.jev_wait_key: tuple | None = None
         self.jev_wait_until = 0.0
         self.lock = asyncio.Lock()
+        self.capture_epoch = 0
+        self.intervention_epoch = 0
+        self.localization: asyncio.Task | None = None
+
+    def cancel_intervention(self, *, invalidate_capture: bool = False) -> None:
+        self.intervention_epoch += 1
+        if invalidate_capture:
+            self.capture_epoch += 1
+            self.targets.invalidate()
+        if self.localization:
+            self.localization.cancel()
 
     def set_step(self, step: dict, generation: int) -> None:
+        self.cancel_intervention()
         self.step, self.generation = step, generation
         self.level, self.undos = 0, 0
         self.last_progress = self.clock.monotonic()
@@ -101,6 +114,7 @@ class HelpPolicy:
         text = text.strip().casefold()
         if text == "chut":
             self.muted = True
+            self.cancel_intervention()
             if self.step:
                 await self._command("stop", {"reason": "Silence demandé"})
             return None
@@ -121,6 +135,7 @@ class HelpPolicy:
             if not self.step or self.passed:
                 return None
             generation = self.generation
+            epoch = self.intervention_epoch
             if result.scene_revision != state.revision or not state.recent:
                 return None
             if result.status == "pass":
@@ -193,7 +208,8 @@ class HelpPolicy:
                 answer = await self.fallback.call(
                     "jev", decide, self.config.jev_timeout_s, local_rule,
                 )
-                if generation != self.generation:
+                if (generation != self.generation or epoch != self.intervention_epoch
+                        or self.muted):
                     return None
                 if self.fallback.health["jev"].consecutive_failures and not self.degraded:
                     self.degraded = True
@@ -210,8 +226,10 @@ class HelpPolicy:
                     code = answer.action.split(":", 1)[1]
                     hint = next(e["hint"] for e in errors if e["code"] == code)
                     reason = "known_error:" + code
+            if self.muted or epoch != self.intervention_epoch:
+                return None
             decision = await self._help(reason, hint, context or HelpContext(), state.revision)
-            if generation != self.generation:
+            if generation != self.generation or epoch != self.intervention_epoch:
                 return None
             self.last_spontaneous = self.clock.monotonic()
             self.last_progress = self.clock.monotonic()
@@ -224,6 +242,7 @@ class HelpPolicy:
         self, reason: str, hint: str, context: HelpContext, revision: int,
     ) -> Decision | None:
         generation = self.generation
+        epoch = self.intervention_epoch
         next_level = min(4, self.level + 1)
         if next_level == 1:
             audio = self.audio.get(hint)
@@ -244,6 +263,8 @@ class HelpPolicy:
                     }, revision=revision)
                 self.level = 2
         elif next_level == 3:
+            if context.target and context.capture_epoch != self.capture_epoch:
+                return None
             entry = self.targets.get_target(context.target) if context.target else None
             result = entry.result if entry else None
             capture_id = entry.capture_id if entry else context.capture_id
@@ -257,10 +278,22 @@ class HelpPolicy:
                         raise ValueError("Cible introuvable")
                     return result
 
-                result = await self.fallback.call(
+                task = asyncio.create_task(self.fallback.call(
                     "holo", localize, self.config.holo_timeout_s, lambda: None,
-                )
-            if generation != self.generation:
+                ))
+                self.localization = task
+                try:
+                    result = await task
+                except asyncio.CancelledError:
+                    if epoch != self.intervention_epoch:
+                        return None
+                    raise
+                finally:
+                    if self.localization is task:
+                        self.localization = None
+            if (generation != self.generation or epoch != self.intervention_epoch
+                    or (context.target and context.capture_epoch != self.capture_epoch)
+                    or (self.muted and reason != "explicit")):
                 return None
             if result and capture_id and context.target and context.target.visible:
                 if not entry:

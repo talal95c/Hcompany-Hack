@@ -13,7 +13,8 @@ def snapshot(objects=None, revision=1):
 
 @pytest.mark.parametrize("name,params,obj", [
     ("object_exists", {"type": "MESH", "primitive": "torus"},
-     {"type": "MESH", "primitive_provenance": "torus"}),
+     {"type": "MESH", "primitive_provenance": "torus",
+                       "mesh": {"verts": 576, "edges": 1152, "polys": 576}}),
     ("object_count", {"type": "MESH", "count": 1}, {"type": "MESH"}),
     ("modifier_present", {"modifier_type": "SUBSURF", "params": {"levels": 2}},
      {"modifiers": [{"type": "SUBSURF", "levels": 2}]}),
@@ -41,6 +42,7 @@ def test_missing_property_not_proof(name, params):
 
 def test_checks_fail_tolerance_and_registry():
     state = snapshot([{"id": "a", "type": "MESH", "primitive_provenance": "cube",
+                      "mesh": {"verts": 8, "edges": 12, "polys": 6},
                        "location": [0.001, 0, 0], "modifiers": [], "materials": [],
                        "shading_smooth": False}])
     for name, params in [
@@ -59,7 +61,8 @@ def test_checks_fail_tolerance_and_registry():
 
 
 def test_scene_deltas_selection_mode_and_staleness():
-    state = snapshot([{"id": "a", "type": "MESH", "primitive_provenance": "torus"}])
+    state = snapshot([{"id": "a", "type": "MESH", "primitive_provenance": "torus",
+                       "mesh": {"verts": 576, "edges": 1152, "polys": 576}}])
     params = {"type": "MESH", "primitive": "torus"}
     before = progress_signature("object_exists", state, params)
     assert evaluate("selection", state, params).status == "unknown"
@@ -101,3 +104,21 @@ def test_incomplete_objects_and_selection_empty():
     state.apply({"type": "mode.changed", "scene_revision": 10,
                  "payload": {"current": "OBJECT"}})
     assert not state.recent
+
+
+@pytest.mark.parametrize("mesh,expected", [
+    (None, "unknown"),
+    ([], "unknown"),
+    ({"verts": 8, "polys": 6}, "unknown"),
+    ({"verts": 8, "edges": 12, "polys": 6}, "fail"),
+    ({"verts": 576, "polys": 576}, "unknown"),
+    ({"verts": 576, "edges": 1153, "polys": 576}, "fail"),
+    ({"verts": 576, "edges": 1152, "polys": 576}, "pass"),
+    ({"verts": 9, "edges": 18, "polys": 9}, "pass"),
+    ({"verts": True, "edges": 2, "polys": 1}, "unknown"),
+])
+def test_primitive_requires_provenance_and_geometry(mesh, expected):
+    obj = {"id": "a", "type": "MESH", "primitive_provenance": "torus", "mesh": mesh}
+    assert evaluate("object_exists", snapshot([obj]), {"primitive": "torus"}).status == expected
+    obj.pop("primitive_provenance")
+    assert evaluate("object_exists", snapshot([obj]), {"primitive": "torus"}).status == "unknown"
