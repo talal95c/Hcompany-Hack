@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "message_id": "m1",
+  "reply_to": null,
+  "type": "audio.chunk",
+  "payload": {
+    "utterance_id": "u1",
+    "sequence": 0,
+    "encoding": "pcm_s16le",
+    "sample_rate": 16000,
+    "data_base64": "AAAA"
+  }
+}

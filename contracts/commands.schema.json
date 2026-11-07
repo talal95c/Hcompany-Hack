@@ -1,0 +1,429 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hcompany-hack.invalid/contracts/commands.schema.json",
+  "title": "commands",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "command_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "step_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "recipient": {
+      "enum": [
+        "addon",
+        "desktop"
+      ]
+    },
+    "type": {
+      "enum": [
+        "highlight",
+        "clear_highlight",
+        "open_menu",
+        "replay",
+        "undo_demo",
+        "request_snapshot",
+        "pointer",
+        "say",
+        "success",
+        "input.action",
+        "stop"
+      ]
+    },
+    "deadline_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "expected_scene_revision": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "session_id",
+    "command_id",
+    "step_id",
+    "generation",
+    "recipient",
+    "type",
+    "deadline_ms",
+    "expected_scene_revision",
+    "payload"
+  ],
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "properties": {
+        "type": {
+          "const": "highlight"
+        },
+        "recipient": {
+          "const": "addon"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "area_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "region_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "color": {
+              "type": "string",
+              "minLength": 1
+            },
+            "duration_ms": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "area_id",
+            "region_id",
+            "color",
+            "duration_ms"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "clear_highlight"
+        },
+        "recipient": {
+          "const": "addon"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "open_menu"
+        },
+        "recipient": {
+          "const": "addon"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "menu_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "area_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "region_id": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "menu_id",
+            "area_id",
+            "region_id"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "replay"
+        },
+        "recipient": {
+          "const": "addon"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "procedure_ref": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?![A-Za-z]:)(?!.*\\\\).+$"
+            },
+            "params": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "procedure_ref",
+            "params"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "undo_demo"
+        },
+        "recipient": {
+          "const": "addon"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "checkpoint_id": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "checkpoint_id"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "request_snapshot"
+        },
+        "recipient": {
+          "const": "addon"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "pointer"
+        },
+        "recipient": {
+          "const": "desktop"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "capture_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ui_revision": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "x": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "y": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000
+            }
+          },
+          "required": [
+            "capture_id",
+            "ui_revision",
+            "x",
+            "y"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "say"
+        },
+        "recipient": {
+          "const": "desktop"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1
+            },
+            "audio_ref": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?![A-Za-z]:)(?!.*\\\\).+$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "text",
+            "audio_ref"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "success"
+        },
+        "recipient": {
+          "const": "desktop"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "input.action"
+        },
+        "recipient": {
+          "const": "desktop"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "object"
+            },
+            "consent_token": {
+              "type": "string",
+              "minLength": 1
+            },
+            "capture_id": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "action",
+            "consent_token",
+            "capture_id"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "stop"
+        },
+        "recipient": {
+          "const": "desktop"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "result": {
+      "type": "object",
+      "properties": {
+        "command_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "rejected",
+            "failed",
+            "expired"
+          ]
+        },
+        "detail": {
+          "type": "string"
+        },
+        "scene_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "error_code": {
+          "enum": [
+            "stale_state",
+            "bad_context",
+            "unknown_procedure",
+            "permission_denied",
+            "busy"
+          ]
+        }
+      },
+      "required": [
+        "command_id",
+        "status",
+        "detail",
+        "scene_revision"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,13 @@
+html, body {
+  margin: 0;
+  background: transparent;
+  font-family: system-ui, sans-serif;
+}
+main {
+  margin: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #18202eee;
+  color: #fff;
+}
+p { margin: 4px 0; }

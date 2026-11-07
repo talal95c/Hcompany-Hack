@@ -48,7 +48,7 @@ docs/       vision, optimisations, schémas
 Le détail est dans [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## État
-Architecture et arborescence posées, **pas encore de code**.
+Socle étape 0 disponible sur `dev` : contrats JSON Schema draft 2020-12 et fixtures, packages Python importables, tests de contrats et scaffold desktop Tauri v2. Aucun moteur pédagogique, capture, injection ou client IA opérationnel à ce stade. Installation et commandes exactes : [environnement de développement](docs/environnement-dev.md).
 
 
 ## Conception détaillée et statut

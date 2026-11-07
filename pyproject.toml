@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hcompany-hack"
+version = "0.1.0"
+description = "Moteur de leçons Blender vérifiables"
+requires-python = ">=3.11"
+dependencies = [
+  "jsonschema>=4.22,<5",
+  "pytest>=8,<10",
+  "pytest-asyncio>=0.24,<2",
+  "ruff>=0.9,<1",
+]
+
+[project.optional-dependencies]
+holo = ["openai>=1.60,<3"]
+jev = ["httpx>=0.27,<1"]
+gladia = ["httpx>=0.27,<1", "websockets>=14,<17"]
+linkup = ["httpx>=0.27,<1"]
+devin = ["httpx>=0.27,<1"]
+desktop = ["websockets>=14,<17"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["engine*", "prep*", "agent*", "addon*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]

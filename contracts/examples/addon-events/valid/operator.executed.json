@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "event_id": "e3",
+  "seq": 3,
+  "type": "operator.executed",
+  "ts_monotonic_ms": 4200,
+  "scene_revision": 4,
+  "payload": {
+    "idname": "MESH_OT_primitive_torus_add",
+    "properties": {
+      "major_radius": 1
+    }
+  }
+}

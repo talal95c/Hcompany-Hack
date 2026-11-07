@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "message_id": "m1",
+  "reply_to": null,
+  "type": "lesson.state",
+  "payload": {
+    "step_id": "add_torus",
+    "status": "OBSERVING",
+    "instruction": "Ajoute un tore.",
+    "help_level": 1
+  }
+}

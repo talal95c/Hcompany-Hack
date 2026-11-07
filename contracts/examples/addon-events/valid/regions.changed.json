@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "event_id": "e7",
+  "seq": 7,
+  "type": "regions.changed",
+  "ts_monotonic_ms": 4200,
+  "scene_revision": 4,
+  "payload": {
+    "ui_revision": 2,
+    "regions": [
+      {
+        "area_id": "a1",
+        "region_id": "r1",
+        "type": "WINDOW",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 1280,
+          "height": 800
+        },
+        "scale": 2,
+        "monitor_id": "main"
+      }
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "event_id": "e4",
+  "seq": 4,
+  "type": "scene.changed",
+  "ts_monotonic_ms": 4200,
+  "scene_revision": 4,
+  "payload": {
+    "changed_ids": [
+      "obj-1"
+    ],
+    "objects": [
+      {
+        "id": "obj-1",
+        "type": "MESH",
+        "primitive_provenance": "torus"
+      }
+    ]
+  }
+}

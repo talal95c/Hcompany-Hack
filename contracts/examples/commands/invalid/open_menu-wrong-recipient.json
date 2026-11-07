@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "command_id": "c1",
+  "step_id": "add_torus",
+  "generation": 2,
+  "recipient": "desktop",
+  "type": "open_menu",
+  "deadline_ms": 1000,
+  "expected_scene_revision": 4,
+  "payload": {
+    "menu_id": "VIEW3D_MT_mesh_add",
+    "area_id": "a1",
+    "region_id": "r1"
+  }
+}

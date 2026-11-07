@@ -13,4 +13,4 @@ fenêtres, permissions, capture, hotkey, enigo et sidecar.
 Contrats v1, interfaces documentées et composants amont ; aucune dépendance de modèle local. Les appels bpy restent dans addon et les accès natifs dans desktop. Voir [conception détaillée](../../docs/architecture/desktop-tauri.md) et [guide des agents](../../AGENTS.md).
 
 ## État et validation
-Pas encore de code. Les modules décrits sont une cible, pas une implémentation disponible. Ajouter tests nominal/vide/erreur et timeout avant intégration ; ne pas remplacer un check par une déclaration de modèle.
+Scaffold Rust Tauri v2 : `cargo check --locked`. `build.rs` génère le contexte à partir de `tauri.conf.json`, qui active macOSPrivateApi et la fenêtre guide transparente. `src/main.rs` rend la fenêtre click-through. Les autres backends natifs restent à implémenter. Gradium TTS local côté Rust est seulement prévu : voir [desktop](../README.md).

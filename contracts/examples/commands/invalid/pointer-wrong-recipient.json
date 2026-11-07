@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "command_id": "c1",
+  "step_id": "add_torus",
+  "generation": 2,
+  "recipient": "addon",
+  "type": "pointer",
+  "deadline_ms": 1000,
+  "expected_scene_revision": 4,
+  "payload": {
+    "capture_id": "cap1",
+    "ui_revision": 2,
+    "x": 500,
+    "y": 350
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "message_id": "m1",
+  "reply_to": null,
+  "type": "ping",
+  "payload": {}
+}

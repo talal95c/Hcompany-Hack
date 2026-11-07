@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "session_id": "s1",
+  "event_id": "e9",
+  "seq": 9,
+  "type": "command.result",
+  "ts_monotonic_ms": 4200,
+  "scene_revision": 4,
+  "payload": {
+    "command_id": "c1",
+    "status": "ok",
+    "detail": "menu ouvert",
+    "scene_revision": 4
+  }
+}
