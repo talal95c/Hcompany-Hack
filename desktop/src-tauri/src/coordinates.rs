@@ -46,6 +46,7 @@ impl Rect {
             h: self.height,
         }
     }
+    #[cfg(any(test, target_os = "linux", target_os = "macos"))]
     pub fn logical_to_physical(self, scale: f64) -> Option<Self> {
         if !scale.is_finite() || scale <= 0.0 || !self.valid() {
             return None;
@@ -59,6 +60,7 @@ impl Rect {
         rect.valid().then_some(rect)
     }
 
+    #[cfg(any(test, target_os = "linux"))]
     pub fn atspi_screen(x: i32, y: i32, width: i32, height: i32) -> Option<Self> {
         if x == i32::MIN || y == i32::MIN {
             return None;

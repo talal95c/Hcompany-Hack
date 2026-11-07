@@ -130,12 +130,14 @@ pub struct ActionGuard<'a> {
 }
 
 enum ActionLock<'a> {
+    #[cfg(any(test, not(any(target_os = "macos", target_os = "windows"))))]
     Borrowed {
         _guard: tokio::sync::MutexGuard<'a, ()>,
     },
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     Owned {
         _guard: std::sync::Arc<tokio::sync::OwnedMutexGuard<()>>,
+        _lifetime: std::marker::PhantomData<&'a ()>,
     },
 }
 
@@ -260,6 +262,7 @@ pub fn guard<'a>(state: &'a State, token: &'a str) -> Result<ActionGuard<'a>, St
             focus_check: crate::discovery::target_focused,
             _lock: ActionLock::Owned {
                 _guard: lock.clone(),
+                _lifetime: std::marker::PhantomData,
             },
             authorization: None,
         };
@@ -285,6 +288,7 @@ pub fn guard<'a>(state: &'a State, token: &'a str) -> Result<ActionGuard<'a>, St
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
 pub type Authorization = std::sync::Arc<dyn Fn() -> Result<(), String> + Send + Sync>;
 
+#[cfg(any(test, not(any(target_os = "macos", target_os = "windows"))))]
 pub fn guard_parts<'a>(
     consent: &'a std::sync::Mutex<Option<Consent>>,
     stopped: &'a std::sync::atomic::AtomicBool,

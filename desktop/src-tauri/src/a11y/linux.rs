@@ -8,7 +8,7 @@ use atspi::zbus::fdo::PropertiesProxy;
 use atspi::zbus::{self, proxy::CacheProperties};
 use atspi::{AccessibilityConnection, CoordType, Interface, Role, State as NativeState, StateSet};
 use futures_util::{stream, FutureExt, StreamExt};
-use std::collections::HashSet;
+use std::{collections::HashSet, future::Future};
 use tokio::sync::OnceCell;
 
 #[derive(Default)]
@@ -21,6 +21,13 @@ struct Observation {
     valid_bounds: bool,
     children: Vec<Handle>,
     reasons: Vec<(Reason, String)>,
+}
+
+async fn call<T, E>(future: impl Future<Output = Result<T, E>>) -> Result<T, Error> {
+    tokio::time::timeout(Duration::from_millis(500), future)
+        .await
+        .map_err(|_| Error::Timeout)?
+        .map_err(|_| Error::StaleRef)
 }
 
 fn secure_field(role: Role, attributes: &std::collections::HashMap<String, String>) -> bool {
@@ -65,15 +72,16 @@ fn states(set: StateSet) -> Vec<String> {
 
 macro_rules! proxy {
     ($kind:ident, $conn:expr, $h:expr) => {
-        $kind::builder($conn)
-            .destination($h.bus.as_str())
-            .map_err(|_| Error::StaleRef)?
-            .path($h.path.as_str())
-            .map_err(|_| Error::StaleRef)?
-            .cache_properties(CacheProperties::No)
-            .build()
-            .await
-            .map_err(|_| Error::StaleRef)?
+        call(
+            $kind::builder($conn)
+                .destination($h.bus.as_str())
+                .map_err(|_| Error::StaleRef)?
+                .path($h.path.as_str())
+                .map_err(|_| Error::StaleRef)?
+                .cache_properties(CacheProperties::No)
+                .build(),
+        )
+        .await?
     };
 }
 
@@ -81,9 +89,13 @@ impl Sensor {
     async fn connection(&self) -> Result<&zbus::Connection, Error> {
         self.connection
             .get_or_try_init(|| async {
-                AccessibilityConnection::new()
-                    .await
-                    .map_err(|_| Error::PermissionDenied)
+                call(AccessibilityConnection::new()).await.map_err(|e| {
+                    if e == Error::Timeout {
+                        e
+                    } else {
+                        Error::PermissionDenied
+                    }
+                })
             })
             .await
             .map(|c| c.connection())
@@ -92,11 +104,11 @@ impl Sensor {
         let conn = self.connection().await?;
         let a = proxy!(AccessibleProxy, conn, h);
         let properties = proxy!(PropertiesProxy, conn, h);
-        let state = a.get_state().shared();
-        let role = a.get_role().shared();
+        let state = call(a.get_state()).shared();
+        let role = call(a.get_role()).shared();
         let showing = async {
             let (state, role) = tokio::join!(state.clone(), role.clone());
-            let state = state.map_err(|_| Error::StaleRef)?;
+            let state = state?;
             Ok::<_, Error>(
                 !state.contains(NativeState::Defunct)
                     && ((state.contains(NativeState::Showing)
@@ -109,25 +121,22 @@ impl Sensor {
             if !showing.clone().await? {
                 return Ok(None);
             }
-            a.get_interfaces()
-                .await
-                .map(Some)
-                .map_err(|_| Error::StaleRef)
+            call(a.get_interfaces()).await.map(Some)
         }
         .shared();
         let properties = async {
             if !showing.clone().await? {
                 return Ok(None);
             }
-            properties
-                .get_all(
+            call(
+                properties.get_all(
                     "org.a11y.atspi.Accessible"
                         .try_into()
                         .map_err(|_| Error::StaleRef)?,
-                )
-                .await
-                .map(Some)
-                .map_err(|_| Error::StaleRef)
+                ),
+            )
+            .await
+            .map(Some)
         };
         let extents = async {
             if interfaces
@@ -136,11 +145,9 @@ impl Sensor {
                 .is_some_and(|interfaces| interfaces.contains(Interface::Component))
             {
                 let component = proxy!(ComponentProxy, conn, h);
-                component
-                    .get_extents(CoordType::Screen)
+                call(component.get_extents(CoordType::Screen))
                     .await
                     .map(Some)
-                    .map_err(|_| Error::StaleRef)
             } else {
                 Ok(None)
             }
@@ -152,7 +159,7 @@ impl Sensor {
             interfaces.clone(),
             extents
         );
-        let set = set.map_err(|_| Error::StaleRef)?;
+        let set = set?;
         let role_name = role
             .as_ref()
             .map(|r| normalize_role(r.name()))
@@ -175,7 +182,7 @@ impl Sensor {
                 reasons: vec![(Reason::InvisibleSkipped, role_name)],
             });
         }
-        let role = role.map_err(|_| Error::StaleRef)?;
+        let role = role?;
         let interfaces = interfaces?.ok_or(Error::StaleRef)?;
         let mut properties = properties?.ok_or(Error::StaleRef)?;
         let count: i32 = properties
@@ -187,7 +194,7 @@ impl Sensor {
         let bounds =
             extents?.and_then(|(x, y, w, h)| crate::coordinates::Rect::atspi_screen(x, y, w, h));
         let attributes = if matches!(role, Role::Entry | Role::Text) {
-            a.get_attributes().await.map_err(|_| Error::StaleRef)?
+            call(a.get_attributes()).await?
         } else {
             Default::default()
         };
@@ -229,17 +236,12 @@ impl Sensor {
                 Ok(None)
             } else if interfaces.contains(Interface::Text) {
                 let text = proxy!(TextProxy, conn, h);
-                text.get_text(0, -1)
-                    .await
-                    .map(Some)
-                    .map_err(|_| Error::StaleRef)
+                call(text.get_text(0, -1)).await.map(Some)
             } else if interfaces.contains(Interface::Value) {
                 let value = proxy!(ValueProxy, conn, h);
-                value
-                    .current_value()
+                call(value.current_value())
                     .await
                     .map(|v| Some(v.to_string()))
-                    .map_err(|_| Error::StaleRef)
             } else {
                 Ok(None)
             }
@@ -254,8 +256,18 @@ impl Sensor {
             }
         };
         let (value, children) = tokio::join!(value, children);
-        node.value = value?;
         let mut reasons = Vec::new();
+        match value {
+            Ok(value) => node.value = value,
+            Err(error) => reasons.push((
+                if error == Error::Timeout {
+                    Reason::Deadline
+                } else {
+                    Reason::ChildReadError
+                },
+                node.role.clone(),
+            )),
+        };
         let children = match children {
             Ok((children, reason)) => {
                 if let Some(reason) = reason {
@@ -263,8 +275,15 @@ impl Sensor {
                 }
                 children
             }
-            Err(_) => {
-                reasons.push((Reason::ChildReadError, node.role.clone()));
+            Err(error) => {
+                reasons.push((
+                    if error == Error::Timeout {
+                        Reason::Deadline
+                    } else {
+                        Reason::ChildReadError
+                    },
+                    node.role.clone(),
+                ));
                 vec![]
             }
         };
@@ -285,7 +304,7 @@ impl Sensor {
         let a = proxy!(AccessibleProxy, conn, h);
         if count <= 4096 {
             let mut result = Vec::new();
-            let objects = a.get_children().await.map_err(|_| Error::StaleRef)?;
+            let objects = call(a.get_children()).await?;
             let mut reason = (objects.len() < count).then_some(Reason::ChildReadError);
             for object in objects.into_iter().take(2000) {
                 match handle(object) {
@@ -307,21 +326,15 @@ impl Sensor {
         let mut corners = Vec::new();
         for (x, y) in [(b.x + 1., b.y + 1.), (b.x + b.w - 2., b.y + b.h - 2.)] {
             let cell = handle(
-                component
-                    .get_accessible_at_point(x as i32, y as i32, CoordType::Screen)
-                    .await
-                    .map_err(|_| Error::StaleRef)?,
+                call(component.get_accessible_at_point(x as i32, y as i32, CoordType::Screen))
+                    .await?,
             )?;
             let cell_a = proxy!(AccessibleProxy, conn, &cell);
-            let index = cell_a
-                .get_index_in_parent()
-                .await
-                .map_err(|_| Error::StaleRef)?;
+            let index = call(cell_a.get_index_in_parent()).await?;
             let (row, col) = tokio::try_join!(
-                table.get_row_at_index(index),
-                table.get_column_at_index(index)
-            )
-            .map_err(|_| Error::StaleRef)?;
+                call(table.get_row_at_index(index)),
+                call(table.get_column_at_index(index))
+            )?;
             if row < 0 || col < 0 {
                 return Ok((vec![], Some(Reason::ChildReadError)));
             }
@@ -345,14 +358,7 @@ impl Sensor {
         let result = stream::iter(cells)
             .map(|(row, col)| {
                 let table = &table;
-                async move {
-                    handle(
-                        table
-                            .get_accessible_at(row, col)
-                            .await
-                            .map_err(|_| Error::StaleRef)?,
-                    )
-                }
+                async move { handle(call(table.get_accessible_at(row, col)).await?) }
             })
             .buffered(64)
             .collect::<Vec<_>>()
@@ -361,7 +367,13 @@ impl Sensor {
         for item in result {
             match item {
                 Ok(h) => handles.push(h),
-                Err(_) => reason = Some(Reason::ChildReadError),
+                Err(error) => {
+                    reason = Some(if error == Error::Timeout {
+                        Reason::Deadline
+                    } else {
+                        Reason::ChildReadError
+                    })
+                }
             }
         }
         Ok((handles, reason))
@@ -371,56 +383,46 @@ impl Sensor {
 impl AccessibilitySensor for Sensor {
     fn apps(&self) -> Task<'_, Vec<App>> {
         Box::pin(async move {
+            let started = Instant::now();
             let conn = self
                 .connection
                 .get_or_try_init(|| async {
-                    AccessibilityConnection::new()
-                        .await
-                        .map_err(|_| Error::PermissionDenied)
+                    call(AccessibilityConnection::new()).await.map_err(|e| {
+                        if e == Error::Timeout {
+                            e
+                        } else {
+                            Error::PermissionDenied
+                        }
+                    })
                 })
                 .await?;
-            let registry = conn
-                .root_accessible_on_registry()
-                .await
-                .map_err(|_| Error::AppNotFound)?;
+            log::debug!(
+                "a11y connection_ms={:.3}",
+                started.elapsed().as_secs_f64() * 1000.
+            );
+            let registry = call(conn.root_accessible_on_registry()).await?;
             let mut apps = Vec::new();
-            for object in registry
-                .get_children()
-                .await
-                .map_err(|_| Error::AppNotFound)?
-            {
+            for object in call(registry.get_children()).await? {
                 let h = handle(object)?;
                 let a = proxy!(AccessibleProxy, conn.connection(), &h);
-                let dbus = zbus::fdo::DBusProxy::new(conn.connection())
-                    .await
-                    .map_err(|_| Error::PermissionDenied)?;
-                let pid = dbus
-                    .get_connection_unix_process_id(
-                        h.bus.as_str().try_into().map_err(|_| Error::StaleRef)?,
-                    )
-                    .await
-                    .map_err(|_| Error::StaleRef)?;
+                let dbus = call(zbus::fdo::DBusProxy::new(conn.connection())).await?;
+                let pid = call(dbus.get_connection_unix_process_id(
+                    h.bus.as_str().try_into().map_err(|_| Error::StaleRef)?,
+                ))
+                .await?;
                 let executable = std::fs::read_link(format!("/proc/{pid}/exe"))
                     .ok()
                     .and_then(|p| p.file_name().map(|v| v.to_string_lossy().into_owned()))
                     .unwrap_or_default();
-                let mut focused = a
-                    .get_state()
-                    .await
-                    .map_err(|_| Error::StaleRef)?
-                    .contains(NativeState::Active);
-                for object in a.get_children().await.map_err(|_| Error::StaleRef)? {
+                let mut focused = call(a.get_state()).await?.contains(NativeState::Active);
+                for object in call(a.get_children()).await? {
                     let child = handle(object)?;
                     let frame = proxy!(AccessibleProxy, conn.connection(), &child);
-                    focused |= frame
-                        .get_state()
-                        .await
-                        .map_err(|_| Error::StaleRef)?
-                        .contains(NativeState::Active);
+                    focused |= call(frame.get_state()).await?.contains(NativeState::Active);
                 }
                 apps.push(App {
                     app_id: executable.clone(),
-                    name: a.name().await.map_err(|_| Error::StaleRef)?,
+                    name: call(a.name()).await?,
                     handle: h,
                     executable,
                     pid,
@@ -441,6 +443,7 @@ impl AccessibilitySensor for Sensor {
             let mut seen = HashSet::new();
             let mut depth_index = 0;
             while !level.is_empty() {
+                let level_started = Instant::now();
                 if Instant::now() >= deadline || tree.nodes.len() >= 2000 {
                     tree.record(
                         if Instant::now() >= deadline {
@@ -482,28 +485,40 @@ impl AccessibilitySensor for Sensor {
                             tree.record(Reason::Deadline, "unknown");
                             break;
                         }
+                        Ok(Err(Error::Timeout)) => {
+                            tree.record(Reason::Deadline, "unknown");
+                            continue;
+                        }
                         Ok(Err(_)) => {
-                            let conn = self.connection().await?;
-                            let accessible = proxy!(AccessibleProxy, conn, &h);
-                            let role = accessible
-                                .get_role()
-                                .await
-                                .ok()
-                                .map(|r| normalize_role(r.name()))
-                                .unwrap_or_else(|| "unknown".into());
-                            let reason = match accessible.get_state().await {
-                                Ok(set) if set.contains(NativeState::Defunct) => {
-                                    Reason::DefunctSkipped
-                                }
-                                Ok(set)
-                                    if !set.contains(NativeState::Showing)
-                                        || !set.contains(NativeState::Visible) =>
-                                {
-                                    Reason::InvisibleSkipped
-                                }
-                                _ => Reason::ChildReadError,
+                            let recovery = async {
+                                let conn = self.connection().await?;
+                                let accessible = proxy!(AccessibleProxy, conn, &h);
+                                let role = call(accessible.get_role())
+                                    .await
+                                    .ok()
+                                    .map(|r| normalize_role(r.name()))
+                                    .unwrap_or_else(|| "unknown".into());
+                                let reason = match call(accessible.get_state()).await {
+                                    Ok(set) if set.contains(NativeState::Defunct) => {
+                                        Reason::DefunctSkipped
+                                    }
+                                    Ok(set)
+                                        if !set.contains(NativeState::Showing)
+                                            || !set.contains(NativeState::Visible) =>
+                                    {
+                                        Reason::InvisibleSkipped
+                                    }
+                                    _ => Reason::ChildReadError,
+                                };
+                                Ok::<_, Error>((reason, role))
                             };
-                            tree.record(reason, &role);
+                            match tokio::time::timeout_at(deadline.into(), recovery).await {
+                                Ok(Ok((reason, role))) => tree.record(reason, &role),
+                                _ => {
+                                    tree.record(Reason::Deadline, "unknown");
+                                    break;
+                                }
+                            }
                             continue;
                         }
                     };
@@ -535,6 +550,12 @@ impl AccessibilitySensor for Sensor {
                         next.push((child, child_parent));
                     }
                 }
+                log::debug!(
+                    "a11y level={} gathered={} elapsed_ms={:.3}",
+                    depth_index,
+                    tree.nodes.len(),
+                    level_started.elapsed().as_secs_f64() * 1000.
+                );
                 level = next;
                 depth_index += 1;
             }
@@ -544,6 +565,13 @@ impl AccessibilitySensor for Sensor {
     fn refresh<'a>(&'a self, h: &'a Handle) -> Task<'a, Node> {
         Box::pin(async move {
             let observation = self.read(h, false).await?;
+            if observation
+                .reasons
+                .iter()
+                .any(|(reason, _)| *reason == Reason::Deadline)
+            {
+                return Err(Error::Timeout);
+            }
             if !observation.valid_bounds {
                 return Err(Error::StaleRef);
             }
@@ -640,6 +668,20 @@ impl AccessibilitySensor for Sensor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[tokio::test]
+    async fn individual_calls_bound_hangs_and_preserve_errors() {
+        assert_eq!(call(async { Ok::<_, Error>(7) }).await, Ok(7));
+        assert_eq!(
+            call(async { Err::<(), _>(Error::PermissionDenied) }).await,
+            Err(Error::StaleRef)
+        );
+        let started = Instant::now();
+        assert_eq!(
+            call(std::future::pending::<Result<(), Error>>()).await,
+            Err(Error::Timeout)
+        );
+        assert!(started.elapsed() < Duration::from_secs(2));
+    }
     #[test]
     fn native_states_require_showing_and_visible_and_map_contract_flags() {
         for set in [

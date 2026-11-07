@@ -27,6 +27,7 @@ impl Target {
             || requested.eq_ignore_ascii_case(&self.name)
             || requested == self.pid.to_string()
     }
+    #[cfg(any(test, target_os = "linux"))]
     pub fn same_app(&self, window: &Window) -> bool {
         self.pid == window.pid && self.app_id.eq_ignore_ascii_case(&window.app_id)
     }

@@ -39,7 +39,7 @@ pub struct Handle {
     pub path: String,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
     StaleRef,
     AmbiguousTarget,
@@ -400,11 +400,13 @@ impl Service {
         self.run(Some(state), payload).await
     }
     async fn run(&self, state: Option<&State>, payload: Value) -> Value {
+        let deadline = Instant::now() + Duration::from_secs(3);
         let request_id = payload["request_id"]
             .as_str()
             .unwrap_or("invalid")
             .to_owned();
         let result = async {
+            let validating = Instant::now();
             crate::protocol::validate(
                 &crate::protocol::envelope("a11y", "a11y.request", payload.clone(), None),
                 "a11y",
@@ -412,9 +414,13 @@ impl Service {
             .map_err(|_| Error::PermissionDenied)?;
             let r: Request =
                 serde_json::from_value(payload).map_err(|_| Error::PermissionDenied)?;
-            self.execute(state, r).await
+            log::debug!(
+                "a11y validation_ms={:.3}",
+                validating.elapsed().as_secs_f64() * 1000.
+            );
+            self.execute(state, r, deadline).await
         };
-        match tokio::time::timeout(Duration::from_secs(3), result).await {
+        match tokio::time::timeout_at(deadline.into(), result).await {
             Ok(Ok(v)) => v,
             error => {
                 let e = match error {
@@ -444,7 +450,12 @@ impl Service {
             })
             .ok_or(Error::AppNotFound)
     }
-    async fn execute(&self, state: Option<&State>, r: Request) -> Result<Value, Error> {
+    async fn execute(
+        &self,
+        state: Option<&State>,
+        r: Request,
+        deadline: Instant,
+    ) -> Result<Value, Error> {
         let epoch = self.store.lock().unwrap().epoch;
         let guard = if r.op == "action" {
             Some(
@@ -457,7 +468,12 @@ impl Service {
         } else {
             None
         };
+        let resolving = Instant::now();
         let resolved = self.resolve_app(&r.app).await?;
+        log::debug!(
+            "a11y resolve_ms={:.3}",
+            resolving.elapsed().as_secs_f64() * 1000.
+        );
         if let Some(guard) = &guard {
             guard.require_pid(resolved.pid).map_err(Error::guard)?;
         }
@@ -499,9 +515,17 @@ impl Service {
             .snapshot(
                 &root,
                 r.max_depth.unwrap_or(32).clamp(1, 64),
-                Instant::now() + Duration::from_secs(3),
+                deadline - Duration::from_millis(100),
             )
             .await?;
+        if tree.nodes.is_empty()
+            && tree
+                .reasons
+                .keys()
+                .any(|(reason, _)| *reason == Reason::Deadline)
+        {
+            return Err(Error::Timeout);
+        }
         let complete = tree.complete;
         let (id, nodes) = {
             let mut store = self.store.lock().unwrap();

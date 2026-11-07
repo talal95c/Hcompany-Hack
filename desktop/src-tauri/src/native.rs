@@ -186,35 +186,6 @@ pub fn capture(crop: Rect, _monitor: &Monitor) -> Result<Vec<u8>, String> {
     Ok(output.into_inner())
 }
 
-#[cfg(test)]
-mod live_tests {
-    use super::*;
-    #[test]
-    #[ignore = "requires a real desktop session; run through pytest -m live"]
-    fn live_native_capture() {
-        let monitors = monitors().unwrap();
-        let monitor = monitors.first().expect("active monitor");
-        let crop = Rect {
-            x: monitor.physical.x,
-            y: monitor.physical.y,
-            width: 256.,
-            height: 128.,
-        };
-        let start = std::time::Instant::now();
-        let bytes = capture(crop, monitor).unwrap();
-        let elapsed = start.elapsed().as_secs_f64() * 1000.;
-        let image = image::load_from_memory(&bytes).unwrap();
-        assert_eq!((image.width(), image.height()), (256, 128));
-        println!(
-            "live native capture_ms={elapsed:.2} png_bytes={}",
-            bytes.len()
-        );
-        use enigo::Mouse;
-        let device = enigo::Enigo::new(&enigo::Settings::default()).unwrap();
-        assert!(device.location().is_ok());
-    }
-}
-
 #[cfg(target_os = "windows")]
 pub fn monitors() -> Result<Vec<Monitor>, String> {
     xcap::Monitor::all()
@@ -304,4 +275,33 @@ pub fn capture(crop: Rect, monitor: &Monitor) -> Result<Vec<u8>, String> {
         &crop.width.to_string(),
         &crop.height.to_string(),
     ])
+}
+
+#[cfg(test)]
+mod live_tests {
+    use super::*;
+    #[test]
+    #[ignore = "requires a real desktop session; run through pytest -m live"]
+    fn live_native_capture() {
+        let monitors = monitors().unwrap();
+        let monitor = monitors.first().expect("active monitor");
+        let crop = Rect {
+            x: monitor.physical.x,
+            y: monitor.physical.y,
+            width: 256.,
+            height: 128.,
+        };
+        let start = std::time::Instant::now();
+        let bytes = capture(crop, monitor).unwrap();
+        let elapsed = start.elapsed().as_secs_f64() * 1000.;
+        let image = image::load_from_memory(&bytes).unwrap();
+        assert_eq!((image.width(), image.height()), (256, 128));
+        println!(
+            "live native capture_ms={elapsed:.2} png_bytes={}",
+            bytes.len()
+        );
+        use enigo::Mouse;
+        let device = enigo::Enigo::new(&enigo::Settings::default()).unwrap();
+        assert!(device.location().is_ok());
+    }
 }

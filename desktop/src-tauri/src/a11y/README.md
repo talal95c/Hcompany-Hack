@@ -53,6 +53,16 @@ avec leurs données : seuls des codes et messages fixes sont exposés.
 Une observation est limitée à 2 000 nœuds et à une profondeur de 32 par défaut (64 au
 maximum), avec un budget de requête de 3 s. Les limites sont configurées, pas des mesures.
 Un arbre tronqué porte `complete=false`. Un timeout global porte `TIMEOUT`.
+Le budget est désormais absolu dès l'entrée de la requête, résolution comprise.
+Le parcours reçoit ce même budget, moins une réserve configurée de 100 ms pour
+restituer et sérialiser le résultat avant le timeout externe. Sous Linux, chaque
+appel D-Bus d'observation (résolution, lecture et parcours) et la connexion initiale
+ont un timeout configuré de 500 ms. Un appel
+en retard marque `Deadline` sans bloquer les autres lectures ; le contrôle de
+visibilité après erreur est lui aussi borné par le budget du parcours.
+Si des nœuds utilisables ont été recueillis, ils sont conservés avec
+`complete=false`, sans erreur TIMEOUT. Sans nœud utilisable après expiration,
+le résultat porte `TIMEOUT`. Un arbre vide complètement observé reste un succès.
 Les nœuds non affichés sont exclus ; les conteneurs sans géométrie propre héritent du
 rectangle du parent. Une racine application sans composant est omise, ses fenêtres
 deviennent les racines du résultat.

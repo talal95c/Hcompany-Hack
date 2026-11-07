@@ -15,6 +15,8 @@ enum Scenario {
     NativeFailure,
     Defunct,
     Timeout,
+    DeadlinePartial,
+    DeadlineEmpty,
     PausedSnapshot,
     PausedRefresh,
     Secure,
@@ -31,7 +33,13 @@ struct Mock {
 }
 impl AccessibilitySensor for Mock {
     fn apps(&self) -> Task<'_, Vec<App>> {
-        Box::pin(async {
+        Box::pin(async move {
+            if matches!(
+                self.scenario,
+                Scenario::DeadlinePartial | Scenario::DeadlineEmpty
+            ) {
+                tokio::time::sleep(Duration::from_millis(100)).await;
+            }
             Ok(vec![App {
                 app_id: "org.example.editor".into(),
                 handle: app(),
@@ -42,7 +50,7 @@ impl AccessibilitySensor for Mock {
             }])
         })
     }
-    fn snapshot<'a>(&'a self, _: &'a Handle, _: usize, _: Instant) -> Task<'a, Tree> {
+    fn snapshot<'a>(&'a self, _: &'a Handle, _: usize, deadline: Instant) -> Task<'a, Tree> {
         Box::pin(async move {
             if matches!(self.scenario, Scenario::Timeout) {
                 return std::future::pending().await;
@@ -55,6 +63,16 @@ impl AccessibilitySensor for Mock {
                 return Err(Error::PermissionDenied);
             }
             let mut result = tree();
+            if matches!(
+                self.scenario,
+                Scenario::DeadlinePartial | Scenario::DeadlineEmpty
+            ) {
+                tokio::time::sleep_until(deadline.into()).await;
+                result.record(Reason::Deadline, "button");
+                if matches!(self.scenario, Scenario::DeadlineEmpty) {
+                    result.nodes.clear();
+                }
+            }
             match self.scenario {
                 Scenario::Empty => result.nodes.clear(),
                 Scenario::Ambiguous => {
@@ -329,6 +347,23 @@ async fn mock_secure_values_are_suppressed_and_set_value_never_dispatches() {
     let result = service.act(&app(), "focus", None, &guard).await.unwrap();
     assert!(result.value.is_none());
     assert_eq!(control.actions.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn mock_deadline_returns_gathered_nodes_or_timeout_when_empty() {
+    for scenario in [Scenario::DeadlinePartial, Scenario::DeadlineEmpty] {
+        let (service, _) = service(scenario);
+        let result = service.run(None, snapshot_request()).await;
+        validate_result(&result);
+        assert_eq!(result["complete"], false);
+        if matches!(scenario, Scenario::DeadlinePartial) {
+            assert_eq!(result["nodes"].as_array().unwrap().len(), 1);
+            assert!(result.get("error").is_none());
+        } else {
+            assert_eq!(result["error"]["code"], "TIMEOUT");
+            assert!(result["nodes"].as_array().unwrap().is_empty());
+        }
+    }
 }
 
 #[tokio::test]
@@ -631,6 +666,44 @@ fn truncation_reasons_count_only_potentially_visible_omissions() {
         assert!(!tree.complete);
         assert_eq!(tree.reasons[&(reason, "table".into())], 1);
     }
+}
+
+#[cfg(target_os = "linux")]
+#[tokio::test]
+#[ignore = "requires a fresh isolated Calc session"]
+async fn cold_first_snapshot() {
+    struct Logger;
+    impl log::Log for Logger {
+        fn enabled(&self, metadata: &log::Metadata<'_>) -> bool {
+            metadata.target().contains("::a11y")
+        }
+        fn log(&self, record: &log::Record<'_>) {
+            if self.enabled(record.metadata()) {
+                println!("{}", record.args());
+            }
+        }
+        fn flush(&self) {}
+    }
+    let _ = log::set_logger(&Logger);
+    log::set_max_level(log::LevelFilter::Debug);
+    let service = Service::default();
+    let started = Instant::now();
+    let result = service
+        .run(
+            None,
+            json!({"request_id":"cold","op":"snapshot","app":"soffice"}),
+        )
+        .await;
+    println!(
+        "cold_ms={:.3} complete={} nodes={} error={}",
+        started.elapsed().as_secs_f64() * 1000.,
+        result["complete"],
+        result["nodes"].as_array().unwrap().len(),
+        result["error"]["code"]
+    );
+    validate_result(&result);
+    assert!(!result["nodes"].as_array().unwrap().is_empty());
+    assert!(result.get("error").is_none());
 }
 
 #[cfg(target_os = "linux")]

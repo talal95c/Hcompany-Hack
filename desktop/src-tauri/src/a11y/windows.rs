@@ -253,7 +253,7 @@ impl Context {
         while let Some(element) = child {
             self.timeout(deadline)?;
             if result.children.len() >= 2000 {
-                result.reasons.push(Reason::NodeCap);
+                result.reasons.push(Reason::LargeContainerSkipped);
                 break;
             }
             result
