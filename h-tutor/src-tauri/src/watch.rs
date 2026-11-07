@@ -64,6 +64,8 @@ struct Watch {
     stable_since: Option<Instant>,
     hits: u32,
     misses: u32,
+    /// Clicks while nothing was pointed at (shortcut or typing steps).
+    clicks: u32,
     last_hit: Option<Instant>,
     keys: u32,
     enter: bool,
@@ -90,8 +92,9 @@ pub fn disarm() {
     }
 }
 
-/// Counts a real click during the current step.
-pub fn note_click(hit: bool) {
+/// Counts a real click during the current step: on the target, beside it,
+/// or (`None`) while nothing is pointed at.
+pub fn note_click(hit: Option<bool>) {
     if let Some(w) = WATCH.lock().unwrap().as_mut().filter(|w| w.active) {
         w.note_click(hit, Instant::now());
     }
@@ -106,12 +109,14 @@ pub fn note_key(enter: bool) {
 }
 
 impl Watch {
-    fn note_click(&mut self, hit: bool, at: Instant) {
-        if hit {
-            self.hits += 1;
-            self.last_hit = Some(at);
-        } else {
-            self.misses += 1;
+    fn note_click(&mut self, hit: Option<bool>, at: Instant) {
+        match hit {
+            Some(true) => {
+                self.hits += 1;
+                self.last_hit = Some(at);
+            }
+            Some(false) => self.misses += 1,
+            None => self.clicks += 1,
         }
     }
 
@@ -150,17 +155,20 @@ impl Watch {
     }
 
     fn describe(&self, changed: bool) -> String {
-        describe_event(self.hits, self.misses, self.keys, self.enter, changed)
+        describe_event(self.hits, self.misses, self.clicks, self.keys, self.enter, changed)
     }
 }
 
 /// What the watcher tells Holo about the learner's action. Shared with the
 /// learner simulator so both speak exactly like the real watcher.
-pub fn describe_event(hits: u32, misses: u32, keys: u32, enter: bool, changed: bool) -> String {
+pub fn describe_event(hits: u32, misses: u32, clicks: u32, keys: u32, enter: bool, changed: bool) -> String {
     let mut what = if hits > 0 {
         "The learner clicked the highlighted element".to_string()
     } else if misses > 0 {
         "The learner clicked somewhere other than the highlighted element".to_string()
+    } else if clicks > 0 {
+        // Nothing was highlighted: not a miss.
+        "The learner clicked on the screen".to_string()
     } else if keys > 0 {
         "The learner did not click".to_string()
     } else {
@@ -230,7 +238,7 @@ mod tests {
     fn clicking_a_field_does_not_end_typing() {
         let t0 = Instant::now();
         let mut w = armed(Mode::Typing);
-        w.note_click(true, t0);
+        w.note_click(Some(true), t0);
         // Small text appears, below the whole-screen threshold, for 5 s.
         let frames: Vec<(u8, u64)> = (0..15).map(|i| (100, i * 350)).collect();
         for i in 0..14 {
@@ -247,7 +255,7 @@ mod tests {
     fn a_focus_click_alone_never_fires_in_typing_mode() {
         let t0 = Instant::now();
         let mut w = armed(Mode::Typing);
-        w.note_click(true, t0);
+        w.note_click(Some(true), t0);
         let frames: Vec<(u8, u64)> = (0..20).map(|i| (100, i * 350)).collect();
         assert!(run(&mut w, t0, &frames).is_none());
     }
@@ -289,5 +297,16 @@ mod tests {
         assert_eq!(Mode::for_kind("scroll"), Some(Mode::Pointer));
         assert_eq!(Mode::for_kind("done"), None);
         assert_eq!(Mode::for_kind("pending"), None);
+    }
+
+    #[test]
+    fn a_click_on_a_shortcut_step_is_not_a_miss() {
+        let t0 = Instant::now();
+        let mut w = armed(Mode::Keys);
+        w.note_click(None, t0);
+        w.note_key(false, t0);
+        let (_, e) = run(&mut w, t0, &[(140, 350), (140, 700), (140, 1050), (140, 1400)]).unwrap();
+        assert!(e.starts_with("The learner clicked on the screen, used the keyboard"), "{e}");
+        assert!(!e.contains("other than the highlighted"));
     }
 }
