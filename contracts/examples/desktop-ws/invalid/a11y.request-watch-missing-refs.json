@@ -1,0 +1,1 @@
+{"schema_version":"1.0","session_id":"test","message_id":"watch-1","reply_to":null,"type":"a11y.request","payload":{"request_id":"watch","op":"watch","app":"org.example.editor","watch_id":"step-1"}}

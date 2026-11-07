@@ -9,6 +9,7 @@ use std::{
     sync::Mutex,
     time::{Duration, Instant},
 };
+mod events;
 #[cfg(test)]
 mod tests;
 
@@ -164,6 +165,17 @@ pub struct App {
 }
 
 pub trait AccessibilitySensor: Send + Sync {
+    fn supports_events(&self) -> bool {
+        false
+    }
+    fn subscribe(
+        &self,
+        _sender: tokio::sync::mpsc::Sender<events::Change>,
+        ready: tokio::sync::oneshot::Sender<bool>,
+    ) -> Task<'_, ()> {
+        let _ = ready.send(false);
+        Box::pin(std::future::pending())
+    }
     fn apps(&self) -> Task<'_, Vec<App>>;
     fn snapshot<'a>(&'a self, root: &'a Handle, depth: usize, deadline: Instant) -> Task<'a, Tree>;
     fn refresh<'a>(&'a self, handle: &'a Handle) -> Task<'a, Node>;
@@ -190,6 +202,12 @@ struct Request {
     value: Option<String>,
     max_depth: Option<usize>,
     consent_token: Option<String>,
+    #[serde(rename = "deadline_ms")]
+    _deadline_ms: Option<u64>,
+    generation: Option<u64>,
+    focus_epoch: Option<u64>,
+    watch_id: Option<String>,
+    refs: Option<Vec<String>>,
 }
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -305,12 +323,7 @@ fn matches(nodes: &[Node], q: &Query) -> Vec<Node> {
                 let mut index = 0;
                 for a in ancestors {
                     if let Some(part) = path.get(index) {
-                        if a.name.eq_ignore_ascii_case(part)
-                            || a.role == normalize_role(part)
-                            || part.split_once(':').is_some_and(|(role, name)| {
-                                a.role == normalize_role(role) && a.name.eq_ignore_ascii_case(name)
-                            })
-                        {
+                        if path_part_matches(a, part) {
                             index += 1;
                         }
                     }
@@ -337,15 +350,42 @@ fn matches(nodes: &[Node], q: &Query) -> Vec<Node> {
     candidates
 }
 
+fn path_part_matches(node: &Node, part: &str) -> bool {
+    node.name.eq_ignore_ascii_case(part)
+        || node.role == normalize_role(part)
+        || part.split_once(':').is_some_and(|(role, name)| {
+            node.role == normalize_role(role) && node.name.eq_ignore_ascii_case(name)
+        })
+}
+
 pub struct Service {
     sensor: Box<dyn AccessibilitySensor>,
     store: Mutex<Store>,
+    collection: tokio::sync::Mutex<()>,
+    cached: Mutex<VecDeque<Collection>>,
+    collection_epoch: std::sync::atomic::AtomicU64,
+    watch: Mutex<Option<events::Watch>>,
+    event_task: Mutex<Option<tokio::task::AbortHandle>>,
+    requests: Mutex<std::collections::HashMap<String, futures_util::future::AbortHandle>>,
+}
+struct Collection {
+    key: String,
+    finished: Instant,
+    id: String,
+    nodes: Vec<Node>,
+    complete: bool,
 }
 impl Default for Service {
     fn default() -> Self {
         Self {
             sensor: Box::new(Sensor::default()),
             store: Mutex::new(Store::default()),
+            collection: tokio::sync::Mutex::new(()),
+            cached: Mutex::new(VecDeque::new()),
+            collection_epoch: std::sync::atomic::AtomicU64::new(0),
+            watch: Mutex::new(None),
+            event_task: Mutex::new(None),
+            requests: Mutex::new(std::collections::HashMap::new()),
         }
     }
 }
@@ -397,6 +437,11 @@ impl Service {
         self.sensor.apps().await
     }
     pub fn clear(&self) {
+        self.stop_watch();
+        for (_, handle) in self.requests.lock().unwrap().drain() {
+            handle.abort();
+        }
+        self.invalidate_collection();
         let mut store = self.store.lock().unwrap();
         store.snapshots.clear();
         store.epoch = store.epoch.wrapping_add(1);
@@ -405,7 +450,14 @@ impl Service {
         self.run(Some(state), payload).await
     }
     async fn run(&self, state: Option<&State>, payload: Value) -> Value {
-        let deadline = Instant::now() + Duration::from_secs(3);
+        let requested = Instant::now();
+        let deadline = requested
+            + Duration::from_millis(
+                payload["deadline_ms"]
+                    .as_u64()
+                    .unwrap_or(3000)
+                    .clamp(100, 3000),
+            );
         let request_id = payload["request_id"]
             .as_str()
             .unwrap_or("invalid")
@@ -423,7 +475,7 @@ impl Service {
                 "a11y validation_ms={:.3}",
                 validating.elapsed().as_secs_f64() * 1000.
             );
-            self.execute(state, r, deadline).await
+            self.execute(state, r, deadline, requested).await
         };
         match tokio::time::timeout_at(deadline.into(), result).await {
             Ok(Ok(v)) => v,
@@ -460,6 +512,7 @@ impl Service {
         state: Option<&State>,
         r: Request,
         deadline: Instant,
+        requested: Instant,
     ) -> Result<Value, Error> {
         let epoch = self.store.lock().unwrap().epoch;
         let guard = if r.op == "action" {
@@ -483,6 +536,43 @@ impl Service {
             guard.require_pid(resolved.pid).map_err(Error::guard)?;
         }
         let app = resolved.handle;
+        if r.op == "watch" {
+            let refs = r.refs.ok_or(Error::StaleRef)?;
+            for reference in &refs {
+                self.store.lock().unwrap().get(reference, &app)?;
+            }
+            let scopes = self.watch_scopes(
+                &refs,
+                r.query
+                    .as_ref()
+                    .and_then(|q| q.path.as_deref())
+                    .unwrap_or_default(),
+            );
+            self.stop_watch();
+            *self.watch.lock().unwrap() = Some(events::Watch {
+                id: r.watch_id.ok_or(Error::StaleRef)?,
+                app,
+                refs,
+                request_id: r.request_id.clone(),
+                scopes,
+            });
+            return Ok(json!({"request_id":r.request_id,"snapshot_id":"watch",
+                "complete":true,"nodes":[],"events_supported":self.sensor.supports_events()}));
+        }
+        if r.op == "unwatch" {
+            if self
+                .watch
+                .lock()
+                .unwrap()
+                .as_ref()
+                .is_some_and(|w| Some(&w.id) == r.watch_id.as_ref())
+            {
+                self.stop_watch();
+            }
+            return Ok(
+                json!({"request_id":r.request_id,"snapshot_id":"watch","complete":true,"nodes":[]}),
+            );
+        }
         if r.op == "get" || r.op == "action" {
             let (id, old, handle) = self
                 .store
@@ -506,6 +596,31 @@ impl Service {
             if self.store.lock().unwrap().epoch != epoch {
                 return Err(Error::StaleRef);
             }
+            if let Some(query) = &r.query {
+                let store = self.store.lock().unwrap();
+                let snapshot = store
+                    .snapshots
+                    .iter()
+                    .find(|s| s.id == id)
+                    .ok_or(Error::StaleRef)?;
+                let nodes: Vec<_> = snapshot
+                    .nodes
+                    .iter()
+                    .map(|(n, _)| {
+                        if n.reference == node.reference {
+                            node.clone()
+                        } else {
+                            n.clone()
+                        }
+                    })
+                    .collect();
+                if !matches(&nodes, query)
+                    .iter()
+                    .any(|n| n.reference == node.reference)
+                {
+                    return Err(Error::StaleRef);
+                }
+            }
             return Ok(
                 json!({"request_id":r.request_id,"snapshot_id":id,"complete":true,"nodes":[node]}),
             );
@@ -515,30 +630,71 @@ impl Service {
         } else {
             app.clone()
         };
-        let tree = self
-            .sensor
-            .snapshot(
-                &root,
-                r.max_depth.unwrap_or(32).clamp(1, 64),
-                deadline - Duration::from_millis(100),
-            )
-            .await?;
-        if tree.nodes.is_empty()
-            && tree
-                .reasons
-                .keys()
-                .any(|(reason, _)| *reason == Reason::Deadline)
+        let depth = r.max_depth.unwrap_or(32).clamp(1, 64);
+        let collection_epoch = self
+            .collection_epoch
+            .load(std::sync::atomic::Ordering::SeqCst);
+        let key = format!(
+            "{}:{}:{}:{depth}:{:?}:{:?}:{epoch}:{collection_epoch}",
+            app.bus, app.path, root.path, r.generation, r.focus_epoch
+        );
+        let _collection = self.collection.lock().await;
+        if collection_epoch
+            != self
+                .collection_epoch
+                .load(std::sync::atomic::Ordering::SeqCst)
         {
-            return Err(Error::Timeout);
+            return Err(Error::StaleRef);
         }
-        let complete = tree.complete;
-        let (id, nodes) = {
-            let mut store = self.store.lock().unwrap();
-            if store.epoch != epoch {
-                return Err(Error::StaleRef);
+        let cached = self
+            .cached
+            .lock()
+            .unwrap()
+            .iter()
+            .rev()
+            .find(|c| c.key == key && c.finished >= requested)
+            .map(|c| (c.id.clone(), c.nodes.clone(), c.complete));
+        let (id, nodes, complete) = if let Some(cached) = cached {
+            cached
+        } else {
+            let tree = self
+                .sensor
+                .snapshot(&root, depth, deadline - Duration::from_millis(100))
+                .await?;
+            if tree.nodes.is_empty()
+                && tree
+                    .reasons
+                    .keys()
+                    .any(|(reason, _)| *reason == Reason::Deadline)
+            {
+                return Err(Error::Timeout);
             }
-            store.insert(app, tree)
+            let complete = tree.complete;
+            let (id, nodes) = {
+                let mut store = self.store.lock().unwrap();
+                if store.epoch != epoch {
+                    return Err(Error::StaleRef);
+                }
+                store.insert(app, tree)
+            };
+            {
+                let mut cached = self.cached.lock().unwrap();
+                cached.push_back(Collection {
+                    key,
+                    finished: Instant::now(),
+                    id: id.clone(),
+                    nodes: nodes.clone(),
+                    complete,
+                });
+                while cached.len() > 4 {
+                    cached.pop_front();
+                }
+            }
+            (id, nodes, complete)
         };
+        if self.store.lock().unwrap().epoch != epoch {
+            return Err(Error::StaleRef);
+        }
         let mut nodes = if r.op == "find" {
             matches(&nodes, r.query.as_ref().ok_or(Error::PermissionDenied)?)
         } else {

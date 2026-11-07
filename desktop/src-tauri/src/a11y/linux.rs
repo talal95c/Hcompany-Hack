@@ -381,6 +381,87 @@ impl Sensor {
 }
 
 impl AccessibilitySensor for Sensor {
+    fn supports_events(&self) -> bool {
+        true
+    }
+
+    fn subscribe(
+        &self,
+        sender: tokio::sync::mpsc::Sender<events::Change>,
+        ready: tokio::sync::oneshot::Sender<bool>,
+    ) -> Task<'_, ()> {
+        Box::pin(async move {
+            use atspi::events::{Event, EventProperties, FocusEvents, ObjectEvents, WindowEvents};
+            let connection = AccessibilityConnection::new()
+                .await
+                .map_err(|_| Error::PermissionDenied)?;
+            connection
+                .register_event::<ObjectEvents>()
+                .await
+                .map_err(|_| Error::PermissionDenied)?;
+            connection
+                .register_event::<FocusEvents>()
+                .await
+                .map_err(|_| Error::PermissionDenied)?;
+            connection
+                .register_event::<WindowEvents>()
+                .await
+                .map_err(|_| Error::PermissionDenied)?;
+            let stream = connection.event_stream();
+            tokio::pin!(stream);
+            let _ = ready.send(true);
+            while let Some(event) = stream.next().await {
+                let event = event.map_err(|_| Error::StaleRef)?;
+                if matches!(
+                    &event,
+                    Event::Window(WindowEvents::Raise(_) | WindowEvents::Lower(_))
+                ) {
+                    continue;
+                }
+                let selector_changed = matches!(&event, Event::Object(ObjectEvents::PropertyChange(e))
+                    if matches!(e.property.as_str(), "accessible-name" | "accessible-role" | "accessible-parent"));
+                let reconcile = selector_changed
+                    || matches!(
+                        &event,
+                        Event::Object(
+                            ObjectEvents::ChildrenChanged(_)
+                                | ObjectEvents::RowInserted(_)
+                                | ObjectEvents::RowDeleted(_)
+                                | ObjectEvents::ColumnInserted(_)
+                                | ObjectEvents::ColumnDeleted(_)
+                        ) | Event::Window(_)
+                    );
+                let focus = matches!(&event, Event::Focus(_) | Event::Window(_));
+                if !reconcile
+                    && !focus
+                    && !matches!(
+                        &event,
+                        Event::Object(
+                            ObjectEvents::TextChanged(_)
+                                | ObjectEvents::StateChanged(_)
+                                | ObjectEvents::PropertyChange(_)
+                                | ObjectEvents::VisibleDataChanged(_)
+                                | ObjectEvents::ModelChanged(_)
+                                | ObjectEvents::SelectionChanged(_)
+                                | ObjectEvents::ActiveDescendantChanged(_)
+                        )
+                    )
+                {
+                    continue;
+                }
+                let change = events::Change {
+                    source: Handle {
+                        bus: event.sender().to_string(),
+                        path: event.path().to_string(),
+                    },
+                    reconcile,
+                    focus,
+                };
+                sender.send(change).await.map_err(|_| Error::StaleRef)?;
+            }
+            Ok(())
+        })
+    }
     fn apps(&self) -> Task<'_, Vec<App>> {
         Box::pin(async move {
             let started = Instant::now();

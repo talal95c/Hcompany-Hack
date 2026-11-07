@@ -194,7 +194,7 @@ pub async fn run(
                     "hello",
                     json!({
                     "app_version":env!("CARGO_PKG_VERSION"), "platform":std::env::consts::OS,
-                    "capabilities":["pointer","capture.region","pcm_s16le","input.action","a11y","capture.window","app.focus","highlight.rect"]}),
+                    "capabilities":["pointer","capture.region","pcm_s16le","input.action","a11y","a11y.events","capture.window","app.focus","highlight.rect"]}),
                     None,
                 );
                 let permissions = protocol::envelope(

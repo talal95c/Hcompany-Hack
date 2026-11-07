@@ -6,6 +6,35 @@ Les autres plateformes renvoient `PERMISSION_DENIED`.
 Le backend Linux est destiné à X11 : les extents écran AT-SPI sont des pixels physiques.
 `Monitor::ax_rect` convertit les points AX avec les origines et le facteur du moniteur.
 
+## Événements et fraîcheur
+
+Les `find` simultanés partagent la collecte en cours pour une même application,
+racine, profondeur, génération et époque de focus. Une requête commencée après la
+fin de la collecte n'utilise pas ce résultat comme cache de valeurs.
+Le moteur résout les cibles de l'étape puis enregistre leurs refs via `watch`.
+Les notifications `a11y.event` ne transportent aucune valeur : le moteur relit
+les refs avec `get`, puis réévalue ses checks. Toute erreur ou modification
+concurrente laisse l'état inconnu. `STALE_REF` déclenche une nouvelle résolution.
+Une réconciliation complète toutes les quatre secondes reste obligatoire ;
+les modifications structurelles l'anticipent.
+Pour les cibles à chemin descriptif, `watch.query.path` transmet leur préfixe
+commun : les modifications structurelles hors de ce scope ne reconstruisent pas
+la feuille à cause d'une barre d'outils sans rapport. Un scope vide reste global.
+Une édition qui invalide la structure surveillée impose toujours une collecte
+complète ; les événements seuls ne garantissent donc pas une décision sous 100 ms.
+
+Linux implémente `AccessibilitySensor::subscribe` avec AT-SPI (texte, état,
+propriétés, enfants, focus et fenêtres). Les descendants et ancêtres connus des
+cibles surveillées réveillent le moteur. Les notifications structurelles invalident
+les snapshots. La connexion de surveillance est fermée à son remplacement ou à la
+déconnexion. AXObserver et UIA pourront implémenter ce même trait ; leurs stubs
+actuels renvoient `events_supported=false` et gardent le polling existant.
+
+`deadline_ms` aligne le budget natif sur celui du moteur. `a11y.cancel` annule
+la future native abandonnée (dont les appels D-Bus Linux en cours) ; les workers
+bloquants AX/UIA peuvent terminer un appel OS déjà lancé, mais ignorent une tâche
+annulée avant son démarrage. Aucune notification n'est une preuve de réussite.
+
 ## Backends AX et UI Automation
 
 La résolution commune accepte l'identifiant d'application, le nom localisé, le nom
