@@ -1,8 +1,8 @@
 :root {
-  --g1: #38bdf8;
-  --g2: #818cf8;
-  --g3: #f472b6;
-  --ok: #34d399;
+  --g1: #ffffff;
+  --g2: #f4f4f5;
+  --g3: #c7c7cc;
+  --ok: #ffffff;
 }
 
 .ghost {
@@ -25,10 +25,9 @@
 }
 .ghost__cursor svg {
   display: block;
-  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.55)) drop-shadow(0 3px 8px rgba(129, 140, 248, 0.55));
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.55)) drop-shadow(0 3px 8px rgba(0, 0, 0, 0.5));
 }
 .ghost--trail svg { position: absolute; left: -2px; top: -2px; }
-.ghost--hit .ghost__cursor svg path { fill: var(--ok); }
 
 .ghost__halo {
   position: absolute;
@@ -37,9 +36,9 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(129, 140, 248, 0.35) 0%, rgba(244, 114, 182, 0.12) 45%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.06) 45%, transparent 70%);
 }
-.ghost--hit .ghost__halo { background: radial-gradient(circle, rgba(52, 211, 153, 0.5) 0%, transparent 70%); }
+.ghost--hit .ghost__halo { background: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0%, transparent 70%); }
 
 .ghost__label {
   position: absolute;
@@ -54,8 +53,8 @@
   line-height: 1.35;
   font-weight: 500;
   background:
-    linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(244, 114, 182, 0.22)),
-    rgba(18, 18, 24, 0.72);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02)),
+    rgba(12, 12, 12, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.14);
   -webkit-backdrop-filter: blur(14px) saturate(160%);
   backdrop-filter: blur(14px) saturate(160%);
@@ -71,7 +70,7 @@
   top: 0;
   pointer-events: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(244, 114, 182, 0.08));
+  background: rgba(255, 255, 255, 0.06);
 }
 .ghost-box::before {
   content: "";
@@ -79,10 +78,10 @@
   inset: 0;
   border-radius: inherit;
   padding: 1.5px;
-  background: linear-gradient(135deg, var(--g1), var(--g2), var(--g3));
+  background: linear-gradient(135deg, #fff, rgba(255, 255, 255, 0.35));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
 }
-.ghost-box--hit { background: rgba(52, 211, 153, 0.1); }
+.ghost-box--hit { background: rgba(255, 255, 255, 0.12); }
 .ghost-box--hit::before { background: var(--ok); }

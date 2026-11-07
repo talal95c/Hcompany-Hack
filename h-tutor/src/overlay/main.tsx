@@ -26,7 +26,7 @@ function Arrow({ id }: { id: string }) {
           <stop offset="1" stopColor="var(--g3)" />
         </linearGradient>
       </defs>
-      <path d={ARROW} fill={`url(#${id})`} stroke="rgba(255,255,255,0.9)" strokeWidth="1.1" strokeLinejoin="round" />
+      <path d={ARROW} fill={`url(#${id})`} stroke="rgba(0,0,0,0.85)" strokeWidth="1.2" strokeLinejoin="round" />
     </svg>
   );
 }
