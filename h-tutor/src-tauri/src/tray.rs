@@ -21,6 +21,11 @@ const BAR_BOTTOM_GAP: f64 = 18.0;
 
 /// While a tutorial runs the bar stays put; otherwise it hides on blur.
 static STICKY: AtomicBool = AtomicBool::new(false);
+static QUIT_REQUESTED: AtomicBool = AtomicBool::new(false);
+
+pub(crate) fn quit_requested() -> bool {
+    QUIT_REQUESTED.load(Ordering::SeqCst)
+}
 
 /// When the panel last hid itself on blur. A click on the tray icon right
 /// after that is the same gesture that caused the blur: don't reopen.
@@ -95,6 +100,7 @@ pub fn setup(app: &tauri::App) -> tauri::Result<()> {
         .show_menu_on_left_click(false)
         .on_menu_event(|app, e| {
             if e.id() == "quit" {
+                QUIT_REQUESTED.store(true, Ordering::SeqCst);
                 app.exit(0);
             }
         })

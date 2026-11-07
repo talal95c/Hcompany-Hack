@@ -246,9 +246,12 @@ impl Driver for LiveDriver<'_> {
         let app = self.app.clone();
         let step = step.clone();
         let ticket = self.ticket;
+        let target = self.session.tutorial.app.clone();
         tauri::async_runtime::spawn_blocking(move || {
             let _mask = autopilot::mask_capture()?;
-            crate::act::perform(&app, &step, ticket)
+            #[cfg(target_os = "macos")]
+            crate::macos_input::prepare(&app, &target, ticket, step.kind == "press_key")?;
+            crate::act::perform(&app, &step, ticket, &target)
         })
         .await
         .map_err(|e| e.to_string())??;
@@ -308,7 +311,7 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
                 }
             }
         };
-        let (outcome, message) = if autopilot::stop_requested() {
+        let (mut outcome, mut message) = if autopilot::stop_requested() {
             ("stopped", Some("Arrêté".into()))
         } else {
             match result {
@@ -318,7 +321,14 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
             }
         };
         autopilot::request_stop();
-        crate::act::drain().await;
+        let drained = crate::act::drain().await;
+        if !drained {
+            if outcome == "completed" {
+                outcome = "failed";
+                message = Some("Le nettoyage des entrées a expiré".into());
+            }
+            journal::event("rio_input_cleanup_timeout", serde_json::json!({ "outcome": outcome }));
+        }
         journal::event(
             "rio_done",
             serde_json::json!({ "outcome": outcome, "actions": driver.actions, "message": message }),
@@ -341,7 +351,9 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
         };
         autopilot::finish(&app, &done);
         let _ = app.emit("autopilot:done", done);
-        autopilot::driver_released();
+        if drained {
+            autopilot::driver_released();
+        }
     });
 }
 

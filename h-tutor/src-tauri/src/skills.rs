@@ -276,7 +276,7 @@ pub fn skill_propose_now(app: AppHandle, skill_id: String) -> Result<(), String>
 }
 
 #[cfg(any(target_os = "macos", test))]
-fn matches_app(skill: &App, foreground: &App) -> bool {
+pub(crate) fn matches_app(skill: &App, foreground: &App) -> bool {
     match (skill.bundle_id.as_deref(), foreground.bundle_id.as_deref()) {
         (Some(expected), Some(actual)) if !expected.is_empty() && !actual.is_empty() => {
             expected == actual

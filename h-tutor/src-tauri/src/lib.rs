@@ -1,5 +1,7 @@
 mod agent;
 mod act;
+#[cfg(target_os = "macos")]
+mod macos_input;
 mod autopilot;
 mod autopilot_driver;
 mod app_icons;
@@ -712,6 +714,7 @@ pub fn run() {
     }
 
     tauri::Builder::default()
+        .enable_macos_default_menu(false)
         .plugin(tauri_plugin_opener::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
@@ -755,6 +758,10 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.hide();
+            }
             if window.label() == "main" {
                 if let WindowEvent::Focused(false) = event {
                     tray::on_bar_blur(window.app_handle());
@@ -797,6 +804,15 @@ pub fn run() {
             locate,
             hide_pointer
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_, event| {
+            if let tauri::RunEvent::ExitRequested { code, api, .. } = event {
+                let explicit = code.is_some() && tray::quit_requested();
+                eprintln!("[Rio] ExitRequested code={code:?}, explicit_tray_quit={explicit}");
+                if !explicit {
+                    api.prevent_exit();
+                }
+            }
+        });
 }
