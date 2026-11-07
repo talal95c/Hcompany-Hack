@@ -101,7 +101,7 @@ async function matrix(env: VecEnv, apps: string[], ws: string | null) {
 
 /** Skills by meaning: the best cosine per skill (its shared row or the organization's), highest first. */
 export async function semantic(env: VecEnv, apps: string[], ws: string | null, query: string, k = 20) {
-  if (!env.AI || !apps.length) return [];
+  if (!env.AI || !apps.length) return Object.assign([] as { id: string; app: string; cos: number }[], { cosOf: new Map<string, number>() });
   const [m, [q]] = await Promise.all([matrix(env, apps, ws), embed(env, { queries: [query] })]);
   const best = new Map<string, { id: string; app: string; cos: number }>();
   for (let i = 0; i < m.ids.length; i++) {
@@ -111,5 +111,6 @@ export async function semantic(env: VecEnv, apps: string[], ws: string | null, q
     const cur = best.get(m.ids[i]);
     if (!cur || dot > cur.cos) best.set(m.ids[i], { id: m.ids[i], app: m.apps[i], cos: dot });
   }
-  return [...best.values()].sort((a, b) => b.cos - a.cos).slice(0, k);
+  const all = [...best.values()].sort((a, b) => b.cos - a.cos);
+  return Object.assign(all.slice(0, k), { cosOf: new Map(all.map((x) => [x.id, x.cos])) });
 }

@@ -68,8 +68,8 @@ pub async fn search(app_name: &str, query: &str) -> Result<Option<SearchResult>,
     }
     let v = get("/v1/search", &[("q", query), ("app", app_name), ("limit", "3")]).await?;
     let results = v["results"].as_array().cloned().unwrap_or_default();
-    // Weak matches share a word or two with the query: noise for Holo.
-    let results: Vec<&Value> = results.iter().filter(|r| r["score"].as_f64().unwrap_or(0.0) >= 2.0).collect();
+    // The platform already keeps only real matches (words with enough coverage, or close meaning).
+    let results: Vec<&Value> = results.iter().collect();
     if results.is_empty() {
         return Ok(None);
     }

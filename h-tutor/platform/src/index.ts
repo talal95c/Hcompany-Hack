@@ -62,22 +62,34 @@ type GlobalHit = Omit<SearchHit, "version"> & { version: SearchHit["version"] };
  */
 async function searchAll(c: C, q: string, o: { app?: string | null; version?: string | null; limit: number }) {
   const own = tutorialsAsKb(await readyTutorials(c.env, c.get("org")));
+  let semanticOk = false;
+  let topCos = 0;
   const run = async (alt: string) => {
     // With English keywords for a foreign question, the keywords lead (the question's own words would mismatch).
     const foreign = !!alt && looksForeign(q);
     const [team, global] = await Promise.all([
       Promise.resolve(search(own, foreign ? [alt] : alt ? [q, alt] : [q], { app: o.app, version: o.version, limit: 3 }).filter((r) => r.score >= 2)),
-      kn<{ results: GlobalHit[] }>(c, "/search", { q: foreign ? alt : q, alt: foreign ? "" : alt, app: o.app, version: o.version, limit: String(o.limit) }),
+      kn<{ results: GlobalHit[]; semantic?: boolean; top_cos?: number | null }>(c, "/search", { q: foreign ? alt : q, alt: foreign ? "" : alt, app: o.app, version: o.version, limit: String(o.limit) }),
     ]);
+    if (global?.semantic) semanticOk = true;
+    if (global?.top_cos != null) topCos = Math.max(topCos, global.top_cos);
     return [...team.slice(0, 2), ...(global?.results ?? [])].slice(0, o.limit);
   };
-  // ReStep's rule: a question that is clearly not English is searched with English keywords (in the software's own
-  // words), otherwise French "commande" finds "Command" and the like.
-  if (looksForeign(q)) {
-    const keywords = await englishKeywords(c.env, q);
-    if (keywords) return { results: await run(keywords), keywords };
-  }
+  // The knowledge Worker understands any language (Qwen3 embeddings). Without them, ReStep's rule applies: a question
+  // clearly not in English is searched with English keywords (French "commande" would find "Command").
+  // A foreign question whose meaning match is not clear (idioms: "arrondir les bords" is Bevel) also gets Holo's
+  // English keywords, started in parallel so a clear answer does not wait for them.
+  const kw = looksForeign(q) ? englishKeywords(c.env, q) : null;
   let results = await run("");
+  if (kw && (!semanticOk || topCos < 0.5)) {
+    const keywords = await kw;
+    if (keywords) {
+      const more = await run(keywords);
+      // keep both: the keywords' answers first, then what the question itself found
+      const seen = new Set(more.map((r) => r.id));
+      return { results: [...more, ...results.filter((r) => !seen.has(r.id))].slice(0, o.limit), keywords };
+    }
+  }
   let keywords = "";
   if (results.length < 2) {
     keywords = await englishKeywords(c.env, q);

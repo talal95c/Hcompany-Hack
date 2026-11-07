@@ -36,6 +36,30 @@ Everything an organization adds stays private. That covers its internal tools, i
 teaches, and its rows in the search index. Other organizations still see the shared skill as before. `DELETE /sources/:id`
 removes a document, and the skills only it taught go with it. Re-ingesting the same document replaces it.
 
+## Search: words and meaning
+`/search` fuses two rankings with reciprocal rank fusion:
+- **Words**: FTS5 with BM25, plus ReStep's rule that at least half of the question's words must match. This side is the
+  strongest on exact UI terms such as *Ctrl+Shift+E* or *Merge by Distance*.
+- **Meaning**: **Qwen3-Embedding-0.6B** on Workers AI (`src/vectors.ts`). Each search row gets one vector; a question is
+  compared by cosine in the Worker, which at a few hundred skills beats any index. The model works in any language, so
+  *couper un clip en deux* finds *Cut a clip in half* without translation. It also handles paraphrases: *give a customer
+  their money back* finds *Refund an order*.
+- **Thresholds**: below a cosine of 0.36 a neighbour is ignored. A words-only match below 0.3 is a false friend, such as
+  French *commande* matching *Command*.
+
+`scripts/eval.ts` checks this on 20 questions (exact, paraphrase, French, internal tool) and 3 unrelated ones:
+
+| Mode | Right first | In top 3 | MRR | Unrelated answered |
+|---|---|---|---|---|
+| Words (FTS5) | 10/20 | 11/20 | 0.53 | 0/3 |
+| Meaning (Qwen3) | 15/20 | 19/20 | 0.82 | 0/3 |
+| **Hybrid** (default) | **15/20** | **19/20** | **0.83** | 0/3 |
+
+Latency is about 0.7 s per question from `wrangler dev` (est. lower once deployed), and about 6 ms for words only. If
+Workers AI fails, search falls back to words. Vectors refresh after each document is ingested or removed. After a ReStep
+import, run `curl -X POST <worker>/vectors/sync`. In `wrangler.toml`, `remote = true` lets `wrangler dev` reach Workers
+AI. The account needs a workers.dev subdomain.
+
 ## Storage
 The schema in `migrations/0001_knowledge.sql` follows ReStep's design, in three layers:
 - **Knowledge**: sources, segments and claims, per workspace. `NULL` means the source is shared by every organization.

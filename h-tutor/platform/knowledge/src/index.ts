@@ -199,7 +199,9 @@ const tokens = (q: string) =>
 const stem = (t: string) => t.replace(/(ing|ed|es|s)$/, "").slice(0, Math.max(4, t.length - 3)) || t;
 
 /** Below this cosine, Qwen3's nearest skill is only the least unrelated one (calibrated with scripts/eval.ts). */
-const MIN_COS = 0.5;
+const MIN_COS = 0.36; // unrelated questions top out near 0.35 (scripts/eval.ts)
+/** A words match whose meaning is this far from the question is a false friend. */
+const FALSE_FRIEND = 0.3;
 
 async function search(env: Env, apps: Apps, url: URL) {
   const p = (k: string) => url.searchParams.get(k);
@@ -236,7 +238,12 @@ async function search(env: Env, apps: Apps, url: URL) {
   // Meaning: any language, any wording. Below MIN_COS a neighbour is just the closest of unrelated things.
   const minCos = Number(p("min_cos") ?? MIN_COS); // calibration (scripts/eval.ts)
   // If Workers AI fails, the words search still answers.
-  const near = mode === "fts" ? [] : (await semantic(env, targets.map((a) => a.id), ws, q, 20).catch(() => [])).filter((r) => r.cos >= minCos);
+  const sem = mode === "fts" ? null : await semantic(env, targets.map((a) => a.id), ws, q, 20).catch(() => null);
+  const near = (sem ?? []).filter((r) => r.cos >= minCos);
+  // With meaning available, a words-only match must still mean something close ("commande" is not "Command").
+  if (sem && sem.cosOf.size) {
+    for (let i = scored.length - 1; i >= 0; i--) if ((sem.cosOf.get(scored[i].skill_id) ?? 0) < FALSE_FRIEND) scored.splice(i, 1);
+  }
   // Reciprocal rank fusion: a skill both searches find rises; either one alone still counts.
   const fused = new Map<string, { skill_id: string; app: string; score: number; cos: number | null; words: boolean }>();
   const add = (id: string, app: string, rank: number, cos: number | null, words: boolean) => {
@@ -275,11 +282,13 @@ async function search(env: Env, apps: Apps, url: URL) {
         proof: s.proofs[version.id] ?? null,
         steps: path(L, g, s, claims, version.id).map(compact),
         sources: s.sources.slice(0, 4).map((x) => ({ ...(srcs.get(x.source) ?? { id: x.source }), t: x.t })),
+        taught_by: s.sources.length,
       });
     }
   }
-  out.sort((a, b) => b.score - a.score);
-  return { results: out };
+  // Ties go to the skill more sources teach (ReStep's order).
+  out.sort((a, b) => b.score - a.score || b.taught_by - a.taught_by);
+  return { results: out, semantic: near.length > 0, top_cos: near[0]?.cos ?? null };
 }
 
 // ---------------------------------------------------------------- skills, tutorials, atoms
