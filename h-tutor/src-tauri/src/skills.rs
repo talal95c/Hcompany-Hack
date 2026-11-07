@@ -286,7 +286,18 @@ fn matches_app(skill: &App, foreground: &App) -> bool {
 }
 
 #[cfg(target_os = "macos")]
-fn foreground_app(own_bundle_id: &str) -> Option<App> {
+fn foreground_app(app: &AppHandle) -> Option<App> {
+    let own_bundle_id = app.config().identifier.clone();
+    let (send, receive) = std::sync::mpsc::sync_channel(1);
+    app.run_on_main_thread(move || {
+        let _ = send.send(foreground_app_on_main_thread(&own_bundle_id));
+    })
+    .ok()?;
+    receive.recv_timeout(Duration::from_secs(2)).ok().flatten()
+}
+
+#[cfg(target_os = "macos")]
+fn foreground_app_on_main_thread(own_bundle_id: &str) -> Option<App> {
     use objc2::rc::autoreleasepool;
     use objc2::runtime::AnyObject;
     use objc2::{class, msg_send};
@@ -344,8 +355,9 @@ pub fn spawn(app: AppHandle) {
                 if session.as_ref().is_some_and(|s| !s.finished) {
                     continue;
                 }
+                drop(session);
                 #[cfg(target_os = "macos")]
-                let Some(foreground) = foreground_app(&app.config().identifier) else {
+                let Some(foreground) = foreground_app(&app) else {
                     continue;
                 };
                 #[cfg(not(target_os = "macos"))]
