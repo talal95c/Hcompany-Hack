@@ -37,7 +37,8 @@ Démo sur **macOS**. Tout est prévu pour tourner aussi sous **Windows** : Pytho
 contracts/  formats partagés (leçon, événements, ordres) — figés en premier
 engine/     orchestrateur Python (la boucle en direct)
 addon/      add-on Blender « Œil » (capteur + surlignage)
-desktop/    overlay Tauri v2 (pointeur, pastille, ✓)
+h-tutor/    front principal : barre + curseur fantôme (Tauri v2, React)
+desktop/    overlay Tauri v2 branché sur l'engine (pointeur, pastille, ✓)
 prep/       préparation : tuto → leçon prouvée
 agent/      face Agent : H Skills + serveur MCP
 lessons/    leçons prouvées (donut…)
