@@ -24,26 +24,61 @@ const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Fi
 export const GET_RIO = "#/get-rio";
 
 export function Nav() {
-  const links = ["Use cases", "Teams", "Pricing", "FAQ"];
-  const ids = ["use-cases", "teams", "pricing", "faq"];
+  const links = [
+    ["Use cases", "#use-cases"],
+    ["Teams", "#teams"],
+    ["Pricing", "#pricing"],
+    ["FAQ", "#faq"],
+  ];
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    addEventListener("hashchange", close);
+    return () => removeEventListener("hashchange", close);
+  }, [open]);
   return (
     <motion.header
-      className="nav"
+      className={`nav ${open ? "nav-open" : ""}`}
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: EASE, delay: 0.1 }}
     >
-      <nav className="nav-pill">
-        <a href="#top" className="nav-logo" aria-label="Home">
-          <PillLogo size="md" />
-        </a>
-        {links.map((l, i) => (
-          <a key={l} href={`#${ids[i]}`} className="nav-link">
+      <a href="#top" className="nav-brand" aria-label="Rio home">
+        <PillLogo size="sm" />
+        <span>Rio</span>
+      </a>
+      <nav className="nav-pill" aria-label="Main">
+        {links.map(([l, href]) => (
+          <a key={l} href={href} className="nav-link">
             <span data-label={l}>{l}</span>
           </a>
         ))}
       </nav>
-      <Btn label="Get Rio" variant="light" size="sm" href={GET_RIO} className="nav-cta" />
+      <div className="nav-right">
+        <a href={APP_URL} className="nav-login">Log in</a>
+        <Btn label="Get Rio" size="sm" href={GET_RIO} className="nav-cta" />
+        <button type="button" className="nav-menu" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          <span />
+          <span />
+        </button>
+      </div>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="nav-sheet"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25, ease: EASE }}
+          >
+            {links.map(([l, href]) => (
+              <a key={l} href={href} onClick={() => setOpen(false)}>{l}</a>
+            ))}
+            <a href={APP_URL} className="nav-sheet-login">Log in to the team console</a>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.header>
   );
 }

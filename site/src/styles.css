@@ -160,16 +160,33 @@ ul { list-style: none; }
 .ticker span { font-size: 14px; line-height: 19.6px; letter-spacing: 0.28px; white-space: nowrap; }
 
 /* ---------- nav ---------- */
-.nav { position: fixed; z-index: 50; top: 30px; left: 30px; right: 30px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+/* Nav: brand left, links centred in a pill, Log in + Get Rio right */
+.nav { position: fixed; z-index: 50; top: 26px; left: 30px; right: 30px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; pointer-events: none; }
 .nav > * { pointer-events: auto; }
-.nav-pill { display: flex; align-items: center; height: 44px; padding: 0 42px 0 5px; gap: 32px; background: #fff; border-radius: 100px; box-shadow: 0 0 0 1px rgba(26, 26, 26, 0.06); }
-.nav-logo { display: flex; margin-right: 8px; transition: transform 0.4s var(--ease); }
-.nav-logo:hover { transform: scale(0.94); }
+.nav-brand { justify-self: start; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px 0 12px; border-radius: 100px; background: #ffffffd9; backdrop-filter: blur(14px); box-shadow: 0 0 0 1px rgba(26, 26, 26, 0.06); font-size: 18px; font-weight: 600; letter-spacing: -0.4px; transition: transform 0.4s var(--ease); }
+.nav-brand:hover { transform: scale(0.97); }
+.nav-pill { display: flex; align-items: center; height: 44px; padding: 0 26px; gap: 28px; background: #ffffffd9; backdrop-filter: blur(14px); border-radius: 100px; box-shadow: 0 0 0 1px rgba(26, 26, 26, 0.06); }
 .nav-link { font-size: 14px; line-height: 20px; letter-spacing: 0.28px; height: 20px; overflow: hidden; }
 .nav-link span { display: block; position: relative; transition: transform 0.45s var(--ease); }
 .nav-link span::after { content: attr(data-label); position: absolute; left: 0; top: 100%; }
 .nav-link:hover span { transform: translateY(-100%); }
+.nav-right { justify-self: end; display: flex; align-items: center; gap: 8px; }
+.nav-login { display: flex; align-items: center; height: 44px; padding: 0 16px; border-radius: 100px; font-size: 14px; background: #ffffffd9; backdrop-filter: blur(14px); box-shadow: 0 0 0 1px rgba(26, 26, 26, 0.06); transition: background-color 0.3s; }
+.nav-login:hover { background: #fff; }
 .nav-cta { box-shadow: 0 0 0 1px rgba(26, 26, 26, 0.06); }
+.nav-menu { display: none; width: 44px; height: 44px; border: 0; border-radius: 100px; background: #fff; box-shadow: 0 0 0 1px rgba(26, 26, 26, 0.06); cursor: pointer; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
+.nav-menu span { display: block; width: 16px; height: 1.5px; background: var(--ink); transition: transform 0.3s var(--ease); }
+.nav-open .nav-menu span:first-child { transform: translateY(3.25px) rotate(45deg); }
+.nav-open .nav-menu span:last-child { transform: translateY(-3.25px) rotate(-45deg); }
+.nav-sheet { grid-column: 1 / -1; margin-top: 10px; display: flex; flex-direction: column; padding: 8px; border-radius: 22px; background: #fff; box-shadow: 0 0 0 1px rgba(26, 26, 26, 0.06), 0 20px 40px -20px rgba(0, 0, 0, 0.25); }
+.nav-sheet a { padding: 14px 16px; border-radius: 14px; font-size: 17px; }
+.nav-sheet a:hover { background: var(--mist); }
+.nav-sheet .nav-sheet-login { margin-top: 6px; border-top: 1px solid #1a1a1a12; border-radius: 0 0 14px 14px; color: #666; font-size: 15px; }
+@media (max-width: 900px) {
+  .nav { top: 16px; left: 16px; right: 16px; grid-template-columns: 1fr auto; }
+  .nav-pill, .nav-login { display: none; }
+  .nav-menu { display: flex; }
+}
 
 /* ---------- page / sections ---------- */
 .page { position: relative; z-index: 2; background: var(--paper); margin-bottom: calc(100vh - 126px); border-radius: 0 0 20px 20px; }
@@ -516,8 +533,6 @@ ul { list-style: none; }
   .h2-54 { font-size: 38px; line-height: 42px; letter-spacing: -1.4px; }
   .giant { font-size: 90px; line-height: 104px; letter-spacing: -3px; }
   .h-collective { font-size: 44px; line-height: 46px; letter-spacing: -1.8px; }
-  .nav-link { display: none; }
-  .nav-pill { padding-right: 5px; }
   .bento, .works-grid, .team, .plans, .features { grid-template-columns: 1fr; }
   .work-cell { border-right: 1px solid rgba(26, 26, 26, 0.07); }
   .portrait { width: 100%; }
@@ -542,7 +557,6 @@ ul { list-style: none; }
 .mark-sm { width: 22px; }
 .mark-md { width: 34px; }
 .mark-lg { width: 96px; }
-.nav-logo { width: 60px; height: 34px; align-items: center; justify-content: center; }
 .app-logo { display: inline-flex; align-items: center; height: 57px; padding: 0 30px; color: #fff; font-size: 24px; font-weight: 600; letter-spacing: -0.6px; white-space: nowrap; }
 .work-app { width: auto; height: auto; filter: none; font-size: 30px; line-height: 36px; font-weight: 600; letter-spacing: -1px; color: rgba(26, 26, 26, 0.55); }
 .bento-mark { width: 34px; height: auto; }
