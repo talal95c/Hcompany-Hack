@@ -13,4 +13,12 @@ fenêtres, permissions, capture, hotkey, enigo et sidecar.
 Contrats v1, interfaces documentées et composants amont ; aucune dépendance de modèle local. Les appels bpy restent dans addon et les accès natifs dans desktop. Voir [conception détaillée](../../docs/architecture/desktop-tauri.md) et [guide des agents](../../AGENTS.md).
 
 ## État et validation
-Scaffold Rust Tauri v2 : `cargo check --locked`. `build.rs` génère le contexte à partir de `tauri.conf.json`, qui active macOSPrivateApi et la fenêtre guide transparente. `src/main.rs` rend la fenêtre click-through. Les autres backends natifs restent à implémenter. Gradium TTS local côté Rust est seulement prévu : voir [desktop](../README.md).
+Client Tauri v2 natif : fenêtres guide/pill, suivi natif du survol, raccourcis globaux,
+microphone cpal, capture régionale X11/ScreenCaptureKit/xcap, injection enigo gardée et
+cycle de vie Python. `protocol.rs` embarque les schémas canoniques ; le web n'accède
+à aucune clé ni socket réseau. `build.rs` compile aussi le helper Swift sur macOS.
+
+Vérifications : `cargo check --locked`, `cargo clippy --locked --all-targets -- -D warnings`,
+`cargo test --locked`. Les tests live natifs sont opt-in via pytest dans `desktop/tests/`.
+Gradium est une frontière `Speech` avec implémentation explicitement sans audio.
+Configuration, garde-fous et limites par OS : voir [desktop](../README.md).
