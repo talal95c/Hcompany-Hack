@@ -14,8 +14,48 @@ ruff check .
 ```
 
 `live` est ignoré par défaut ; `-m live` ou `BENCH_LIVE=1` l'active.
-Les cinq suites sont disponibles ; `all` les exécute successivement avec leurs clés.
+Les six suites sont disponibles ; `all` les exécute successivement avec leurs clés.
 Options addon : `--blender /opt/blender/blender`, `--timeout 60`, `--operations 50`.
+
+## Assertions visuelles Holo
+
+```sh
+python -m bench verify
+python -m bench verify --reuse-assets --models holo4-27b holo4-35b-a3b --repeats 2
+pytest -q bench/tests -m live -k verify
+```
+
+Requiert `HAI_API_KEY` dans l'environnement et les extras `bench,holo`. Même
+dépendances système que `a11y`, plus Blender graphique et ImageMagick. La première
+commande crée vingt scènes réelles (dix Calc, dix Blender), quarante questions
+fermées équilibrées par scène, puis deux répétitions : quatre-vingts appels par
+modèle. Chaque lancement Calc utilise un profil vierge ; A1 est focalisée par son
+rectangle AT-SPI, puis ne reçoit que `424242`. Les boutons Gras/Italique/Souligné
+sont actionnés et leurs états AT-SPI lus avant **et après** capture. Les questions
+portent sur l'état des boutons, pas sur une inférence du style du texte. Blender
+écrit les faits bpy dans une session privée Xvfb ; les captures externes sont
+acquittées avant de passer à la scène suivante. Aucun label n'est produit à l'œil.
+
+`results/verify_assets/manifest.json` conserve faits, versions, questions, labels,
+SHA-256 et dimensions ; les PNG sont réduits à 1280×900 maximum. Les questions Calc
+emploient la région supérieure de la fenêtre en millièmes. `--reuse-assets`
+vérifie intégrité, chemins, labels et équilibre sans relancer d'application.
+Les labels ne sont jamais transmis au modèle. Le client SDK utilise `extra_body`
+pour le schéma JSON et `chat_template_kwargs.enable_thinking=false`, un Pacer
+commun à tous les appels du run, deux secondes initialement et dix tentatives
+maximum avec les cooldowns existants. Une erreur d'authentification arrête le run.
+
+`verify-calls.jsonl` conserve modèle/question/répétition, réponse structurée brute,
+statut, détails des tentatives, waits et durées murales ; aucune clé ni image en
+base64. Seuil de confiance 0,8 : les réponses sous ce seuil deviennent unknown.
+Accuracy sur **tous** les appels ; unknown et erreurs comptent comme incorrects.
+Précision/rappel yes : dénominateur nul représenté par null. Matrices de confusion,
+latences p50/p95, échecs par app, modèle et global dans JSON/Markdown. La latence
+principale inclut pacing et retries ; la dernière tentative HTTP est séparée.
+Les répétitions ne sont pas indépendantes et ce petit dataset contrôlé ne mesure
+ni l'exécution du moteur ni une capacité générale sur les applications. Le test
+live court vérifie le protocole sur deux questions par application, pas un seuil
+de qualité du modèle ; sans clé il est ignoré proprement.
 Installation Blender 4.5.9 LTS : voir `docs/environnement-dev.md`.
 Exécuter depuis la racine (bench n'est pas inclus dans les packages distribués du socle).
 

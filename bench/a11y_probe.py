@@ -250,6 +250,77 @@ class Probe:
                 return {"correct": text == TEST_VALUE, "cell": "A1", "role": cell.getRoleName()}
         raise RuntimeError("cell_unavailable")
 
+    def configure_cell(self, has_value=False, bold=False, italic=False, underline=False):
+        for node, _ in self.walk(max_nodes=2000):
+            if node.getRoleName() == "table":
+                cell = node.queryTable().getAccessibleAt(0, 0)
+                rect = cell.queryComponent().getExtents(self.atspi.DESKTOP_COORDS)
+                if rect.width <= 0 or rect.height <= 0:
+                    raise RuntimeError("cell_not_visible")
+                subprocess.run(
+                    [
+                        "xdotool",
+                        "mousemove",
+                        "--sync",
+                        str(rect.x + rect.width // 2),
+                        str(rect.y + rect.height // 2),
+                        "click",
+                        "1",
+                    ],
+                    check=True,
+                    timeout=5,
+                    stdout=subprocess.DEVNULL,
+                )
+                break
+        else:
+            raise RuntimeError("cell_unavailable")
+        if has_value:
+            self.write_cell()
+        time.sleep(0.2)
+        for enabled, name in ((bold, "Bold"), (italic, "Italic"), (underline, "Underline")):
+            if enabled:
+                for node, _ in self.walk(skip_tables=True):
+                    if node.name == name and node.getRoleName() in ("push button", "toggle button"):
+                        if not node.queryAction().doAction(0):
+                            raise RuntimeError("format_action_failed")
+                        break
+                else:
+                    raise RuntimeError("format_button_unavailable")
+        time.sleep(0.3)
+        return {"configured": True}
+
+    def verify_cell_state(self):
+        facts = {}
+        for node, _ in self.walk(max_nodes=2000):
+            if node.getRoleName() == "table":
+                cell = node.queryTable().getAccessibleAt(0, 0)
+                text = cell.queryText().getText(0, -1)
+                if text not in ("", TEST_VALUE):
+                    raise RuntimeError("unexpected_cell_value:length=" + str(len(text)))
+                facts.update(cell_has_value=text == TEST_VALUE, cell_empty=text == "")
+                break
+        if not facts:
+            raise RuntimeError("cell_unavailable")
+        buttons = {}
+        for key, name in (("bold", "Bold"), ("italic", "Italic"), ("underline", "Underline")):
+            button = self.find(name)
+            if button is None:
+                raise RuntimeError("format_button_unavailable")
+            buttons[key] = button
+            facts[key] = "checked" in button["states"] or "pressed" in button["states"]
+        return {"facts": facts, "buttons": buttons, "cell": "A1"}
+
+    def capture(self, path):
+        identifiers = subprocess.check_output(
+            ["xdotool", "search", "--onlyvisible", "--name", "LibreOffice Calc"],
+            text=True,
+            timeout=5,
+        ).splitlines()
+        if len(identifiers) != 1:
+            raise RuntimeError("ambiguous_capture_window")
+        subprocess.run(["import", "-window", identifiers[0], path], check=True, timeout=10)
+        return {"window_id": identifiers[0]}
+
     def dispatch(self, request):
         op = request["op"]
         if op != "start":
@@ -276,6 +347,9 @@ class Probe:
                 "write_cell",
                 "read_cell",
                 "ready",
+                "configure_cell",
+                "verify_cell_state",
+                "capture",
             }
             else None
         )
