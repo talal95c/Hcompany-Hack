@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-07T13:39:02+00:00",
+  "date": "2026-11-07T14:31:22+00:00",
   "host": {
     "os": "Linux-6.8.0-1061-aws-x86_64-with-glibc2.35",
     "python": "3.11.17"
@@ -10,71 +10,71 @@
       "n": 2,
       "n_ok": 2,
       "failures": {},
-      "p50_ms": 709.0,
-      "p95_ms": 760.2,
-      "min_ms": 652.2,
-      "max_ms": 765.8
+      "p50_ms": 635.0,
+      "p95_ms": 648.2,
+      "min_ms": 620.3,
+      "max_ms": 649.7
     },
     "gladia.live_init": {
       "n": 2,
       "n_ok": 2,
       "failures": {},
-      "p50_ms": 353.5,
-      "p95_ms": 499.2,
-      "min_ms": 191.7,
-      "max_ms": 515.4
+      "p50_ms": 351.3,
+      "p95_ms": 495.8,
+      "min_ms": 190.8,
+      "max_ms": 511.8
     },
     "gladia.live_ws_connect": {
       "n": 2,
       "n_ok": 2,
       "failures": {},
-      "p50_ms": 486.7,
-      "p95_ms": 489.4,
-      "min_ms": 483.7,
-      "max_ms": 489.7
+      "p50_ms": 498.8,
+      "p95_ms": 500.3,
+      "min_ms": 497.2,
+      "max_ms": 500.5
     },
     "gladia.prerecorded_create": {
       "n": 3,
       "n_ok": 3,
       "failures": {},
-      "p50_ms": 347.4,
-      "p95_ms": 768.6,
-      "min_ms": 326.7,
-      "max_ms": 815.4
+      "p50_ms": 889.9,
+      "p95_ms": 1460.6,
+      "min_ms": 401.3,
+      "max_ms": 1524.0
     },
     "gladia.prerecorded_poll": {
-      "n": 8,
-      "n_ok": 8,
+      "n": 9,
+      "n_ok": 9,
       "failures": {},
-      "p50_ms": 185.8,
-      "p95_ms": 223.2,
-      "min_ms": 182.8,
-      "max_ms": 227.7
+      "p50_ms": 186.6,
+      "p95_ms": 254.0,
+      "min_ms": 181.7,
+      "max_ms": 286.5
     },
     "gladia.transcribe_file_total": {
       "n": 3,
       "n_ok": 3,
       "failures": {},
-      "p50_ms": 3255.9,
-      "p95_ms": 3505.7,
-      "min_ms": 2149.6,
-      "max_ms": 3533.5
+      "p50_ms": 4409.5,
+      "p95_ms": 5985.5,
+      "min_ms": 4020.8,
+      "max_ms": 6160.6
     },
     "gladia.upload": {
       "n": 3,
       "n_ok": 3,
       "failures": {},
-      "p50_ms": 909.6,
-      "p95_ms": 1534.9,
-      "min_ms": 850.4,
-      "max_ms": 1604.4
+      "p50_ms": 2348.0,
+      "p95_ms": 2985.8,
+      "min_ms": 1548.0,
+      "max_ms": 3056.7
     }
   },
   "calls": [
     {
       "service": "gladia",
       "operation": "upload",
-      "duration_ms": 1604.4,
+      "duration_ms": 3056.7,
       "status": "ok",
       "request_id": null,
       "input_tokens": null,
@@ -84,9 +84,9 @@
     {
       "service": "gladia",
       "operation": "prerecorded_create",
-      "duration_ms": 347.35,
+      "duration_ms": 1523.98,
       "status": "ok",
-      "request_id": "2565d8ca-1a03-489c-8364-4dd613ea53c7",
+      "request_id": "e25f0756-365a-461b-91bc-2b0836a3a1ff",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -94,9 +94,9 @@
     {
       "service": "gladia",
       "operation": "prerecorded_poll",
-      "duration_ms": 183.25,
+      "duration_ms": 184.24,
       "status": "ok",
-      "request_id": "2565d8ca-1a03-489c-8364-4dd613ea53c7",
+      "request_id": "e25f0756-365a-461b-91bc-2b0836a3a1ff",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -104,9 +104,9 @@
     {
       "service": "gladia",
       "operation": "prerecorded_poll",
-      "duration_ms": 185.82,
+      "duration_ms": 185.08,
       "status": "ok",
-      "request_id": "2565d8ca-1a03-489c-8364-4dd613ea53c7",
+      "request_id": "e25f0756-365a-461b-91bc-2b0836a3a1ff",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -114,9 +114,9 @@
     {
       "service": "gladia",
       "operation": "prerecorded_poll",
-      "duration_ms": 207.45,
+      "duration_ms": 205.24,
       "status": "ok",
-      "request_id": "2565d8ca-1a03-489c-8364-4dd613ea53c7",
+      "request_id": "e25f0756-365a-461b-91bc-2b0836a3a1ff",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -124,9 +124,9 @@
     {
       "service": "gladia",
       "operation": "transcribe_file_total",
-      "duration_ms": 3533.47,
+      "duration_ms": 6160.65,
       "status": "ok",
-      "request_id": "2565d8ca-1a03-489c-8364-4dd613ea53c7",
+      "request_id": "e25f0756-365a-461b-91bc-2b0836a3a1ff",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -134,7 +134,7 @@
     {
       "service": "gladia",
       "operation": "upload",
-      "duration_ms": 909.56,
+      "duration_ms": 2348.01,
       "status": "ok",
       "request_id": null,
       "input_tokens": null,
@@ -144,9 +144,9 @@
     {
       "service": "gladia",
       "operation": "prerecorded_create",
-      "duration_ms": 326.66,
+      "duration_ms": 401.28,
       "status": "ok",
-      "request_id": "8bce581b-240a-4af7-97e7-a58bc9452a94",
+      "request_id": "831dd19e-999b-403f-9743-dbf81a4f628b",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -154,9 +154,9 @@
     {
       "service": "gladia",
       "operation": "prerecorded_poll",
-      "duration_ms": 182.83,
+      "duration_ms": 186.58,
       "status": "ok",
-      "request_id": "8bce581b-240a-4af7-97e7-a58bc9452a94",
+      "request_id": "831dd19e-999b-403f-9743-dbf81a4f628b",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -164,9 +164,19 @@
     {
       "service": "gladia",
       "operation": "prerecorded_poll",
-      "duration_ms": 227.67,
+      "duration_ms": 181.65,
       "status": "ok",
-      "request_id": "8bce581b-240a-4af7-97e7-a58bc9452a94",
+      "request_id": "831dd19e-999b-403f-9743-dbf81a4f628b",
+      "input_tokens": null,
+      "cached_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "service": "gladia",
+      "operation": "prerecorded_poll",
+      "duration_ms": 286.48,
+      "status": "ok",
+      "request_id": "831dd19e-999b-403f-9743-dbf81a4f628b",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -174,9 +184,9 @@
     {
       "service": "gladia",
       "operation": "transcribe_file_total",
-      "duration_ms": 2149.63,
+      "duration_ms": 4409.54,
       "status": "ok",
-      "request_id": "8bce581b-240a-4af7-97e7-a58bc9452a94",
+      "request_id": "831dd19e-999b-403f-9743-dbf81a4f628b",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -184,7 +194,7 @@
     {
       "service": "gladia",
       "operation": "upload",
-      "duration_ms": 850.4,
+      "duration_ms": 1548.0,
       "status": "ok",
       "request_id": null,
       "input_tokens": null,
@@ -194,9 +204,9 @@
     {
       "service": "gladia",
       "operation": "prerecorded_create",
-      "duration_ms": 815.41,
+      "duration_ms": 889.92,
       "status": "ok",
-      "request_id": "b760ac22-98e3-4188-a3a2-a40322a80833",
+      "request_id": "9319cbe4-de8a-4e46-9ce0-65cef0519e16",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -204,9 +214,9 @@
     {
       "service": "gladia",
       "operation": "prerecorded_poll",
-      "duration_ms": 185.87,
+      "duration_ms": 188.4,
       "status": "ok",
-      "request_id": "b760ac22-98e3-4188-a3a2-a40322a80833",
+      "request_id": "9319cbe4-de8a-4e46-9ce0-65cef0519e16",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -214,9 +224,9 @@
     {
       "service": "gladia",
       "operation": "prerecorded_poll",
-      "duration_ms": 183.71,
+      "duration_ms": 184.7,
       "status": "ok",
-      "request_id": "b760ac22-98e3-4188-a3a2-a40322a80833",
+      "request_id": "9319cbe4-de8a-4e46-9ce0-65cef0519e16",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -224,9 +234,9 @@
     {
       "service": "gladia",
       "operation": "prerecorded_poll",
-      "duration_ms": 215.0,
+      "duration_ms": 204.32,
       "status": "ok",
-      "request_id": "b760ac22-98e3-4188-a3a2-a40322a80833",
+      "request_id": "9319cbe4-de8a-4e46-9ce0-65cef0519e16",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -234,9 +244,9 @@
     {
       "service": "gladia",
       "operation": "transcribe_file_total",
-      "duration_ms": 3255.92,
+      "duration_ms": 4020.79,
       "status": "ok",
-      "request_id": "b760ac22-98e3-4188-a3a2-a40322a80833",
+      "request_id": "9319cbe4-de8a-4e46-9ce0-65cef0519e16",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -244,9 +254,9 @@
     {
       "service": "gladia",
       "operation": "live_init",
-      "duration_ms": 191.68,
+      "duration_ms": 190.85,
       "status": "ok",
-      "request_id": "5d1cefba-8c7f-41af-903a-1cb83a3aa31e",
+      "request_id": "874e1ac6-50ce-49ea-90fd-37e6c489c384",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -254,9 +264,9 @@
     {
       "service": "gladia",
       "operation": "live_ws_connect",
-      "duration_ms": 489.73,
+      "duration_ms": 500.46,
       "status": "ok",
-      "request_id": "5d1cefba-8c7f-41af-903a-1cb83a3aa31e",
+      "request_id": "874e1ac6-50ce-49ea-90fd-37e6c489c384",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -264,9 +274,9 @@
     {
       "service": "gladia",
       "operation": "live_final_after_last_chunk",
-      "duration_ms": 765.83,
+      "duration_ms": 649.7,
       "status": "ok",
-      "request_id": "5d1cefba-8c7f-41af-903a-1cb83a3aa31e",
+      "request_id": "874e1ac6-50ce-49ea-90fd-37e6c489c384",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -274,9 +284,9 @@
     {
       "service": "gladia",
       "operation": "live_init",
-      "duration_ms": 515.39,
+      "duration_ms": 511.82,
       "status": "ok",
-      "request_id": "253794ed-0c5a-4c42-b594-153a98b4cac7",
+      "request_id": "119ec530-1dd0-4c0d-ac0d-ce6c6366d7c2",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -284,9 +294,9 @@
     {
       "service": "gladia",
       "operation": "live_ws_connect",
-      "duration_ms": 483.67,
+      "duration_ms": 497.21,
       "status": "ok",
-      "request_id": "253794ed-0c5a-4c42-b594-153a98b4cac7",
+      "request_id": "119ec530-1dd0-4c0d-ac0d-ce6c6366d7c2",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
@@ -294,9 +304,9 @@
     {
       "service": "gladia",
       "operation": "live_final_after_last_chunk",
-      "duration_ms": 652.23,
+      "duration_ms": 620.32,
       "status": "ok",
-      "request_id": "253794ed-0c5a-4c42-b594-153a98b4cac7",
+      "request_id": "119ec530-1dd0-4c0d-ac0d-ce6c6366d7c2",
       "input_tokens": null,
       "cached_tokens": null,
       "output_tokens": null
