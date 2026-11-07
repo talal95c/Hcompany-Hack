@@ -1,15 +1,29 @@
-# Leçon donut — plan, pas artefact prouvé
+# Mon premier donut
 
-Pas encore de code. Aucun lesson.json ni preuve n'est livré ici. Ce dossier recevra les révisions par version Blender, manifeste, checkpoints et audio éventuel.
+Leçon originale inspirée du style débutant de la partie 1 du donut classique,
+sans copie vidéo ; voir [SOURCE.md](SOURCE.md) pour les limites de droits.
+Blender **4.5.9**, langue **fr-FR**, neuf étapes prouvées par `bpy` :
 
-## Étapes prévues
-1. Préparer une scène de test et supprimer le cube par défaut avec confirmation.
-2. Ajouter un tore : object_exists(type=MESH, primitive=torus), provenance et géométrie à vérifier.
-3. Ajuster proportions et transformation : check de valeurs avec tolérance.
-4. Ajouter subdivision : check de modificateur et niveaux.
-5. Lisser : check des faces et configuration selon version.
-6. Construire un glaçage : sous-étapes et checks géométriques encore à définir ; pas de check inventé pour publier.
-7. Affecter un matériau : check affectation et paramètres attendus.
-8. Défi sans aide : recréer une primitive et valider la compétence avant délégation.
+1. Ajouter un tore de 48 × 12 segments.
+2. Ajuster la dernière opération : rayons 1 m et 0,45 m.
+3. Subdivision de niveau 2.
+4. Ombrage lissé.
+5. Déformation proportionnelle d'un sommet : déplacement Z de 0,12 m, rayon 0,5 m.
+6. Dupliquer les faces supérieures et séparer le glaçage.
+7. Solidifier le glaçage : épaisseur 0,035 m.
+8. Matériau beige de la pâte.
+9. Matériau rose du glaçage.
 
-Entrées : tutoriel autorisé, version exacte, bibliothèque de checks. Sorties : leçon seulement après preuve complète. Dépend de prep et engine/checks ; certains checks sont encore à écrire. Voir [contrat](../../docs/contrats/lecon.md) et [préparation](../../docs/architecture/preparation.md).
+Le lanceur vide la scène initiale. Les préconditions de mode et de rôle actif sont
+préparées avant chaque étape. Les sélections manuelles sont remplacées par une
+règle géométrique explicite dans `steps.json`. Les preuves sont dans `proof/`.
+
+Depuis la racine :
+
+```sh
+python tests/lessons/prove.py lessons/donut lessons/donut/proof-run.json
+```
+
+Voir [les checks et commandes de validation](../README.md).
+Le contrat reste limité à l'existence du sujet ; le compagnon valide les gestes
+réels. `ui_path_verified=false` : ni menus ni pointeur ni rendu visuel vérifiés.

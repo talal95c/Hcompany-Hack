@@ -1,0 +1,221 @@
+{
+  "step_id": "add_torus",
+  "blender_version": "4.5.9 LTS",
+  "ui_path_verified": false,
+  "before": {
+    "mode": "OBJECT",
+    "objects": []
+  },
+  "after": {
+    "mode": "OBJECT",
+    "objects": [
+      {
+        "type": "MESH",
+        "vertices": 576,
+        "edges": 1152,
+        "faces": 576,
+        "smooth_faces": 0,
+        "bounds": [
+          [
+            -1.25,
+            1.25
+          ],
+          [
+            -1.25,
+            1.25
+          ],
+          [
+            -0.25,
+            0.25
+          ]
+        ],
+        "materials": [],
+        "provenance": {
+          "primitive": "torus",
+          "major_segments": 48,
+          "minor_segments": 12,
+          "major_radius": 1.0,
+          "minor_radius": 0.25
+        },
+        "modifiers": []
+      }
+    ]
+  },
+  "actions": [
+    {
+      "kind": "operator",
+      "idname": "MESH_OT_primitive_torus_add",
+      "properties": {
+        "major_segments": 48,
+        "minor_segments": 12,
+        "major_radius": 1.0,
+        "minor_radius": 0.25
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "object_exists",
+      "params": {
+        "type": "MESH",
+        "primitive": "torus"
+      }
+    },
+    {
+      "name": "torus_dimensions",
+      "params": {
+        "major_radius": 1.0,
+        "minor_radius": 0.25,
+        "major_segments": 48,
+        "minor_segments": 12,
+        "tolerance": 0.002
+      }
+    }
+  ],
+  "before_checks": [
+    "fail",
+    "fail"
+  ],
+  "after_checks": [
+    "pass",
+    "pass"
+  ],
+  "known_errors": [
+    "unknown",
+    "fail"
+  ],
+  "error_proofs": [
+    {
+      "code": "cube_instead_of_torus",
+      "check": {
+        "name": "object_exists",
+        "params": {
+          "type": "MESH",
+          "primitive": "cube"
+        }
+      },
+      "actions": [
+        {
+          "kind": "operator",
+          "idname": "MESH_OT_primitive_cube_add",
+          "properties": {
+            "size": 2
+          }
+        }
+      ],
+      "before": {
+        "mode": "OBJECT",
+        "objects": []
+      },
+      "after": {
+        "mode": "OBJECT",
+        "objects": [
+          {
+            "type": "MESH",
+            "vertices": 8,
+            "edges": 12,
+            "faces": 6,
+            "smooth_faces": 0,
+            "bounds": [
+              [
+                -1.0,
+                1.0
+              ],
+              [
+                -1.0,
+                1.0
+              ],
+              [
+                -1.0,
+                1.0
+              ]
+            ],
+            "materials": [],
+            "provenance": {
+              "primitive": "cube",
+              "size": 2
+            },
+            "modifiers": []
+          }
+        ]
+      },
+      "on_mistake": "pass",
+      "step_checks_on_mistake": [
+        "unknown",
+        "fail"
+      ],
+      "on_correct_path": "unknown"
+    },
+    {
+      "code": "thin_ring",
+      "check": {
+        "name": "torus_dimensions",
+        "params": {
+          "major_radius": 1,
+          "minor_radius": 0.1,
+          "major_segments": 48,
+          "minor_segments": 12,
+          "tolerance": 0.002
+        }
+      },
+      "actions": [
+        {
+          "kind": "operator",
+          "idname": "MESH_OT_primitive_torus_add",
+          "properties": {
+            "major_segments": 48,
+            "minor_segments": 12,
+            "major_radius": 1.0,
+            "minor_radius": 0.1
+          }
+        }
+      ],
+      "before": {
+        "mode": "OBJECT",
+        "objects": []
+      },
+      "after": {
+        "mode": "OBJECT",
+        "objects": [
+          {
+            "type": "MESH",
+            "vertices": 576,
+            "edges": 1152,
+            "faces": 576,
+            "smooth_faces": 0,
+            "bounds": [
+              [
+                -1.100000023841858,
+                1.100000023841858
+              ],
+              [
+                -1.100000023841858,
+                1.100000023841858
+              ],
+              [
+                -0.10000000149011612,
+                0.10000000149011612
+              ]
+            ],
+            "materials": [],
+            "provenance": {
+              "primitive": "torus",
+              "major_segments": 48,
+              "minor_segments": 12,
+              "major_radius": 1.0,
+              "minor_radius": 0.1
+            },
+            "modifiers": []
+          }
+        ]
+      },
+      "on_mistake": "pass",
+      "step_checks_on_mistake": [
+        "pass",
+        "fail"
+      ],
+      "on_correct_path": "fail"
+    }
+  ],
+  "seconds": 0.017565294000007725
+}
