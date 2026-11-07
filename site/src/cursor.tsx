@@ -23,7 +23,6 @@ type Mode = "default" | "link" | "text" | "media";
 
 const LABELS: [string, string][] = [
   ["[data-cursor-label]", ""],
-  [".computer-link", "click to enter"],
   [".nav-logo", "home"],
   [".nav a", "jump"],
   [".hero .btn", "start a lesson"],
