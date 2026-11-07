@@ -13,4 +13,4 @@ sources et candidat à retester.
 Contrats v1, interfaces documentées et composants amont ; aucune dépendance de modèle local. Les appels bpy restent dans addon et les accès natifs dans desktop. Voir [conception détaillée](../../docs/architecture/preparation.md) et [guide des agents](../../AGENTS.md).
 
 ## État et validation
-Pas encore de code. Les modules décrits sont une cible, pas une implémentation disponible. Ajouter tests nominal/vide/erreur et timeout avant intégration ; ne pas remplacer un check par une déclaration de modèle.
+`docs_search` appelle Linkup via httpx, filtre docs.blender.org avec includeDomains, délai explicite de 15 s et latence mesurée en logs. Tests timeout et clé absente ; test live opt-in avec LINKUP_API_KEY. Aucun candidat n’est accepté sans nouveau check.
