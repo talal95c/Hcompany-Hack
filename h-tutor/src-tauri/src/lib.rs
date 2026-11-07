@@ -7,6 +7,7 @@ mod debug;
 mod clicks;
 mod holo;
 mod journal;
+mod skills;
 mod planner;
 mod qa;
 mod tutorial;
@@ -702,6 +703,7 @@ pub fn run() {
             let handle = app.handle().clone();
             clicks::watch(move |c| on_user_click(&handle, c));
             watch::spawn(app.handle().clone());
+            skills::spawn(app.handle().clone());
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -712,6 +714,9 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            skills::skills_list,
+            skills::skill_decline,
+            skills::skill_propose_now,
             tray::set_tray_status,
             tray::hide_bar,
             tray::resize_bar,

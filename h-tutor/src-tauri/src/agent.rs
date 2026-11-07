@@ -341,6 +341,9 @@ pub async fn advance(
     event: Option<String>,
     only_if_changed: bool,
 ) -> Result<Step, String> {
+    if session.finished {
+        return Ok(session.step.clone());
+    }
     let shot = tauri::async_runtime::spawn_blocking(capture_primary)
         .await
         .map_err(|e| e.to_string())??;
@@ -378,8 +381,15 @@ pub async fn advance(
     }
 
     // Tutorial complete.
-    session.finished = true;
+    if !session.finished {
+        return Err("Trop de jalons enchaînés ; réessayez pour continuer".into());
+    }
     journal::event("tutorial_done", json!({}));
+    if let Some(run) = journal::skill_run()
+        && let Err(error) = crate::skills::record_run(to_tutorial(session), run)
+    {
+        eprintln!("Impossible d'enregistrer le skill : {error}");
+    }
     journal::end("completed");
     let step = Step {
         kind: "done".into(),

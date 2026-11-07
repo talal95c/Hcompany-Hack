@@ -117,6 +117,18 @@ pub fn current_dir() -> Option<PathBuf> {
     CURRENT.lock().unwrap().as_ref().map(|j| j.dir.clone())
 }
 
+pub fn skill_run() -> Option<crate::skills::Run> {
+    let guard = CURRENT.lock().unwrap();
+    let j = guard.as_ref()?;
+    Some(crate::skills::Run {
+        date: now_secs(),
+        mode: crate::skills::Mode::Learner,
+        outcome: "completed".into(),
+        duration_s: j.started.elapsed().as_secs(),
+        session_id: j.dir.file_name()?.to_string_lossy().into_owned(),
+    })
+}
+
 /// Closes the session with its outcome ("completed", "abandoned", "error").
 pub fn end(outcome: &str) {
     let Some(mut j) = CURRENT.lock().unwrap().take() else { return };
