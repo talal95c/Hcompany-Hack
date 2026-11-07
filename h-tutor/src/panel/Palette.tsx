@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { api, type AppIcon, type TutorialSummary } from "./api";
 import { IconClose, IconGrid } from "./icons";
 
@@ -21,6 +21,7 @@ type Props = {
  * list of tutorials on the right. Arrows move, Enter starts, Esc closes.
  */
 export default function Palette({ tutorials, onStart, onClose }: Props) {
+  const reduced = useReducedMotion();
   const [query, setQuery] = useState("");
   const [app, setApp] = useState<string | null>(null);
   const [selected, setSelected] = useState(0);
@@ -94,9 +95,9 @@ export default function Palette({ tutorials, onStart, onClose }: Props) {
     <motion.div
       className="palette"
       onKeyDown={onKeyDown}
-      initial={{ opacity: 0, y: 12, scale: 0.98, filter: "blur(10px)" }}
+      initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, filter: "blur(6px)" }}
       animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-      transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+      transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
     >
       <div className="palette__head">
         <input
@@ -144,9 +145,9 @@ export default function Palette({ tutorials, onStart, onClose }: Props) {
                   <motion.button
                     key={t.id}
                     className="card"
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={{ opacity: 0 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.05 + i * 0.04, duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+                    transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                     data-selected={i === selected}
                     onMouseEnter={() => setSelected(i)}
                     onClick={() => onStart(t)}
