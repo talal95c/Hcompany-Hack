@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -19,6 +20,22 @@ _SCHEMAS = {
 _REGISTRY = Registry().with_resources(
     (s["$id"], Resource.from_contents(s)) for s in _SCHEMAS.values()
 )
+
+
+# Les clients exigent les extras `holo`, `jev`, `gladia`, `linkup` ; sans eux (CI de base,
+# `pip install -e .`) les modules de test du dossier ne sont pas collectés.
+SERVICE_DEPS = ("httpx", "h2", "websockets", "openai")
+MISSING_DEPS = [m for m in SERVICE_DEPS if importlib.util.find_spec(m) is None]
+collect_ignore = ["test_services_unit.py", "test_services_live.py"] if MISSING_DEPS else []
+
+
+def pytest_report_header(config: pytest.Config) -> str | None:
+    if MISSING_DEPS:
+        return (
+            f"tests/services ignorés : {', '.join(MISSING_DEPS)} absents "
+            "(pip install -e '.[holo,jev,gladia,linkup]')"
+        )
+    return None
 
 
 def pytest_configure(config: pytest.Config) -> None:
