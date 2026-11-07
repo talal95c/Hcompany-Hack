@@ -43,7 +43,7 @@ p { margin: 0; }
   width: 560px;
   max-width: 100%;
   border-radius: 20px;
-  padding: 24px;
+  padding: 20px;
   animation: rise 240ms var(--ease);
 }
 @keyframes rise { from { opacity: 0; transform: translateY(6px) scale(0.95); filter: blur(6px); } }
@@ -243,7 +243,7 @@ p { margin: 0; }
   border: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
-.explain__q { font-size: 12px; color: var(--dim); margin-bottom: 6px; }
+.explain__q { font-size: 14px; color: var(--dim); margin-bottom: 16px; }
 .explain__a { font-family: var(--display); font-size: 15px; line-height: 1.45; letter-spacing: -0.015em; margin: 0; user-select: text; }
 .explain__list {
   margin: 8px 0 0;
@@ -256,10 +256,11 @@ p { margin: 0; }
 .explain__list li::marker { color: var(--dim); }
 .explain__actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
 
-.explain { display: flex; flex-direction: column; min-height: 180px; padding: 24px; }
-.explain__actions { margin-top: auto; padding-top: 24px; }
-.explain__a { font-size: 20px; line-height: 1.2; font-weight: 400; }
-.explain__list { color: var(--dim); }
+.explain { display: flex; flex-direction: column; min-height: 240px; padding: 24px; }
+.explain__actions { margin-top: auto; padding-top: 32px; }
+.explain__a { font-size: 23px; line-height: 1.25; font-weight: 400; }
+.explain__list { margin-top: 16px; font-size: 14px; color: var(--dim); }
+.bar:has(.explain) { padding: 24px; }
 .palette__mark { width: 24px; height: 24px; flex: none; }
 
 .ask { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
@@ -298,13 +299,13 @@ p { margin: 0; }
   --p-card-hover: #38383d;
   --p-ring: rgba(255, 255, 255, 0.7);
   width: 100%;
-  height: 420px;
+  height: 480px;
   display: flex;
   flex-direction: column;
   border-radius: 20px;
 }
 
-.palette__head { display: flex; align-items: center; gap: 10px; padding: 22px 18px 16px 28px; }
+.palette__head { display: flex; align-items: center; gap: 16px; padding: 24px; }
 .palette__head input {
   flex: 1;
   border: 0;
@@ -314,12 +315,13 @@ p { margin: 0; }
   font: inherit;
   font-family: var(--display);
   font-size: 21px;
+  font-weight: 400;
   letter-spacing: -0.03em;
   user-select: text;
 }
 .palette__head input::placeholder { color: var(--dim); }
 
-.palette__body { flex: 1; min-height: 0; display: flex; gap: 18px; padding: 0 22px 0 16px; }
+.palette__body { flex: 1; min-height: 0; display: flex; gap: 24px; padding: 0 24px 0; }
 
 .palette__nav { width: 168px; flex: none; display: flex; flex-direction: column; gap: 1px; overflow-y: auto; }
 .nav-item {
@@ -379,14 +381,14 @@ p { margin: 0; }
 .shell--library > .bar { width: 100%; border-top: 1px solid var(--line); }
 .nav-item, .group-title, .nav-count, .card__meta, .palette__foot, .palette__foot kbd { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; }
 .nav-item, .group-title, .card__meta, .palette__foot { text-transform: uppercase; }
-.cards { gap: 8px; }
-.card { padding: 14px; background: rgba(255,255,255,.04); gap: 8px; }
+.cards { gap: 12px; }
+.card { padding: 18px; background: rgba(255,255,255,.04); gap: 12px; }
 .card:hover { background: rgba(255,255,255,.08); }
 .card:active { transform: none; }
 .card[data-selected="true"] { background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); }
 .card__title {
-  font-size: 13.5px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 400;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
@@ -401,7 +403,7 @@ p { margin: 0; }
   display: flex;
   gap: 16px;
   justify-content: flex-end;
-  padding: 10px 22px;
+  padding: 16px 24px;
   border-top: 1px solid var(--line);
   font-size: 11.5px;
   color: var(--dim);
@@ -488,19 +490,20 @@ p { margin: 0; }
 .dicta-inline__text { position: relative; margin: 0; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; font-size: 15px; letter-spacing: -0.01em; }
 
 .composer { height: auto; padding: 0; flex-wrap: wrap; gap: 18px; }
-.composer > input, .composer > .dicta-inline { flex-basis: 100%; height: 36px; font-size: 17px; }
+.composer > input, .composer > .dicta-inline { flex-basis: 100%; height: 36px; font-size: 19px; font-weight: 400; }
 .composer > .lead { display: none; }
 .composer__foot { display: flex; align-items: center; gap: 8px; width: 100%; }
 .agent-label { margin-right: auto; color: var(--dim); font-size: 15px; font-weight: 400; }
 .composer .hint { display: none; }
-.key { width: 38px; height: 38px; background: var(--grad); color: var(--ink); }
+.key { width: 36px; height: 36px; background: var(--grad); color: var(--ink); }
 .key:disabled { opacity: .4; }
 .key:hover:not(:disabled) { filter: brightness(1.08); }
-.job-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.04); }
-.job-card p { font-size: 15px; }
-.job-card__detail { display: block; margin-top: 4px; font: 10px var(--mono); letter-spacing: .06em; color: var(--dim); }
-.job-card__tag { border-radius: 999px; padding: 5px 10px; background: var(--chip); font: 10px var(--mono); }
-.instruction { font-size: 23px; font-weight: 400; line-height: 1.25; margin: 14px 0 10px; }
+.job-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 8px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.10); box-shadow: inset 0 1px 0 rgba(255,255,255,.08); }
+.job-card > div { min-width: 0; }
+.job-card p { font-size: 16px; font-weight: 400; }
+.job-card__detail { display: block; margin-top: 6px; font: 13px/1.4 var(--mono); letter-spacing: .02em; color: var(--dim); overflow-wrap: anywhere; }
+.job-card__tag { flex: none; border-radius: 999px; padding: 6px 12px; background: rgba(255,255,255,.18); font-size: 14px; }
+.instruction { font-size: 26px; font-weight: 400; line-height: 1.25; margin: 20px 0 14px; }
 .run { padding: 0; }
 .count, .hint, .status, .chip code, .chip kbd, .qa__searched { font-family: var(--mono); letter-spacing: .06em; }
 .lead { color: var(--text); }
