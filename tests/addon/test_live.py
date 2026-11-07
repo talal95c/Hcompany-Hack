@@ -166,20 +166,41 @@ async def test_real_blender_socket_stream(tmp_path):
             result = await send(kind, payload, **options)
             assert result["status"] == status, result
             assert result.get("error_code") == code
+        result = await send("replay", {"procedure_ref": "add_cube", "params": {"size": 10**400}})
+        assert result["status"] == "rejected", result
+        assert result["error_code"] == "bad_context"
+        assert (await send("request_snapshot"))["status"] == "ok"
+        await receive(lambda e: e["type"] == "heartbeat")
+        fixture = json.loads((ROOT / "contracts/examples/commands/valid/replay.json").read_text())
+        state = next(e for _, e in reversed(events) if e["type"] == "snapshot")
+        result = await send(
+            fixture["type"],
+            fixture["payload"],
+            expected_scene_revision=state["scene_revision"],
+        )
+        assert result["status"] == "ok", result
+        initial_regions = next(e for _, e in events if e["type"] == "regions.changed")
         writer.write(b"not-json\n{}\n")
         await writer.drain()
+        server.close()
+        await server.wait_closed()
         writer.close()
         await writer.wait_closed()
+        await asyncio.sleep(0.2)
+        server = await asyncio.start_server(connected, "127.0.0.1", port)
         reader, writer = await asyncio.wait_for(connections.get(), 5)
         sequence = 0
         assert (await receive(lambda e: True))["type"] == "hello"
+        regions = await receive(lambda e: e["type"] == "regions.changed")
+        assert regions["payload"]["regions"] == initial_regions["payload"]["regions"]
+        assert regions["payload"]["ui_revision"] > initial_regions["payload"]["ui_revision"]
         await receive(lambda e: e["type"] == "snapshot")
         assert (
             await send("replay", {"procedure_ref": "add_cube", "params": {}}, identifier="add_cube")
         )["status"] == "ok"
         assert (await send("request_snapshot", identifier="finish"))["status"] == "ok"
         final = next(e for _, e in reversed(events) if e["type"] == "snapshot")
-        assert len(final["payload"]["objects"]) == direct_count + 2
+        assert len(final["payload"]["objects"]) == direct_count + 3
         output, _ = await asyncio.wait_for(process.communicate(), 10)
         assert process.returncode == 0, output.decode()
         actions = [

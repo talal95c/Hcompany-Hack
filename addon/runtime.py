@@ -288,6 +288,13 @@ class Runtime:
     def tick(self) -> float | None:
         if not self.running:
             return None
+        try:
+            return self._tick()
+        except Exception:
+            self.dirty = True
+            return 0.01
+
+    def _tick(self) -> float:
         now = time.monotonic()
         if self.transport.connected.is_set() and self.connection != self.transport.generation:
             self.connection = self.transport.generation
@@ -298,6 +305,7 @@ class Runtime:
             self.pending.clear()
             self.seq = 0
             self.checkpoint = None
+            self.regions = None
             self.emit(
                 "hello",
                 {
@@ -357,7 +365,7 @@ class Runtime:
                 self.observe()
         except Refused as exc:
             result.update(status="rejected", detail=str(exc), error_code=exc.code)
-        except (RuntimeError, ValueError, TypeError) as exc:
+        except Exception as exc:
             result.update(status="failed", detail=str(exc), error_code="bad_context")
         result["scene_revision"] = self.revision
         self.results[identifier] = result
@@ -388,7 +396,7 @@ class Runtime:
                 if payload["menu_id"] not in {"VIEW3D_MT_mesh_add", "VIEW3D_MT_add"}:
                     raise Refused("permission_denied", "Menu non autorisé")
                 with bpy.context.temp_override(window=window, area=area, region=region):
-                    if "FINISHED" not in bpy.ops.wm.call_menu(name=payload["menu_id"]):
+                    if "CANCELLED" in bpy.ops.wm.call_menu(name=payload["menu_id"]):
                         raise Refused("bad_context", "Menu indisponible")
         elif kind == "replay":
             self.replay(payload, command["command_id"])
@@ -403,6 +411,10 @@ class Runtime:
 
     def replay(self, payload: dict[str, Any], identifier: str) -> None:
         procedure, params = payload["procedure_ref"], payload["params"]
+        aliases = {
+            f"donut/{name}": name for name in ("add_torus", "add_cube", "add_subdivision_modifier")
+        }
+        procedure = aliases.get(procedure, procedure)
         procedures = {
             "add_torus": (
                 bpy.ops.mesh.primitive_torus_add,
@@ -414,11 +426,19 @@ class Runtime:
         if procedure not in procedures:
             raise Refused("unknown_procedure", "Procédure non autorisée")
         operation, allowed = procedures[procedure]
-        if set(params) - allowed or any(
-            not isinstance(v, (int, float)) or isinstance(v, bool) or not math.isfinite(v) or v <= 0
-            for v in params.values()
-        ):
+        if set(params) - allowed:
             raise Refused("bad_context", "Paramètres invalides")
+        for name, value in params.items():
+            segments = name in {"major_segments", "minor_segments"}
+            lower, upper = (3, 256) if segments else (0.0001, 10000)
+            if (
+                not isinstance(value, (int, float))
+                or isinstance(value, bool)
+                or not lower <= value <= upper
+                or not math.isfinite(value)
+                or (segments and not isinstance(value, int))
+            ):
+                raise Refused("bad_context", "Paramètres invalides")
         if bpy.context.mode != "OBJECT" or not operation.poll():
             raise Refused("bad_context", "Mode ou objet actif incompatible")
         if any(w.modal_operators for w in bpy.context.window_manager.windows):
