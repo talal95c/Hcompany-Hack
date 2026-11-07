@@ -51,7 +51,7 @@ impl Holo {
     async fn post(&self, body: &Value) -> Result<(reqwest::StatusCode, String, u128), String> {
         const ATTEMPTS: usize = 2;
         let started = std::time::Instant::now();
-        let key = api_key().ok_or("HAI_API_KEY is missing: add it to the .env file")?;
+        let key = api_key().ok_or("HAI_API_KEY manque : ajoute-la au fichier .env")?;
         let base = env_or("HAI_BASE_URL", "https://api.hcompany.ai/v1");
         let url = format!("{}/chat/completions", base.trim_end_matches('/'));
         let mut last = String::new();
@@ -81,7 +81,7 @@ impl Holo {
                 tokio::time::sleep(std::time::Duration::from_millis(wait)).await;
             }
         }
-        Err(format!("Can't reach Holo after {ATTEMPTS} attempts: {last}"))
+        Err(format!("Impossible de joindre Holo après {ATTEMPTS} tentatives : {last}"))
     }
 
     /// One request, backed up by copies on fresh connections if it has not
@@ -184,7 +184,7 @@ impl Holo {
         let mut body = body.clone();
         body["stream"] = json!(true);
         body["stream_options"] = json!({ "include_usage": true });
-        let key = api_key().ok_or("HAI_API_KEY is missing: add it to the .env file")?;
+        let key = api_key().ok_or("HAI_API_KEY manque : ajoute-la au fichier .env")?;
         let base = env_or("HAI_BASE_URL", "https://api.hcompany.ai/v1");
         let url = format!("{}/chat/completions", base.trim_end_matches('/'));
         let started = std::time::Instant::now();
@@ -199,7 +199,7 @@ impl Holo {
                 }
             }
         }
-        Err(format!("Can't reach Holo: {last}"))
+        Err(format!("Impossible de joindre Holo : {last}"))
     }
 
     async fn stream_once(
@@ -215,7 +215,7 @@ impl Holo {
         if !status.is_success() {
             let text = res.text().await.unwrap_or_default();
             let detail: String = text.chars().take(300).collect();
-            return Err(format!("Holo {status}: {detail}"));
+            return Err(format!("Holo {status} : {detail}"));
         }
         let mut stream = res.bytes_stream();
         let mut buf = String::new();
@@ -224,7 +224,7 @@ impl Holo {
         let (mut finish, mut usage) = (Value::Null, Value::Null);
         loop {
             let chunk = match tokio::time::timeout(std::time::Duration::from_secs(20), stream.next()).await {
-                Err(_) => return Err("stream stalled (no data for 20 s)".into()),
+                Err(_) => return Err("Flux bloqué (aucune donnée depuis 20 s)".into()),
                 Ok(None) => break,
                 Ok(Some(Err(e))) => return Err(describe(&e)),
                 Ok(Some(Ok(bytes))) => bytes,
@@ -320,7 +320,7 @@ impl Holo {
                 match select(next, tick).await {
                     Either::Left((r, _)) => r,
                     Either::Right(_) if launched < LAUNCH_AT_S.len() => continue,
-                    Either::Right(_) => return Err("timed out (no answer within 40 s)".into()),
+                    Either::Right(_) => return Err("Délai dépassé (aucune réponse sous 40 s)".into()),
                 }
             };
             match outcome {
@@ -336,9 +336,9 @@ impl Holo {
         let (status, text, ms) = self.post(body).await?;
         if !status.is_success() {
             let detail: String = text.chars().take(300).collect();
-            return Err(format!("Holo {status}: {detail}"));
+            return Err(format!("Holo {status} : {detail}"));
         }
-        let v: Value = serde_json::from_str(&text).map_err(|e| format!("Unreadable response: {e}"))?;
+        let v: Value = serde_json::from_str(&text).map_err(|e| format!("Réponse illisible : {e}"))?;
         let mut message = v["choices"][0]["message"].clone();
         message["finish_reason"] = v["choices"][0]["finish_reason"].clone();
         Ok((message, ms, v["usage"].clone()))
@@ -383,20 +383,20 @@ impl Holo {
         if !status.is_success() {
             crate::debug::record(tag, model, images, prompt, &format!("HTTP {status}: {text}"), ms);
             let hint = match status.as_u16() {
-                401 | 403 => "API key rejected",
-                402 => "not enough credits",
-                404 => "model not found (check HOLO_*_MODEL)",
-                429 => "rate limit reached, try again in a moment",
-                _ => "API error",
+                401 | 403 => "Clé API refusée",
+                402 => "Crédits insuffisants",
+                404 => "Modèle introuvable (vérifie HOLO_*_MODEL)",
+                429 => "Limite de requêtes atteinte, réessaie dans un instant",
+                _ => "Erreur API",
             };
             let detail: String = text.chars().take(240).collect();
-            return Err(format!("Holo {status}: {hint}. {detail}"));
+            return Err(format!("Holo {status} : {hint}. {detail}"));
         }
 
-        let v: Value = serde_json::from_str(&text).map_err(|e| format!("Unreadable response: {e}"))?;
+        let v: Value = serde_json::from_str(&text).map_err(|e| format!("Réponse illisible : {e}"))?;
         let raw = v["choices"][0]["message"]["content"]
             .as_str()
-            .ok_or("Empty response from the model")?;
+            .ok_or("Réponse vide du modèle")?;
         let id = crate::debug::record(tag, model, images, prompt, raw, ms);
         let cleaned = raw
             .trim()
@@ -406,7 +406,7 @@ impl Holo {
             .trim();
         serde_json::from_str(cleaned)
             .map(|v| (v, id))
-            .map_err(|e| format!("Unexpected JSON ({e}): {raw}"))
+            .map_err(|e| format!("JSON inattendu ({e}) : {raw}"))
     }
 }
 
@@ -414,9 +414,9 @@ impl Holo {
 /// which its own message hides behind "error sending request".
 fn describe(e: &reqwest::Error) -> String {
     if e.is_timeout() {
-        return "timed out (no answer within 40 s)".into();
+        return "Délai dépassé (aucune réponse sous 40 s)".into();
     }
-    let mut msg = if e.is_connect() { "could not connect".to_string() } else { "network error".to_string() };
+    let mut msg = if e.is_connect() { "connexion impossible".to_string() } else { "erreur réseau".to_string() };
     let mut source = std::error::Error::source(e);
     let mut last = String::new();
     while let Some(s) = source {

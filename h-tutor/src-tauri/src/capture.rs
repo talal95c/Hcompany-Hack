@@ -24,20 +24,20 @@ pub struct Shot {
 }
 
 pub fn capture_primary() -> Result<Shot, String> {
-    let monitors = xcap::Monitor::all().map_err(|e| format!("Screen capture failed: {e}"))?;
+    let monitors = xcap::Monitor::all().map_err(|e| format!("Échec de la capture d'écran : {e}"))?;
     let monitor = monitors
         .iter()
         .find(|m| m.is_primary().unwrap_or(false))
         .or(monitors.first())
-        .ok_or("No display found")?;
+        .ok_or("Aucun écran trouvé")?;
 
     let rgba = monitor.capture_image().map_err(|e| {
-        format!("Screen capture failed ({e}). Allow Screen Recording in System Settings › Privacy & Security.")
+        format!("Échec de la capture d'écran ({e}). Autorise l'enregistrement de l'écran dans Réglages Système › Confidentialité et sécurité.")
     })?;
 
     let img = DynamicImage::ImageRgba8(
         image::RgbaImage::from_raw(rgba.width(), rgba.height(), rgba.into_raw())
-            .ok_or("Invalid capture image")?,
+            .ok_or("Image capturée invalide")?,
     );
     let max = max_width();
     let img = if img.width() > max {
@@ -53,7 +53,7 @@ pub fn capture_primary() -> Result<Shot, String> {
     let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut buf, 82);
     img.to_rgb8()
         .write_with_encoder(encoder)
-        .map_err(|e| format!("JPEG encoding failed: {e}"))?;
+        .map_err(|e| format!("Échec de l'encodage JPEG : {e}"))?;
 
     Ok(Shot {
         data_uri: format!("data:image/jpeg;base64,{}", STANDARD.encode(buf.into_inner())),
@@ -64,15 +64,15 @@ pub fn capture_primary() -> Result<Shot, String> {
 /// Just the tiny grayscale thumbnail of the primary display, for watching
 /// the screen for changes several times a second without any encoding.
 pub fn capture_thumb() -> Result<GrayImage, String> {
-    let monitors = xcap::Monitor::all().map_err(|e| format!("Screen capture failed: {e}"))?;
+    let monitors = xcap::Monitor::all().map_err(|e| format!("Échec de la capture d'écran : {e}"))?;
     let monitor = monitors
         .iter()
         .find(|m| m.is_primary().unwrap_or(false))
         .or(monitors.first())
-        .ok_or("No display found")?;
-    let rgba = monitor.capture_image().map_err(|e| format!("Screen capture failed: {e}"))?;
+        .ok_or("Aucun écran trouvé")?;
+    let rgba = monitor.capture_image().map_err(|e| format!("Échec de la capture d'écran : {e}"))?;
     let img = DynamicImage::ImageRgba8(
-        image::RgbaImage::from_raw(rgba.width(), rgba.height(), rgba.into_raw()).ok_or("Invalid capture image")?,
+        image::RgbaImage::from_raw(rgba.width(), rgba.height(), rgba.into_raw()).ok_or("Image capturée invalide")?,
     );
     // Same pipeline as `capture_primary` so thumbnails are comparable.
     let max = max_width();

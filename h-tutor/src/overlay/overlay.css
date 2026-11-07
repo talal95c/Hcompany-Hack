@@ -1,9 +1,9 @@
-/* Black and white ghost: a white arrow with a thin dark edge (readable on any background), no glow. */
+/* Orange ghost with a fine grain, no outline; a soft dark shadow keeps it readable on any background. */
 :root {
-  --g1: #ffffff;
-  --g2: #ffffff;
-  --g3: #ffffff;
-  --ok: #ffffff;
+  --g1: #ffc078;
+  --g2: #ff7a1a;
+  --g3: #d9420b;
+  --ok: #b4c7a6;
 }
 
 .ghost {
@@ -29,8 +29,7 @@
   overflow: visible;
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
 }
-.ghost__cursor svg path:first-of-type { stroke: #0b0b0b; stroke-width: 1.2; stroke-linejoin: round; }
-.ghost__grain { display: none; }
+.ghost__grain { opacity: 0.55; mix-blend-mode: overlay; }
 .ghost--trail svg { position: absolute; left: -2px; top: -2px; }
 
 .ghost__halo {
@@ -40,9 +39,9 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 170, 110, 0.55);
 }
-.ghost--hit .ghost__halo { border-color: #ffffff; }
+.ghost--hit .ghost__halo { border-color: var(--ok); }
 
 .ghost__label {
   position: absolute;
@@ -56,22 +55,24 @@
   font-size: 11.5px;
   line-height: 1.35;
   font-weight: 500;
-  background: rgba(11, 11, 11, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(135deg, rgba(255, 154, 77, 0.42), rgba(217, 66, 11, 0.3)),
+    rgba(20, 16, 12, 0.9);
+  border: 1px solid rgba(255, 170, 110, 0.5);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
 .ghost__label.is-left { left: auto; right: 10px; }
 .ghost__label.is-up { top: auto; bottom: 10px; }
 
-/* The real element (from the accessibility tree): a plain white ring. */
+/* The real element (from the accessibility tree): a flat orange ring. */
 .ghost-box {
   position: fixed;
   left: 0;
   top: 0;
   pointer-events: none;
   border-radius: 10px;
-  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  border: 1.5px solid rgba(255, 154, 77, 0.9);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
-.ghost-box--hit { border-color: #ffffff; background: rgba(255, 255, 255, 0.08); }
+.ghost-box--hit { border-color: var(--ok); background: rgba(180, 199, 166, 0.1); }
