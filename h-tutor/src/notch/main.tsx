@@ -38,6 +38,7 @@ function Notch() {
           <path d="M24 0H84V40L64 60V20H24V60L0 84V24Z M24 60H64L96 84H48Z" />
         </svg>
         <span>RIO LE FAIT POUR TOI</span>
+        {view?.mode === "script" && <span className="notch__badge">Script testé par Devin</span>}
       </div>
       {view?.phase === "expanded" ? (
         <>
@@ -52,7 +53,6 @@ function Notch() {
         <>
           <div className="notch__task">
             <h1>{view?.title}</h1>
-            {view?.mode === "script" && <span className="notch__badge">Script testé par Devin</span>}
             {!view?.outcome && <button className="notch__stop" disabled={busy} onClick={() => act(api.autopilotStop)}>Arrêter</button>}
           </div>
           <p className="notch__status">{view?.outcome ? view.message : `Étape ${view?.index ?? 0}/${view?.total ?? 0} · ${view?.label ?? ""}`}</p>

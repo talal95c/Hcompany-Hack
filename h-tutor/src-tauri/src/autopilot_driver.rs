@@ -30,6 +30,7 @@ enum Failure {
 
 trait Driver {
     fn stopped(&self) -> bool;
+    fn replay(&mut self, step: agent::Step);
     fn progressed(&self) -> bool {
         true
     }
@@ -136,6 +137,38 @@ async fn bounded<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Fai
         .map_err(|_| Failure::Failed("Le délai maximal d'exécution est dépassé".into()))?
 }
 
+async fn after_script<D: Driver>(
+    driver: &mut D,
+    script_result: Result<(), crate::script::Failure>,
+    run_mode: &mut skills::Mode,
+) -> Result<usize, Failure> {
+    if driver.stopped() {
+        return Err(Failure::Stopped);
+    }
+    let reason = match script_result {
+        Ok(()) => match driver.advance().await {
+            Ok(step) if step.kind == "done" => {
+                *run_mode = skills::Mode::Script;
+                return Ok(0);
+            }
+            Ok(step) => {
+                driver.replay(step);
+                Some("La vérification Holo demande encore des actions".into())
+            }
+            Err(error) => Some(format!("Vérification Holo échouée : {error}")),
+        },
+        Err(crate::script::Failure::Stopped) => return Err(Failure::Stopped),
+        Err(crate::script::Failure::NotEligible) => None,
+        Err(error) => Some(error.to_string()),
+    };
+    if let Some(reason) = reason {
+        journal::event("script_fallback", serde_json::json!({"reason": reason}));
+    }
+    journal::set_mode("rio");
+    *run_mode = skills::Mode::Rio;
+    bounded(driver, Limits::default()).await
+}
+
 struct LiveDriver<'a> {
     app: AppHandle,
     holo: &'a crate::holo::Holo,
@@ -150,6 +183,9 @@ struct LiveDriver<'a> {
 impl Driver for LiveDriver<'_> {
     fn stopped(&self) -> bool {
         autopilot::stop_requested()
+    }
+    fn replay(&mut self, step: agent::Step) {
+        self.pending = Some(step);
     }
     fn progressed(&self) -> bool {
         self.progressed
@@ -248,7 +284,11 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
             pending: None,
         };
         let candidate = crate::script::eligible(&skill);
-        let mut run_mode = skills::Mode::Rio;
+        let mut run_mode = if candidate.is_some() {
+            skills::Mode::Script
+        } else {
+            skills::Mode::Rio
+        };
         let result = if journal::current_dir().is_none() {
             Err(Failure::Failed(
                 "Impossible d'ouvrir le journal ; aucune action exécutée".into(),
@@ -260,39 +300,11 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
             } else {
                 Err(crate::script::Failure::NotEligible)
             };
-            match script_result {
-                Ok(()) => {
-                    run_mode = skills::Mode::Script;
-                    match driver.advance().await {
-                        Ok(step) if step.kind == "done" => Ok(0),
-                        Ok(step) => {
-                            journal::event(
-                                "script_fallback",
-                                serde_json::json!({"reason":"La vérification Holo demande encore des actions"}),
-                            );
-                            journal::set_mode("rio");
-                            run_mode = skills::Mode::Rio;
-                            driver.pending = Some(step);
-                            bounded(&mut driver, Limits::default()).await
-                        }
-                        Err(_) => {
-                            journal::event(
-                                "script_fallback",
-                                serde_json::json!({"reason":"vérification Holo échouée"}),
-                            );
-                            journal::set_mode("rio");
-                            run_mode = skills::Mode::Rio;
-                            bounded(&mut driver, Limits::default()).await
-                        }
-                    }
-                }
-                Err(error) => {
-                    journal::event(
-                        "script_fallback",
-                        serde_json::json!({"reason": error.to_string()}),
-                    );
-                    journal::set_mode("rio");
-                    tokio::select! { biased; _ = wait_stop() => Err(Failure::Stopped), result = bounded(&mut driver, Limits::default()) => result }
+            tokio::select! {
+                biased;
+                _ = wait_stop() => Err(Failure::Stopped),
+                result = tokio::time::timeout(Limits::default().timeout, after_script(&mut driver, script_result, &mut run_mode)) => {
+                    result.unwrap_or_else(|_| Err(Failure::Failed("Le délai maximal d'exécution est dépassé".into())))
                 }
             }
         };
@@ -347,6 +359,9 @@ mod tests {
         fn stopped(&self) -> bool {
             self.stop_after.is_some_and(|n| self.executed >= n)
         }
+        fn replay(&mut self, step: agent::Step) {
+            self.steps.push_front(Ok(step));
+        }
         fn progressed(&self) -> bool {
             !self.no_screen_change || self.executed == 0
         }
@@ -387,6 +402,55 @@ mod tests {
             kind: "done".into(),
             ..Default::default()
         })
+    }
+
+    #[tokio::test]
+    async fn autopilot_script_verification_and_fallback_use_the_live_driver_route() {
+        let mut mode = skills::Mode::Rio;
+        let mut verified = Fake {
+            steps: [done()].into(),
+            ..Default::default()
+        };
+        assert_eq!(after_script(&mut verified, Ok(()), &mut mode).await, Ok(0));
+        assert!(matches!(mode, skills::Mode::Script));
+        for script_result in [
+            Ok(()),
+            Err(crate::script::Failure::Failed("Erreur factice".into())),
+        ] {
+            let mut fake = Fake {
+                steps: [action(100.0, "a"), done()].into(),
+                ..Default::default()
+            };
+            assert_eq!(
+                after_script(&mut fake, script_result, &mut mode).await,
+                Ok(1)
+            );
+            assert!(matches!(mode, skills::Mode::Rio));
+            assert_eq!(fake.executed, 1);
+        }
+        let mut failed_check = Fake {
+            steps: [
+                Err("Capture indisponible".into()),
+                action(100.0, "a"),
+                done(),
+            ]
+            .into(),
+            ..Default::default()
+        };
+        assert_eq!(
+            after_script(&mut failed_check, Ok(()), &mut mode).await,
+            Ok(1)
+        );
+        assert!(matches!(mode, skills::Mode::Rio));
+        assert_eq!(
+            after_script(
+                &mut Fake::default(),
+                Err(crate::script::Failure::Stopped),
+                &mut mode
+            )
+            .await,
+            Err(Failure::Stopped)
+        );
     }
 
     #[tokio::test]

@@ -96,7 +96,7 @@ pub async fn run(artifact: &devin::Compiled) -> Result<(), Failure> {
             Ok(Ok(status)) if status.success() => Ok(()),
             Ok(Ok(status)) => Err(Failure::Failed(format!("Le script s'est arrêté avec {status}"))),
             Ok(Err(e)) => Err(Failure::Failed(format!("Erreur d'exécution du script : {e}"))),
-            Err(_) => Err(Failure::TimedOut),
+            Err(_) => { kill_process(&mut child, pid).await; Err(Failure::TimedOut) },
         }
     };
     if let Err(error) = &result {

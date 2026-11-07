@@ -135,7 +135,10 @@ impl Session {
             )
     }
     fn successful(&self) -> bool {
-        self.status_detail.as_deref() == Some("finished") || self.status == "exit"
+        self.status_detail.as_deref() == Some("finished")
+            || self.status == "exit"
+            || (self.status_detail.as_deref() == Some("waiting_for_user")
+                && self.structured_output.is_some())
     }
 }
 
@@ -279,7 +282,7 @@ fn target_os(skill: &Skill) -> &'static str {
         .app
         .bundle_id
         .as_ref()
-        .is_some_and(|id| id.starts_with("com.apple."))
+        .is_some_and(|id| !id.trim().is_empty())
     {
         "macos"
     } else {
@@ -328,7 +331,7 @@ fn acquire(id: &str) -> Result<Lease, String> {
     Ok(Lease(id.into()))
 }
 
-#[allow(dead_code)]
+#[cfg(test)]
 pub async fn compile(skill: Skill, app: Option<AppHandle>) -> Result<Compiled, String> {
     let _lease = acquire(&skill.tutorial_id)?;
     compile_inner(skill, app.as_ref()).await
@@ -535,6 +538,10 @@ mod tests {
         )
         .unwrap();
         assert!(!s.terminal());
+        s.status_detail = Some("waiting_for_user".into());
+        assert!(!s.successful());
+        s.structured_output = Some(serde_json::to_value(output()).unwrap());
+        assert!(s.successful());
         for detail in ["finished", "waiting_for_user", "waiting_for_approval"] {
             s.status_detail = Some(detail.into());
             assert!(s.terminal());

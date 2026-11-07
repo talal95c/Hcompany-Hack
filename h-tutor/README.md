@@ -38,7 +38,7 @@ A tutorial is a **graph of milestones** (`tutorials/*.json`), not a click script
 
 Une session réussie crée ou met à jour `skills/<tutorial_id>/skill.json` avec
 le graph et le chemin réellement suivi, l'app et l'historique du journal.
-Les écritures sont atomiques ; `compiled` reste vide (aucun script exécuté).
+Les écritures sont atomiques ; `compiled` contient les artefacts de compilation.
 Les dates et `muted_until` sont des secondes Unix, `duration_s` est mesurée.
 
 - `skills_list()` retourne les skills ; `skill_decline({skillId})` enregistre
@@ -46,7 +46,7 @@ Les dates et `muted_until` sont des secondes Unix, `duration_s` est mesurée.
 - Sans tutoriel actif, le contexte est vérifié toutes les 3 s via le nom de
   l'app ayant le focus (sans capture). Une app reçoit au plus une proposition
   toutes les 30 min ; `RIO_SKILLS_COOLDOWN_SECONDS` règle ce délai pour les tests.
-- `autopilot:propose` contient `{skill_id, title, goal, app}` ; `app` contient
+- `autopilot:propose` contient `{skill_id, title, goal, app, mode}` ; `app` contient
   `name` et, lorsqu'il existe, `bundle_id`.
 - `skill_propose_now({skillId})` propose immédiatement un skill déjà réussi,
   même en sourdine (demande explicite), et réinitialise le délai de l'app.
@@ -60,7 +60,7 @@ Après 15 s sans réponse, « Pas maintenant » ou Échap, il enregistre un refu
 Échap est enregistré globalement uniquement pendant l'affichage de la notch.
 
 - `autopilot_accept({skillId})` prend le verrou exclusif et émet
-  `autopilot:started {skill_id, title, total}`, puis lance le pilote voie A.
+  `autopilot:started {skill_id, title, total}`, puis lance un script éligible ou le pilote voie A.
   Il réutilise le graph, ses hints et `agent::advance` : chaque action Holo est
   injectée par notre code existant porté vers `act.rs` (enigo), puis une nouvelle
   capture vérifie les `done_when`. Seul le retour `done` autorise « Fait ✓ ».
@@ -95,6 +95,36 @@ touches et modificateurs connus ; textes vides, multilignes ou de plus de
 512 caractères, touches inconnues et actions non prises en charge sont refusés.
 Les coordonnées partagent la conversion du pointeur (origine du moniteur principal,
 pixels physiques, puis facteur d'échelle pour les coordonnées logiques macOS).
+
+### Scripts testés par Devin (voie B)
+
+`skill_compile({skillId})` démarre une compilation en arrière-plan, avec une seule
+session en vol par skill. Après une réussite, Rio compile aussi automatiquement
+si aucun artefact terminé ne correspond à la version du graph ;
+`RIO_AUTO_COMPILE=0` désactive ce déclenchement. `DEVIN_API_KEY` et `DEVIN_ORG_ID`
+sont lus dans le même environnement/.env que Holo, uniquement côté Rust.
+Le client utilise l'API v3 et demande une sortie structurée, un script paramétré
+et l'exécution de chaque test `done_when` sur la plateforme cible.
+
+- `RIO_COMPILE_MAX_ACU` : plafond par session, 2 par défaut.
+- `RIO_COMPILE_TIMEOUT_SECONDS` : délai maximal, 1800 par défaut ; polling toutes les 30 s.
+- `autopilot:compile {skill_id, status, url?}` : création, suivi et issue.
+- `compiled[]` conserve la session, les paramètres, les preuves, l'ACU retourné,
+  le SHA-256 et la version du graph, avec écritures atomiques.
+
+Seuls les artefacts terminés, `tested: true`, sur l'OS courant et la version
+courante, dont le hash recalculé correspond, sont proposés en mode `script`.
+Une session Devin `waiting_for_user` n'est acceptée que si elle a fourni sa sortie
+structurée ; une attente sans sortie, une approbation ou une erreur ne suffit pas.
+La notch affiche « Script testé par Devin » ; le front ne sélectionne pas le mode.
+
+Les paramètres par défaut sont transmis comme arguments séparés, sans shell
+intermédiaire. Le processus reçoit un environnement restreint, sans clés API.
+Arrêter tue son groupe de processus ; `RIO_SCRIPT_TIMEOUT_SECONDS` limite aussi
+l'exécution (300 s par défaut). Une capture fraîche et `advance` vérifient toujours
+le résultat. Tout échec du script ou de cette vérification provoque un repli
+journalisé vers la voie A. Le run est enregistré en mode `script`, ou `rio` en cas
+de repli ; aucun succès n'est déclaré sur le seul code de sortie du processus.
 
 ```
 Bar (React)                Rust (src-tauri)                          H Models API

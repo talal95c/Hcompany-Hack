@@ -602,8 +602,12 @@ fn set_overlay_visible(app: &AppHandle, visible: bool) {
         }
         #[cfg(not(target_os = "macos"))]
         {
-            let _ = w.set_ignore_cursor_events(true);
-            let _ = if visible { w.show() } else { w.hide() };
+            if visible {
+                let _ = w.show();
+                let _ = w.set_ignore_cursor_events(true);
+            } else {
+                let _ = w.hide();
+            }
         }
     });
 }

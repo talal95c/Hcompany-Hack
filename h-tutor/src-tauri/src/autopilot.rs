@@ -215,6 +215,7 @@ pub fn propose(app: &AppHandle, proposal: skills::Proposal) {
             skill_id: proposal.skill_id,
             title: proposal.title,
             goal: proposal.goal,
+            mode: proposal.mode,
             ..View::default()
         };
         (control.view.clone(), control.generation)
@@ -452,11 +453,11 @@ impl Drop for CaptureMask {
         let app = self.app.clone();
         let handle = app.clone();
         let _ = app.run_on_main_thread(move || {
-            if !CAPTURING.load(Ordering::SeqCst)
-                && !matches!(autopilot_view().phase, Phase::Hidden)
-                && let Some(window) = handle.get_webview_window("notch")
-            {
-                panel::show(&window, false, panel::LEVEL_OVERLAY);
+            if !CAPTURING.load(Ordering::SeqCst) {
+                let view = autopilot_view();
+                if !matches!(view.phase, Phase::Hidden) {
+                    let _ = publish(&handle, &view);
+                }
             }
         });
     }
