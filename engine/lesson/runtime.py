@@ -21,6 +21,8 @@ from engine.fallback import Fallback
 from engine.interfaces import Clock, HoloClient, JevClient, SearchClient, SttClient, SystemClock
 from engine.learner import LearnerMemory
 from engine.lesson import Session, load_lesson, load_verification
+from engine.lesson.live_audio import LiveUtterance
+from engine.platform.targets import AddonTargetAdapter
 from engine.policy import HelpContext, HelpPolicy
 
 
@@ -105,11 +107,14 @@ class EngineRuntime:
         self.consent_tokens = Seen()
         self.consent: tuple[str, float, int] | None = None
         self.utterances: dict[str, dict] = {}
+        self.live_utterances: dict[str, LiveUtterance] = {}
         self.help_context = HelpContext()
         self.max_help = 0
         self.closed = False
         self.last_desktop_state = None
         self.render_pending = {}
+        self.pointer_request = None
+        self.app_adapter = AddonTargetAdapter(self)
         self.connection_epoch = 0
         self.commands = self.bus.subscribe(Topic.COMMAND)
         self.diagnostics = self.bus.subscribe(Topic.DEBUG)
@@ -199,6 +204,8 @@ class EngineRuntime:
         self.invalidate_native()
         self.permissions = dict.fromkeys(self.permissions, False)
         self.utterances.clear()
+        await asyncio.gather(*(s.close() for s in self.live_utterances.values()))
+        self.live_utterances.clear()
         self.targets.invalidate()
         self.pause()
 
@@ -328,6 +335,8 @@ class EngineRuntime:
         step = self.session.step if self.session else {}
         help_spec = step.get("help", {})
         context = replace(context, menu_id=help_spec.get("menu_id"),
+                          reveal_target=self.reveal_target,
+                          shortcut_hint=getattr(self.app_adapter, "shortcut_hint", None),
                           safe_demo=help_spec.get("safe_demo", False),
                           checkpoint_id=help_spec.get("checkpoint_id"))
         target = step.get("target", {})
@@ -338,7 +347,8 @@ class EngineRuntime:
             context = replace(context, area_id=region["area_id"], region_id=region["region_id"])
         return context
 
-    async def send_state(self, connection=None, *, force: bool = False) -> None:
+    async def send_state(self, connection=None, *, force: bool = False,
+                         transcript: str | None = None, transcript_final: bool = False) -> None:
         session = self.session
         payload = {
             "step_id": session.step_id if session and session.status != "COMPLETE" else None,
@@ -347,6 +357,8 @@ class EngineRuntime:
             "help_level": self.policy.level,
             "ui_revision": self.ui_revision,
         }
+        if transcript is not None:
+            payload.update(transcript=transcript, transcript_final=transcript_final)
         if force or connection is not None or payload != self.last_desktop_state:
             await self.desktop.send("lesson.state", payload, connection)
             self.last_desktop_state = payload
@@ -395,6 +407,31 @@ class EngineRuntime:
         except (TimeoutError, ConnectionError):
             self.pause()
             await self.error("demo_failed", "Démonstration interrompue")
+
+    async def reveal_target(self) -> None:
+        self.spawn(self.capture_target())
+
+    async def capture_target(self) -> None:
+        if not self.session:
+            return
+        generation = self.session.generation
+        try:
+            reveal = getattr(self.app_adapter, "reveal_target", None)
+            crop = await reveal(self.session.step, self.context()) if reveal else None
+            if generation != self.session.generation:
+                return
+            if crop and crop["width"] * crop["height"] > 1_048_576:
+                raise ValueError("Région trop grande")
+            request = {"request_id": str(uuid4()), "crop": crop,
+                       "ui_revision": self.ui_revision, "generation": generation}
+            self.pointer_request = {**request, "at": time.monotonic(),
+                                    "epoch": self.policy.capture_epoch}
+            await self.send_state(force=True)
+            await self.desktop.send("capture.request", request)
+            self.debug.record({"kind": "pointer_capture_requested", **request})
+        except (TimeoutError, ConnectionError, ValueError, KeyError, StopIteration):
+            self.pointer_request = None
+            await self.error("target_unavailable", "Dévoilez la cible ; pointage indisponible")
 
     async def forward_diagnostics(self) -> None:
         while True:
@@ -496,6 +533,15 @@ class EngineRuntime:
         image = decode_capture(payload)
         if payload["ui_revision"] != self.ui_revision:
             raise ValueError("Capture périmée")
+        if (payload.get("request_id") or (self.session and self.session.status != "ACTING"
+                and self.policy.level == 2 and self.session.step.get("help", {}).get("menu_id"))):
+            request = self.pointer_request
+            if (not request or payload.get("request_id") != request["request_id"]
+                    or (request["crop"] is not None and payload["crop"] != request["crop"])
+                    or self.session.generation != request["generation"]
+                    or request["epoch"] != self.policy.capture_epoch
+                    or time.monotonic() - request["at"] > 10):
+                raise ValueError("Capture non corrélée au menu acquitté")
         self.invalidate_capture()
         self.capture_ids.add(payload["capture_id"])
         self.capture = {**payload, "image_png": image, "consumed": False}
@@ -506,10 +552,13 @@ class EngineRuntime:
                 self.session.step["target"]["description"], (crop["x"], crop["y"]),
                 payload["monitor_id"], self.session.lesson.get("language", "fr"),
                 self.ui_revision, True,
+                menu_context=payload.get("request_id", ""),
             )
             self.help_context = replace(self.context(), target=target,
                                         capture_id=payload["capture_id"], image_png=image,
-                                        capture_epoch=self.policy.capture_epoch)
+                                        capture_epoch=self.policy.capture_epoch,
+                                        require_visible=bool(self.pointer_request
+                                            and self.pointer_request["crop"] is None))
             if (self.policy.level == 2 and self.session.status != "COMPLETE"
                     and not self.policy.muted):
                 await self.policy.intent("aide", self.context())
@@ -534,7 +583,8 @@ class EngineRuntime:
     async def audio_message(self, kind: str, payload: dict, connection) -> None:
         key = payload["utterance_id"]
         if kind == "ptt.start":
-            if not self.permissions["microphone"] or len(self.utterances) >= 4:
+            if (not self.permissions["microphone"] or len(self.utterances) >= 4
+                    or len(self.live_utterances) >= 4 or key in self.utterances):
                 raise ValueError("Microphone indisponible")
             self.utterances[key] = {"chunks": {}, "size": 0, "encoding": None, "sample_rate": None}
         elif key not in self.utterances:
@@ -543,6 +593,41 @@ class EngineRuntime:
             utterance = self.utterances[key]
             data = base64.b64decode(payload["data_base64"], validate=True)
             sequence = payload["sequence"]
+            if callable(getattr(self.stt, "open_live", None)):
+                if payload["encoding"] != "pcm_s16le":
+                    raise ValueError("Le direct exige PCM 16 bits mono")
+                if key not in self.live_utterances:
+                    generation = self.session.generation if self.session else 0
+
+                    async def on_event(event):
+                        if self.session and generation != self.session.generation:
+                            return
+                        if event.kind in {"partial", "final"}:
+                            self.debug.record({"kind": "stt_" + event.kind,
+                                               "utterance_id": key, "t": time.monotonic()})
+                            await self.send_state(force=True, transcript=event.text,
+                                                  transcript_final=event.kind == "final")
+                            if event.kind == "final" and event.text:
+                                await self.policy.intent(event.text, self.context())
+
+                    async def on_error():
+                        await self.error("stt_live_failed", "Transcription interrompue", connection)
+
+                    stream = LiveUtterance(self.stt, payload["sample_rate"], on_event, on_error,
+                                           vocabulary=self.config.stt_vocabulary)
+                    self.live_utterances[key] = stream
+                    utterance["sample_rate"] = payload["sample_rate"]
+                stream = self.live_utterances[key]
+                if payload["sample_rate"] != utterance["sample_rate"]:
+                    raise ValueError("Format audio modifié")
+                try:
+                    stream.feed(sequence, data)
+                except ValueError:
+                    await stream.close()
+                    self.live_utterances.pop(key, None)
+                    self.utterances.pop(key, None)
+                    raise
+                return
             if sequence in utterance["chunks"]:
                 return
             if utterance["size"] + len(data) > 2 * 1024 * 1024 or sequence >= 2048:
@@ -557,6 +642,16 @@ class EngineRuntime:
             utterance["size"] += len(data)
         else:
             utterance = self.utterances.pop(key)
+            if key in self.live_utterances:
+                stream = self.live_utterances[key]
+                stream.stop()
+
+                async def finish():
+                    await stream.task
+                    self.live_utterances.pop(key, None)
+
+                self.spawn(finish())
+                return
             chunks = utterance["chunks"]
             if not chunks or sorted(chunks) != list(range(len(chunks))):
                 raise ValueError("Audio incomplet")
@@ -573,6 +668,8 @@ class EngineRuntime:
         if self.closed:
             return
         self.closed = True
+        await asyncio.gather(*(s.close() for s in self.live_utterances.values()))
+        self.live_utterances.clear()
         for task in tuple(self.tasks):
             task.cancel()
         await asyncio.gather(*self.tasks, return_exceptions=True)

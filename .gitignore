@@ -10,3 +10,6 @@ desktop/src-tauri/gen/
 .env.*
 !.env.example
 .DS_Store
+
+# Données externes téléchargées (voir data/README.md)
+data/raw/

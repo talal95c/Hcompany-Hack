@@ -1,7 +1,8 @@
 """Décisions d'aide déterministes avec escalade prudente et services facultatifs."""
 
 import asyncio
-from collections.abc import Callable
+import math
+from collections.abc import Awaitable, Callable
 from dataclasses import asdict, dataclass
 from uuid import uuid4
 
@@ -35,6 +36,9 @@ class HelpContext:
     safe_demo: bool = False
     checkpoint_id: str | None = None
     capture_epoch: int = 0
+    reveal_target: Callable[[], Awaitable[None]] | None = None
+    require_visible: bool = False
+    shortcut_hint: str | None = None
 
 
 class HelpPolicy:
@@ -266,7 +270,15 @@ class HelpPolicy:
             )}, revision=revision)
             self.level = 1
         elif next_level == 2:
-            if context.area_id and context.region_id:
+            if context.reveal_target:
+                if context.area_id and context.region_id:
+                    await self._command("highlight", {
+                        "area_id": context.area_id, "region_id": context.region_id,
+                        "color": "#ffcc00", "duration_ms": 3000,
+                    }, revision=revision)
+                self.level = 2
+                await context.reveal_target()
+            elif context.area_id and context.region_id:
                 await self._command("highlight", {
                     "area_id": context.area_id, "region_id": context.region_id,
                     "color": "#ffcc00", "duration_ms": 3000,
@@ -310,6 +322,13 @@ class HelpPolicy:
                     or (context.target and context.capture_epoch != self.capture_epoch)
                     or (self.muted and reason != "explicit")):
                 return None
+            if result and (not 0 < result.x < 1000 or not 0 < result.y < 1000
+                           or result.target_visible is False
+                           or (result.confidence is not None and (
+                               not math.isfinite(result.confidence) or result.confidence < 0.5))
+                           or (context.require_visible and (result.target_visible is not True
+                               or result.confidence is None))):
+                result = None
             if result and capture_id and context.target and context.target.visible:
                 if not entry:
                     self.targets.put_target(TargetEntry(context.target, result, capture_id))
@@ -319,9 +338,22 @@ class HelpPolicy:
                 }, revision=revision)
                 self.level = 3
             else:
-                self.debug({"kind": "holo_unavailable", "message": "Utilisez le menu ou F3"})
+                self.debug({"kind": "holo_unavailable", "message": "Cible non localisée"})
+                if context.image_png:
+                    if context.area_id and context.region_id:
+                        await self._command("highlight", {
+                            "area_id": context.area_id, "region_id": context.region_id,
+                            "color": "#ffcc00", "duration_ms": 3000,
+                        }, revision=revision)
+                    await self._command("say", {
+                        "text": ("Utilisez " + context.shortcut_hint + " : "
+                                 if context.shortcut_hint else "Recherche de commandes : ")
+                                 + self.step["instruction"],
+                        "audio_ref": None,
+                    }, revision=revision)
                 await self.bus.publish(Topic.DEBUG, {
-                    "code": "holo_unavailable", "message": "Utilisez le menu ou F3",
+                    "code": "holo_unavailable",
+                    "message": "Cible non visible ; utilisez la recherche",
                     "retryable": True,
                 })
         elif self.level == 3 and context.safe_demo and context.checkpoint_id:

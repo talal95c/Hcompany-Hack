@@ -14,7 +14,7 @@ from openai import APIStatusError, APITimeoutError, AsyncOpenAI
 
 from prep.ingest import Transcript
 from prep.prover.procedures import CHECK_LIBRARY, PRIMITIVES, PROCEDURE_LIBRARY, target_description
-from prep.ui_map import step_signature
+from prep.ui_map import operator_menu, step_signature
 
 LOGGER = logging.getLogger(__name__)
 SCHEMA = Path(__file__).resolve().parents[2] / "contracts/lesson.schema.json"
@@ -238,6 +238,9 @@ class HoloCompiler:
                 signature = step_signature(ui_map, PROCEDURE_LIBRARY[procedure]["operator_id"])
                 if signature:
                     step["target"]["description"] = target_description(signature)
+                menu = operator_menu(ui_map, PROCEDURE_LIBRARY[procedure]["operator_id"])
+                if menu:
+                    step.setdefault("help", {})["menu_id"] = menu
             step["audio_ref"] = None
             step["proof"] = {
                 "status": "draft",

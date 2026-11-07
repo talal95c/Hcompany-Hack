@@ -186,9 +186,24 @@ pub async fn capture_region(
     crop: Rect,
 ) -> Result<Value, String> {
     pill(&window)?;
+    capture_requested(&app, state.inner(), crop, None).await
+}
+
+pub async fn capture_requested(
+    app: &AppHandle,
+    state: &Arc<State>,
+    crop: Rect,
+    request: Option<(String, u64)>,
+) -> Result<Value, String> {
     let _lock = state.capture_lock.lock().await;
-    if !state.connected.load(Ordering::SeqCst) {
+    if !state.connected.load(Ordering::SeqCst) || !native::permissions().screen {
         return Err("Engine déconnecté".into());
+    }
+    if request
+        .as_ref()
+        .is_some_and(|(_, revision)| *revision != state.revision.load(Ordering::SeqCst))
+    {
+        return Err("Capture périmée".into());
     }
     if !crop.valid()
         || crop.width * crop.height > 1_048_576.0
@@ -213,7 +228,7 @@ pub async fn capture_region(
     let image =
         tokio::task::spawn_blocking(move || native::capture(crop, &monitor_for_capture)).await;
     #[cfg(not(target_os = "macos"))]
-    guide::restore(&app);
+    guide::restore(app);
     let image = image.map_err(|e| e.to_string())??;
     eprintln!(
         "desktop latency capture_ms={:.2}",
@@ -221,9 +236,15 @@ pub async fn capture_region(
     );
     let id = uuid::Uuid::new_v4().to_string();
     let revision = state.revision.load(Ordering::SeqCst);
-    let payload = json!({"capture_id":id, "ui_revision":revision, "crop":crop,
+    let mut payload = json!({"capture_id":id, "ui_revision":revision, "crop":crop,
         "scale":monitor.scale, "monitor_id":monitor.id,
         "image_ref":format!("data:image/png;base64,{}", base64::engine::general_purpose::STANDARD.encode(image))});
+    if let Some((request_id, expected)) = request {
+        if expected != revision {
+            return Err("Capture périmée".into());
+        }
+        payload["request_id"] = json!(request_id);
+    }
     let mut captures = state.captures.lock().unwrap();
     captures.clear();
     captures.insert(

@@ -28,21 +28,7 @@ from engine.services.protocols import SttEvent, Transcript, Word
 
 SERVICE = "gladia"
 DEFAULT_BASE_URL = "https://api.gladia.io/v2"
-DEFAULT_VOCABULARY = (
-    "Blender",
-    "tore",
-    "torus",
-    "extrude",
-    "extrusion",
-    "modificateur",
-    "subdivision",
-    "Bevel",
-    "outliner",
-    "viewport",
-    "vertex",
-    "mesh",
-    "Shift A",
-)
+DEFAULT_VOCABULARY = ()
 
 
 def _words(raw: Any) -> tuple[Word, ...]:

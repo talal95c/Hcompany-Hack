@@ -17,10 +17,17 @@ class HoloAdapter:
 
     async def localize(self, image_png, description, *, timeout_s):
         start = time.perf_counter()
-        x, y, confidence = await asyncio.wait_for(
-            self.client.locate(image_png, description), timeout_s)
-        return LocalizeResult(round(x), round(y), confidence if math.isfinite(confidence) else None,
-                              (time.perf_counter() - start) * 1000)
+        if not hasattr(self.client, "locate_detailed"):
+            x, y, confidence = await asyncio.wait_for(
+                self.client.locate(image_png, description), timeout_s)
+            return LocalizeResult(round(x), round(y),
+                                  confidence if math.isfinite(confidence) else None,
+                                  (time.perf_counter() - start) * 1000)
+        point = await asyncio.wait_for(
+            self.client.locate_detailed(image_png, description), timeout_s)
+        return LocalizeResult(round(point.x), round(point.y),
+                              point.confidence if math.isfinite(point.confidence) else None,
+                              (time.perf_counter() - start) * 1000, point.target_visible)
 
     async def aclose(self):
         await self.client.aclose()
@@ -54,6 +61,9 @@ class JevAdapter:
 class SttAdapter:
     def __init__(self, client):
         self.client = client
+
+    async def open_live(self, **config):
+        return await self.client.open_live(**config)
 
     async def transcribe(self, audio, *, encoding, sample_rate, language):
         start = time.perf_counter()
