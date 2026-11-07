@@ -1,6 +1,5 @@
 """Adaptateur Blender : canal TCP de l'add-on, régions, checks blender.* et démo sûre."""
 
-import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -100,7 +99,6 @@ class BlenderAdapter:
             result = await runtime.addon.correlation.request(command, runtime.addon.send)
             if result["status"] != "ok":
                 raise ValueError("Dévoilement refusé par l'application")
-            await asyncio.sleep(0.15)
             region = next(r for r in self.regions if r["region_id"] == payload["region_id"])
             return region["screen_rect"]
 

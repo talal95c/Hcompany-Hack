@@ -32,6 +32,7 @@ fn set_visible(window: &WebviewWindow, visible: bool) {
 #[derive(Default)]
 pub struct Visibility {
     revision: AtomicU64,
+    pending: AtomicU64,
     active: AtomicBool,
 }
 
@@ -41,7 +42,15 @@ impl Visibility {
         self.revision.fetch_add(1, Ordering::SeqCst) + 1
     }
 
-    fn current(&self, revision: u64) -> bool {
+    pub fn reserve(&self) -> u64 {
+        self.pending.fetch_add(1, Ordering::SeqCst) + 1
+    }
+
+    pub fn pending_current(&self, revision: u64) -> bool {
+        self.pending.load(Ordering::SeqCst) == revision
+    }
+
+    pub fn current(&self, revision: u64) -> bool {
         self.revision.load(Ordering::SeqCst) == revision
     }
 }
@@ -71,11 +80,29 @@ fn raise_pill(app: &AppHandle) {
 }
 
 pub fn clear(app: &AppHandle) {
+    let pending = app.state::<Arc<State>>().guide.reserve();
+    let revision = app.state::<Arc<State>>().guide.update(false);
     let handle = app.clone();
-    let _ = app.run_on_main_thread(move || hide(&handle));
+    let _ = app.run_on_main_thread(move || {
+        let state = handle.state::<Arc<State>>();
+        if state.guide.current(revision) && state.guide.pending_current(pending) {
+            hide(&handle);
+        }
+    });
 }
 
 pub fn show(app: &AppHandle, event: &'static str, payload: Value, duration_ms: f64) {
+    let revision = app.state::<Arc<State>>().guide.reserve();
+    show_if_current(app, event, payload, duration_ms, revision);
+}
+
+pub fn show_if_current(
+    app: &AppHandle,
+    event: &'static str,
+    payload: Value,
+    duration_ms: f64,
+    ticket: u64,
+) {
     let Ok(duration) = Duration::try_from_secs_f64(duration_ms / 1000.) else {
         return;
     };
@@ -85,6 +112,9 @@ pub fn show(app: &AppHandle, event: &'static str, payload: Value, duration_ms: f
     let handle = app.clone();
     // Serialize visibility and expiry on the event loop, not WebKit's repaint timers.
     let _ = app.run_on_main_thread(move || {
+        if !handle.state::<Arc<State>>().guide.pending_current(ticket) {
+            return;
+        }
         let revision = handle.state::<Arc<State>>().guide.update(true);
         if let Some(window) = handle.get_webview_window("guide") {
             set_visible(&window, true);
@@ -140,5 +170,27 @@ mod tests {
         visibility.update(false);
         assert!(!visibility.current(current));
         assert!(!visibility.active.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn slow_highlight_cannot_replace_a_later_visual_or_stop() {
+        let visibility = Visibility::default();
+        let slow = visibility.reserve();
+        let newer = visibility.reserve();
+        assert!(!visibility.pending_current(slow));
+        assert!(visibility.pending_current(newer));
+        visibility.reserve();
+        visibility.update(false);
+        assert!(!visibility.pending_current(newer));
+    }
+
+    #[test]
+    fn failed_pending_highlight_keeps_the_previous_expiry_valid() {
+        let visibility = Visibility::default();
+        let shown = visibility.update(true);
+        visibility.reserve();
+        assert!(visibility.current(shown));
+        visibility.update(false);
+        assert!(!visibility.current(shown));
     }
 }

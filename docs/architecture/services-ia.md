@@ -17,6 +17,28 @@ partiels au desktop et transmet chaque final à Jev. Le traitement fichier reste
 pour prep et bench. Linkup est injecté dans le moteur
 mais aucune recherche automatique n'est ajoutée sur le chemin critique.
 
+## Quota et priorité Holo
+Le client Holo possède un ordonnanceur partagé par le pointage plugin, le pointage
+générique et la vérification. La fenêtre glissante autorise des rafales : par défaut
+30 départs par 60 s (configuration, pas un délai par requête). Variables :
+`ENGINE_HOLO_QUOTA_REQUESTS` et `ENGINE_HOLO_QUOTA_WINDOW_S`. Quatre requêtes au plus
+sont en vol ; une requête interactive en attente passe avant une spéculation.
+Les prélocalisations et vérifications périodiques sont spéculatives ; leur travail
+en attente ou en vol est annulé si génération, capture ou focus ne sont plus actuels.
+La priorité ne préempte pas une requête interactive déjà en vol.
+
+Les headers de quota réduisent le budget disponible, `Retry-After` impose une pause
+bornée par le délai d'appel existant ; un 429 ne multiplie pas définitivement
+l'intervalle. Le client HTTP est conservé, sans `Connection: close` forcé.
+Les contrôles de visibilité, confiance, bornes et époque restent obligatoires.
+Jev est préchauffé en tâche de fond au démarrage ; un échec ne bloque ni le handshake
+ni les secours locaux. Aucun secret n'est journalisé.
+
+Le résultat `command.result` de l'add-on est émis après son observation post-commande.
+Le dévoilement attend ce résultat corrélé avec la deadline existante, puis capture
+sans sommeil supplémentaire. Si le résultat manque ou est refusé, le secours
+existant reste actif : aucun ancien rectangle n'est traité comme une preuve récente.
+
 Tous les délais ci-dessous sont des politiques initiales (est.), pas des SLA mesurés. Les retries ont backoff et jitter, jamais de répétition aveugle d'action native. Propager timeout, unavailable, quota et invalid_response distinctement.
 | Service / secret | Rôle et appel exact prévu | Délai / secours | Prix et quota |
 |---|---|---|---|

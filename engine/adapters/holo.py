@@ -1,4 +1,4 @@
-"""Budget partagé de requêtes Holo : une requête en vol, pacing et retries bornés."""
+"""Adaptateur Holo : budget et retries bornés, quota du client partagé."""
 
 import asyncio
 import json
@@ -34,44 +34,42 @@ def retry_after(error: Exception) -> float:
 
 
 class HoloRequests:
-    def __init__(self, client, *, interval_s: float = 2, attempts: int = 3,
+    def __init__(self, client, *, attempts: int = 3,
                  clock=time.monotonic, sleep=asyncio.sleep):
         self.client = client
-        self.interval_s, self.attempts = interval_s, attempts
+        self.attempts = attempts
         self.clock, self.sleep = clock, sleep
-        self.lock = asyncio.Lock()
-        self.next_request = 0.0
 
     def budget_s(self, timeout_s: float) -> float:
         return self.attempts * min(timeout_s, 20) + 10
 
     async def _complete(self, operation: str, timeout_s: float, **kwargs):
         deadline = self.clock() + self.budget_s(timeout_s)
+        next_attempt = self.clock()
         async with asyncio.timeout(self.budget_s(timeout_s)):
-            async with self.lock:
-                for attempt in range(self.attempts):
-                    wait = max(0, self.next_request - self.clock())
-                    if wait:
-                        await self.sleep(min(wait, max(0, deadline - self.clock())))
-                    if self.clock() >= deadline:
-                        raise ServiceTimeout("holo", "Budget épuisé avant le prochain essai")
-                    limit = min(timeout_s, 20, deadline - self.clock())
-                    self.next_request = self.clock() + self.interval_s
-                    try:
-                        single_attempt = getattr(self.client, "_complete_attempt", None)
-                        request = (
-                            single_attempt(operation, limit, _start=time.perf_counter(),
-                                           _path=f"desktop_{attempt + 1}", **kwargs)
-                            if single_attempt else self.client._complete(operation, limit, **kwargs)
-                        )
-                        return await asyncio.wait_for(
-                            request, limit)
-                    except (ServiceTimeout, ServiceUnavailable, QuotaExceeded,
-                            TimeoutError) as error:
-                        delay = max(retry_after(error), min(8, 2 ** (attempt + 1)))
-                        self.next_request = max(self.next_request, self.clock() + delay)
-                        if attempt + 1 == self.attempts:
-                            raise
+            for attempt in range(self.attempts):
+                wait = max(0, next_attempt - self.clock())
+                if wait:
+                    await self.sleep(min(wait, max(0, deadline - self.clock())))
+                if self.clock() >= deadline:
+                    raise ServiceTimeout("holo", "Budget épuisé avant le prochain essai")
+                limit = min(timeout_s, 20, deadline - self.clock())
+                try:
+                    single_attempt = getattr(self.client, "_complete_attempt", None)
+                    request = (
+                        single_attempt(operation, limit, _start=time.perf_counter(),
+                                       _path=f"desktop_{attempt + 1}", **kwargs)
+                        if single_attempt else self.client._complete(operation, limit, **kwargs)
+                    )
+                    return await asyncio.wait_for(request, limit)
+                except (ServiceTimeout, ServiceUnavailable, QuotaExceeded,
+                        TimeoutError) as error:
+                    retry = retry_after(error)
+                    delay = (retry if isinstance(error, QuotaExceeded) and retry > 0
+                             else max(retry, min(8, 2 ** (attempt + 1))))
+                    next_attempt = self.clock() + delay
+                    if attempt + 1 == self.attempts:
+                        raise
         raise AssertionError("Budget Holo vide")
 
 
