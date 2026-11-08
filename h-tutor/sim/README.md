@@ -46,3 +46,22 @@ steps), `distracted` (30 % misclicks), `curious` (asks half the time).
 `explanations_pointing`, `tutor_questions`, `hint_only_steps`, `reveals`,
 `stuck`, `errors`, `wall_s`, `holo_requests`, `holo_model_s`,
 `invalid_responses`, `retries`, `prompt_tokens`, `completion_tokens`, `session`.
+
+## A/B comparison
+
+Run version A (before a change) and B (after) on the same scenarios,
+personas and seeds, **one run at a time**: the H account allows 30 requests
+per minute on `holo4-27b`, and parallel runs fail on 429 and measure nothing.
+Copy the same simulator into A's worktree so only the tutor differs. Compare
+`success`, `false_done`, actions and time, then read the journals of every run
+whose outcome changed before concluding; with 8 runs per side it is a trend,
+not proof. The [`rio-harness-core`](../.prime/agent/skills/rio-harness-core/references/measure.md)
+skill has the full recipe and `scripts/worktree.sh`.
+
+## Not harness2
+
+Google's [harness2](https://github.com/google-research/harness2) was not used:
+it drives Codex and OpenCode on text and code tasks, with no interface for an
+external agent, screens or a human in the loop. This simulator borrows its idea
+(measure harness variants on an automatic evaluation); the automatic
+"propose, test, keep the best" loop is not built yet.
