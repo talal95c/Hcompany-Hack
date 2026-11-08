@@ -429,3 +429,26 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .auth { grid-template-columns: 1fr; }
   .auth__art { display: none; }
 }
+
+/* Floating sidebar: a card beside the app, not glued to its edge; collapses to icons */
+.shell { grid-template-columns: 260px 1fr; background: var(--side); transition: grid-template-columns 0.28s cubic-bezier(0.23, 1, 0.32, 1); }
+.shell.is-collapsed { grid-template-columns: 84px 1fr; }
+.side { top: 12px; height: calc(100vh - 24px); margin: 12px 0 12px 12px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 32px -18px rgba(0, 0, 0, 0.18); overflow: visible; }
+.main { margin: 12px; border: 1px solid var(--line); border-radius: 18px; background: var(--bg); min-height: calc(100vh - 24px); }
+.side__toggle { position: absolute; top: 18px; right: -13px; z-index: 2; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--line); background: var(--paper); color: var(--dim); box-shadow: var(--shadow); cursor: pointer; }
+.side__toggle:hover { color: var(--text); }
+.side .nav__label, .side .brand__name, .side .org__name { white-space: nowrap; overflow: hidden; }
+.is-collapsed .side { padding-left: 10px; padding-right: 10px; }
+.is-collapsed .nav { justify-content: center; padding: 9px 0; gap: 0; }
+.is-collapsed .nav__label, .is-collapsed .nav__count, .is-collapsed .brand__name, .is-collapsed .org__name, .is-collapsed .org__btn > svg, .is-collapsed .side__label, .is-collapsed .side__foot .who { display: none; }
+.is-collapsed .brand { justify-content: center; padding-left: 0; padding-right: 0; }
+.is-collapsed .org__btn { justify-content: center; padding: 7px 0; }
+.is-collapsed .side__new { padding-left: 0; padding-right: 0; justify-content: center; }
+.is-collapsed .side__label { display: block; height: 14px; padding: 0; font-size: 0; }
+.is-collapsed .side__foot { flex-direction: column; padding: 8px 0 2px; }
+@media (max-width: 860px) {
+  .shell, .shell.is-collapsed { grid-template-columns: 1fr; }
+  .side { margin: 8px 8px 0; height: auto; position: static; }
+  .main { margin: 8px; }
+  .side__toggle { display: none; }
+}

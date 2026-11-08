@@ -59,10 +59,26 @@ function Shell({ path, orgId }: { path: string; orgId: string }) {
   const me = useApi<{ role: string; canManage: boolean }>(`/me?org=${orgId}`);
   const canManage = !!me.data?.canManage;
   const tid = path.match(/^\/t\/([\w-]+)/)?.[1];
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("rio.side") === "collapsed";
+    } catch {
+      return false;
+    }
+  });
+  const toggle = () =>
+    setCollapsed((c) => {
+      try {
+        localStorage.setItem("rio.side", c ? "open" : "collapsed");
+      } catch {
+        // private mode: the choice lasts for this visit only
+      }
+      return !c;
+    });
 
   return (
-    <div className="shell">
-      <Sidebar path={path} orgId={orgId} />
+    <div className={`shell ${collapsed ? "is-collapsed" : ""}`}>
+      <Sidebar path={path} orgId={orgId} collapsed={collapsed} onToggle={toggle} />
       <main className="main">
         <div className="page" key={`${orgId}-${tid ?? path}`}>
           {tid ? (
@@ -94,6 +110,7 @@ function NavLink({ to, label, icon: Icon, path, count }: { to: string; label: st
   return (
     <a
       href={to}
+      title={label}
       className={`nav ${path.startsWith(to) ? "is-on" : ""}`}
       onClick={(e) => {
         e.preventDefault();
@@ -101,13 +118,13 @@ function NavLink({ to, label, icon: Icon, path, count }: { to: string; label: st
       }}
     >
       <Icon />
-      {label}
+      <span className="nav__label">{label}</span>
       {count ? <span className="nav__count">{count}</span> : null}
     </a>
   );
 }
 
-function Sidebar({ path, orgId }: { path: string; orgId: string }) {
+function Sidebar({ path, orgId, collapsed, onToggle }: { path: string; orgId: string; collapsed: boolean; onToggle: () => void }) {
   const user = auth.useSession().data?.user;
   const lib = useApi<{ tutorials: TutorialRow[] }>(`/tutorials?org=${orgId}`);
   const drafts = lib.data?.tutorials.filter((t) => t.visibility === "draft").length;
@@ -117,11 +134,14 @@ function Sidebar({ path, orgId }: { path: string; orgId: string }) {
         <span className="brand__mark">
           <I.Mark />
         </span>
-        Rio
+        <span className="brand__name">Rio</span>
       </div>
+      <button className="side__toggle" onClick={onToggle} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} title={collapsed ? "Expand" : "Collapse"}>
+        {collapsed ? <I.Right /> : <I.Back />}
+      </button>
       <OrgSwitcher />
       <button className="btn btn--primary side__new" onClick={() => navigate("/home")}>
-        <I.Plus /> New tutorial
+        <I.Plus /> <span className="nav__label">New tutorial</span>
       </button>
       {MAIN.map((p) => (
         <NavLink key={p.path} to={p.path} label={p.label} icon={p.icon} path={path} count={p.path === "/library" ? drafts : undefined} />
