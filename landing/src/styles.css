@@ -567,7 +567,7 @@ ul { list-style: none; }
 .mark-sm { width: 22px; }
 .mark-md { width: 34px; }
 .mark-lg { width: 96px; }
-.app-logo { display: inline-flex; align-items: center; height: 57px; padding: 0 30px; color: #fff; font-size: 24px; font-weight: 600; letter-spacing: -0.6px; white-space: nowrap; }
+.hero-logos img.app-logo { width: 44px; height: 44px; margin: 0 28px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.18)); }
 .work-app { width: auto; height: auto; filter: none; font-size: 30px; line-height: 36px; font-weight: 600; letter-spacing: -1px; color: rgba(26, 26, 26, 0.55); }
 .bento-mark { width: 34px; height: auto; }
 .t-app { font-family: var(--mono); font-size: 11px; text-transform: uppercase; padding: 0 6px 0 10px; color: rgba(26, 26, 26, 0.7); }
