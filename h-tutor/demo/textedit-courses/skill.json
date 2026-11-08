@@ -1,0 +1,71 @@
+{
+  "tutorial_id": "demo-textedit-courses",
+  "title": "Préparer une liste de courses",
+  "goal": "Préparer dans TextEdit une liste de courses avec un titre en gras et trois articles.",
+  "app": { "name": "TextEdit", "bundle_id": "com.apple.TextEdit" },
+  "graph": {
+    "id": "demo-textedit-courses",
+    "version": 1,
+    "title": "Préparer une liste de courses",
+    "goal": "Préparer dans TextEdit une liste de courses avec un titre en gras et trois articles.",
+    "app": { "name": "TextEdit", "bundle_id": "com.apple.TextEdit" },
+    "language": "fr",
+    "source": "authored",
+    "start": "m1",
+    "milestones": [
+      {
+        "id": "m1",
+        "goal": "Ouvrir un document TextEdit vide.",
+        "done_when": "Une fenêtre de document TextEdit est ouverte avec sa page de texte visible, vide ou déjà commencée.",
+        "hints": ["Ouvrir TextEdit, créer un nouveau document et choisir le format Texte enrichi."],
+        "next": ["m2"]
+      },
+      {
+        "id": "m2",
+        "goal": "Écrire le titre Liste de courses sur la première ligne.",
+        "done_when": "La première ligne du document TextEdit contient le texte exact «Liste de courses», sans autre texte sur cette ligne.",
+        "hints": ["Saisir Liste de courses en première ligne, sans retour à la ligne."],
+        "requires": ["m1"],
+        "next": ["m3"]
+      },
+      {
+        "id": "m3",
+        "goal": "Mettre le titre Liste de courses en gras.",
+        "done_when": "La première ligne du document TextEdit contient le texte exact «Liste de courses» et ce titre est visiblement en gras.",
+        "hints": ["Sélectionner le titre puis utiliser cmd+b. Placer ensuite le curseur à la fin du titre."],
+        "requires": ["m2"],
+        "next": ["m4"]
+      },
+      {
+        "id": "m4",
+        "goal": "Ajouter Pommes sous le titre.",
+        "done_when": "Le document TextEdit affiche le texte exact «Pommes» seul sur la deuxième ligne, immédiatement sous le titre Liste de courses en gras.",
+        "hints": ["Placer le curseur à la fin du titre sans effacer le texte existant, appuyer sur Retour, désactiver le gras avec cmd+b si actif, puis saisir Pommes."],
+        "requires": ["m3"],
+        "next": ["m5"]
+      },
+      {
+        "id": "m5",
+        "goal": "Ajouter Pain sous Pommes.",
+        "done_when": "Le document TextEdit affiche le texte exact «Pain» seul sur la troisième ligne, immédiatement sous Pommes sur la deuxième ligne et Liste de courses en gras sur la première.",
+        "hints": ["Placer le curseur à la fin de Pommes, appuyer sur Retour et saisir Pain sans remplacer les lignes existantes."],
+        "requires": ["m4"],
+        "next": ["m6"]
+      },
+      {
+        "id": "m6",
+        "goal": "Ajouter Lait sous Pain.",
+        "done_when": "Le document TextEdit affiche le texte exact «Lait» seul sur la quatrième ligne, immédiatement sous Pain sur la troisième, Pommes sur la deuxième et Liste de courses en gras sur la première.",
+        "hints": ["Placer le curseur à la fin de Pain, appuyer sur Retour et saisir Lait sans remplacer les lignes existantes."],
+        "requires": ["m5"],
+        "next": []
+      }
+    ]
+  },
+  "runs": [
+    { "date": 0, "mode": "learner", "outcome": "completed", "duration_s": 0, "session_id": "demo-fixture-not-a-user-run" }
+  ],
+  "compiled": [],
+  "muted_until": null,
+  "declines": 0
+}

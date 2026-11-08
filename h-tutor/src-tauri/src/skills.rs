@@ -462,6 +462,27 @@ mod tests {
     use super::*;
     use crate::tutorial::Milestone;
 
+    #[test]
+    fn textedit_demo_is_eligible_and_starts_at_first_milestone() {
+        let skill: Skill = serde_json::from_str(include_str!("../../demo/textedit-courses/skill.json")).unwrap();
+        skill.graph.validate().unwrap();
+        assert_eq!(skill.app.name, "TextEdit");
+        assert!(skill.app.name.eq_ignore_ascii_case("TextEdit"));
+        assert!(eligible(&skill, 0));
+        assert_eq!(skill.runs.len(), 1);
+        assert_eq!(skill.runs[0].outcome, "completed");
+        assert!(skill.compiled.is_empty());
+        assert_eq!(skill.graph.milestones.len(), 6);
+        let mut matched = std::collections::HashSet::new();
+        for milestone in &skill.graph.milestones {
+            let frontier = crate::observe::frontier(&skill.graph, &matched);
+            assert_eq!(frontier.len(), 1);
+            assert_eq!(frontier[0].id, milestone.id);
+            matched.insert(milestone.id.clone());
+        }
+        assert!(crate::observe::frontier(&skill.graph, &matched).is_empty());
+    }
+
     fn graph() -> Tutorial {
         Tutorial {
             id: "example".into(),

@@ -195,6 +195,68 @@ user clicks ───────────▶   clicks.rs: real click near ta
 
 Both windows are excluded from screen captures, so Holo never sees the app itself.
 
+## Démo observation
+
+Depuis `h-tutor/`, sur macOS :
+
+```sh
+npm run demo:skill
+RIO_OBSERVE=1 RIO_OBSERVE_STEPS=3 RIO_SKILLS_COOLDOWN_SECONDS=0 RIO_AUTO_COMPILE=0 npm run tauri dev
+```
+
+Le modèle Holo doit déjà être configuré et Rio doit avoir l’autorisation
+d’enregistrer l’écran. L’observation envoie des captures au cloud : utiliser un
+bureau de démonstration sans données privées, sur l’écran principal. Ne pas
+lancer de tutoriel ni d’autopilot pendant l’observation.
+
+L’installateur copie `demo/textedit-courses/skill.json` vers
+`skills/demo-textedit-courses/skill.json`, exactement le dossier lu par
+`skills::dir()` (pas de variable d’environnement de remplacement actuellement).
+Ce dossier local est ignoré par Git. Une installation identique est laissée
+inchangée ; un dossier différent provoque un refus explicite, sans écrasement.
+La fixture contient **une réussite synthétique réservée à la démo**, pas une
+preuve d’une exécution réelle, et aucun script compilé. Le graphe est inclus
+dans `skill.json` : aucun tutoriel séparé n’est nécessaire.
+
+1. Ouvrir **TextEdit**, créer un document vide avec `⌘N`, choisir **Format →
+   Convertir au format RTF** si le document est en texte brut. Fermer les
+   dialogues ; garder le document sur l’écran principal et TextEdit au premier
+   plan. Son nom d’application est `TextEdit` (xcap lit `kCGWindowOwnerName` ;
+   le watcher compare les noms sans tenir compte de la casse).
+2. Attendre une première prise de référence locale (environ 4 s, est.), puis
+   redimensionner franchement la fenêtre et la laisser immobile environ 20 s
+   (est.). Cela déclenche le contrôle du premier jalon : document ouvert.
+3. Saisir exactement **`Liste de courses`**, sans Retour. Redimensionner à
+   nouveau la fenêtre, puis attendre environ 20 s (est.), sans changer d’app.
+4. Sélectionner le titre avec `⌘A`, puis `⌘B` pour le mettre en gras. Avec la
+   souris, placer le curseur à la fin du titre, sans Retour. Redimensionner à
+   nouveau et attendre environ 20 s (est.).
+5. La proposition attendue est **« Tu es en train de faire Préparer une liste
+   de courses (3/6). Je termine pour toi ? »**. Cliquer **Oui, vas-y**.
+   Rio GUI revérifie les jalons existants puis ajoute `Pommes`, `Pain`, `Lait`,
+   chacun sur sa propre ligne, en expliquant ses actions en français.
+
+Le premier critère reste vrai après la saisie du titre : c’est volontaire pour
+que la reprise GUI puisse revérifier les trois premiers jalons sans effacer le
+travail déjà fait. Les critères suivants exigent le texte exact et l’ordre des
+lignes. Résultat attendu :
+
+```text
+Liste de courses     ← en gras
+Pommes
+Pain
+Lait
+```
+
+Les changements de quelques lettres peuvent être trop petits pour la miniature
+locale ; le redimensionnement après chaque étape assure un changement net avant
+la stabilisation. Si la proposition n’apparaît pas, rester dans TextEdit et
+redimensionner à nouveau. Une vérification inconnue ne compte jamais. Une autre
+skill TextEdit à égalité empêche la proposition ; changer d’app réinitialise les
+jalons observés. Deux refus activent toujours la sourdine de 24 h, même avec le
+cooldown à zéro. L’installateur ne réinitialise pas une skill modifiée : sauvegarder
+ou déplacer explicitement son dossier local avant une nouvelle installation.
+
 ## Next
 
 ### Opt-in skill observation
