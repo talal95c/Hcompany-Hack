@@ -597,3 +597,44 @@ ul { list-style: none; }
   .hero { height: 100svh; min-height: 680px; }
   .hero-bg { top: auto; bottom: 0; height: 58%; object-position: 50% 100%; }
 }
+/* Phones: keep it simple. Headlines, the demo, the cards, the prices and the buttons stay;
+   supporting copy, labels, tickers, mock-ups and feature lists go. */
+@media (max-width: 700px) {
+  .hero-sub, .hero-bottom { display: none; }
+  .hero-content { padding-top: 130px; }
+  .hero-link-demo { margin-top: 22px; }
+
+  .usecases, .teams { padding-top: 64px; }
+  .usecases .label-row, .teams .label-row, .faq .label-row { display: none; }
+  .usecases-head { margin-top: 0; margin-bottom: 24px; }
+  .usecases-head > p, .usecase-app, .usecase-copy > .p-14l, .usecase-chips, .usecases-note { display: none; }
+  .usecases-grid { gap: 12px; }
+  .usecase-copy { padding: 16px 12px 10px; }
+  .usecase-copy h3 { font-size: 20px; }
+
+  .teams-grid { margin-top: 0; gap: 0; }
+  .teams-grid > :last-child { display: none; }
+  .teams-sub, .teams-points .p-14l, .teams-n { display: none; }
+  .teams-points { margin-top: 20px; gap: 0; }
+  .teams-points li { display: block; padding: 14px 0; }
+  .teams-points h3 { font-size: 17px; }
+  .teams-cta { margin-top: 24px; }
+
+  .pricing { padding-top: 72px; }
+  .pricing .big-marquee, .pricing .ticker, .toggle-row, .pricing-sub, .plan-feats { display: none; }
+  .pricing-head { margin-top: 0; }
+  .pricing::before { content: "Pricing"; display: block; margin: 0 var(--pad) 20px; font-size: 38px; line-height: 42px; font-weight: 500; letter-spacing: -1.4px; }
+
+  .faq-card { padding: 64px var(--pad) 72px; }
+  .faq-card .big-marquee, .faq-sub { display: none; }
+  .faq-list > :nth-child(n + 5) { display: none; }
+
+  .footer-text, .footer-col:last-child { display: none; }
+}
+@media (max-width: 700px) {
+  .plans { margin-top: 0; }
+  .plan { height: auto; }
+  .plan-top { height: auto; padding: 22px 20px 14px; }
+  .plan-price { margin-top: 12px; }
+  .plan-band { padding-bottom: 20px; }
+}
