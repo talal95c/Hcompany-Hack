@@ -1,7 +1,7 @@
 import { navigate } from "../lib";
 import { CopyButton, Head } from "../ui";
 
-const REPO = "https://github.com/talal95c/Hcompany-Hack";
+const REPO = "https://github.com/Jacqkues/rio";
 
 type Step = { t: string; p: React.ReactNode; c?: string };
 
@@ -10,7 +10,7 @@ export function GetRioPage() {
   const url = window.location.origin;
   const steps: Step[] = [
     { t: "Install the tools", p: "Rio runs on macOS. You need Node.js 20+ and Rust.", c: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh" },
-    { t: "Get the code", p: "Clone the repository and open the app folder.", c: `git clone ${REPO} && cd Hcompany-Hack/h-tutor` },
+    { t: "Get the code", p: "Clone the repository and open the app folder.", c: `git clone ${REPO}.git && cd rio` },
     {
       t: "Add your keys",
       p: (
