@@ -58,10 +58,14 @@ whose outcome changed before concluding; with 8 runs per side it is a trend,
 not proof. The [`rio-harness-core`](../.prime/agent/skills/rio-harness-core/references/measure.md)
 skill has the full recipe and `scripts/worktree.sh`.
 
-## Not harness2
+## Inspired by harness2
 
-Google's [harness2](https://github.com/google-research/harness2) was not used:
-it drives Codex and OpenCode on text and code tasks, with no interface for an
-external agent, screens or a human in the loop. This simulator borrows its idea
-(measure harness variants on an automatic evaluation); the automatic
-"propose, test, keep the best" loop is not built yet.
+This simulator follows the idea of Google's
+[harness2](https://github.com/google-research/harness2): improve the harness
+around a model (prompts, tools, memory) by measuring variants on an automatic
+evaluation, not by intuition. Here the harness is Rio's tutor loop and the
+evaluation is this simulator with code-graded scenarios; each change is a
+variant compared with the previous one on the same seeds. harness2's code was
+not used (it drives Codex and OpenCode on text and code tasks, with no
+interface for an external agent, screens or a human in the loop), and its
+automatic "propose, probe, keep the best" loop is not built here yet.
