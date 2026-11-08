@@ -638,3 +638,9 @@ ul { list-style: none; }
   .plan-price { margin-top: 12px; }
   .plan-band { padding-bottom: 20px; }
 }
+/* Phones: a shorter hero, so the TV sits right under the demo instead of a band of empty sky. */
+@media (max-width: 700px) {
+  .hero { height: auto; min-height: 0; }
+  .hero-card { height: 640px; }
+  .hero-bg { height: 66%; }
+}

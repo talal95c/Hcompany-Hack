@@ -177,10 +177,10 @@ export function Hero() {
           <motion.p className="p-16 hero-sub" {...up(0.44)}>
             Rio turns it into steps, shows you where to click in your own app and checks each step. No link? Just type what you want to do.
           </motion.p>
-          <motion.div className="hero-link-demo" {...up(0.5)} aria-label="Illustration: paste a tutorial link or type a goal to start a lesson">
+          <motion.div className="hero-link-demo" {...up(0.5)} aria-label="Paste a tutorial link or type a goal to start a lesson">
             <span className="hero-demo-kind mono-12" aria-hidden>{src.kind}</span>
             <span className="hero-demo-url" aria-hidden>{typed}<span className="hero-caret" /></span>
-            <span className="hero-demo-start" aria-hidden>Start ↗</span>
+            <a className="hero-demo-start" href={APP_URL}>Start ↗</a>
           </motion.div>
         </div>
         <motion.div className="hero-bottom" {...up(0.85)}>
