@@ -9,26 +9,28 @@ type Source = { id: string; title: string | null; kind: string | null; url: stri
 type Skill = { id: string; intent: string; sources: Source[]; proofs: Record<string, string>; changed: boolean; steps: Record<string, Step[]> };
 type AppInfo = { id: string; name: string; versions: { id: string; label: string | null }[]; current_version: string };
 type Overview = {
-  global: { internal?: boolean; app: AppInfo; skills: number; sources: number; proven: number; atoms?: number; tutorials: LibraryEntry[] }[];
+  global: { internal?: boolean; mine?: boolean; app: AppInfo; skills: number; sources: number; proven: number; atoms?: number; tutorials: LibraryEntry[] }[];
   created: { app: string; skills: number }[];
 };
 type Hit = { id: string; intent: string; app_name: string; score: number; proof: string | null; version: { id: string }; steps: { do: string }[]; sources: Source[] };
 
-export function KnowledgePage() {
-  const { data } = useApi<Overview>("/knowledge");
+export function KnowledgePage({ canManage }: { canManage: boolean }) {
+  const { data, reload } = useApi<Overview>("/knowledge");
   const [tab, setTab] = useState<"global" | "created">(new URLSearchParams(window.location.search).get("tab") === "team" ? "created" : "global");
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<Hit[] | null>(null);
+  const [searchApp, setSearchApp] = useState("");
 
   useEffect(() => {
     if (!q.trim()) return setHits(null);
     const t = setTimeout(() => {
-      fetch(`/api/app/knowledge/search?q=${encodeURIComponent(q)}`, { credentials: "include" })
+      const app = searchApp ? `&app=${encodeURIComponent(searchApp)}` : "";
+      fetch(`/api/app/knowledge/search?q=${encodeURIComponent(q)}${app}`, { credentials: "include" })
         .then((r) => r.json())
-        .then((v: { results: Hit[] }) => setHits(v.results));
+        .then((v: { results: Hit[] }) => setHits(v.results ?? []));
     }, 300);
     return () => clearTimeout(t);
-  }, [q]);
+  }, [q, searchApp]);
 
   const shared = data ? { ...data, global: data.global.filter((g) => !g.internal) } : null;
   const teamTotal = data?.global.filter((g) => g.internal).reduce((a, g) => a + g.skills, 0) ?? 0;
@@ -40,6 +42,16 @@ export function KnowledgePage() {
       <div className="ask">
         <I.Search />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask anything, in any language: “comment supprimer les doublons ?”" aria-label="Search the knowledge" />
+        {data && data.global.length > 1 && (
+          <select className="select ask__app" value={searchApp} onChange={(e) => setSearchApp(e.target.value)} aria-label="Search in one app">
+            <option value="">All apps</option>
+            {data.global.map((g) => (
+              <option key={g.app.id} value={g.app.id}>
+                {g.app.name}
+              </option>
+            ))}
+          </select>
+        )}
         {q && (
           <button className="btn btn--sm btn--ghost" onClick={() => setQ("")}>
             Clear
@@ -101,14 +113,16 @@ export function KnowledgePage() {
               Your team's knowledge<span className="count">{teamTotal}</span>
             </button>
           </div>
-          {!data || !shared ? <Loading /> : tab === "global" ? <Global data={shared} /> : <TeamKnowledge data={data} />}
+          {!data || !shared ? <Loading /> : tab === "global" ? <Global data={shared} canManage={canManage} onChange={reload} /> : <TeamKnowledge data={data} canManage={canManage} onChange={reload} />}
         </>
       )}
     </>
   );
 }
 
-function Global({ data }: { data: Overview }) {
+type Manage = { canManage: boolean; onChange: () => void };
+
+function Global({ data, canManage, onChange }: { data: Overview } & Manage) {
   const [appId, setAppId] = useState(data.global[0]?.app.id ?? null);
   const g = data.global.find((x) => x.app.id === appId);
   const [filter, setFilter] = useState("");
@@ -136,18 +150,24 @@ function Global({ data }: { data: Overview }) {
           <AppIcon name={g.app.name} />
         </div>
         <div className="hero__body" style={{ paddingTop: 36 }}>
-          <h2 className="hero__title" style={{ fontSize: 22 }}>{g.app.name}</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <h2 className="hero__title" style={{ fontSize: 22 }}>{g.app.name}</h2>
+            {g.mine && !g.internal && <span className="tag">Shared by your team</span>}
+            {g.mine && canManage && <ShareButton app={g.app} shared={!g.internal} onDone={onChange} />}
+          </div>
           <p className="hero__goal">
             {g.internal
               ? `Learned from your team's ${g.sources === 1 ? "document" : `${g.sources} documents`}: every procedure tied to the buttons and menus they name. Only your organization sees it.`
-              : `Learned from ${g.sources} ${g.sources === 1 ? "source" : "videos, docs and threads"}, re-targeted to each version: where every action is now, and where it used to be.`}
+              : g.mine
+                ? `Learned from your team's docs and shared with every organization: anyone can find these ${g.skills} skills and add their own docs to ${g.app.name}.`
+                : `Learned from ${g.sources} ${g.sources === 1 ? "source" : "videos, docs and threads"}, re-targeted to each version: where every action is now, and where it used to be.`}
           </p>
         </div>
       </div>
       <div className="stats">
         <div className="stat"><div className="stat__value">{g.skills}</div><div className="stat__label">Skills</div></div>
         <div className="stat"><div className="stat__value">{g.sources}</div><div className="stat__label">Sources</div></div>
-        {g.internal ? (
+        {g.internal || g.mine ? (
           <div className="stat"><div className="stat__value">{g.atoms ?? 0}</div><div className="stat__label">Buttons and menus</div></div>
         ) : (
           <div className="stat"><div className="stat__value">{g.proven}</div><div className="stat__label">Proven in a sandbox</div></div>
@@ -267,26 +287,60 @@ function Global({ data }: { data: Overview }) {
   );
 }
 
-type Doc = { id: string; title: string; url: string | null; added_at: number; app_id: string; app_name: string; internal: boolean; skills: number; steps: number };
-type Ingested = { title: string; app: { name: string; internal: boolean }; skills: number; new_skills: number; merged_into_known: number; steps: number; grounded: number; elapsed_s: number };
+/** Shares one of the team's own tools with every organization, or makes it private again. */
+function ShareButton({ app, shared, onDone }: { app: AppInfo; shared: boolean; onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  async function toggle() {
+    const ask = shared
+      ? `Make ${app.name} private again? Other organizations will no longer see or search it.`
+      : `Share ${app.name} with every organization? Its skills, docs and graph become visible and searchable by everyone, like Blender.`;
+    if (!window.confirm(ask)) return;
+    setBusy(true);
+    try {
+      await api(`/knowledge/apps/${encodeURIComponent(app.id)}/share`, { method: "POST", json: { shared: !shared } });
+      onDone();
+    } catch (e) {
+      window.alert((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <button className="btn btn--sm" style={{ marginLeft: "auto" }} onClick={toggle} disabled={busy}>
+      {busy ? <span className="spinner" /> : shared ? "Make private" : "Share with everyone"}
+    </button>
+  );
+}
+
+type Doc = { id: string; title: string; url: string | null; added_at: number; app_id: string; app_name: string; internal: boolean; shared?: boolean; skills: number; steps: number };
+type Ingested = { title: string; app: { name: string; internal: boolean; shared?: boolean; mine?: boolean }; skills: number; new_skills: number; merged_into_known: number; steps: number; grounded: number; elapsed_s: number };
 
 /** Your team's knowledge: docs about internal tools (or your way of using any tool), read into skills Rio uses first. */
-function TeamKnowledge({ data }: { data: Overview }) {
+function TeamKnowledge({ data, canManage, onChange }: { data: Overview } & Manage) {
   const docs = useApi<{ sources: Doc[] }>("/knowledge/docs");
-  const [done, setDone] = useState<Ingested | null>(null);
+  const [done, setDone] = useState<Ingested[]>([]);
   const internal = data.global.filter((g) => g.internal);
   const tools = [...new Set([...data.global.map((g) => g.app.name)])];
   return (
     <>
-      <AddDoc tools={tools} onDone={(r) => { setDone(r); docs.reload(); }} />
-      {done && (
-        <div className="empty" style={{ textAlign: "left", marginTop: 12, borderStyle: "solid" }}>
-          <b>Rio learned {done.skills} procedures from “{done.title}”</b>
-          {done.grounded} of {done.steps} steps tied to {done.app.name}'s interface
-          {done.merged_into_known ? `, ${done.merged_into_known} merged with what Rio already knew` : ""} · {done.elapsed_s}s.
-          {done.app.internal ? ` ${done.app.name} is one of your internal tools: only your team sees it.` : ""}
+      <AddDoc
+        tools={tools}
+        onStart={() => setDone([])}
+        onDone={(r) => {
+          setDone((d) => [...d, r]);
+          docs.reload();
+          onChange();
+        }}
+      />
+      {done.map((r) => (
+        <div key={r.title} className="empty" style={{ textAlign: "left", marginTop: 12, borderStyle: "solid" }}>
+          <b>Rio learned {r.skills} {r.skills === 1 ? "procedure" : "procedures"} from “{r.title}”</b>
+          {r.grounded} of {r.steps} steps tied to {r.app.name}'s interface
+          {r.merged_into_known ? `, ${r.merged_into_known} merged with what Rio already knew` : ""} · {r.elapsed_s}s.
+          {r.app.internal ? ` ${r.app.name} is one of your internal tools: only your team sees it.` : ""}
+          {r.app.shared && r.app.mine ? ` ${r.app.name} is shared: every organization sees it.` : ""}
         </div>
-      )}
+      ))}
       <div className="section">
         <div className="section__title">
           <h2>Documents</h2>
@@ -308,7 +362,7 @@ function TeamKnowledge({ data }: { data: Overview }) {
                     {d.title}
                     <small>
                       {d.app_name}
-                      {d.internal ? " (internal tool)" : ""} · {d.skills} procedures · {d.steps} steps · added {ago(d.added_at * 1000).toLowerCase()}
+                      {d.shared ? (d.internal ? " (your tool, shared)" : "") : d.internal ? " (internal tool)" : ""} · {d.skills} {d.skills === 1 ? "procedure" : "procedures"} · {d.steps} steps · added {ago(d.added_at * 1000).toLowerCase()}
                     </small>
                   </span>
                   <button
@@ -333,47 +387,65 @@ function TeamKnowledge({ data }: { data: Overview }) {
             <h2>Your internal tools</h2>
             <span>Their interface, as your docs describe it</span>
           </div>
-          <Global data={{ ...data, global: internal }} />
+          <Global data={{ ...data, global: internal }} canManage={canManage} onChange={onChange} />
         </div>
       )}
     </>
   );
 }
 
-function AddDoc({ tools, onDone }: { tools: string[]; onDone: (r: Ingested) => void }) {
+type DocFile = { name: string; title: string; text: string };
+const titleOf = (text: string, file: string) => text.match(/^#\s*(.+)$/m)?.[1]?.trim() || file.replace(/\.(md|markdown|txt)$/i, "");
+
+/** One Markdown guide pasted, or several files: each is read on its own, one after the other. */
+function AddDoc({ tools, onStart, onDone }: { tools: string[]; onStart: () => void; onDone: (r: Ingested) => void }) {
   const [tool, setTool] = useState("");
   const [version, setVersion] = useState("");
   const [text, setText] = useState("");
-  const [title, setTitle] = useState("");
+  const [files, setFiles] = useState<DocFile[]>([]);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  async function file(f: File | undefined) {
-    if (!f) return;
-    setText(await f.text());
-    setTitle(f.name.replace(/\.(md|markdown|txt)$/i, ""));
+  const [progress, setProgress] = useState<string | null>(null);
+  const [errors, setErrors] = useState<string[]>([]);
+  async function pick(list: FileList | null | undefined) {
+    const md = [...(list ?? [])].filter((f) => /\.(md|markdown|txt)$/i.test(f.name) || f.type.startsWith("text/"));
+    const read = await Promise.all(md.map(async (f) => { const t = await f.text(); return { name: f.name, title: titleOf(t, f.name), text: t }; }));
+    setFiles((cur) => [...cur.filter((c) => !read.some((r) => r.name === c.name)), ...read]);
   }
+  const docs: DocFile[] = files.length ? files : text.trim() ? [{ name: "pasted", title: titleOf(text, "Pasted document"), text }] : [];
+  const tooShort = docs.filter((d) => d.text.trim().length < 80);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    setError(null);
-    try {
-      const r = await api<Ingested>("/knowledge/docs", { method: "POST", json: { app: tool, version: version || undefined, title: title || undefined, text } });
-      setText("");
-      setTitle("");
-      onDone(r);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setBusy(false);
+    setErrors([]);
+    onStart();
+    const failed: string[] = [];
+    for (const [i, d] of docs.entries()) {
+      setProgress(`${i + 1} of ${docs.length}: ${d.title}`);
+      if (d.text.trim().length < 80) {
+        failed.push(`${d.name}: too short to learn from`);
+        continue;
+      }
+      try {
+        onDone(await api<Ingested>("/knowledge/docs", { method: "POST", json: { app: tool, version: version || undefined, title: d.title, text: d.text } }));
+      } catch (err) {
+        failed.push(`${d.name}: ${(err as Error).message}`);
+      }
     }
+    setErrors(failed);
+    if (!failed.length) {
+      setText("");
+      setFiles([]);
+    } else setFiles((cur) => cur.filter((f) => failed.some((x) => x.startsWith(`${f.name}:`))));
+    setProgress(null);
+    setBusy(false);
   }
   return (
     <form className="card-box" onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div>
         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Teach Rio your tools</h3>
         <p className="note" style={{ margin: "4px 0 0" }}>
-          Paste or drop a Markdown guide. Rio reads every procedure in it, ties each step to the tool's buttons and menus, and uses it
-          first when someone on your team asks.
+          Paste a Markdown guide, or drop several .md files. Rio reads every procedure in them, ties each step to the tool's buttons
+          and menus, and builds the tool's graph. A new tool name creates the tool.
         </p>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
@@ -396,22 +468,46 @@ function AddDoc({ tools, onDone }: { tools: string[]; onDone: (r: Ingested) => v
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
-          file(e.dataTransfer.files[0]);
+          pick(e.dataTransfer.files);
         }}
       >
-        <label htmlFor="doc-text">
-          Document {title && <span className="faint">· {title}</span>}
-        </label>
-        <textarea id="doc-text" className="textarea" rows={7} required value={text} onChange={(e) => setText(e.target.value)} placeholder={"# Refund an order\n1. Open Orders › All orders…\n\nOr drop a .md file here."} style={{ fontFamily: "var(--mono)", fontSize: 12.5 }} />
+        <label htmlFor="doc-text">{files.length ? `${files.length} ${files.length === 1 ? "file" : "files"}` : "Document"}</label>
+        {files.length ? (
+          <div className="doc-files">
+            {files.map((f) => (
+              <div key={f.name} className="doc-file">
+                <I.Page />
+                <span>
+                  {f.title}
+                  <small>
+                    {f.name} · {f.text.length.toLocaleString()} characters{f.text.trim().length < 80 ? " · too short" : ""}
+                  </small>
+                </span>
+                <button type="button" className="btn btn--sm btn--ghost" disabled={busy} onClick={() => setFiles((cur) => cur.filter((c) => c.name !== f.name))}>
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <textarea id="doc-text" className="textarea" rows={7} value={text} onChange={(e) => setText(e.target.value)} placeholder={"# Refund an order\n1. Open Orders › All orders…\n\nOr drop one or more .md files here."} style={{ fontFamily: "var(--mono)", fontSize: 12.5 }} />
+        )}
       </div>
-      {error && <div className="error">{error}</div>}
+      {errors.map((m) => (
+        <div key={m} className="error">{m}</div>
+      ))}
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <label className="btn" style={{ cursor: "pointer" }}>
-          <I.Page /> Choose a file
-          <input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onChange={(e) => file(e.target.files?.[0])} />
+          <I.Page /> {files.length ? "Add files" : "Choose files"}
+          <input type="file" multiple accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onChange={(e) => { pick(e.target.files); e.target.value = ""; }} />
         </label>
-        <button className="btn btn--primary" disabled={busy || !tool.trim() || text.trim().length < 80} style={{ marginLeft: "auto" }}>
-          {busy ? <><span className="spinner" /> Rio is reading it…</> : "Add to knowledge"}
+        {files.length > 0 && !busy && (
+          <button type="button" className="btn btn--ghost" onClick={() => setFiles([])}>
+            Clear files
+          </button>
+        )}
+        <button className="btn btn--primary" disabled={busy || !tool.trim() || !docs.length || tooShort.length === docs.length} style={{ marginLeft: "auto" }}>
+          {busy ? <><span className="spinner" /> Reading {progress}</> : docs.length > 1 ? `Add ${docs.length} documents` : "Add to knowledge"}
         </button>
       </div>
     </form>

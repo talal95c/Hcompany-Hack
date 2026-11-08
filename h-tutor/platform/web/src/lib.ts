@@ -81,7 +81,7 @@ export type TutorialRow = {
   remixOf: string | null;
   agentViewUrl?: string | null;
   thumbnail?: string | null;
-  sources: { title: string; url: string }[];
+  sources: { title: string; url: string; image?: string; site?: string }[];
   tutorial: RioTutorial | null;
   author: { id: string | null; name: string | null };
   org: string | null;

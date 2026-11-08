@@ -1,0 +1,9 @@
+{
+  "id": "excalidraw-hello",
+  "app": "Excalidraw",
+  "url": "https://excalidraw.com",
+  "goal": "Draw a rectangle and write the text \"Hello\" on the canvas",
+  "lang": "fr",
+  "max_steps": 30,
+  "success": "(() => { const els = JSON.parse(localStorage.getItem('excalidraw') || '[]').filter(e => !e.isDeleted); return els.some(e => e.type === 'rectangle') && els.some(e => e.type === 'text' && (e.text || '').includes('Hello')); })()"
+}

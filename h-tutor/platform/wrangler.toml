@@ -3,18 +3,24 @@ main = "src/index.ts"
 compatibility_date = "2025-09-01"
 compatibility_flags = ["nodejs_compat"]
 
-# The console (React, built by `npm run build:web`). /api and /v1 go to the Worker first.
+# Public address. The vignemale.com zone is in this Cloudflare account: deploy creates the DNS record and certificate.
+# BETTER_AUTH_URL must match it (https://rio.vignemale.com), and so must Google's redirect URI.
+# `npm run dev` passes --local-upstream so that local requests keep their 127.0.0.1 origin (better-auth checks it).
+routes = [{ pattern = "rio.vignemale.com", custom_domain = true }]
+
+# The console (React, built by `npm run build:web`) and the landing in /landing (`npm run build:landing`).
+# /api, /v1 and the front page / go to the Worker first.
 [assets]
 directory = "./web/dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-run_worker_first = ["/api/*", "/v1/*"]
+run_worker_first = ["/", "/api/*", "/v1/*"]
 
 # `npx wrangler d1 create rio` prints the id to put here.
 [[d1_databases]]
 binding = "DB"
 database_name = "rio"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "92a3da02-7b14-4db3-a807-5bcc987cc9e5"
 migrations_dir = "migrations"
 
 # The global knowledge base (knowledge/: ReStep's graphs and core, search only).

@@ -8,7 +8,7 @@ workers_dev = false
 [[d1_databases]]
 binding = "DB"
 database_name = "rio-knowledge"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "d3f8e7af-e1ec-4719-aac8-0978c36c6587"
 migrations_dir = "migrations"
 
 # Workers AI: Qwen3-Embedding-0.6B for semantic search. `remote = true` is required for `wrangler dev` to reach it.

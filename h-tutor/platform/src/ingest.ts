@@ -65,6 +65,64 @@ export const youtubeThumbnail = (url: string) => {
   return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : undefined;
 };
 
+// ---------------------------------------------------------------- Link previews
+
+export type Source = { title: string; url: string; image?: string; site?: string };
+
+/** A page's preview from its <head>: og:image (or twitter:image), absolute and https only, and its site name. */
+export function previewFromHtml(html: string, base: string): { image?: string; site?: string } {
+  const meta = new Map<string, string>();
+  for (const tag of html.match(/<meta\b[^>]*>/gi) ?? []) {
+    const attrs = new Map([...tag.matchAll(/([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)].map((m) => [m[1].toLowerCase(), m[2] ?? m[3] ?? ""]));
+    const key = (attrs.get("property") ?? attrs.get("name") ?? "").toLowerCase();
+    const content = attrs.get("content");
+    if (key && content && !meta.has(key)) meta.set(key, decode(content).trim());
+  }
+  const raw = ["og:image:secure_url", "og:image", "og:image:url", "twitter:image", "twitter:image:src"].map((k) => meta.get(k)).find(Boolean);
+  let image: string | undefined;
+  try {
+    const u = raw ? new URL(raw, base) : null;
+    if (u?.protocol === "https:") image = u.href; // the console is https: an http image would be blocked
+  } catch {
+    // not a URL
+  }
+  const site = meta.get("og:site_name") || undefined;
+  return { ...(image ? { image } : {}), ...(site ? { site: site.slice(0, 80) } : {}) };
+}
+
+/** Reads a page's <head> only (at most 256 KB, 5 s) for its preview; nothing when it is not HTML or unreachable. */
+export async function pagePreview(url: string): Promise<{ image?: string; site?: string }> {
+  try {
+    const r = await fetch(url, {
+      headers: { "user-agent": "RioPlatform/1.0 (+link preview)", accept: "text/html" },
+      redirect: "follow",
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!r.ok || !r.body || !(r.headers.get("content-type") ?? "").includes("html")) return {};
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let html = "";
+    while (html.length < 256_000 && !/<\/head>|<body[\s>]/i.test(html)) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      html += dec.decode(value, { stream: true });
+    }
+    await reader.cancel().catch(() => {});
+    return previewFromHtml(html, r.url || url);
+  } catch {
+    return {};
+  }
+}
+
+/** The sources' previews (the first four web pages), read in parallel; the agent's replay link is not a source page. */
+async function withPreviews(sources: Source[], skip?: string): Promise<Source[]> {
+  const pages = sources.filter((s) => /^https?:\/\//i.test(s.url) && s.url !== skip && !s.image).slice(0, 4);
+  // A video found as a source: its thumbnail (YouTube's <head> is too heavy to read for it).
+  const found = await Promise.all(pages.map((s) => (youtubeId(s.url) ? Promise.resolve({ image: youtubeThumbnail(s.url), site: "YouTube" }) : pagePreview(s.url))));
+  const by = new Map(pages.map((s, i) => [s.url, found[i]]));
+  return sources.map((s) => ({ ...s, ...(by.get(s.url) ?? {}) }));
+}
+
 export function kindOf(input: string): Kind {
   const s = input.trim();
   if (youtubeId(s)) return "youtube";
@@ -402,6 +460,10 @@ async function design(env: IngestEnv, row: TutorialRow, job: Job): Promise<Parti
   const p = JSON.parse(v.choices?.[0]?.message?.content ?? "null") as Plan | null;
   if (!p?.milestones?.length) throw new Error("Holo returned no milestones");
   const id = `rio:org:${row.id}`;
+  // A page or a goal: the found pages' previews, the first image as the tutorial's cover (a video has its thumbnail).
+  const sources: Source[] = row.sources ? JSON.parse(row.sources) : [];
+  const shown = row.kind === "youtube" ? sources : await withPreviews(sources, job.agentViewUrl);
+  const cover = row.kind === "youtube" ? undefined : shown.find((s) => s.image);
   const tutorial = {
     id,
     version: 1,
@@ -415,7 +477,9 @@ async function design(env: IngestEnv, row: TutorialRow, job: Job): Promise<Parti
     credit:
       row.kind === "youtube"
         ? { kind: "youtube", title: row.title ?? undefined, author: job.author, url: row.input, thumbnail: youtubeThumbnail(row.input) }
-        : undefined,
+        : cover
+          ? { kind: "web", title: cover.title, site: cover.site, url: cover.url, thumbnail: cover.image }
+          : undefined,
     milestones: p.milestones.map((m, i) => ({
       id: `m${i + 1}`,
       goal: m.goal,
@@ -426,7 +490,7 @@ async function design(env: IngestEnv, row: TutorialRow, job: Job): Promise<Parti
     })),
   };
   job.material = undefined; // the tutorial replaces it
-  return { status: "ready", title: p.title, app: tutorial.app.name, data: JSON.stringify(tutorial), error: null };
+  return { status: "ready", title: p.title, app: tutorial.app.name, data: JSON.stringify(tutorial), sources: JSON.stringify(shown), error: null };
 }
 
 // ---------------------------------------------------------------- application

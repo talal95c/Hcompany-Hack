@@ -19,6 +19,9 @@ mod planner;
 mod platform;
 mod qa;
 mod search;
+/// Learner simulator, driven from tests only (never shipped in the app).
+#[cfg(test)]
+mod sim;
 mod skills;
 mod stt;
 mod tray;
@@ -303,6 +306,8 @@ async fn tutor_start(
     let generation = state.generation.current();
     // Both entries end up as a milestone graph: a saved tutorial, or one
     // planned by Holo from the goal and the current screen.
+    // What the knowledge base gave the planner, journaled in the new session.
+    let plan_note: Mutex<Option<serde_json::Value>> = Mutex::new(None);
     let planning = async {
         Ok(match (tutorial_id, goal) {
             (Some(id), _) if id.starts_with(platform::ID_PREFIX) => platform::tutorial(&id).await?,
@@ -310,17 +315,19 @@ async fn tutor_start(
             (None, Some(goal)) => {
                 app.emit_to("main", "tutor:planning", ()).ok();
                 // The organization's knowledge base, looked up while the screen is captured.
-                let (shot, kb) = tokio::join!(shoot(), platform::search("", &goal));
-                let kb = kb.unwrap_or_else(|e| {
-                    eprintln!("[platform] {e}");
-                    None
+                let (shot, kb) = tokio::join!(shoot(), platform::lookup("", &goal));
+                // Journaled once the session exists (its journal opens after planning).
+                *plan_note.lock().unwrap() = Some(match &kb {
+                    Ok(Some((_, matches))) => json!({ "goal": goal, "matches": matches }),
+                    Ok(None) => json!({ "goal": goal, "matches": [] }),
+                    Err(e) => json!({ "goal": goal, "error": e }),
                 });
-                if let Some(k) = &kb {
-                    journal::event(
-                        "knowledge",
-                        json!({ "goal": goal, "chars": k.text.len(), "sources": k.sources.len() }),
-                    );
-                }
+                let kb = kb
+                    .unwrap_or_else(|e| {
+                        eprintln!("[platform] {e}");
+                        None
+                    })
+                    .map(|(r, _)| r);
                 planner::plan(&state.holo, &goal, &shot?, kb.as_ref().map(|k| k.text.as_str())).await?
             }
             (None, None) => return Err("Nothing to start".into()),
@@ -335,6 +342,9 @@ async fn tutor_start(
         return Err("Rio is already running a task".into());
     }
     let session = guard.insert(agent::Session::new(tutorial, lang.as_deref()));
+    if let Some(note) = plan_note.lock().unwrap().take() {
+        journal::event("plan_knowledge", note);
+    }
     app.emit_to("main", "tutor:plan", session.progress()).ok();
     app.emit_to("overlay", "pointer:thinking", ()).ok();
     let step = guarded_step(&app, &state, session, None, false, generation).await?;
@@ -450,18 +460,15 @@ async fn tutor_skip_milestone(
 /// text's language when detection is confident, else `fallback`.
 #[tauri::command]
 fn resolve_lang(text: String, spoken: Option<String>, fallback: Option<String>) -> String {
-    let supported = |l: &String| agent::language_name(l).is_some();
-    spoken
-        .filter(supported)
-        .or_else(|| voice::detect(&text).map(String::from))
-        .or(fallback.filter(supported))
-        .unwrap_or_else(|| "en".into())
+    voice::resolve(&text, spoken.as_deref(), fallback.as_deref(), |l| agent::language_name(l).is_some())
 }
 
 #[tauri::command]
 async fn list_tutorials() -> Result<Vec<tutorial::Summary>, String> {
     let mut list = tutorial::list();
-    list.extend(platform::tutorials().await);
+    // The palette opens before a tutorial starts: fetch the organization's apps now, for the search tool.
+    let (tutorials, _) = tokio::join!(platform::tutorials(), platform::apps());
+    list.extend(tutorials);
     Ok(list)
 }
 
@@ -739,7 +746,8 @@ fn on_user_click(app: &AppHandle, click: clicks::Click) {
     }
 
     let Some((tx, ty)) = *state.target.lock().unwrap() else {
-        watch::note_click(false);
+        // Nothing is pointed at (a shortcut or a question step): a plain click.
+        watch::note_click(None);
         return;
     };
     let distance = ((click.x - tx).powi(2) + (click.y - ty).powi(2)).sqrt();
@@ -748,7 +756,7 @@ fn on_user_click(app: &AppHandle, click: clicks::Click) {
         Some(r) => r.contains(click.x, click.y, 4.0),
         None => distance <= HIT_RADIUS,
     };
-    watch::note_click(hit);
+    watch::note_click(Some(hit));
     if hit {
         *state.target.lock().unwrap() = None;
         *state.target_rect.lock().unwrap() = None;
@@ -852,6 +860,8 @@ pub fn run() {
             tray::setup(app)?;
             let handle = app.handle().clone();
             // Typing in Rio's own panel (a question) is not the learner's step.
+            // Wake the platform and its knowledge worker before the first request.
+            tauri::async_runtime::spawn(platform::warm_up());
             clicks::watch_keys(|enter| {
                 if !PANEL_FOCUSED.load(Ordering::SeqCst) {
                     watch::note_key(enter);

@@ -4,6 +4,7 @@ import { Avatar } from "./cards";
 import { type TutorialRow, auth, initials, navigate, usePath, useApi } from "./lib";
 import { AuthPage, InvitePage, OnboardingPage } from "./pages/Auth";
 import { CommunityPage } from "./pages/Community";
+import { GetRioPage } from "./pages/GetRio";
 import { HomePage } from "./pages/Home";
 import { KnowledgePage } from "./pages/Knowledge";
 import { LibraryPage } from "./pages/Library";
@@ -25,6 +26,7 @@ const TEAM = [
   { path: "/usage", label: "Insights", icon: I.Chart },
   { path: "/settings", label: "Settings", icon: I.Gear },
 ];
+const GET_RIO = { path: "/get-rio", label: "Get the Mac app", icon: I.Download };
 
 function App() {
   const path = usePath();
@@ -50,18 +52,35 @@ function App() {
 }
 
 function Shell({ path, orgId }: { path: string; orgId: string }) {
-  const known = [...MAIN, ...TEAM].some((p) => path.startsWith(p.path)) || path.startsWith("/t/");
+  const known = [...MAIN, ...TEAM, GET_RIO].some((p) => path.startsWith(p.path)) || path.startsWith("/t/");
   useEffect(() => {
     if (!known) navigate("/home", true);
   }, [known]);
   const me = useApi<{ role: string; canManage: boolean }>(`/me?org=${orgId}`);
   const canManage = !!me.data?.canManage;
   const tid = path.match(/^\/t\/([\w-]+)/)?.[1];
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("rio.side") === "collapsed";
+    } catch {
+      return false;
+    }
+  });
+  const toggle = () =>
+    setCollapsed((c) => {
+      try {
+        localStorage.setItem("rio.side", c ? "open" : "collapsed");
+      } catch {
+        // private mode: the choice lasts for this visit only
+      }
+      return !c;
+    });
 
   return (
-    <div className="shell">
-      <Sidebar path={path} orgId={orgId} />
-      <main className="main">
+    <div className={`shell ${collapsed ? "is-collapsed" : ""}`}>
+      <Rail path={path} orgId={orgId} open={!collapsed} onToggle={toggle} />
+      <div className="frame">
+        <main className="main">
         <div className="page" key={`${orgId}-${tid ?? path}`}>
           {tid ? (
             <TutorialPage id={tid} />
@@ -70,11 +89,13 @@ function Shell({ path, orgId }: { path: string; orgId: string }) {
           ) : path.startsWith("/community") ? (
             <CommunityPage />
           ) : path.startsWith("/knowledge") ? (
-            <KnowledgePage />
+            <KnowledgePage canManage={canManage} />
           ) : path.startsWith("/members") ? (
             <MembersPage canManage={canManage} />
           ) : path.startsWith("/settings") ? (
             <TokensPage canManage={canManage} />
+          ) : path.startsWith("/get-rio") ? (
+            <GetRioPage />
           ) : path.startsWith("/usage") ? (
             <UsagePage />
           ) : (
@@ -82,67 +103,77 @@ function Shell({ path, orgId }: { path: string; orgId: string }) {
           )}
         </div>
       </main>
+      </div>
     </div>
   );
 }
 
-function NavLink({ to, label, icon: Icon, path, count }: { to: string; label: string; icon: () => React.ReactNode; path: string; count?: number }) {
+function NavLink({ to, label, icon: Icon, path, count, short }: { to: string; label: string; icon: () => React.ReactNode; path: string; count?: number; short?: boolean }) {
   return (
     <a
       href={to}
-      className={`nav ${path.startsWith(to) ? "is-on" : ""}`}
+      title={label}
+      className={`rail__btn ${path.startsWith(to) ? "is-on" : ""}`}
       onClick={(e) => {
         e.preventDefault();
         navigate(to);
       }}
     >
       <Icon />
-      {label}
+      {!short && <span className="nav__label">{label}</span>}
       {count ? <span className="nav__count">{count}</span> : null}
     </a>
   );
 }
 
-function Sidebar({ path, orgId }: { path: string; orgId: string }) {
+/** The sidebar, outside the app's card: icons only, or the full menu. The logo opens and closes it. */
+function Rail({ path, orgId, open, onToggle }: { path: string; orgId: string; open: boolean; onToggle: () => void }) {
   const user = auth.useSession().data?.user;
   const lib = useApi<{ tutorials: TutorialRow[] }>(`/tutorials?org=${orgId}`);
   const drafts = lib.data?.tutorials.filter((t) => t.visibility === "draft").length;
+  const short = !open;
   return (
-    <nav className="side">
-      <div className="brand">
-        <span className="brand__mark">
-          <I.Mark />
-        </span>
-        Rio
-      </div>
-      <OrgSwitcher />
-      <button className="btn btn--primary side__new" onClick={() => navigate("/home")}>
-        <I.Plus /> New tutorial
+    <nav className={`rail ${open ? "is-open" : ""}`} aria-label="Pages">
+      <button className="rail__mark" onClick={onToggle} aria-expanded={open} aria-label={open ? "Collapse the menu" : "Expand the menu"} title={open ? "Collapse" : "Expand"}>
+        <I.Mark />
+        {open && <span className="rail__name">Rio</span>}
+      </button>
+      {open && <OrgSwitcher />}
+      <button className="rail__btn rail__new" onClick={() => navigate("/home")} title="New tutorial">
+        <I.Plus />
+        {open && <span className="nav__label">New tutorial</span>}
       </button>
       {MAIN.map((p) => (
-        <NavLink key={p.path} to={p.path} label={p.label} icon={p.icon} path={path} count={p.path === "/library" ? drafts : undefined} />
+        <NavLink key={p.path} short={short} to={p.path} label={p.label} icon={p.icon} path={path} count={p.path === "/library" ? drafts : undefined} />
       ))}
-      <div className="side__label">Team</div>
+      {open ? <div className="rail__label">Team</div> : <div className="rail__sep" />}
       {TEAM.map((p) => (
-        <NavLink key={p.path} to={p.path} label={p.label} icon={p.icon} path={path} />
+        <NavLink key={p.path} short={short} to={p.path} label={p.label} icon={p.icon} path={path} />
       ))}
-      <div className="side__foot">
-        <Avatar name={user?.name || user?.email || "?"} />
-        <span className="who">
-          <b>{user?.name}</b>
-          <span>{user?.email}</span>
-        </span>
-        <button
-          className="btn btn--ghost btn--sm"
-          title="Sign out"
-          aria-label="Sign out"
-          onClick={async () => {
-            await auth.signOut();
-            navigate("/sign-in", true);
-          }}
-        >
-          <I.Logout />
-        </button>
+      <div className="rail__foot">
+        <NavLink short={short} to={GET_RIO.path} label={GET_RIO.label} icon={GET_RIO.icon} path={path} />
+        <div className="rail__me">
+          <span title={user?.email ?? ""}>
+            <Avatar name={user?.name || user?.email || "?"} />
+          </span>
+          {open && (
+            <span className="who">
+              <b>{user?.name}</b>
+              <span>{user?.email}</span>
+            </span>
+          )}
+          <button
+            className="rail__btn rail__out"
+            title="Sign out"
+            aria-label="Sign out"
+            onClick={async () => {
+              await auth.signOut();
+              navigate("/sign-in", true);
+            }}
+          >
+            <I.Logout />
+          </button>
+        </div>
       </div>
     </nav>
   );

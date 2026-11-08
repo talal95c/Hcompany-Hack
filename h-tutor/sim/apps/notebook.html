@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Notebook</title>
+<!-- Test app for the learner simulator: menus, a sidebar, dialogs and an
+     unlabeled toolbar icon, so a tutor has real guiding to do. Its state is
+     exposed as `window.app` for scenario graders. -->
+<style>
+  :root { --bg: #ffffff; --fg: #1d1d1f; --muted: #6e6e73; --line: #d2d2d7; --panel: #f5f5f7; --accent: #0a66d8; }
+  body.dark { --bg: #1c1c1e; --fg: #f2f2f7; --muted: #a1a1a6; --line: #3a3a3c; --panel: #2c2c2e; --accent: #4c9bff; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px -apple-system, "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--fg); height: 100vh; display: flex; flex-direction: column; }
+  .menubar { display: flex; gap: 2px; padding: 4px 8px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  .menu { position: relative; }
+  .menu > button { background: none; border: 0; padding: 6px 12px; font: inherit; color: var(--fg); border-radius: 6px; cursor: pointer; }
+  .menu > button:hover, .menu.open > button { background: var(--line); }
+  .items { display: none; position: absolute; top: 34px; left: 0; min-width: 210px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.18); padding: 4px; z-index: 10; }
+  .menu.open .items { display: block; }
+  .items button { display: flex; justify-content: space-between; width: 100%; background: none; border: 0; padding: 8px 10px; font: inherit; color: var(--fg); text-align: left; border-radius: 5px; cursor: pointer; }
+  .items button:hover { background: var(--accent); color: #fff; }
+  .items .key { color: var(--muted); }
+  .items button:hover .key { color: #fff; }
+  .main { flex: 1; display: flex; min-height: 0; }
+  .sidebar { width: 230px; border-right: 1px solid var(--line); background: var(--panel); padding: 12px 8px; }
+  .sidebar h3 { margin: 4px 8px 10px; font-size: 12px; text-transform: uppercase; color: var(--muted); letter-spacing: .05em; }
+  .note { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 8px 10px; font: inherit; color: var(--fg); border-radius: 6px; cursor: pointer; }
+  .note.active { background: var(--accent); color: #fff; }
+  .editor { flex: 1; padding: 24px 40px; overflow: auto; }
+  .toolbar { display: flex; gap: 6px; margin-bottom: 18px; }
+  .toolbar button { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--fg); font-size: 17px; cursor: pointer; }
+  h1 { margin: 0 0 16px; font-size: 26px; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  li.selected { background: var(--panel); }
+  li .text { flex: 1; cursor: pointer; }
+  li.important .text { font-weight: 700; color: #d70015; }
+  li input[type=text] { flex: 1; font: inherit; padding: 6px 8px; border: 1px solid var(--accent); border-radius: 6px; background: var(--bg); color: var(--fg); }
+  .empty { color: var(--muted); }
+  .dialog-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); align-items: center; justify-content: center; z-index: 20; }
+  .dialog-bg.open { display: flex; }
+  .dialog { background: var(--bg); color: var(--fg); border-radius: 12px; padding: 20px; width: 360px; box-shadow: 0 20px 50px rgba(0,0,0,.3); }
+  .dialog h2 { margin: 0 0 12px; font-size: 17px; }
+  .dialog input { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--fg); }
+  .dialog .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .dialog .row button { font: inherit; padding: 7px 14px; border-radius: 7px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; }
+  .dialog .row .primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+</style>
+</head>
+<body>
+<div class="menubar">
+  <div class="menu"><button>File</button><div class="items">
+    <button data-cmd="new">New note…<span class="key">⌘N</span></button>
+    <button data-cmd="rename">Rename note…</button>
+    <button data-cmd="delete">Delete note</button>
+  </div></div>
+  <div class="menu"><button>Insert</button><div class="items">
+    <button data-cmd="item">Checklist item<span class="key">⌘I</span></button>
+  </div></div>
+  <div class="menu"><button>View</button><div class="items">
+    <button data-cmd="theme">Dark theme</button>
+  </div></div>
+</div>
+<div class="main">
+  <div class="sidebar"><h3>Notes</h3><div id="notes"></div></div>
+  <div class="editor">
+    <div class="toolbar">
+      <button data-cmd="item" title="Add a checklist item">＋</button>
+      <button data-cmd="star" title="Mark the selected item as important">★</button>
+    </div>
+    <h1 id="title"></h1>
+    <ul id="items"></ul>
+  </div>
+</div>
+<div class="dialog-bg" id="dialog"><div class="dialog">
+  <h2 id="dialog-title"></h2>
+  <input id="dialog-input" type="text" spellcheck="false">
+  <div class="row"><button id="cancel">Cancel</button><button class="primary" id="ok">OK</button></div>
+</div></div>
+<script>
+  const app = (window.app = { notes: [{ name: "Untitled", items: [] }], current: 0, selected: -1, theme: "light" });
+  const $ = (id) => document.getElementById(id);
+  let onOk = null;
+
+  function render() {
+    document.body.classList.toggle("dark", app.theme === "dark");
+    $("notes").innerHTML = "";
+    app.notes.forEach((n, i) => {
+      const b = document.createElement("button");
+      b.className = "note" + (i === app.current ? " active" : "");
+      b.textContent = n.name;
+      b.onclick = () => { app.current = i; app.selected = -1; render(); };
+      $("notes").appendChild(b);
+    });
+    const note = app.notes[app.current];
+    $("title").textContent = note ? note.name : "";
+    $("items").innerHTML = note && note.items.length ? "" : '<li class="empty">No items yet. Insert › Checklist item</li>';
+    (note ? note.items : []).forEach((it, i) => {
+      const li = document.createElement("li");
+      li.className = (it.important ? "important " : "") + (i === app.selected ? "selected" : "");
+      if (it.editing) {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = "New item";
+        input.value = it.text;
+        input.onkeydown = (e) => {
+          if (e.key === "Enter") { it.text = input.value.trim(); it.editing = false; if (!it.text) note.items.splice(i, 1); render(); }
+        };
+        input.oninput = () => { it.text = input.value; };
+        li.appendChild(input);
+        setTimeout(() => input.focus(), 0);
+      } else {
+        const box = document.createElement("input");
+        box.type = "checkbox";
+        box.checked = it.done;
+        box.onchange = () => { it.done = box.checked; };
+        const span = document.createElement("span");
+        span.className = "text";
+        span.textContent = it.text;
+        span.onclick = () => { app.selected = i; render(); };
+        li.append(box, span);
+      }
+      $("items").appendChild(li);
+    });
+  }
+
+  function ask(title, value, ok) {
+    $("dialog-title").textContent = title;
+    $("dialog-input").value = value;
+    $("dialog").classList.add("open");
+    onOk = ok;
+    setTimeout(() => $("dialog-input").focus(), 0);
+  }
+  function close() { $("dialog").classList.remove("open"); onOk = null; }
+  $("ok").onclick = () => { const v = $("dialog-input").value.trim(); if (v && onOk) onOk(v); close(); render(); };
+  $("cancel").onclick = close;
+  $("dialog-input").onkeydown = (e) => { if (e.key === "Enter") $("ok").click(); if (e.key === "Escape") close(); };
+
+  const commands = {
+    new: () => ask("New note", "", (v) => { app.notes.push({ name: v, items: [] }); app.current = app.notes.length - 1; app.selected = -1; }),
+    rename: () => ask("Rename note", app.notes[app.current].name, (v) => { app.notes[app.current].name = v; }),
+    delete: () => { if (app.notes.length > 1) { app.notes.splice(app.current, 1); app.current = 0; } },
+    item: () => { const n = app.notes[app.current]; n.items.push({ text: "", important: false, done: false, editing: true }); },
+    star: () => { const it = app.notes[app.current].items[app.selected]; if (it) it.important = !it.important; },
+    theme: () => { app.theme = app.theme === "dark" ? "light" : "dark"; },
+  };
+  function run(cmd) { document.querySelectorAll(".menu").forEach((m) => m.classList.remove("open")); commands[cmd](); render(); }
+
+  document.querySelectorAll("[data-cmd]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); run(b.dataset.cmd); }));
+  document.querySelectorAll(".menu > button").forEach((b) => (b.onclick = (e) => {
+    e.stopPropagation();
+    const m = b.parentElement, open = m.classList.contains("open");
+    document.querySelectorAll(".menu").forEach((x) => x.classList.remove("open"));
+    if (!open) m.classList.add("open");
+  }));
+  document.addEventListener("click", () => document.querySelectorAll(".menu").forEach((m) => m.classList.remove("open")));
+  document.addEventListener("keydown", (e) => {
+    if (!(e.metaKey || e.ctrlKey)) return;
+    if (e.key === "n") { e.preventDefault(); run("new"); }
+    if (e.key === "i") { e.preventDefault(); run("item"); }
+  });
+  render();
+</script>
+</body>
+</html>

@@ -239,8 +239,15 @@ function Ready({ t, reload, say }: { t: TutorialRow; reload: () => void; say: (m
             {t.sources.map((s) =>
               s.url ? (
                 <a key={s.url} className="source" href={s.url} target="_blank" rel="noreferrer">
-                  <span className="source__icon">{t.kind === "youtube" ? <I.Play /> : <I.Page />}</span>
-                  <span>{s.title || s.url}</span>
+                  {s.image ? (
+                    <img className="source__thumb" src={s.image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={(e) => (e.currentTarget.style.display = "none")} />
+                  ) : (
+                    <span className="source__icon">{t.kind === "youtube" ? <I.Play /> : <I.Page />}</span>
+                  )}
+                  <span className="source__text">
+                    {s.title || s.url}
+                    {s.site && <small>{s.site}</small>}
+                  </span>
                   <span className="faint" style={{ marginLeft: "auto" }}>↗</span>
                 </a>
               ) : (

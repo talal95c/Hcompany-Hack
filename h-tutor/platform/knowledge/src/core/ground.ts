@@ -157,7 +157,8 @@ export const STRUCT_SCHEMA = {
   type: "object",
   properties: {
     title: { type: "string" },
-    version: { type: "string" },
+    // No "version" field: with nothing to write (most docs state none), Holo's constrained decoding pads it with
+    // whitespace until max_tokens and the JSON never closes. The version comes from the person adding the doc.
     paths: {
       type: "array",
       items: {
@@ -184,7 +185,7 @@ export const STRUCT_SCHEMA = {
       },
     },
   },
-  required: ["title", "version", "paths"],
+  required: ["title", "paths"],
 };
 
 /** Split a markdown doc on its headings into chunks of at most ~12k characters. */

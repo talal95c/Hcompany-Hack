@@ -1,0 +1,9 @@
+{
+  "id": "notebook-journal",
+  "app": "Notebook",
+  "url": "apps/notebook.html",
+  "goal": "Switch the app to the dark theme, then rename the \"Untitled\" note to \"Journal\"",
+  "lang": "fr",
+  "max_steps": 20,
+  "success": "app.theme === 'dark' && app.notes.some(n => n.name === 'Journal') && !app.notes.some(n => n.name === 'Untitled')"
+}

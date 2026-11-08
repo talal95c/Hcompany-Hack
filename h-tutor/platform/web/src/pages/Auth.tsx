@@ -13,6 +13,19 @@ function Brand() {
   );
 }
 
+/** The landing's hill, beside every sign-in form. */
+function Art() {
+  return (
+    <figure className="auth__art" aria-hidden>
+      <img src="/auth-hill.jpg" alt="" />
+      <figcaption>
+        <span>Paste a tutorial.</span>
+        Do it with Rio.
+      </figcaption>
+    </figure>
+  );
+}
+
 function GoogleLogo() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -137,6 +150,7 @@ export function AuthPage({ mode, invite }: { mode: "sign-in" | "sign-up"; invite
           </button>
         </div>
       </div>
+      <Art />
     </div>
   );
 }
@@ -191,6 +205,7 @@ export function OnboardingPage({ again }: { again?: boolean }) {
           )}
         </form>
       </div>
+      <Art />
     </div>
   );
 }
@@ -255,6 +270,7 @@ export function InvitePage({ id }: { id: string }) {
           )}
         </div>
       </div>
+      <Art />
     </div>
   );
 }
