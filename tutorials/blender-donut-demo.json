@@ -1,0 +1,83 @@
+{
+  "id": "blender-donut-demo",
+  "version": 1,
+  "title": "Donut in 5 steps (demo)",
+  "app": {
+    "name": "Blender",
+    "bundle_id": "org.blenderfoundation.blender",
+    "min_version": "4.0"
+  },
+  "goal": "Make a brown donut in Blender with the simplest possible path: delete the cube, add a torus, give it a brown material and show it in Material Preview",
+  "language": "en",
+  "source": "authored",
+  "start": "delete-cube",
+  "milestones": [
+    {
+      "id": "delete-cube",
+      "goal": "Delete the default cube (keep the camera and the light)",
+      "done_when": "The outliner (top right) no longer lists 'Cube'; 'Camera' and 'Light' may still be there",
+      "hints": [
+        "Simplest path: the Cube is already selected in a new scene (orange outline). Move the pointer over the 3D viewport, press X, then click Delete",
+        "If the Cube is not selected: click the cube once in the viewport first, then press X and click Delete",
+        "Do not press A (select all) and do not delete the Camera or the Light",
+        "Do not use the Edit menu, the outliner right-click menu or any other path"
+      ],
+      "teach": "Every new Blender scene starts with a cube. We remove it to make room for the donut.",
+      "next": ["add-torus"]
+    },
+    {
+      "id": "add-torus",
+      "goal": "Add a torus with its default settings",
+      "done_when": "A ring-shaped object is in the middle of the viewport and the outliner lists 'Torus'",
+      "hints": [
+        "Simplest path: click the 'Add' menu in the header at the top left of the 3D viewport, hover 'Mesh', then click 'Torus'",
+        "Keep every default value: do not open or change the 'Add Torus' panel that appears at the bottom left",
+        "Do not use Shift+A, the search, or the Edit Mode; stay in Object Mode",
+        "If the torus is small, that is fine: do not scale, move or zoom"
+      ],
+      "teach": "A torus is a ready-made ring: the perfect starting shape for a donut.",
+      "requires": ["delete-cube"],
+      "next": ["new-material"]
+    },
+    {
+      "id": "new-material",
+      "goal": "Give the torus a new material",
+      "done_when": "In the Properties editor, the Material tab shows a material named 'Material' (or 'Material.001') with 'Surface: Principled BSDF'",
+      "hints": [
+        "The torus is already selected right after you add it; if not, click it once in the viewport",
+        "Simplest path: in the Properties editor on the right, click the red sphere icon (Material Properties), near the bottom of the vertical tab column",
+        "Click the big 'New' button. Nothing else",
+        "Do not open the Shading workspace or the node editor"
+      ],
+      "teach": "A material describes how a surface looks: its color, how shiny it is, how it reflects light.",
+      "requires": ["add-torus"],
+      "next": ["brown-color"]
+    },
+    {
+      "id": "brown-color",
+      "goal": "Set the material's Base Color to golden brown (hex C68642)",
+      "done_when": "The Base Color swatch in the Material tab is brown (warm orange-brown), not white or grey",
+      "hints": [
+        "Simplest path: in the Material tab, click the white swatch next to 'Base Color' to open the color picker",
+        "Click the 'Hex' field in the picker, select its text, type C68642 and press Enter",
+        "Do not drag in the color wheel and do not change Metallic, Roughness or any other value",
+        "Click anywhere outside the picker to close it"
+      ],
+      "teach": "Base Color is the surface's own color, before light and reflections. Typing the hex value is the most precise way to set it.",
+      "requires": ["new-material"],
+      "next": ["material-preview"]
+    },
+    {
+      "id": "material-preview",
+      "goal": "Show the donut in Material Preview to see its color",
+      "done_when": "The viewport shading is Material Preview (the third of the four sphere buttons at the top right of the viewport is highlighted) and the donut looks brown",
+      "hints": [
+        "Simplest path: at the top right of the 3D viewport there are four small sphere buttons; click the third one (Material Preview)",
+        "Do not use the Z pie menu and do not switch to Rendered (the fourth button), which is slower",
+        "The first preview can take a few seconds to compile shaders: wait, do not click again"
+      ],
+      "teach": "Solid mode shows shapes in grey; Material Preview shows the real colors of your materials.",
+      "requires": ["brown-color"]
+    }
+  ]
+}
