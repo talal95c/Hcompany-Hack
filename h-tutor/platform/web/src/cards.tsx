@@ -1,4 +1,5 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { AppIcon, coverStyle } from "./appIcons";
 import { type TutorialRow, api, initials, isLive, kindOf, navigate } from "./lib";
 import { I } from "./ui";
@@ -146,6 +147,8 @@ type Recognition = { lang: string; interimResults: boolean; continuous: boolean;
  * library and mic buttons. Whatever you type becomes a tutorial.
  */
 export function RioBar({ initial = "" }: { initial?: string }) {
+  const reduced = useReducedMotion();
+  const [focused, setFocused] = useState(false);
   const [text, setText] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -191,7 +194,9 @@ export function RioBar({ initial = "" }: { initial?: string }) {
 
   return (
     <div className="riobar-wrap">
-      <form className="riobar" onSubmit={submit}>
+      <motion.form layout={!reduced} className={`riobar ${focused ? "is-focused" : ""}`} onSubmit={submit}
+        onFocus={() => setFocused(true)} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false); }}
+        animate={{ height: focused ? 70 : 62 }} transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 280, damping: 28 }}>
         <span className="riobar__lead">{busy ? <span className="spinner" /> : <I.Spark />}</span>
         <input
           ref={input}
@@ -211,10 +216,10 @@ export function RioBar({ initial = "" }: { initial?: string }) {
             <I.Mic />
           </button>
         )}
-        <button className="riobar__key" disabled={!kind || busy} aria-label="Create tutorial">
+        <motion.button animate={{ scale: reduced ? 1 : kind && !busy ? 1 : 0.9 }} whileTap={reduced ? undefined : { scale: 0.92 }} className="riobar__key" disabled={!kind || busy} aria-label="Create tutorial">
           <I.Enter />
-        </button>
-      </form>
+        </motion.button>
+      </motion.form>
       {error && <p className="error" style={{ textAlign: "center", margin: "10px 0 0" }}>{error}</p>}
     </div>
   );
