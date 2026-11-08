@@ -61,7 +61,42 @@ tools/       explorateur de sessions
 
 ## État
 
-Rio se lance depuis les sources (`npm run tauri dev`, détail ci-dessous) ; un installeur en un clic est prévu. Le tuteur, l'autopilote et la plateforme fonctionnent de bout en bout ; leurs points faibles mesurés sont la précision du pointage de Holo (environ 79 % des clics à moins de 30 points de la cible) et les plans faits sur des demandes vagues (« rends l'arbre plus réaliste »).
+Rio se lance depuis les sources (voir [How to install](#how-to-install)) ; un installeur en un clic est prévu. Le tuteur, l'autopilote et la plateforme fonctionnent de bout en bout ; leurs points faibles mesurés sont la précision du pointage de Holo (environ 79 % des clics à moins de 30 points de la cible) et les plans faits sur des demandes vagues (« rends l'arbre plus réaliste »).
+
+## How to install
+
+Rio runs from source on a Mac for now; a one-click installer is planned. Allow about 10 minutes (est.), most of it the first build.
+
+1. **Install the tools**: [Node.js](https://nodejs.org) 20 or newer, [Rust](https://rustup.rs), and Apple's command line tools.
+   ```bash
+   xcode-select --install
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   ```
+2. **Get the code**
+   ```bash
+   git clone https://github.com/Jacqkues/rio.git && cd rio
+   ```
+3. **Add your keys**: copy the example file, then set `HAI_API_KEY` ([H Company](https://platform.hcompany.ai/settings/api-keys)).
+   ```bash
+   cp .env.example .env
+   ```
+   Optional: `GLADIA_API_KEY` turns on voice ([Gladia](https://app.gladia.io)); `LINKUP_API_KEY` adds a web search fallback; `HF_TOKEN` (or `hf auth login`) gives Rio its best voice (Phonon 40m). No paid H credits? Set `HOLO_FAST_MODEL` and `HOLO_SMART_MODEL` to `holo3-1-35b-a3b` (free, 10 requests/min).
+4. **Connect your team** (optional): in the console at [rio.vignemale.com](https://rio.vignemale.com), create a token in **Settings**, then add to `.env`:
+   ```bash
+   RIO_API_URL=https://rio.vignemale.com
+   RIO_API_TOKEN=rio_…
+   ```
+   Rio then finds your team's tutorials and knowledge base.
+5. **Launch Rio**: it opens in the menu bar, not the Dock.
+   ```bash
+   npm install && npm run tauri dev
+   ```
+6. **Grant the permissions** in System Settings › Privacy & Security, to your terminal, then restart Rio:
+   - **Screen Recording** (required): Rio sees your screen.
+   - **Microphone**: to talk to Rio.
+   - **Accessibility**: to point at elements precisely, and for the autopilot to click for you.
+   - **Input Monitoring**: Rio notices your clicks and when you stop typing (it counts keys, never records them).
+7. **Start a lesson**: press **⌥ ⇧ Space**, type what you want to learn or paste a tutorial link, and follow the orange cursor.
 
 ---
 
@@ -69,13 +104,7 @@ Rio se lance depuis les sources (`npm run tauri dev`, détail ci-dessous) ; un i
 
 ## Run
 
-```bash
-cp .env.example .env   # then set HAI_API_KEY
-npm install
-npm run tauri dev
-```
-
-On first use, macOS asks for **Screen Recording** permission (System Settings › Privacy & Security). Grant it to your terminal, then restart.
+See [How to install](#how-to-install). In short: `cp .env.example .env` (set `HAI_API_KEY`), then `npm install && npm run tauri dev`, and grant Screen Recording to your terminal.
 
 ## Use
 
