@@ -2,7 +2,15 @@ import { constants } from "node:fs";
 import { copyFile, mkdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
-const source = new URL("./textedit-courses/skill.json", import.meta.url);
+const demos = {
+  textedit: "./textedit-courses/skill.json",
+  excel: "./excel-courses/skill.json",
+};
+const name = process.argv[2] ?? "textedit";
+if (!Object.hasOwn(demos, name) || process.argv.length > 3) {
+  throw new Error("Usage : npm run demo:skill -- [textedit|excel]");
+}
+const source = new URL(demos[name], import.meta.url);
 const fixture = await readFile(source);
 const skill = JSON.parse(fixture);
 // Mirrors skills::dir(): there is no environment override in the app.

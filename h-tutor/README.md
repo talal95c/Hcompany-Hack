@@ -257,6 +257,60 @@ jalons observés. Deux refus activent toujours la sourdine de 24 h, même avec l
 cooldown à zéro. L’installateur ne réinitialise pas une skill modifiée : sauvegarder
 ou déplacer explicitement son dossier local avant une nouvelle installation.
 
+### Variante Microsoft Excel pour Mac — Calculer le total des courses
+
+Microsoft Excel doit être installé et activé sur le Mac. Depuis `h-tutor/` :
+
+```sh
+npm run demo:skill -- excel
+RIO_OBSERVE=1 RIO_OBSERVE_STEPS=3 RIO_SKILLS_COOLDOWN_SECONDS=0 RIO_AUTO_COMPILE=0 npm run tauri dev
+```
+
+Sans argument, l’installateur continue d’installer TextEdit. L’argument `excel`
+installe `demo/excel-courses/skill.json` dans
+`skills/demo-excel-courses/skill.json`, sans toucher à TextEdit. Les mêmes règles
+de refus d’écrasement s’appliquent. La réussite incluse est synthétique, réservée
+à la démo, et aucun script n’est compilé. Le nom d’application attendu par xcap
+est **`Microsoft Excel`**, pas `Excel`.
+
+Les permissions, l’écran principal et les précautions de confidentialité décrits
+ci-dessus restent nécessaires. Garder Excel au premier plan pendant les étapes :
+
+1. Ouvrir un **nouveau classeur vierge** avec `⌘N`. Fermer les dialogues,
+   afficher la feuille avec **A1:B5** visibles et la barre de formule affichée
+   (onglet **Affichage**, si nécessaire). Attendre environ 4 s (est.) pour la
+   référence locale, redimensionner franchement la fenêtre, puis la laisser
+   immobile environ 20 s (est.) pour le premier contrôle.
+2. Cliquer **A1**, saisir exactement **`Produit`**, appuyer sur **Tab**, saisir
+   **`Prix`**, puis **Entrée** pour valider. Redimensionner à nouveau et attendre
+   environ 20 s (est.), sans changer d’application.
+3. Cliquer **A2**, saisir exactement **`Pommes`**, **Entrée**, **`Pain`**,
+   **Entrée**, **`Lait`**, **Entrée**. Ne pas saisir les prix soi-même.
+   Redimensionner à nouveau et attendre environ 20 s (est.).
+4. Accepter **« Tu es en train de faire Calculer le total des courses (3/7).
+   Je termine pour toi ? »** avec **Oui, vas-y**. Rio GUI revérifie les trois
+   jalons puis saisit les prix, la somme, et met les deux lignes en gras.
+
+Résultat attendu :
+
+| Cellule | Contenu |
+|---|---|
+| A1 / B1 | **Produit / Prix** |
+| A2 / B2 | Pommes / 2 |
+| A3 / B3 | Pain / 3 |
+| A4 / B4 | Lait / 1,5 (ou 1.5) |
+| A5 / B5 | **Total / 6,5 (ou 6.5)** |
+
+Pour prouver le cinquième jalon sur **une seule capture**, B5 doit être
+sélectionnée : la cellule affiche **6,5** ou **6.5** et la barre de formule
+montre **`=SOMME(B2:B4)`** ou **`=SUM(B2:B4)`**, selon la langue d’Excel.
+Une constante `6,5` ne suffit pas. Les hints indiquent les deux noms de fonction,
+le séparateur décimal local et les actions concrètes cellule/Entrée/Tab/`⌘B`.
+Le premier critère reste vrai après remplissage du classeur pour permettre la
+reprise sans effacer les données. Si le contrôle reste inconnu, redimensionner
+de nouveau en gardant Excel actif ; une autre skill Excel à égalité empêche la
+proposition et les refus conservent la sourdine habituelle.
+
 ## Next
 
 ### Opt-in skill observation

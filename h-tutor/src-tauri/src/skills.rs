@@ -483,6 +483,31 @@ mod tests {
         assert!(crate::observe::frontier(&skill.graph, &matched).is_empty());
     }
 
+    #[test]
+    fn excel_demo_is_eligible_and_starts_at_first_milestone() {
+        let skill: Skill = serde_json::from_str(include_str!("../../demo/excel-courses/skill.json")).unwrap();
+        skill.graph.validate().unwrap();
+        assert_eq!(skill.app.name, "Microsoft Excel");
+        assert_eq!(skill.graph.app.name, skill.app.name);
+        assert!(eligible(&skill, 0));
+        assert_eq!(skill.runs.len(), 1);
+        assert_eq!(skill.runs[0].outcome, "completed");
+        assert!(skill.compiled.is_empty());
+        assert_eq!(skill.graph.milestones.len(), 7);
+        let mut matched = std::collections::HashSet::new();
+        for milestone in &skill.graph.milestones {
+            let frontier = crate::observe::frontier(&skill.graph, &matched);
+            assert_eq!(frontier.len(), 1);
+            assert_eq!(frontier[0].id, milestone.id);
+            matched.insert(milestone.id.clone());
+        }
+        assert!(crate::observe::frontier(&skill.graph, &matched).is_empty());
+        let formula = &skill.graph.milestone("m5").unwrap().done_when;
+        for alternative in ["6,5", "6.5", "=SUM(B2:B4)", "=SOMME(B2:B4)"] {
+            assert!(formula.contains(alternative));
+        }
+    }
+
     fn graph() -> Tutorial {
         Tutorial {
             id: "example".into(),
