@@ -1,11 +1,6 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="brand/rio-mark-white.svg">
-  <img src="brand/rio-mark-black.svg" alt="Rio logo" width="64">
-</picture>
-
-# Rio
+<img src="brand/readme-hero.jpg" alt="Rio" width="100%">
 
 ### Stop juggling between the tutorial and your software.
 
