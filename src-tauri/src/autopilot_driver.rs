@@ -230,9 +230,6 @@ async fn wait_narration(
 }
 
 async fn narrate(app: &AppHandle, sentence: String, ticket: u64) {
-    if autopilot::stop_requested() || !autopilot::narrating() {
-        return;
-    }
     if SYNTHESIZING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
         eprintln!("[narration] TTS occupée, poursuite sans voix");
         return;
@@ -264,11 +261,7 @@ async fn narrate(app: &AppHandle, sentence: String, ticket: u64) {
         tokio::time::sleep(duration).await;
         Ok::<(), String>(())
     };
-    let interrupted = async {
-        while !autopilot::stop_requested() && autopilot::narrating() && autopilot::run_id() == ticket {
-            tokio::time::sleep(Duration::from_millis(30)).await;
-        }
-    };
+    let interrupted = wait_until(|| autopilot::stop_requested() || !autopilot::narrating());
     if let Err(error) = wait_narration(speech, interrupted, Duration::from_secs(6)).await {
         eprintln!("[narration] {error}");
     }
@@ -364,8 +357,8 @@ impl Driver for LiveDriver<'_> {
     }
 }
 
-async fn wait_stop() {
-    while !autopilot::stop_requested() {
+async fn wait_until(done: impl Fn() -> bool) {
+    while !done() {
         tokio::time::sleep(Duration::from_millis(30)).await;
     }
 }
@@ -402,7 +395,7 @@ pub fn spawn(app: AppHandle, skill: skills::Skill, observed: bool) {
             };
             tokio::select! {
                 biased;
-                _ = wait_stop() => Err(Failure::Stopped),
+                _ = wait_until(autopilot::stop_requested) => Err(Failure::Stopped),
                 result = tokio::time::timeout(Limits::default().timeout, after_script(&mut driver, script_result, &mut run_mode)) => {
                     result.unwrap_or_else(|_| Err(Failure::Failed("The maximum run time was exceeded".into())))
                 }

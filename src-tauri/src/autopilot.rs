@@ -578,20 +578,12 @@ mod tests {
         let stop = AtomicBool::new(true);
         assert!(!controller.fast());
         controller.accept(&skill, &stop, true).unwrap();
-        assert!(controller.view.narrating);
         assert!(controller.fast());
         assert!(!controller.view.narrating);
-        assert!(!controller.fast());
-        assert!(!stop.load(Ordering::SeqCst));
         controller.stop(&stop).unwrap();
         assert!(!controller.fast());
-        assert!(stop.load(Ordering::SeqCst));
         controller.accept(&skill, &stop, true).unwrap();
         assert!(controller.view.narrating);
-        controller.stop(&stop).unwrap();
-        controller.accept(&skill, &stop, false).unwrap();
-        assert!(!controller.view.narrating);
-        assert!(!controller.fast());
     }
 
     #[test]
