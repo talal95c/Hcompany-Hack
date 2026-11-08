@@ -53,7 +53,9 @@ fn key(value: &str) -> Result<Key, String> {
     })
 }
 
-pub fn perform(app: &AppHandle, step: &Step, ticket: u64) -> Result<(), String> {
+/// `click_first`: a write clicks its field before typing, except right after
+/// a select-all, whose selection the click would drop.
+pub fn perform(app: &AppHandle, step: &Step, ticket: u64, click_first: bool) -> Result<(), String> {
     let _lock = INPUT_LOCK.lock().map_err(|_| "Input injection lock unavailable")?;
     check(ticket)?;
     #[cfg(target_os = "linux")]
@@ -85,7 +87,9 @@ pub fn perform(app: &AppHandle, step: &Step, ticket: u64) -> Result<(), String> 
             if step.text.is_empty() || step.text.chars().count() > 512 || step.text.contains(['\n', '\r', '\0']) {
                 return Err("Empty, too long or multi-line text refused".into());
             }
-            device.button(Button::Left, Direction::Click).map_err(|e| e.to_string())?;
+            if click_first {
+                device.button(Button::Left, Direction::Click).map_err(|e| e.to_string())?;
+            }
             for character in step.text.chars() {
                 check(ticket)?;
                 device.text(&character.to_string()).map_err(|e| e.to_string())?;

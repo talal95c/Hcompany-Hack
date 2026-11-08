@@ -7,13 +7,19 @@ use tauri::{AppHandle, Emitter, Manager};
 pub(crate) struct Limits {
     per_milestone: usize,
     total: usize,
+    /// Consecutive Holo errors before giving up.
     failures: usize,
+    /// Consecutive actions without visible progress before giving up. Kept
+    /// apart from errors: with one shared limit of 3, the benchmark saw Rio
+    /// stopped on its third try, the very click (File menu) that recovered
+    /// from two dead clicks (est.).
+    no_progress: usize,
     timeout: Duration,
 }
 
 impl Default for Limits {
     fn default() -> Self {
-        Self { per_milestone: 20, total: 80, failures: 3, timeout: Duration::from_secs(300) }
+        Self { per_milestone: 20, total: 80, failures: 3, no_progress: 5, timeout: Duration::from_secs(300) }
     }
 }
 
@@ -34,6 +40,28 @@ pub(crate) trait Driver {
     async fn pause(&self);
 }
 
+/// Whether Rio's last action shows progress. A whole-screen thumbnail cannot
+/// see a few letters typed or erased in a field: the benchmark saw runs
+/// stopped for "no progress" while Rio was typing its way out (Backspace,
+/// a name in a dialog). Keyboard actions are not judged by the thumbnail;
+/// repeating the same one is still caught by `same_action`.
+pub(crate) fn progressed_after(
+    after_action: bool,
+    completed: bool,
+    screen_moved: bool,
+    last_kind: Option<&str>,
+) -> bool {
+    !after_action || completed || screen_moved || matches!(last_kind, Some("write" | "press_key"))
+}
+
+/// A select-all shortcut ("cmd+a", "ctrl+a"): the next write must not click
+/// first, or the click drops the selection and the text is appended
+/// ("UntitledJournal") instead of replacing it.
+pub(crate) fn selects_all(keys: &str) -> bool {
+    let parts: Vec<String> = keys.split('+').map(|k| k.trim().to_lowercase()).collect();
+    parts.len() == 2 && matches!(parts[0].as_str(), "cmd" | "command" | "meta" | "ctrl" | "control") && parts[1] == "a"
+}
+
 fn same_action(a: &agent::Step, b: &agent::Step) -> bool {
     a.milestone.as_ref().map(|m| &m.id) == b.milestone.as_ref().map(|m| &m.id)
         && a.kind == b.kind
@@ -47,6 +75,7 @@ async fn drive<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failu
     let mut total = 0;
     let mut counts = HashMap::<String, usize>::new();
     let mut failures = 0;
+    let mut stalls = 0;
     let mut previous = None;
     loop {
         if driver.stopped() {
@@ -57,7 +86,10 @@ async fn drive<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failu
             return Err(Failure::Stopped);
         }
         let step = match result {
-            Ok(step) => step,
+            Ok(step) => {
+                failures = 0;
+                step
+            }
             Err(error) => {
                 failures += 1;
                 journal::event("rio_holo_failure", serde_json::json!({ "consecutive": failures, "error": error }));
@@ -72,13 +104,13 @@ async fn drive<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failu
             return Ok(total);
         }
         if step.unchanged || !driver.progressed() || previous.as_ref().is_some_and(|p| same_action(p, &step)) {
-            failures += 1;
-            journal::event("rio_no_progress", serde_json::json!({ "consecutive": failures }));
-            if failures >= limits.failures {
+            stalls += 1;
+            journal::event("rio_no_progress", serde_json::json!({ "consecutive": stalls }));
+            if stalls >= limits.no_progress {
                 return Err(Failure::Failed("The screen or the milestone does not move after Rio's actions".into()));
             }
         } else {
-            failures = 0;
+            stalls = 0;
         }
         if step.unchanged {
             driver.pause().await;
@@ -152,6 +184,8 @@ struct LiveDriver<'a> {
     progressed: bool,
     ticket: u64,
     pending: Option<agent::Step>,
+    /// The last action Rio performed.
+    last: Option<agent::Step>,
 }
 
 impl Driver for LiveDriver<'_> {
@@ -173,12 +207,16 @@ impl Driver for LiveDriver<'_> {
         let before = self.session.before.as_ref().map(|s| s.thumb.clone());
         let event = after_action.then(|| "Rio ran the action; check the result on this new screenshot".into());
         let step = agent::advance(self.holo, &mut self.session, event, false).await?;
-        self.progressed = !after_action
-            || !step.completed.is_empty()
-            || before
-                .as_ref()
-                .zip(self.session.before.as_ref())
-                .is_none_or(|(before, after)| crate::capture::thumb_diff(before, &after.thumb) > 0.1);
+        let moved = before
+            .as_ref()
+            .zip(self.session.before.as_ref())
+            .is_none_or(|(before, after)| crate::capture::thumb_diff(before, &after.thumb) > 0.1);
+        self.progressed = progressed_after(
+            after_action,
+            !step.completed.is_empty(),
+            moved,
+            self.last.as_ref().map(|s| s.kind.as_str()),
+        );
         Ok(step)
     }
 
@@ -209,11 +247,13 @@ impl Driver for LiveDriver<'_> {
         );
         self.actions += 1;
         let app = self.app.clone();
+        let click_first = !self.last.as_ref().is_some_and(|p| p.kind == "press_key" && selects_all(&p.keys));
+        self.last = Some(step.clone());
         let step = step.clone();
         let ticket = self.ticket;
         tauri::async_runtime::spawn_blocking(move || {
             let _mask = autopilot::mask_capture()?;
-            crate::act::perform(&app, &step, ticket)
+            crate::act::perform(&app, &step, ticket, click_first)
         })
         .await
         .map_err(|e| e.to_string())??;
@@ -247,6 +287,7 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
             progressed: true,
             ticket,
             pending: None,
+            last: None,
         };
         let candidate = crate::script::eligible(&skill);
         let mut run_mode = if candidate.is_some() { skills::Mode::Script } else { skills::Mode::Rio };
@@ -302,6 +343,26 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn typing_is_not_judged_by_the_thumbnail() {
+        // A click with no visible effect is no progress; typing cannot be seen at thumbnail scale.
+        assert!(!super::progressed_after(true, false, false, Some("click")));
+        assert!(super::progressed_after(true, false, false, Some("write")));
+        assert!(super::progressed_after(true, false, false, Some("press_key")));
+        assert!(super::progressed_after(true, true, false, Some("click")), "a milestone closed");
+        assert!(super::progressed_after(false, false, false, None), "no action yet");
+    }
+
+    #[test]
+    fn select_all_keeps_the_selection_for_the_next_write() {
+        for k in ["cmd+a", "ctrl+a", "Command + A", "meta+a"] {
+            assert!(super::selects_all(k), "{k}");
+        }
+        for k in ["a", "cmd+c", "cmd+shift+a", "enter"] {
+            assert!(!super::selects_all(k), "{k}");
+        }
+    }
     use super::*;
     use std::collections::VecDeque;
 
@@ -439,7 +500,7 @@ mod tests {
             ..Default::default()
         };
         assert!(
-            matches!(bounded(&mut fake, Limits::default()).await, Err(Failure::Failed(message)) if message.contains("does not move"))
+            matches!(bounded(&mut fake, Limits { no_progress: 3, ..Default::default() }).await, Err(Failure::Failed(message)) if message.contains("does not move"))
         );
         let mut unchanged = action(200.0, "a").unwrap();
         unchanged.unchanged = true;
@@ -447,7 +508,10 @@ mod tests {
             steps: [action(100.0, "a"), Ok(unchanged.clone()), Ok(unchanged.clone()), Ok(unchanged), done()].into(),
             ..Default::default()
         };
-        assert!(matches!(bounded(&mut fake, Limits::default()).await, Err(Failure::Failed(_))));
+        assert!(matches!(
+            bounded(&mut fake, Limits { no_progress: 3, ..Default::default() }).await,
+            Err(Failure::Failed(_))
+        ));
         assert_eq!(fake.executed, 1);
     }
 
@@ -500,8 +564,19 @@ mod tests {
             ..Default::default()
         };
         assert!(
-            matches!(bounded(&mut fake, Limits::default()).await, Err(Failure::Failed(message)) if message.contains("does not move"))
+            matches!(bounded(&mut fake, Limits { no_progress: 3, ..Default::default() }).await, Err(Failure::Failed(message)) if message.contains("does not move"))
         );
         assert_eq!(fake.executed, 3);
+    }
+
+    #[tokio::test]
+    async fn three_dead_actions_no_longer_stop_a_run_that_recovers() {
+        // Dead clicks, then the one that works: the default limit lets it through.
+        let mut fake = Fake {
+            steps: [action(100.0, "a"), action(200.0, "a"), action(300.0, "a"), action(400.0, "a"), done()].into(),
+            no_screen_change: true,
+            ..Default::default()
+        };
+        assert_eq!(bounded(&mut fake, Limits::default()).await, Ok(4));
     }
 }

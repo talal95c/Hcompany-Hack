@@ -12,7 +12,7 @@
 use super::browser::Browser;
 use super::{Scenario, sim_dir};
 use crate::agent::{self, Session, Step};
-use crate::autopilot_driver::{Driver, Failure, Limits, bounded};
+use crate::autopilot_driver::{Driver, Failure, Limits, bounded, progressed_after, selects_all};
 use crate::capture::{Shot, shot_from_jpeg, thumb_diff};
 use crate::holo::Holo;
 use crate::journal;
@@ -46,6 +46,7 @@ struct SimDriver<'a> {
     progressed: bool,
     pending: Option<Step>,
     actions: usize,
+    last: Option<Step>,
 }
 
 impl Driver for SimDriver<'_> {
@@ -73,12 +74,16 @@ impl Driver for SimDriver<'_> {
             async move { look(&browser).await }
         };
         let step = agent::advance_with(self.holo, &mut self.session, event, false, agent::STALE_AFTER, capture).await?;
-        self.progressed = !after_action
-            || !step.completed.is_empty()
-            || before
-                .as_ref()
-                .zip(self.session.before.as_ref())
-                .is_none_or(|(before, after)| thumb_diff(before, &after.thumb) > 0.1);
+        let moved = before
+            .as_ref()
+            .zip(self.session.before.as_ref())
+            .is_none_or(|(before, after)| thumb_diff(before, &after.thumb) > 0.1);
+        self.progressed = progressed_after(
+            after_action,
+            !step.completed.is_empty(),
+            moved,
+            self.last.as_ref().map(|s| s.kind.as_str()),
+        );
         Ok(step)
     }
 
@@ -101,7 +106,10 @@ impl Driver for SimDriver<'_> {
                     if step.text.is_empty() || step.text.chars().count() > 512 || step.text.contains(['\n', '\r']) {
                         return Err("Empty, too long or multi-line text refused".into());
                     }
-                    b.click(x, y).await?;
+                    // As act.rs: no click right after a select-all.
+                    if !self.last.as_ref().is_some_and(|p| p.kind == "press_key" && selects_all(&p.keys)) {
+                        b.click(x, y).await?;
+                    }
                     b.type_text(&step.text).await?;
                 }
                 "scroll" => {
@@ -113,6 +121,7 @@ impl Driver for SimDriver<'_> {
             }
         }
         self.actions += 1;
+        self.last = Some(step.clone());
         self.after_action = true;
         tokio::time::sleep(Duration::from_millis(650)).await;
         Ok(())
@@ -181,6 +190,7 @@ async fn drive(holo: &Holo, scenario: &Scenario, report: &mut AutopilotReport) -
         progressed: true,
         pending: None,
         actions: 0,
+        last: None,
     };
     // The app's own loop and limits.
     let outcome = bounded(&mut driver, Limits::default()).await;
