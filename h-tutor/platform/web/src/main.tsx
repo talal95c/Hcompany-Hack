@@ -1,4 +1,5 @@
 import { StrictMode, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { Avatar } from "./cards";
 import { type TutorialRow, auth, initials, navigate, usePath, useApi } from "./lib";
@@ -59,111 +60,142 @@ function Shell({ path, orgId }: { path: string; orgId: string }) {
   const me = useApi<{ role: string; canManage: boolean }>(`/me?org=${orgId}`);
   const canManage = !!me.data?.canManage;
   const tid = path.match(/^\/t\/([\w-]+)/)?.[1];
-  const [collapsed, setCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem("rio.side") === "collapsed";
-    } catch {
-      return false;
-    }
-  });
-  const toggle = () =>
-    setCollapsed((c) => {
-      try {
-        localStorage.setItem("rio.side", c ? "open" : "collapsed");
-      } catch {
-        // private mode: the choice lasts for this visit only
-      }
-      return !c;
-    });
 
   return (
-    <div className={`shell ${collapsed ? "is-collapsed" : ""}`}>
-      <Rail path={path} orgId={orgId} open={!collapsed} onToggle={toggle} />
+    <div className="shell">
+      <Sidebar path={path} orgId={orgId} />
       <div className="frame">
         <main className="main">
-        <div className="page" key={`${orgId}-${tid ?? path}`}>
-          {tid ? (
-            <TutorialPage id={tid} />
-          ) : path.startsWith("/library") ? (
-            <LibraryPage />
-          ) : path.startsWith("/community") ? (
-            <CommunityPage />
-          ) : path.startsWith("/knowledge") ? (
-            <KnowledgePage canManage={canManage} />
-          ) : path.startsWith("/members") ? (
-            <MembersPage canManage={canManage} />
-          ) : path.startsWith("/settings") ? (
-            <TokensPage canManage={canManage} />
-          ) : path.startsWith("/get-rio") ? (
-            <GetRioPage />
-          ) : path.startsWith("/usage") ? (
-            <UsagePage />
-          ) : (
-            <HomePage />
-          )}
-        </div>
-      </main>
+          <div className="page" key={`${orgId}-${tid ?? path}`}>
+            {tid ? (
+              <TutorialPage id={tid} />
+            ) : path.startsWith("/library") ? (
+              <LibraryPage />
+            ) : path.startsWith("/community") ? (
+              <CommunityPage />
+            ) : path.startsWith("/knowledge") ? (
+              <KnowledgePage canManage={canManage} />
+            ) : path.startsWith("/members") ? (
+              <MembersPage canManage={canManage} />
+            ) : path.startsWith("/settings") ? (
+              <TokensPage canManage={canManage} />
+            ) : path.startsWith("/get-rio") ? (
+              <GetRioPage />
+            ) : path.startsWith("/usage") ? (
+              <UsagePage />
+            ) : (
+              <HomePage />
+            )}
+          </div>
+        </main>
       </div>
     </div>
   );
 }
 
-function NavLink({ to, label, icon: Icon, path, count, short }: { to: string; label: string; icon: () => React.ReactNode; path: string; count?: number; short?: boolean }) {
+function NavLink({ to, label, icon: Icon, path, count }: { to: string; label: string; icon: () => ReactNode; path: string; count?: number }) {
   return (
     <a
       href={to}
       title={label}
-      className={`rail__btn ${path.startsWith(to) ? "is-on" : ""}`}
+      className={`sb__link ${path.startsWith(to) ? "is-on" : ""}`}
       onClick={(e) => {
         e.preventDefault();
         navigate(to);
       }}
     >
       <Icon />
-      {!short && <span className="nav__label">{label}</span>}
+      <span className="sb__label">{label}</span>
       {count ? <span className="nav__count">{count}</span> : null}
     </a>
   );
 }
 
-/** The sidebar, outside the app's card: icons only, or the full menu. The logo opens and closes it. */
-function Rail({ path, orgId, open, onToggle }: { path: string; orgId: string; open: boolean; onToggle: () => void }) {
+/** 60 px of icons that widens to the full menu while hovered; on phones, a menu button and a sheet. */
+function Sidebar({ path, orgId }: { path: string; orgId: string }) {
+  const [open, setOpen] = useState(false);
+  const [sheet, setSheet] = useState<"closed" | "open" | "closing">("closed");
+  const closeSheet = () => {
+    setSheet("closing");
+    window.setTimeout(() => setSheet("closed"), 300);
+  };
+  useEffect(() => {
+    setSheet((s) => (s === "open" ? "closing" : s));
+    const t = window.setTimeout(() => setSheet((s) => (s === "closing" ? "closed" : s)), 300);
+    return () => window.clearTimeout(t);
+  }, [path]);
+  return (
+    <>
+      <div className="sb-slot">
+        <nav className={`sb ${open ? "is-open" : ""}`} aria-label="Pages" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+          <SidebarContent path={path} orgId={orgId} />
+        </nav>
+      </div>
+      <div className="mbar">
+        <span className="mbar__brand">
+          <I.Mark /> Rio
+        </span>
+        <button className="mbar__menu" onClick={() => (sheet === "open" ? closeSheet() : setSheet("open"))} aria-label="Open the menu" aria-expanded={sheet === "open"}>
+          <I.Menu />
+        </button>
+        {sheet !== "closed" && (
+          <nav className={`msheet ${sheet === "closing" ? "is-closing" : ""}`} aria-label="Pages">
+            <button className="msheet__close" onClick={closeSheet} aria-label="Close the menu">
+              <I.Close />
+            </button>
+            <div className="sb is-open">
+              <SidebarContent path={path} orgId={orgId} />
+            </div>
+          </nav>
+        )}
+      </div>
+    </>
+  );
+}
+
+function SidebarContent({ path, orgId }: { path: string; orgId: string }) {
   const user = auth.useSession().data?.user;
   const lib = useApi<{ tutorials: TutorialRow[] }>(`/tutorials?org=${orgId}`);
   const drafts = lib.data?.tutorials.filter((t) => t.visibility === "draft").length;
-  const short = !open;
   return (
-    <nav className={`rail ${open ? "is-open" : ""}`} aria-label="Pages">
-      <button className="rail__mark" onClick={onToggle} aria-expanded={open} aria-label={open ? "Collapse the menu" : "Expand the menu"} title={open ? "Collapse" : "Expand"}>
+    <>
+      <a
+        href="/home"
+        className="sb__mark"
+        onClick={(e) => {
+          e.preventDefault();
+          navigate("/home");
+        }}
+      >
         <I.Mark />
-        {open && <span className="rail__name">Rio</span>}
-      </button>
-      {open && <OrgSwitcher />}
-      <button className="rail__btn rail__new" onClick={() => navigate("/home")} title="New tutorial">
+        <span className="sb__label sb__name">Rio</span>
+      </a>
+      <OrgSwitcher />
+      <button className="sb__link sb__new" onClick={() => navigate("/home")} title="New tutorial">
         <I.Plus />
-        {open && <span className="nav__label">New tutorial</span>}
+        <span className="sb__label">New tutorial</span>
       </button>
       {MAIN.map((p) => (
-        <NavLink key={p.path} short={short} to={p.path} label={p.label} icon={p.icon} path={path} count={p.path === "/library" ? drafts : undefined} />
+        <NavLink key={p.path} to={p.path} label={p.label} icon={p.icon} path={path} count={p.path === "/library" ? drafts : undefined} />
       ))}
-      {open ? <div className="rail__label">Team</div> : <div className="rail__sep" />}
+      <div className="sb__group">
+        <span className="sb__label">Team</span>
+      </div>
       {TEAM.map((p) => (
-        <NavLink key={p.path} short={short} to={p.path} label={p.label} icon={p.icon} path={path} />
+        <NavLink key={p.path} to={p.path} label={p.label} icon={p.icon} path={path} />
       ))}
-      <div className="rail__foot">
-        <NavLink short={short} to={GET_RIO.path} label={GET_RIO.label} icon={GET_RIO.icon} path={path} />
-        <div className="rail__me">
+      <div className="sb__foot">
+        <NavLink to={GET_RIO.path} label={GET_RIO.label} icon={GET_RIO.icon} path={path} />
+        <div className="sb__me">
           <span title={user?.email ?? ""}>
             <Avatar name={user?.name || user?.email || "?"} />
           </span>
-          {open && (
-            <span className="who">
-              <b>{user?.name}</b>
-              <span>{user?.email}</span>
-            </span>
-          )}
+          <span className="who sb__label">
+            <b>{user?.name}</b>
+            <span>{user?.email}</span>
+          </span>
           <button
-            className="rail__btn rail__out"
+            className="sb__out sb__label"
             title="Sign out"
             aria-label="Sign out"
             onClick={async () => {
@@ -175,7 +207,7 @@ function Rail({ path, orgId, open, onToggle }: { path: string; orgId: string; op
           </button>
         </div>
       </div>
-    </nav>
+    </>
   );
 }
 
