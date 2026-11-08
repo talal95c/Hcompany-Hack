@@ -1,6 +1,0 @@
-{
-  "$schema": "../gen/schemas/desktop-schema.json",
-  "identifier": "desktop-windows",
-  "windows": ["guide", "pill"],
-  "permissions": ["core:default"]
-}

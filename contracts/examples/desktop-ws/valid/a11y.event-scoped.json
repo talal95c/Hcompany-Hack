@@ -1,1 +1,0 @@
-{"schema_version":"1.0","session_id":"session","message_id":"scoped-event","reply_to":null,"type":"a11y.event","payload":{"watch_id":"watch","sequence":1,"refs":["snapshot:n1"],"reconcile":true,"scoped":true,"events_supported":true}}

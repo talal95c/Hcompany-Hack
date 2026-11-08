@@ -1,9 +1,0 @@
-{
-  "id": "excel",
-  "name": "Microsoft Excel",
-  "vocabulary": ["Excel", "cellule", "feuille", "formule", "ruban", "somme automatique", "colonne", "ligne"],
-  "jev_context": "Tableur Microsoft Excel : l'apprenant saisit des valeurs et des formules dans des cellules.",
-  "docs_domains": ["support.microsoft.com", "learn.microsoft.com"],
-  "shortcut_hint": "Alt+Q",
-  "process_names": ["excel", "microsoft excel"]
-}
