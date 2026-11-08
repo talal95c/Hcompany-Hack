@@ -9,6 +9,7 @@ description = "Moteur de leçons Blender vérifiables"
 requires-python = ">=3.11"
 dependencies = [
   "jsonschema>=4.22,<5",
+  "pillow>=11,<13",
   "pytest>=8,<10",
   "pytest-asyncio>=0.24,<2",
   "ruff>=0.9,<1",
@@ -42,3 +43,7 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# HTML and CSS templates of the session report.
+"h-tutor/tools/session_explorer.py" = ["E501"]

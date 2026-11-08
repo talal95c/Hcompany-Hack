@@ -36,7 +36,7 @@ Un WebSocket local par session, authentifié avant messages applicatifs. Adresse
 | desktop → engine : permissions | screen:boolean, accessibility:boolean, microphone:boolean |
 | desktop → engine : ptt.start / ptt.stop | utterance_id |
 | desktop → engine : audio.chunk | utterance_id, sequence, encoding, sample_rate, data_base64 |
-| desktop → engine : capture.result | capture_id, ui_revision, crop, scale, monitor_id, image_ref |
+| desktop → engine : capture.result | capture_id, ui_revision, crop, scale, monitor_id, image_ref ; image_size optionnel |
 | desktop → engine : input.result | command_id, status, detail |
 | desktop → engine : user.intent | text, source clavier ou bouton |
 | engine → desktop : command | enveloppe [ordre](ordres.md) |

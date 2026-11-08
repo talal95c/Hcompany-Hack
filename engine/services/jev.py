@@ -173,7 +173,9 @@ class CodivJevClient:
             async def post():
                 nonlocal attempt_number
                 attempt_number += 1
-                if attempt_number > 1 and not self.bucket.try_acquire():
+                if attempt_number > 1 and not self.bucket.try_acquire(
+                    reserve=self.speculative_reserve if speculative else 0,
+                ):
                     raise QuotaExceeded(SERVICE, "budget de duplication épuisé")
                 if attempt_number > 1 and not self._custom_transport:
                     async with httpx.AsyncClient(
@@ -207,12 +209,14 @@ class CodivJevClient:
             return parse_answers(payload, questions, ctx.request_id)
 
     async def classify_intent(
-        self, utterance: str, *, context: str = "", profile: AppProfile | None = None
+        self, utterance: str, *, context: str = "", profile: AppProfile | None = None,
+        speculative: bool = False,
     ) -> JevDecision:
         state: dict[str, Any] = {"utterance": utterance}
         if context:
             state["lesson_context"] = context
-        return (await self.decide(state, {"intent": intent_question(profile or self.profile)}))[
+        return (await self.decide(state, {"intent": intent_question(profile or self.profile)},
+                                  speculative=speculative))[
             "intent"
         ]
 

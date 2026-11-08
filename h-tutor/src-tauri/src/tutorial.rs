@@ -209,8 +209,8 @@ pub fn list() -> Vec<Summary> {
 
 pub fn load(id: &str) -> Result<Tutorial, String> {
     let path = dir().join(format!("{}.json", slug(id)));
-    let t: Tutorial = serde_json::from_slice(&std::fs::read(&path).map_err(|e| format!("{id}: {e}"))?)
-        .map_err(|e| format!("{id}: invalid tutorial ({e})"))?;
+    let t: Tutorial = serde_json::from_slice(&std::fs::read(&path).map_err(|e| format!("{id} : {e}"))?)
+        .map_err(|e| format!("{id} : tuto invalide ({e})"))?;
     t.validate()?;
     Ok(t)
 }

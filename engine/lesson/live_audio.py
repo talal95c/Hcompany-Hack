@@ -4,10 +4,13 @@ import asyncio
 
 
 class LiveUtterance:
-    def __init__(self, client, sample_rate, on_event, on_error, *, vocabulary=()):
+    def __init__(self, client, sample_rate, on_event, on_error, *, vocabulary=(),
+                 pool=None, on_close=None, allowed=None):
         self.client, self.sample_rate = client, sample_rate
         self.on_event, self.on_error = on_event, on_error
         self.vocabulary = vocabulary
+        self.pool, self.on_close = pool, on_close
+        self.allowed = allowed
         self.queue = asyncio.Queue(256)
         self.sequence = 0
         self.size = 0
@@ -39,11 +42,17 @@ class LiveUtterance:
                 raise RuntimeError("Erreur du service de transcription")
             await self.on_event(event)
 
+    async def send(self, session, chunk: bytes) -> None:
+        if self.allowed and not self.allowed():
+            raise asyncio.CancelledError
+        await session.send_audio(chunk)
+
     async def run(self) -> None:
         session = None
         reader = None
         try:
-            session = await asyncio.wait_for(self.client.open_live(
+            open_live = self.pool.acquire if self.pool else self.client.open_live
+            session = await asyncio.wait_for(open_live(
                    sample_rate=self.sample_rate, language="fr", endpointing_s=0.05,
                    vocabulary=self.vocabulary), 15)
             reader = asyncio.create_task(self.read(session))
@@ -51,7 +60,7 @@ class LiveUtterance:
                 chunk = await asyncio.wait_for(self.queue.get(), 60)
                 if chunk is None:
                     break
-                await asyncio.wait_for(session.send_audio(chunk), 5)
+                await asyncio.wait_for(self.send(session, chunk), 5)
                 if reader.done():
                     await reader
                     raise RuntimeError("Flux de transcription interrompu")
@@ -65,8 +74,14 @@ class LiveUtterance:
             if reader:
                 reader.cancel()
                 await asyncio.gather(reader, return_exceptions=True)
-            if session:
-                await session.aclose()
+            try:
+                if session:
+                    await session.aclose()
+            finally:
+                if session and self.pool:
+                    self.pool.release()
+                if self.on_close:
+                    await self.on_close()
 
     async def close(self) -> None:
         self.task.cancel()

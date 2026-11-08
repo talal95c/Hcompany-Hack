@@ -77,11 +77,11 @@ pub async fn listen_start(app: AppHandle, lang: Option<String>) -> Result<(), St
         }))
         .send()
         .await
-        .map_err(|e| format!("Gladia: {e}"))?;
+        .map_err(|e| format!("Gladia : {e}"))?;
     let status = res.status();
-    let body: Value = res.json().await.map_err(|e| format!("Gladia: {e}"))?;
+    let body: Value = res.json().await.map_err(|e| format!("Gladia : {e}"))?;
     if !status.is_success() {
-        return Err(format!("Gladia {status}: {body}"));
+        return Err(format!("Gladia {status} : {body}"));
     }
     let url = body["url"].as_str().ok_or("Gladia: no session URL")?.to_string();
 
@@ -194,10 +194,10 @@ fn start_mic(tx: mpsc::UnboundedSender<Vec<u8>>, stop: Arc<AtomicBool>) -> Resul
                     err,
                     None,
                 ),
-                f => return Err(format!("Unsupported microphone format {f:?}")),
+                f => return Err(format!("Format de micro non pris en charge {f:?}")),
             }
-            .map_err(|e| format!("Microphone: {e}"))?;
-            stream.play().map_err(|e| format!("Microphone: {e}"))?;
+            .map_err(|e| format!("Micro : {e}"))?;
+            stream.play().map_err(|e| format!("Micro : {e}"))?;
             Ok(stream)
         };
         match setup() {
@@ -213,7 +213,7 @@ fn start_mic(tx: mpsc::UnboundedSender<Vec<u8>>, stop: Arc<AtomicBool>) -> Resul
             }
         }
     });
-    ready_rx.recv().map_err(|_| "Microphone thread failed".to_string())?
+    ready_rx.recv().map_err(|_| "The microphone thread failed".to_string())?
 }
 
 /// Downmix + linear-interpolation resampling to 16 kHz, batched into PCM16 chunks.

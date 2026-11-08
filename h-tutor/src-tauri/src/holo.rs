@@ -365,7 +365,7 @@ impl Holo {
                 match select(next, tick).await {
                     Either::Left((r, _)) => r,
                     Either::Right(_) if launched < LAUNCH_AT_S.len() => continue,
-                    Either::Right(_) => return Err("timed out (no answer within 40 s)".into()),
+                    Either::Right(_) => return Err("Timed out (no answer within 40 s)".into()),
                 }
             };
             match outcome {
@@ -381,7 +381,7 @@ impl Holo {
         let (status, text, ms) = self.post(body).await?;
         if !status.is_success() {
             let detail: String = text.chars().take(300).collect();
-            return Err(format!("Holo {status}: {detail}"));
+            return Err(format!("Holo {status} : {detail}"));
         }
         let v: Value = serde_json::from_str(&text).map_err(|e| format!("Unreadable response: {e}"))?;
         let mut message = v["choices"][0]["message"].clone();
@@ -426,14 +426,14 @@ impl Holo {
         if !status.is_success() {
             crate::debug::record(tag, model, images, prompt, &format!("HTTP {status}: {text}"), ms);
             let hint = match status.as_u16() {
-                401 | 403 => "API key rejected",
-                402 => "not enough credits",
-                404 => "model not found (check HOLO_*_MODEL)",
-                429 => "rate limit reached, try again in a moment",
-                _ => "API error",
+                401 | 403 => "API key refused",
+                402 => "Not enough credits",
+                404 => "Model not found (check HOLO_*_MODEL)",
+                429 => "Rate limit reached, try again in a moment",
+                _ => "Erreur API",
             };
             let detail: String = text.chars().take(240).collect();
-            return Err(format!("Holo {status}: {hint}. {detail}"));
+            return Err(format!("Holo {status} : {hint}. {detail}"));
         }
 
         let v: Value = serde_json::from_str(&text).map_err(|e| format!("Unreadable response: {e}"))?;
@@ -448,9 +448,9 @@ impl Holo {
 /// which its own message hides behind "error sending request".
 fn describe(e: &reqwest::Error) -> String {
     if e.is_timeout() {
-        return "timed out (no answer within 40 s)".into();
+        return "Timed out (no answer within 40 s)".into();
     }
-    let mut msg = if e.is_connect() { "could not connect".to_string() } else { "network error".to_string() };
+    let mut msg = if e.is_connect() { "connexion impossible".to_string() } else { "network error".to_string() };
     let mut source = std::error::Error::source(e);
     let mut last = String::new();
     while let Some(s) = source {

@@ -1,7 +1,6 @@
 """Décisions d'aide déterministes avec escalade prudente et services facultatifs."""
 
 import asyncio
-import math
 from collections.abc import Awaitable, Callable
 from dataclasses import asdict, dataclass
 from typing import Any
@@ -23,6 +22,8 @@ from engine.interfaces import (
     LocalizeResult,
     SystemClock,
 )
+from engine.lesson.voice import normalize_utterance
+from engine.pointer import rejection
 
 
 @dataclass(frozen=True)
@@ -55,6 +56,7 @@ class HelpContext:
     pointer_ref: tuple[str, str] | None = None
     app: str | None = None
     expected_rect: tuple[float, float, float, float] | None = None
+    bounds_proven: bool = False
     request_demo: Callable[[], Awaitable[None]] | None = None
 
 
@@ -143,7 +145,21 @@ class HelpPolicy:
         for recipient, kind, payload in commands:
             await self._command(kind, payload, revision=revision, recipient=recipient)
 
-    async def intent(self, text: str, context: HelpContext | None = None) -> Decision | None:
+    async def classify_intent(self, text: str, *, speculative: bool = False) -> JevDecision | None:
+        classify = (getattr(self.jev, "speculate_intent", None) if speculative
+                    else getattr(self.jev, "decide", None))
+        if not classify or not self.step or self.muted:
+            return None
+        return await self.fallback.call(
+            "jev_intent_speculative" if speculative else "jev_intent",
+            lambda: classify({"utterance": normalize_utterance(text),
+                "instruction": self.step["instruction"],
+                **({"app": self.app_context} if self.app_context else {})},
+                timeout_s=self.config.jev_timeout_s), self.config.jev_timeout_s,
+            lambda: None)
+
+    async def intent(self, text: str, context: HelpContext | None = None, *,
+                     prediction: tuple[str, int, JevDecision] | None = None) -> Decision | None:
         text = text.strip().casefold()
         if text == "chut":
             if self.on_stop:
@@ -164,13 +180,12 @@ class HelpPolicy:
                                         context or HelpContext(), 0)
         if text and self.step and self.jev:
             generation = self.generation
-            answer = await self.fallback.call(
-                "jev_intent", lambda: self.jev.decide(
-                    {"utterance": text, "instruction": self.step["instruction"],
-                     **({"app": self.app_context} if self.app_context else {})},
-                    timeout_s=self.config.jev_timeout_s), self.config.jev_timeout_s,
-                lambda: JevDecision("other", None, 0))
+            hit = bool(prediction and prediction[:2] == (normalize_utterance(text), generation))
+            self.debug({"kind": "voice_intent_speculation", "hit": hit})
+            answer = prediction[2] if hit else await self.classify_intent(text)
             if generation != self.generation or self.muted:
+                return None
+            if answer is None:
                 return None
             if answer.action == "question":
                 await self._command("say", {"text": self.step.get("why", self.step["instruction"]),
@@ -296,6 +311,47 @@ class HelpPolicy:
                 self.handled_errors.add(reason.split(":", 1)[1])
             return decision
 
+    async def validate_point(self, context: HelpContext, result: LocalizeResult | None,
+                             *, verified: bool = False):
+        reason = rejection(result, context.expected_rect)
+        if reason is None and not (verified or (context.bounds_proven
+                                               and context.expected_rect is not None)):
+            verify = getattr(self.holo, "verify_point", None)
+            if not verify or not context.image_png or not context.target:
+                reason = "verification_unavailable"
+            else:
+                proven = await self.fallback.call(
+                    "holo_point_verify", lambda: verify(context.image_png, context.target.target,
+                        result, timeout_s=self.config.holo_timeout_s),
+                    localization_budget(self.holo, self.config.holo_timeout_s), lambda: False)
+                if proven is not True:
+                    reason = "verification_failed"
+        if reason:
+            self.debug({"kind": "point_rejected", "reason": reason})
+            return None
+        return result
+
+    async def prelocalize(self, context: HelpContext):
+        local = bool(context.pointer and context.bounds_proven
+                     and context.expected_rect is not None)
+        if not self.config.cloud_vision_preload and not local:
+            return None
+        generation, epoch = self.generation, self.capture_epoch
+        if context.pointer:
+            result = LocalizeResult(*context.pointer, 1, 0, True)
+        elif self.holo and context.target and context.image_png:
+            result = await self.fallback.call(
+                "holo", lambda: self.holo.localize(context.image_png, context.target.target,
+                    timeout_s=self.config.holo_timeout_s),
+                localization_budget(self.holo, self.config.holo_timeout_s), lambda: None)
+        else:
+            result = None
+        result = await self.validate_point(context, result)
+        if generation != self.generation or epoch != self.capture_epoch:
+            self.debug({"kind": "point_rejected", "reason": "stale"})
+            return None
+        return result
+
     async def _help(
         self, reason: str, hint: str, context: HelpContext, revision: int,
     ) -> Decision | None:
@@ -318,12 +374,16 @@ class HelpPolicy:
                 self.level = 2
         elif next_level == 3:
             if context.target and context.capture_epoch != self.capture_epoch:
+                self.debug({"kind": "point_rejected", "reason": "stale"})
                 return None
             entry = self.targets.get_target(context.target) if context.target else None
+            if entry:
+                self.debug({"kind": "pointer_cache_hit"})
             result = entry.result if entry else None
             capture_id = entry.capture_id if entry else context.capture_id
-            exact = bool(not result and context.pointer and capture_id)
+            exact = bool(context.pointer and context.capture_id and context.bounds_proven)
             if exact:
+                capture_id = context.capture_id
                 result = LocalizeResult(context.pointer[0], context.pointer[1], 1.0, 0, True)
             if not result and self.holo and context.image_png and context.target:
                 async def localize():
@@ -352,21 +412,16 @@ class HelpPolicy:
             if (generation != self.generation or epoch != self.intervention_epoch
                     or (context.target and context.capture_epoch != self.capture_epoch)
                     or (self.muted and reason != "explicit")):
+                self.debug({"kind": "point_rejected", "reason": "stale"})
                 return None
-            if result and (not 0 < result.x < 1000 or not 0 < result.y < 1000
-                           or result.target_visible is False
-                           or (result.confidence is not None and (
-                               not math.isfinite(result.confidence) or result.confidence < 0.5))
-                           or (context.require_visible and (result.target_visible is not True
-                               or result.confidence is None))
-                           or (context.expected_rect is not None
-                               and not inside(context.expected_rect, result.x, result.y))):
-                if result and context.expected_rect is not None:
-                    self.debug({"kind": "point_rejected", "x": result.x, "y": result.y})
-                result = None
+            result = await self.validate_point(context, result,
+                                               verified=bool(entry and entry.verified))
+            if generation != self.generation or epoch != self.intervention_epoch:
+                self.debug({"kind": "point_rejected", "reason": "stale"})
+                return None
             if result and capture_id and context.target and context.target.visible:
                 if not entry and not exact:
-                    self.targets.put_target(TargetEntry(context.target, result, capture_id))
+                    self.targets.put_target(TargetEntry(context.target, result, capture_id, True))
                 payload = {"capture_id": capture_id, "ui_revision": context.target.ui_revision,
                            "x": result.x, "y": result.y}
                 if context.app:

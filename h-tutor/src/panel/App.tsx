@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import Palette from "./Palette";
-import { AnimatePresence, motion } from "motion/react";
+import { sfx, useSoundEnabled, setSoundEnabled } from "../sound";
+import { Feedback } from "../feedback";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Transcript, Wave, tail } from "./Dictaphone";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { listen } from "@tauri-apps/api/event";
@@ -8,7 +10,6 @@ import { api, errorText, speak, stopSpeaking, type Imported, type QaAnswer, type
 import {
   IconCheck,
   IconClose,
-  IconEnter,
   IconGrid,
   IconKeyboard,
   IconMic,
@@ -16,6 +17,8 @@ import {
   IconSkip,
   IconVolume,
   IconVolumeOff,
+  IconSound,
+  IconSoundOff,
 } from "./icons";
 
 type Phase = "home" | "planning" | "importing" | "imported" | "running" | "done";
@@ -30,6 +33,7 @@ const BAR_WIDTH = 560;
 const PALETTE_WIDTH = 760;
 
 export default function App() {
+  const sound = useSoundEnabled();
   const [status, setStatus] = useState<Status | null>(null);
   const [phase, setPhase] = useState<Phase>("home");
   const [goal, setGoal] = useState("");
@@ -85,6 +89,24 @@ export default function App() {
   liveRef.current = { phase, stepState, step, explain };
   const barRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const previous = useRef({ phase, paletteOpen, listening, homeError, error: "" });
+  const visibleError = qa?.error || explain?.error || (stepState === "error" ? message : "");
+  useEffect(() => {
+    const prev = previous.current;
+    if (phase === "done" && prev.phase !== phase) sfx.success();
+    if (paletteOpen && !prev.paletteOpen) sfx.open();
+    if (listening !== prev.listening) (listening ? sfx.micOn : sfx.micOff)();
+    if ((homeError && homeError !== prev.homeError) || (visibleError && visibleError !== prev.error)) sfx.error();
+    previous.current = { phase, paletteOpen, listening, homeError, error: visibleError };
+  }, [phase, paletteOpen, listening, homeError, visibleError]);
+  useEffect(() => {
+    const tap = (event: MouseEvent) => {
+      const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button.tool, button.pill, button.key") : null;
+      if (button && !button.disabled) sfx.tap();
+    };
+    document.addEventListener("click", tap);
+    return () => document.removeEventListener("click", tap);
+  }, []);
 
   useEffect(() => {
     api.status().then(setStatus).catch(() => setStatus(null));
@@ -108,7 +130,7 @@ export default function App() {
   }, []);
 
   // The native window is exactly the size of what is shown (bar, plus the
-  // palette above it when open): follow it.
+  // palette below it when open): follow it.
   useLayoutEffect(() => {
     const el = barRef.current;
     if (!el) return;
@@ -156,6 +178,7 @@ export default function App() {
     }
     setStep(s);
     setThinking("");
+    if (liveRef.current.step) (s.completed.length ? sfx.success : sfx.step)();
     // A milestone just closed: say so briefly.
     const closed = s.completed.length ? liveRef.current.step?.milestone?.goal : null;
     setMessage(closed ? `✓ ${closed}` : "");
@@ -441,24 +464,12 @@ export default function App() {
   }, [onUtterance]);
 
   const busy = stepState === "thinking";
+  const reduced = useReducedMotion();
 
   return (
-    <div className="shell" ref={barRef}>
-      {paletteOpen && phase === "home" && (
-        <Palette
-          tutorials={library}
-          onClose={() => {
-            setPaletteOpen(false);
-            inputRef.current?.focus();
-          }}
-          onStart={(t) => {
-            setPaletteOpen(false);
-            startTutorial(t.title, null, t.id);
-          }}
-        />
-      )}
+    <div className={`shell ${paletteOpen && phase === "home" ? "shell--library" : ""}`} ref={barRef}>
     <div className="bar">
-      {phase === "home" && qa && (
+      {phase === "home" && qa && (qa.result || qa.error) && (
         <div className="explain qa">
           <div className="explain__q">
             “{qa.question}”
@@ -522,9 +533,10 @@ export default function App() {
       {(phase === "home" || phase === "planning" || phase === "importing") && (
         <>
           <form
-            className="row row--input"
+            className="row row--input composer"
             onSubmit={(e) => {
               e.preventDefault();
+              if (goal.trim()) sfx.confirm();
               startTutorial();
             }}
           >
@@ -538,7 +550,7 @@ export default function App() {
                 className="dicta-inline"
                 initial={{ opacity: 0, filter: "blur(6px)" }}
                 animate={{ opacity: 1, filter: "blur(0px)" }}
-                transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+                transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
               >
                 <Wave level={level} done={voiceText.final} size="sm" />
                 <Transcript text={tail(voiceText.text, 44)} placeholder="Listening…" className="dicta-inline__text" />
@@ -577,13 +589,14 @@ export default function App() {
                 <button
                   type="button"
                   className={`tool ${listening ? "tool--rec" : ""}`}
+                  style={{ "--mic-ring": 1 + level * 0.25 } as CSSProperties}
                   onClick={toggleMic}
                   title={listening ? "Stop listening" : "Speak (Gladia)"}
                 >
                   <IconMic />
                 </button>
                 <button className="key" type="submit" disabled={!goal.trim()} title="Start">
-                  <IconEnter />
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5m-6 6 6-6 6 6" /></svg>
                 </button>
               </>
             )}
@@ -598,9 +611,9 @@ export default function App() {
       {phase === "running" && step && (
         <motion.div
           className="run"
-          initial={{ opacity: 0, y: 8, filter: "blur(6px)" }}
+          initial={reduced ? { opacity: 0 } : { opacity: 0, y: -8, filter: "blur(6px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+          transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
         >
           <div className="row row--meta">
             <div className="segments" aria-label="Milestones">
@@ -621,6 +634,7 @@ export default function App() {
               </button>
               <button
                 className={`tool ${listening ? "tool--rec" : ""}`}
+                style={{ "--mic-ring": 1 + level * 0.25 } as CSSProperties}
                 onClick={toggleMic}
                 title={listening ? "Stop listening" : "Ask a question out loud"}
               >
@@ -649,6 +663,9 @@ export default function App() {
               </button>
               <button className="tool" onClick={toggleVoice} title={voice ? "Mute voice" : "Unmute voice"}>
                 {voice ? <IconVolume /> : <IconVolumeOff />}
+              </button>
+              <button className="tool" aria-pressed={sound} onClick={() => setSoundEnabled(!sound)} title={sound ? "Mute sounds" : "Unmute sounds"}>
+                {sound ? <IconSound /> : <IconSoundOff />}
               </button>
               <button className="tool" onClick={quit} title="Stop">
                 <IconClose />
@@ -691,16 +708,16 @@ export default function App() {
           <motion.p
             key={step.instruction}
             className={`instruction ${busy || explain ? "instruction--dim" : ""}`}
-            initial={{ opacity: 0, y: 6, filter: "blur(6px)" }}
+            initial={reduced ? { opacity: 0 } : { opacity: 0, y: -6, filter: "blur(6px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+            transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
           >
             {step.instruction}
           </motion.p>
           {step.teach && !busy && !explain && <div className="teach">{step.teach}</div>}
           {step.milestone?.video_url && !explain && (
             <button className="video-link" onClick={() => openUrl(step.milestone!.video_url!)} title="Open the video at this moment">
-              ▶ Watch this part in the video
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true"><path d="m2 1 7 4-7 4Z" /></svg> Watch this part in the video
             </button>
           )}
           {step.kind === "write" && step.text && !busy && (
@@ -744,8 +761,8 @@ export default function App() {
             )
           ) : stepState === "error" ? (
             <div className="status status--error">{message}</div>
-          ) : stepState === "success" ? (
-            <div className="status status--ok">{message}</div>
+          ) : stepState === "success" || message.startsWith("✓ ") ? (
+            <div className="status status--ok"><Feedback />{message.replace(/^✓ /, "")}</div>
           ) : (
             <div className="status">
               {message ||
@@ -765,9 +782,9 @@ export default function App() {
               <motion.div
                 key="dicta"
                 className="dicta"
-                initial={{ opacity: 0, height: 0, filter: "blur(6px)" }}
-                animate={{ opacity: 1, height: "auto", filter: "blur(0px)" }}
-                exit={{ opacity: 0, height: 0, filter: "blur(6px)", transition: { duration: 0.2, ease: [0.23, 1, 0.32, 1] } }}
+                initial={reduced ? { opacity: 0 } : { opacity: 0, y: -6, height: 0, filter: "blur(6px)" }}
+                animate={{ opacity: 1, y: 0, height: "auto", filter: "blur(0px)" }}
+                exit={reduced ? { opacity: 0, transition: { duration: 0.12 } } : { opacity: 0, y: -6, height: 0, filter: "blur(6px)", transition: { duration: 0.14, ease: [0.23, 1, 0.32, 1] } }}
                 transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
               >
                 <Wave level={level} done={voiceText.final} size="lg" />
@@ -778,9 +795,9 @@ export default function App() {
                 <motion.form
                   key="ask"
                   className="ask"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0, transition: { duration: 0.16, ease: [0.23, 1, 0.32, 1] } }}
+                  initial={reduced ? { opacity: 0 } : { opacity: 0, y: -6, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  exit={reduced ? { opacity: 0, transition: { duration: 0.12 } } : { opacity: 0, y: -6, height: 0, transition: { duration: 0.14, ease: [0.23, 1, 0.32, 1] } }}
                   transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -819,7 +836,7 @@ export default function App() {
       {phase === "done" && (
         <div className="row row--done">
           <span className="lead lead--ok">
-            <IconCheck />
+            <Feedback />
           </span>
           <span className="done-text">
             {saved ? "Saved to your library" : "Done"} <span className="dim">· {saved ?? title}</span>
@@ -845,6 +862,22 @@ export default function App() {
         </div>
       )}
     </div>
+      <AnimatePresence initial={false}>
+        {paletteOpen && phase === "home" && (
+          <Palette
+            key="palette"
+            tutorials={library}
+            onClose={() => {
+              setPaletteOpen(false);
+              inputRef.current?.focus();
+            }}
+            onStart={(t) => {
+              setPaletteOpen(false);
+              startTutorial(t.title, null, t.id);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
