@@ -383,7 +383,7 @@ def calc_context(**kwargs):
     target = TargetContext("libreoffice-calc", "7.3.7", (1485, 900), 1, "Cellule A1", (57, 50),
                            "main", "fr", 1, True)
     return HelpContext(target=target, capture_id="cap", image_png=b"png",
-                       app="libreoffice-calc", require_visible=True, **kwargs)
+                       app="libreoffice-calc", require_visible=True, bounds_proven=True, **kwargs)
 
 
 async def test_policy_pointer_uses_a11y_center_without_holo():

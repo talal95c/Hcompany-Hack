@@ -37,6 +37,7 @@ mod imp {
     const LISTEN_ONLY: u32 = 1; // kCGEventTapOptionListenOnly
     const LEFT_DOWN: u32 = 1; // kCGEventLeftMouseDown
     const RIGHT_DOWN: u32 = 3; // kCGEventRightMouseDown
+    const SOURCE_USER_DATA: u32 = 42;
     const KEY_DOWN: u32 = 10; // kCGEventKeyDown
     const KEYCODE_FIELD: u32 = 9; // kCGKeyboardEventKeycode
     const RETURN: i64 = 36; // kVK_Return
@@ -56,9 +57,9 @@ mod imp {
         ) -> *mut c_void;
         fn CGEventTapEnable(tap: *mut c_void, enable: bool);
         fn CGEventGetLocation(event: *const c_void) -> CGPoint;
+        fn CGEventGetIntegerValueField(event: *const c_void, field: u32) -> i64;
         fn CGEventSourceButtonState(state: i32, button: u32) -> bool;
         fn CGEventCreate(source: *const c_void) -> *mut c_void;
-        fn CGEventGetIntegerValueField(event: *const c_void, field: u32) -> i64;
         fn CGPreflightListenEventAccess() -> bool;
     }
 
@@ -86,6 +87,9 @@ mod imp {
                 }
             },
             LEFT_DOWN | RIGHT_DOWN => {
+                if unsafe { CGEventGetIntegerValueField(event, SOURCE_USER_DATA) } == crate::act::RIO_EVENT_TAG {
+                    return event;
+                }
                 let p = unsafe { CGEventGetLocation(event) };
                 if let Some(h) = HANDLER.get() {
                     h(Click { x: p.x, y: p.y });

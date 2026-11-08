@@ -1,0 +1,1 @@
+{"schema_version":"1.0","session_id":"test","message_id":"event-1","reply_to":null,"type":"a11y.event","payload":{"watch_id":"step-1","sequence":1,"refs":["snapshot:n1"],"reconcile":false,"events_supported":true}}

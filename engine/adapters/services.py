@@ -37,6 +37,13 @@ class ProfileJevAdapter(JevAdapter):
         self.profile = profile
 
     async def decide(self, context: dict, *, timeout_s: float) -> JevDecision:
+        return await self._decide(context, timeout_s=timeout_s)
+
+    async def speculate_intent(self, context: dict, *, timeout_s: float) -> JevDecision:
+        return await self._decide(context, timeout_s=timeout_s, speculative=True)
+
+    async def _decide(self, context: dict, *, timeout_s: float,
+                      speculative: bool = False) -> JevDecision:
         from engine.services.jev import INTENT_QUESTION
 
         start = time.perf_counter()
@@ -55,5 +62,6 @@ class ProfileJevAdapter(JevAdapter):
                              for code in context.get("known_errors", [])})
             question = JevQuestion(
                 "choice", f"Choose whether to help the {self.profile.name} learner", criteria)
-        result = (await self.client.decide(state, {key: question}, timeout_s=timeout_s))[key]
+        result = (await self.client.decide(state, {key: question}, timeout_s=timeout_s,
+                  **({"speculative": True} if speculative else {})))[key]
         return JevDecision(result.choice, None, (time.perf_counter() - start) * 1000)

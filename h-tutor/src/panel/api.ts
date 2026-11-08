@@ -30,6 +30,31 @@ export type TutorialSummary = {
   milestones: number;
   source: string;
 };
+export type AppIcon = { data_uri: string; color: string };
+export type SkillApp = { name: string; bundle_id?: string; min_version?: string };
+export type Skill = {
+  tutorial_id: string;
+  title: string;
+  goal: string;
+  app: SkillApp;
+  graph: { milestones: unknown[]; [key: string]: unknown };
+  runs: { date: number; mode: "learner" | "rio" | "script"; outcome: string; duration_s: number; session_id: string }[];
+  compiled: unknown[];
+  muted_until: number | null;
+  declines: number;
+};
+export type AutopilotView = {
+  phase: "hidden" | "expanded" | "compact";
+  skill_id: string;
+  title: string;
+  goal: string;
+  index: number;
+  total: number;
+  label: string;
+  outcome: "completed" | "failed" | "stopped" | null;
+  message: string | null;
+  mode: "script" | "rio";
+};
 
 /** One action for the learner, decided by Holo from the live screen. */
 export type Step = {
@@ -68,6 +93,14 @@ export type Status = {
 };
 
 export const api = {
+  skillsList: () => invoke<Skill[]>("skills_list"),
+  skillDecline: (skillId: string) => invoke("skill_decline", { skillId }),
+  skillProposeNow: (skillId: string) => invoke("skill_propose_now", { skillId }),
+  autopilotAccept: (skillId: string) => invoke("autopilot_accept", { skillId }),
+  autopilotStop: () => invoke("autopilot_stop"),
+  autopilotDecline: () => invoke("autopilot_decline"),
+  autopilotView: () => invoke<AutopilotView>("autopilot_view"),
+  notchSurface: (surface: { x: number; y: number; width: number; height: number; radius: number }) => invoke("notch_surface", { surface }),
   status: () => invoke<Status>("status"),
   /** Starts a saved tutorial (`tutorialId`) or plans one from a free-form goal. */
   tutorStart: (goal: string | null, tutorialId: string | null, lang: string | null) =>

@@ -28,12 +28,15 @@ pub struct Shot {
 }
 
 pub fn capture_primary() -> Result<Shot, String> {
+    static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    let _lock = LOCK.lock().map_err(|_| "Capture lock unavailable")?;
+    let _mask = crate::autopilot::mask_capture()?;
     let monitors = xcap::Monitor::all().map_err(|e| format!("Screen capture failed: {e}"))?;
     let monitor =
         monitors.iter().find(|m| m.is_primary().unwrap_or(false)).or(monitors.first()).ok_or("No display found")?;
 
     let rgba = monitor.capture_image().map_err(|e| {
-        format!("Screen capture failed ({e}). Allow Screen Recording in System Settings › Privacy & Security.")
+        format!("Screen capture failed ({e}). Allow screen recording in System Settings › Privacy & Security.")
     })?;
 
     let img = DynamicImage::ImageRgba8(
