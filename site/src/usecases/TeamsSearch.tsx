@@ -20,13 +20,13 @@ export function TeamsSearchScene({ frame = 85, width }: { frame?: number; width?
   return <div className="teams-demo" style={{ width }}>
     <div className="teams-demo-bar">
       <span className="teams-demo-q" style={{ opacity: exit }}>{query.slice(0, typed)}{f < 53 && <span style={{ display: 'inline-block', height: 16, width: 1, background: '#fff', verticalAlign: '-3px', marginLeft: 2, opacity: Math.floor(f / 10) % 2 ? 0 : 1 }} />}</span>
-      <span className="teams-demo-k" style={{ transform: `scale(${1 - press * .08}) translateY(${press}px)`, background: press ? `rgba(255,255,255,${31 / 255 + press * .15})` : undefined }}>⌘K</span>
+      <span className="teams-demo-k" style={{ transform: press ? `scale(${1 - press * .08}) translateY(${press}px)` : undefined, background: press ? `rgba(255,255,255,${31 / 255 + press * .15})` : undefined }}>⌘K</span>
     </div>
     <ul className="teams-demo-list">
       {TEAMS_SEARCH_RESULTS.map((r, i) => {
         const enter = f >= 85 ? 1 : spring({ frame: f - 45 - i * 4, fps: FPS, config: { damping: 22, stiffness: 170 } });
         const highlight = i === cycle ? accent : 0;
-        return <li key={r.title} style={{ boxShadow: `inset ${3 * highlight}px 0 0 #e98548`, opacity: Math.min(1, enter) * exit, transform: `translateY(${(1 - enter) * 8}px)`, background: `rgb(255, ${255 - Math.round(highlight * (1 - ease(f, 75, 85)) * 5)}, ${255 - Math.round(highlight * (1 - ease(f, 75, 85)) * 9)})` }}>
+        return <li key={r.title} style={{ boxShadow: `inset ${3 * highlight}px 0 0 #e98548`, opacity: Math.min(1, enter) * exit, transform: enter === 1 ? undefined : `translateY(${(1 - enter) * 8}px)`, background: `rgb(255, ${255 - Math.round(highlight * (1 - ease(f, 75, 85)) * 5)}, ${255 - Math.round(highlight * (1 - ease(f, 75, 85)) * 9)})` }}>
           <p className="teams-demo-title">{r.title}</p>
           <p className="teams-demo-meta"><span>{r.src}</span><span>{r.steps}</span></p>
         </li>;
