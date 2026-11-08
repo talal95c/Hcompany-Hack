@@ -92,7 +92,10 @@ does not react after two tries, stop insisting on it: look for the command in th
 - Call answer as soon as the latest screenshot meets the current task's success criterion, even if that happened \
 before you acted. Only work on the current task, not the later ones. Your evidence must be the result itself \
 (the item, the name, the state that changed), never a control that is always there: a toolbar icon or a button \
-looking active proves nothing.
+looking active proves nothing. For a position, size or shape, judge the result against the other objects \
+(\"on top of the trunk\"), never by the value you had typed, and only from a view that shows it: if the \
+screenshot cannot show it (a perspective hides heights), first give the action that does (a front or side \
+view, the object's dimensions) and answer on the next screenshot.
 Teaching:
 - The learner may pause and ask you something. You then receive their question and reply with explain: a short \
 spoken answer in their language, and the element to show when that helps. Then the current action resumes. \
@@ -784,13 +787,10 @@ async fn advance_on(
     }
     while !session.finished {
         if let Some(ids) = &session.blocked {
-            return Err(format!(
-                "Le tutoriel est bloqué : aucune étape restante ne peut démarrer ({}).",
-                ids.join(", ")
-            ));
+            return Err(format!("The tutorial is blocked: no remaining milestone can start ({}).", ids.join(", ")));
         }
         if session.current.is_none() {
-            return Err("Aucune étape en cours".into());
+            return Err("No milestone in progress".into());
         }
         match ask_holo(brain, session, event.take(), &shot, shot_path.as_deref()).await? {
             Turn::Action(step) => {
@@ -1175,7 +1175,7 @@ async fn choose(
                 }
             }
         }
-        let (call, action, msg) = accepted.ok_or("Holo n'a pas proposé d'action valide : réessaie pour continuer.")?;
+        let (call, action, msg) = accepted.ok_or("Holo did not give a valid action: try again to continue.")?;
 
         // Keep only the parsed action in history, never the reasoning.
         let assistant = json!({
@@ -1239,6 +1239,13 @@ async fn ensure_knowledge(brain: &impl Brain, session: &mut Session) {
     }
 }
 
+/// Added to the first observation of a tutorial: the screen is rarely a
+/// fresh app (a session had a cylinder with a leftover plank and an extra
+/// cube that ended up in the "tree").
+const FIRST_LOOK: &str = "First look at this screen: before guiding, check whether anything on it stands in the way \
+of the tutorial goal (leftover objects or parts from earlier work, another document open, unexpected settings). \
+If something does, ask the learner with ask_learner whether to keep it or remove it; otherwise start the task.";
+
 /// Appends an observation: the `<progress>` block, the screenshot, and any
 /// extra text (a learner's question). Keeps the conversation bounded.
 fn observe(session: &mut Session, shot: &Shot, extra: Option<&str>) {
@@ -1272,7 +1279,11 @@ async fn ask_holo(
         let content = event.unwrap_or_else(|| "No report from the learner.".into());
         session.messages.push(json!({ "role": "tool", "tool_call_id": id, "content": content }));
     }
-    observe(session, shot, None);
+    // The very first look of a tutorial: what on screen stands in the way.
+    let first = session.actions.values().all(Vec::is_empty)
+        && session.status.values().all(|s| !matches!(s, Status::Done | Status::Skipped))
+        && !session.messages.iter().any(|m| m["role"] == "assistant");
+    observe(session, shot, first.then_some(FIRST_LOOK));
 
     let model = holo::smart_model();
     let mut metrics = Metrics::default();
@@ -1322,7 +1333,7 @@ async fn ask_holo(
     let current = session.current_milestone().cloned();
     let (kind, element, point, text, keys, instruction, path, typed) = match action {
         Action::Answer { evidence } => {
-            let id = session.close_current(Status::Done, &evidence).ok_or("Aucune étape en cours")?;
+            let id = session.close_current(Status::Done, &evidence).ok_or("No milestone in progress")?;
             return Ok(Turn::MilestoneDone(id));
         }
         Action::AskLearner { question, options } => {
@@ -1413,7 +1424,7 @@ pub async fn ask_in_loop(
     shot: Shot,
 ) -> Result<Reply, String> {
     if session.current.is_none() {
-        return Err("Aucune étape en cours".into());
+        return Err("No milestone in progress".into());
     }
     journal::event("learner_question", json!({ "milestone": session.current, "question": question }));
     ensure_knowledge(brain, session).await;
@@ -1858,7 +1869,7 @@ mod tests {
         let mut s = session(vec![milestone("a", &[]), milestone("b", &["c"]), milestone("c", &["b"])]);
         let brain = Fake::new(vec![answer()]);
         let e = step(&brain, &mut s, None).unwrap_err();
-        assert!(e.contains("bloqué"), "{e}");
+        assert!(e.contains("blocked"), "{e}");
         assert!(!s.finished);
     }
 
@@ -2301,5 +2312,21 @@ mod tests {
         step_on(&brain, &mut s, "start", 100);
         let task = brain.bodies.lock().unwrap()[0]["messages"][1]["content"].as_str().unwrap().to_string();
         assert!(!task.contains("knowledge"), "{task}");
+    }
+
+    #[test]
+    fn only_the_first_look_checks_the_scene() {
+        let mut s = linear(2);
+        let brain = Fake::new(vec![click()]);
+        step_on(&brain, &mut s, "start", 100);
+        let first = brain.bodies.lock().unwrap()[0]["messages"].to_string();
+        assert!(first.contains("First look at this screen"));
+        let next = Fake::new(vec![answer(), click()]);
+        step_on(&next, &mut s, "clicked", 170);
+        let later = next.bodies.lock().unwrap();
+        // The earlier observation still holds it in history; the new ones do not add it again.
+        let last_obs =
+            later[1]["messages"].as_array().unwrap().iter().rev().find(|m| m["role"] == "user").unwrap().to_string();
+        assert!(!last_obs.contains("First look"));
     }
 }

@@ -657,7 +657,7 @@ export default function App() {
                   </button>
                 )}
                 <button className="pill pill--light" onClick={continueTutorial}>
-                  Continuer
+                  Continue
                 </button>
               </div>
             </div>
@@ -680,7 +680,7 @@ export default function App() {
           )}
           {step.kind === "write" && step.text && !busy && (
             <div className="chip">
-              Tape <code>{step.text}</code>
+              Type <code>{step.text}</code>
             </div>
           )}
           {step.kind === "ask_learner" && !busy && !explain && (
@@ -691,23 +691,23 @@ export default function App() {
                 </button>
               ))}
               <button className="pill pill--light" onClick={() => setAsking(true)}>
-                Répondre
+                Answer
               </button>
             </div>
           )}
           {step.hint_only && !busy && !explain && (
             <button className="pill" onClick={() => api.tutorReveal()} title="Show me where it is">
-              Montre-moi
+              Show me
             </button>
           )}
           {step.kind === "press_key" && step.keys && !busy && (
             <div className="chip">
-              Appuie sur <kbd>{step.keys}</kbd>
+              Press <kbd>{step.keys}</kbd>
             </div>
           )}
 
           {voiceText ? null : explain ? (
-            <div className="status">En pause pendant qu'on parle.</div>
+            <div className="status">Paused while we talk.</div>
           ) : busy ? (
             thinking ? (
               <div className="status status--thinking" title={thinking}>
@@ -725,13 +725,13 @@ export default function App() {
             <div className="status">
               {message ||
                 (step.kind === "ask_learner"
-                  ? "Réponds à voix haute ou tape ta réponse."
+                  ? "Answer out loud or type your answer."
                   : step.hint_only
-                    ? "À toi de le trouver ! Je regarde ton écran."
+                    ? "Your turn to find it. I'm watching your screen."
                     : step.kind === "click"
                   ? "Go where I'm pointing. I'm watching your screen."
                   : step.kind === "write"
-                    ? "Tape-le dans le champ que je pointe."
+                    ? "Type it in the field I'm pointing at."
                     : "Go ahead, I'm watching your screen.")}
             </div>
           )}
@@ -767,7 +767,7 @@ export default function App() {
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     onKeyDown={(e) => e.key === "Escape" && setAsking(false)}
-                    placeholder={step?.kind === "ask_learner" ? "Ta réponse…" : "Ask Holo anything…"}
+                    placeholder={step?.kind === "ask_learner" ? "Your answer…" : "Ask Holo anything…"}
                     spellCheck={false}
                   />
                 </motion.form>
@@ -783,7 +783,7 @@ export default function App() {
             {imported.title} <span className="dim">· {imported.app} · {imported.milestones} milestones</span>
           </span>
           <button className="pill" onClick={() => setPhase("home")}>
-            Plus tard
+            Later
           </button>
           <button className="pill pill--light" onClick={() => startTutorial(imported.title, null, imported.id)}>
             Start
@@ -815,7 +815,7 @@ export default function App() {
               setPhase("home");
             }}
           >
-            Nouveau
+            New
           </button>
         </div>
       )}

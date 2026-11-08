@@ -72,7 +72,11 @@ pub async fn plan(holo: &Holo, request: &str, shot: &Shot, knowledge: Option<&st
          on how a button or icon looks (\"the star icon is filled\"): describe the object that changed.\n\
          Use the application visible on screen when relevant. Keep the tutorial focused on the request. Prefer \
          outcome milestones (\"A note named Groceries exists\") over guessed procedures (\"Create a note\" then \
-         \"Rename it\"), and fewer milestones when one action may reach several outcomes."
+         \"Rename it\"), and fewer milestones when one action may reach several outcomes.\n\
+         When the result is about placement, size or shape, write done_when relative to the other objects on \
+         screen, never as a value to type: \"the sphere sits on top of the trunk, wider than it\", not \
+         \"the sphere is at Z = 6\" or \"scaled to 0.5\". Read the scene first (what is there, how big it is) \
+         and build on it."
     );
     let prompt = match knowledge {
         Some(k) => format!(

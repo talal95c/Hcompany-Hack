@@ -443,12 +443,7 @@ async fn tutor_skip_milestone(
 /// text's language when detection is confident, else `fallback`.
 #[tauri::command]
 fn resolve_lang(text: String, spoken: Option<String>, fallback: Option<String>) -> String {
-    let supported = |l: &String| agent::language_name(l).is_some();
-    spoken
-        .filter(supported)
-        .or_else(|| voice::detect(&text).map(String::from))
-        .or(fallback.filter(supported))
-        .unwrap_or_else(|| "en".into())
+    voice::resolve(&text, spoken.as_deref(), fallback.as_deref(), |l| agent::language_name(l).is_some())
 }
 
 #[tauri::command]

@@ -14,7 +14,7 @@ use tokio::sync::watch;
 /// inactivity timeout).
 pub const STEP_DEADLINE: Duration = Duration::from_secs(150);
 
-pub const STOPPED: &str = "Tutoriel arrêté";
+pub const STOPPED: &str = "Tutorial stopped";
 
 pub struct Generation(watch::Sender<u64>);
 
@@ -52,7 +52,7 @@ impl Generation {
             biased;
             _ = rx.wait_for(|g| *g != generation) => Err(STOPPED.into()),
             r = tokio::time::timeout(deadline, work) => r.unwrap_or_else(|_| {
-                Err(format!("Holo n'a pas répondu en {} s : réessaie.", deadline.as_secs()))
+                Err(format!("Holo did not answer within {} s: try again.", deadline.as_secs()))
             }),
         }
     }
@@ -104,6 +104,6 @@ mod tests {
                 tokio::time::sleep(Duration::from_secs(30)).await;
                 Ok(())
             }));
-        assert!(r.unwrap_err().contains("réessaie"));
+        assert!(r.unwrap_err().contains("try again"));
     }
 }

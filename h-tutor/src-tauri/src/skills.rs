@@ -72,7 +72,7 @@ fn read(root: &Path, id: &str) -> Result<Skill, String> {
     let bytes = std::fs::read(path(root, id)?).map_err(|e| e.to_string())?;
     let skill: Skill = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
     if skill.tutorial_id != id {
-        return Err("Identifiant de skill incohérent".into());
+        return Err("Inconsistent skill id".into());
     }
     skill.graph.validate()?;
     Ok(skill)
@@ -213,7 +213,7 @@ pub fn skill_decline(skill_id: String) -> Result<(), String> {
 pub fn skill_propose_now(app: AppHandle, skill_id: String) -> Result<(), String> {
     let skill = load(&skill_id)?;
     if !skill.runs.iter().any(|r| r.outcome == "completed") {
-        return Err("Ce skill n'a pas encore réussi".into());
+        return Err("This skill has not succeeded yet".into());
     }
     let mut guard = PROPOSALS.lock().unwrap();
     emit(&app, &skill)?;

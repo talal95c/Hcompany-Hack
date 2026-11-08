@@ -65,19 +65,71 @@ fn speakable(text: &str) -> String {
 /// Language of `text` among the five Phonon speaks, when the detection is
 /// reliable (short sentences often are not).
 pub fn detect(text: &str) -> Option<&'static str> {
+    detect_with_confidence(text).map(|(l, _)| l)
+}
+
+/// Small words that settle English vs French when a sentence is too short
+/// for statistics ("Make it blue", "add a sphere", "rends-le bleu").
+fn small_words_vote(text: &str) -> Option<&'static str> {
+    const EN: [&str; 30] = [
+        "the", "to", "a", "an", "is", "it", "how", "i", "you", "me", "my", "make", "can", "what", "this", "in", "on",
+        "with", "and", "of", "please", "help", "add", "do", "does", "where", "why", "change", "create", "show",
+    ];
+    const FR: [&str; 34] = [
+        "le", "la", "les", "un", "une", "des", "de", "du", "est", "je", "tu", "il", "comment", "mon", "ma", "mes",
+        "ce", "cette", "pour", "avec", "et", "dans", "sur", "moi", "aide", "fais", "faire", "peux", "veux", "stp",
+        "svp", "rends", "ajoute", "où",
+    ];
+    let words: Vec<String> = text.to_lowercase().split(|c: char| !c.is_alphabetic()).map(String::from).collect();
+    let en = words.iter().filter(|w| EN.contains(&w.as_str())).count();
+    let fr = words.iter().filter(|w| FR.contains(&w.as_str())).count();
+    match en.cmp(&fr) {
+        std::cmp::Ordering::Greater => Some("en"),
+        std::cmp::Ordering::Less => Some("fr"),
+        std::cmp::Ordering::Equal => None,
+    }
+}
+
+/// The language of a text, and whether that is reliable (long enough, or
+/// settled by its small words).
+fn detect_with_confidence(text: &str) -> Option<(&'static str, bool)> {
     use whatlang::{Detector, Lang as W};
     let detector = Detector::with_allowlist(vec![W::Eng, W::Fra, W::Deu, W::Spa, W::Por]);
-    let info = detector.detect(text)?;
-    if !info.is_reliable() && info.confidence() < 0.5 {
-        return None;
-    }
-    Some(match info.lang() {
+    let info = detector.detect(text);
+    let stats = info.filter(|i| i.is_reliable() || i.confidence() >= 0.5);
+    let votes = small_words_vote(text);
+    let lang = |l: W| match l {
         W::Fra => "fr",
         W::Deu => "de",
         W::Spa => "es",
         W::Por => "pt",
         _ => "en",
-    })
+    };
+    match (stats, votes) {
+        // Statistics and small words agree, or statistics are sure.
+        (Some(i), Some(v)) if lang(i.lang()) == v => Some((v, true)),
+        (Some(i), _) if i.is_reliable() => Some((lang(i.lang()), true)),
+        // Short text: the small words decide.
+        (_, Some(v)) => Some((v, true)),
+        (Some(i), None) => Some((lang(i.lang()), false)),
+        (None, None) => None,
+    }
+}
+
+/// The learner's language for something they said or typed. Gladia's spoken
+/// detection usually wins, but a French accent can label English speech
+/// "fr": when the words themselves clearly say otherwise, they win. When
+/// nothing is clear, the language stays what it was.
+pub fn resolve(text: &str, spoken: Option<&str>, fallback: Option<&str>, supported: impl Fn(&str) -> bool) -> String {
+    let written = detect_with_confidence(text);
+    let spoken = spoken.filter(|l| supported(l));
+    let chosen = match (spoken, written) {
+        (Some(s), Some((w, true))) if s != w => Some(w),
+        (Some(s), _) => Some(s),
+        (None, Some((w, _))) => Some(w),
+        (None, None) => None,
+    };
+    chosen.or(fallback.filter(|l| supported(l))).unwrap_or("en").to_string()
 }
 
 struct Engine {
@@ -180,6 +232,37 @@ impl Tts {
         let (reply, rx) = mpsc::channel();
         self.tx.lock().unwrap().send(Job { text, lang, reply }).map_err(|_| "TTS thread stopped")?;
         rx.recv().map_err(|_| "TTS thread stopped".to_string())?
+    }
+}
+
+#[cfg(test)]
+mod language_tests {
+    use super::resolve;
+    const ALL: fn(&str) -> bool = |l| ["en", "fr", "de", "es", "pt"].contains(&l);
+
+    #[test]
+    fn english_is_kept_english() {
+        // Short English after a French session: the small words decide.
+        assert_eq!(resolve("Make it blue", None, Some("fr"), ALL), "en");
+        assert_eq!(resolve("add a sphere on top of the trunk", None, Some("fr"), ALL), "en");
+        assert_eq!(resolve("help me make a blue tree", None, Some("fr"), ALL), "en");
+        // Gladia heard a French accent, the words are English.
+        assert_eq!(resolve("how do I add a material to this cylinder", Some("fr"), Some("fr"), ALL), "en");
+    }
+
+    #[test]
+    fn french_is_kept_french() {
+        assert_eq!(resolve("rends-le bleu", None, Some("en"), ALL), "fr");
+        assert_eq!(resolve("aide moi à faire un arbre bleu", Some("en"), None, ALL), "fr");
+        assert_eq!(resolve("comment je mets une texture sur le cylindre", Some("fr"), Some("en"), ALL), "fr");
+    }
+
+    #[test]
+    fn unclear_keeps_the_current_language() {
+        assert_eq!(resolve("ok", None, Some("fr"), ALL), "fr");
+        assert_eq!(resolve("Blender", None, Some("en"), ALL), "en");
+        // Speech detection stands when the words say nothing.
+        assert_eq!(resolve("ok", Some("de"), Some("fr"), ALL), "de");
     }
 }
 
