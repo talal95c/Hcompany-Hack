@@ -3,7 +3,7 @@
 One Cloudflare Worker that does three jobs:
 - it serves **the console**, where an organization manages its tutorials, members, API tokens and usage (React + better-auth);
 - it serves **the Rio API** (`/v1`), which the desktop app calls with a token;
-- it **makes tutorials** from a YouTube link (Gladia, then Holo), a documentation page or a goal (H web agent `h/web-surfer-pro` when needed, Linkup as fallback, then Holo).
+- it **makes tutorials** from a YouTube link (Gladia, then Holo), a documentation page (H web agent `h/web-surfer-pro` when the page needs a browser, then Holo) or a goal (H deep-search agent `h/deep-search-pro`, Linkup as fallback, then Holo). Where Rio uses Linkup: see [Web search](../README.md#web-search-h-agents-and-linkup).
 
 | Piece | Where |
 |---|---|

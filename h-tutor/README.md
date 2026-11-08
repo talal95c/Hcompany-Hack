@@ -60,6 +60,19 @@ tutorials and the result is graded by code. Everything lives in
 
 **Inspired by Google's [harness2](https://github.com/google-research/harness2).** This way of working comes from harness2's idea: the *harness* around a model (system prompt, tools, memory, guardrails) is what you improve, and you improve it by **testing variants against an automatic evaluation** instead of trusting intuition. Rio applies it to tutoring: the harness is the tutor loop (`agent.rs`, the prompts, the tools, the knowledge injection), the evaluation is the learner simulator with code-graded scenarios, and each change is a variant measured against the previous one on the same seeds, like harness2's contrastive probing. What Rio did not take is harness2's code: it drives Codex and OpenCode agents on text and code tasks, with no interface for an external agent such as a Rust app, nothing on screens or a human in the loop, and Linux with Gemini on Vertex, so it was not installed or run. Its automatic loop (propose a variant, probe it, keep the best) is not built here yet: a human, or a coding agent with the [`rio-harness-core`](.prime/agent/skills/rio-harness-core/SKILL.md) skill, plays that role by hand. The pieces for automating it are in place (seeded simulator, A/B, graded reports); the main limit is the H quota of 30 requests per minute (a series of 8 runs takes about 20 min (est.)).
 
+## Web search: H agents and Linkup
+
+Rio looks things up on the web in two places. [Linkup](https://linkup.so) is only ever a fallback.
+
+| Where | What it searches with, in order | Code |
+|---|---|---|
+| **Desktop app**, during a lesson or a question (the agent's `search` tool) | 1. the team's knowledge on the platform (`RIO_API_URL` + `RIO_API_TOKEN`) · 2. **Linkup**, only if `LINKUP_API_KEY` is set in `.env` · 3. Holo answering from what it knows (simulated, marked as such) | `src-tauri/src/search.rs` |
+| **Platform**, a tutorial made from a **goal** ("make a pivot table in Calc") | 1. H's deep-search agent **`h/deep-search-pro`** (parallel web workers, cross-checked sources) · 2. **Linkup** web search if the agent cannot start (quota, outage) or brings back nothing | `platform/src/ingest.ts` (`searchGoal`, `searchLinkup`) |
+| **Platform**, a tutorial made from a **pasted page** | the page's text; if it is empty or thin (JavaScript, blocked), H's web agent **`h/web-surfer-pro`** reads it in a real browser. No Linkup here | `platform/src/ingest.ts` (`readPage`) |
+| **Platform**, a tutorial made from a **YouTube link** | no web search: Gladia transcribes the video, Holo designs the steps | `platform/src/ingest.ts` |
+
+Keys: `LINKUP_API_KEY` in `.env` for the desktop app, and as a Worker secret (`npx wrangler secret put LINKUP_API_KEY`) for the platform. Without it, the desktop app skips straight to step 3, and the platform lets Holo design the goal from its own knowledge (the tutorial says so).
+
 ## How it works
 
 ### Bibliothèque de skills (Rust)

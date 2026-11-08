@@ -2,7 +2,8 @@
 //   youtube: Gladia transcribes the video from its link (timestamps)            -> Holo designs
 //   page:    the page's text; if it is empty (JavaScript) or unreadable, H's
 //            web agent (h/web-surfer-pro, Agents API) reads the guide in a browser -> Holo designs
-//   goal:    H's web agent finds and reads the official docs (Linkup as fallback) -> Holo designs
+//   goal:    H's deep-search agent (h/deep-search-pro) researches it across several sources in parallel,
+//            Linkup web search as fallback                                      -> Holo designs
 // The application's name (and macOS bundle id) is extracted as soon as there is text.
 
 import { HaiAgentsClient } from "hai-agents";
@@ -55,7 +56,9 @@ interface Job {
 
 const LEASE_MS = 3 * 60_000;
 const PENDING = ["queued", "transcribing", "browsing", "designing"];
-const AGENT = "h/web-surfer-pro";
+// One page to read in a browser, or a goal to research across the web.
+const WEB_AGENT = "h/web-surfer-pro";
+const DEEP_SEARCH = "h/deep-search-pro";
 
 export const youtubeId = (url: string) =>
   url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/)?.[1] ?? null;
@@ -261,7 +264,7 @@ async function readPage(env: IngestEnv, row: TutorialRow, job: Job): Promise<Par
   // A JavaScript page, a blocked fetch or a thin page: let H's web agent read it in a real browser.
   if (text.length < 1500 && env.HAI_API_KEY) {
     job.pageText = text ? clip(text) : undefined;
-    return { ...(await startAgent(env, job, pageTask(row.input))), title: title || row.title, app };
+    return { ...(await startAgent(env, job, WEB_AGENT, pageTask(row.input))), title: title || row.title, app };
   }
   if (text.length < 200) throw new Error("The page has too little text to learn from");
   job.material = clip(text);
@@ -275,17 +278,18 @@ const pageTask = (url: string) =>
   `button labels, keyboard shortcuts and settings it gives. Do not invent steps. End with "Sources:" and the URLs you read.`;
 
 const goalTask = (goal: string) =>
-  `Find out how to do this in the software's official documentation (prefer the vendor's own docs, then reputable ` +
-  `tutorials): "${goal}". Read the relevant pages (at most 5). Then answer with: the software's name and the version ` +
-  `the docs are for, and every step in order with the exact menu paths, button labels, keyboard shortcuts and settings. ` +
-  `Do not invent steps. End with "Sources:" and the URLs you read.`;
+  `Research how to do this in a piece of software: "${goal}". Prefer the vendor's official documentation, then ` +
+  `reputable tutorials and forums; read several sources and keep the steps they agree on, for the most recent version ` +
+  `you find. Then answer with: the software's name and the version the steps are for, and every step in order with the ` +
+  `exact menu paths, button labels, keyboard shortcuts and settings. Do not invent steps. End with "Sources:" and the ` +
+  `URLs you read.`;
 
 // ---------------------------------------------------------------- H web agent (Agents API)
 
 const agents = (env: IngestEnv) => new HaiAgentsClient({ apiKey: env.HAI_API_KEY });
 
-async function startAgent(env: IngestEnv, job: Job, task: string): Promise<Partial<TutorialRow>> {
-  const session = await agents(env).startSession({ agent: AGENT, messages: task, maxTimeS: 300, queue: true });
+async function startAgent(env: IngestEnv, job: Job, agent: string, task: string): Promise<Partial<TutorialRow>> {
+  const session = await agents(env).startSession({ agent, messages: task, maxTimeS: agent === DEEP_SEARCH ? 600 : 300, queue: true });
   job.agentSession = session.id;
   job.polls = 0;
   try {
@@ -325,7 +329,7 @@ async function pollAgent(env: IngestEnv, row: TutorialRow, job: Job): Promise<Pa
   const sources = urls.map((u) => ({ title: u.replace(/^https?:\/\/(www\.)?/, "").slice(0, 80), url: u }));
   if (row.kind === "page" && !urls.includes(row.input)) sources.unshift({ title: row.title ?? row.input, url: row.input });
   const view = job.agentViewUrl ?? s.agentViewUrl ?? undefined;
-  if (view) sources.push({ title: "How H's web agent read it (replay)", url: view });
+  if (view) sources.push({ title: row.kind === "goal" ? "How H's agents researched it (replay)" : "How H's web agent read it (replay)", url: view });
   const app = row.app ?? (await detectApp(env, job, answer.slice(0, 1500)));
   return { status: "designing", sources: JSON.stringify(sources), app };
 }
@@ -347,7 +351,7 @@ async function searchGoal(env: IngestEnv, row: TutorialRow, job: Job): Promise<P
   const app = await detectApp(env, job, row.input);
   if (env.HAI_API_KEY) {
     try {
-      return { ...(await startAgent(env, job, goalTask(row.input))), app };
+      return { ...(await startAgent(env, job, DEEP_SEARCH, goalTask(row.input))), app };
     } catch {
       // Agents API unavailable (quota, outage): search the web another way
     }
