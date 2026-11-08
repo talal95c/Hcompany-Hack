@@ -148,7 +148,7 @@ const PROMPT_HINTS = ["Ask or learn anything, or paste a YouTube link", "Export 
  * The Rio bar from the Mac app, on the web: the same dark pill, spark, input,
  * library and mic buttons. Whatever you type becomes a tutorial.
  */
-export function RioBar({ initial = "" }: { initial?: string }) {
+export function RioBar({ initial = "", onActiveChange }: { initial?: string; onActiveChange?: (active: boolean) => void }) {
   const reduced = useReducedMotion();
   const [focused, setFocused] = useState(false);
   const [text, setText] = useState(initial);
@@ -164,6 +164,7 @@ export function RioBar({ initial = "" }: { initial?: string }) {
     (window as unknown as { webkitSpeechRecognition?: new () => Recognition }).webkitSpeechRecognition;
 
   useEffect(() => () => rec.current?.stop(), []);
+  useEffect(() => onActiveChange?.(focused || text.length > 0), [focused, text, onActiveChange]);
   useEffect(() => {
     if (!rotating) return;
     const timer = window.setInterval(() => setHint((i) => (i + 1) % PROMPT_HINTS.length), 3600);
