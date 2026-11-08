@@ -13,12 +13,7 @@ struct Limits {
 
 impl Default for Limits {
     fn default() -> Self {
-        Self {
-            per_milestone: 20,
-            total: 80,
-            failures: 3,
-            timeout: Duration::from_secs(300),
-        }
+        Self { per_milestone: 20, total: 80, failures: 3, timeout: Duration::from_secs(300) }
     }
 }
 
@@ -65,14 +60,9 @@ async fn drive<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failu
             Ok(step) => step,
             Err(error) => {
                 failures += 1;
-                journal::event(
-                    "rio_holo_failure",
-                    serde_json::json!({ "consecutive": failures, "error": error }),
-                );
+                journal::event("rio_holo_failure", serde_json::json!({ "consecutive": failures, "error": error }));
                 if failures >= limits.failures {
-                    return Err(Failure::Failed(
-                        format!("Could not verify success after several tries: {error}"),
-                    ));
+                    return Err(Failure::Failed(format!("Could not verify success after several tries: {error}")));
                 }
                 driver.pause().await;
                 continue;
@@ -81,19 +71,11 @@ async fn drive<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failu
         if step.kind == "done" && !step.unchanged {
             return Ok(total);
         }
-        if step.unchanged
-            || !driver.progressed()
-            || previous.as_ref().is_some_and(|p| same_action(p, &step))
-        {
+        if step.unchanged || !driver.progressed() || previous.as_ref().is_some_and(|p| same_action(p, &step)) {
             failures += 1;
-            journal::event(
-                "rio_no_progress",
-                serde_json::json!({ "consecutive": failures }),
-            );
+            journal::event("rio_no_progress", serde_json::json!({ "consecutive": failures }));
             if failures >= limits.failures {
-                return Err(Failure::Failed(
-                    "The screen or the milestone does not move after Rio's actions".into(),
-                ));
+                return Err(Failure::Failed("The screen or the milestone does not move after Rio's actions".into()));
             }
         } else {
             failures = 0;
@@ -102,21 +84,13 @@ async fn drive<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failu
             driver.pause().await;
             continue;
         }
-        if !matches!(
-            step.kind.as_str(),
-            "click" | "write" | "scroll" | "press_key"
-        ) {
+        if !matches!(step.kind.as_str(), "click" | "write" | "scroll" | "press_key") {
             return Err(Failure::Failed("Holo returned an unknown action".into()));
         }
-        let milestone = step
-            .milestone
-            .as_ref()
-            .ok_or_else(|| Failure::Failed("Jalon Holo manquant".into()))?;
+        let milestone = step.milestone.as_ref().ok_or_else(|| Failure::Failed("Jalon Holo manquant".into()))?;
         let count = counts.entry(milestone.id.clone()).or_default();
         if *count >= limits.per_milestone {
-            return Err(Failure::Failed(
-                "Action limit reached for this milestone".into(),
-            ));
+            return Err(Failure::Failed("Action limit reached for this milestone".into()));
         }
         if total >= limits.total {
             return Err(Failure::Failed("Global action limit reached".into()));
@@ -197,30 +171,21 @@ impl Driver for LiveDriver<'_> {
         }
         let after_action = std::mem::take(&mut self.after_action);
         let before = self.session.before.as_ref().map(|s| s.thumb.clone());
-        let event = after_action.then(|| {
-            "Rio ran the action; check the result on this new screenshot".into()
-        });
+        let event = after_action.then(|| "Rio ran the action; check the result on this new screenshot".into());
         let step = agent::advance(self.holo, &mut self.session, event, false).await?;
         self.progressed = !after_action
             || !step.completed.is_empty()
             || before
                 .as_ref()
                 .zip(self.session.before.as_ref())
-                .is_none_or(|(before, after)| {
-                    crate::capture::thumb_diff(before, &after.thumb) > 0.1
-                });
+                .is_none_or(|(before, after)| crate::capture::thumb_diff(before, &after.thumb) > 0.1);
         Ok(step)
     }
 
     async fn execute(&mut self, step: &agent::Step) -> Result<(), String> {
         let milestone = step.milestone.as_ref().ok_or("Jalon manquant")?;
         let graph = &self.session.tutorial;
-        let index = graph
-            .milestones
-            .iter()
-            .position(|m| m.id == milestone.id)
-            .ok_or("Jalon inconnu")?
-            + 1;
+        let index = graph.milestones.iter().position(|m| m.id == milestone.id).ok_or("Jalon inconnu")? + 1;
         self.app
             .emit(
                 "autopilot:progress",
@@ -284,15 +249,9 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
             pending: None,
         };
         let candidate = crate::script::eligible(&skill);
-        let mut run_mode = if candidate.is_some() {
-            skills::Mode::Script
-        } else {
-            skills::Mode::Rio
-        };
+        let mut run_mode = if candidate.is_some() { skills::Mode::Script } else { skills::Mode::Rio };
         let result = if journal::current_dir().is_none() {
-            Err(Failure::Failed(
-                "Could not open the journal; no action was run".into(),
-            ))
+            Err(Failure::Failed("Could not open the journal; no action was run".into()))
         } else {
             let script_result = if let Some(ref artifact) = candidate {
                 journal::set_mode("script");
@@ -334,11 +293,7 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
         } else {
             message
         };
-        let done = autopilot::Done {
-            skill_id: skill.tutorial_id,
-            outcome: outcome.into(),
-            message,
-        };
+        let done = autopilot::Done { skill_id: skill.tutorial_id, outcome: outcome.into(), message };
         autopilot::finish(&app, &done);
         let _ = app.emit("autopilot:done", done);
         autopilot::driver_released();
@@ -374,9 +329,7 @@ mod tests {
             if self.pending {
                 std::future::pending::<()>().await;
             }
-            self.steps
-                .pop_front()
-                .unwrap_or_else(|| Err("Holo indisponible".into()))
+            self.steps.pop_front().unwrap_or_else(|| Err("Holo indisponible".into()))
         }
         async fn execute(&mut self, _: &agent::Step) -> Result<(), String> {
             if self.execution_error {
@@ -403,10 +356,7 @@ mod tests {
     }
 
     fn done() -> Result<agent::Step, String> {
-        Ok(agent::Step {
-            kind: "done".into(),
-            ..Default::default()
-        })
+        Ok(agent::Step { kind: "done".into(), ..Default::default() })
     }
 
     #[tokio::test]
@@ -418,7 +368,8 @@ mod tests {
                 Err("Le texte exact attendu n'est pas visible ; création impossible".into()),
                 Err("Le texte exact attendu n'est pas visible ; création impossible".into()),
                 Err("Le texte exact attendu n'est pas visible ; création impossible".into()),
-            ].into(),
+            ]
+            .into(),
             ..Default::default()
         };
         assert!(matches!(drive(&mut fake, Limits::default()).await,
@@ -429,74 +380,33 @@ mod tests {
     #[tokio::test]
     async fn autopilot_script_verification_and_fallback_use_the_live_driver_route() {
         let mut mode = skills::Mode::Rio;
-        let mut verified = Fake {
-            steps: [done()].into(),
-            ..Default::default()
-        };
+        let mut verified = Fake { steps: [done()].into(), ..Default::default() };
         assert_eq!(after_script(&mut verified, Ok(()), &mut mode).await, Ok(0));
         assert!(matches!(mode, skills::Mode::Script));
-        for script_result in [
-            Ok(()),
-            Err(crate::script::Failure::Failed("Erreur factice".into())),
-        ] {
-            let mut fake = Fake {
-                steps: [action(100.0, "a"), done()].into(),
-                ..Default::default()
-            };
-            assert_eq!(
-                after_script(&mut fake, script_result, &mut mode).await,
-                Ok(1)
-            );
+        for script_result in [Ok(()), Err(crate::script::Failure::Failed("Erreur factice".into()))] {
+            let mut fake = Fake { steps: [action(100.0, "a"), done()].into(), ..Default::default() };
+            assert_eq!(after_script(&mut fake, script_result, &mut mode).await, Ok(1));
             assert!(matches!(mode, skills::Mode::Rio));
             assert_eq!(fake.executed, 1);
         }
         let mut failed_check = Fake {
-            steps: [
-                Err("Capture indisponible".into()),
-                action(100.0, "a"),
-                done(),
-            ]
-            .into(),
+            steps: [Err("Capture indisponible".into()), action(100.0, "a"), done()].into(),
             ..Default::default()
         };
-        assert_eq!(
-            after_script(&mut failed_check, Ok(()), &mut mode).await,
-            Ok(1)
-        );
+        assert_eq!(after_script(&mut failed_check, Ok(()), &mut mode).await, Ok(1));
         assert!(matches!(mode, skills::Mode::Rio));
         assert_eq!(
-            after_script(
-                &mut Fake::default(),
-                Err(crate::script::Failure::Stopped),
-                &mut mode
-            )
-            .await,
+            after_script(&mut Fake::default(), Err(crate::script::Failure::Stopped), &mut mode).await,
             Err(Failure::Stopped)
         );
     }
 
     #[tokio::test]
     async fn autopilot_driver_success_only_after_done() {
-        let mut fake = Fake {
-            steps: [action(100.0, "a"), action(200.0, "b"), done()].into(),
-            ..Default::default()
-        };
-        assert_eq!(
-            bounded(
-                &mut fake,
-                Limits {
-                    per_milestone: 1,
-                    ..Default::default()
-                }
-            )
-            .await,
-            Ok(2)
-        );
+        let mut fake = Fake { steps: [action(100.0, "a"), action(200.0, "b"), done()].into(), ..Default::default() };
+        assert_eq!(bounded(&mut fake, Limits { per_milestone: 1, ..Default::default() }).await, Ok(2));
         assert_eq!(fake.executed, 2);
-        let mut already_done = Fake {
-            steps: [done()].into(),
-            ..Default::default()
-        };
+        let mut already_done = Fake { steps: [done()].into(), ..Default::default() };
         assert_eq!(bounded(&mut already_done, Limits::default()).await, Ok(0));
     }
 
@@ -507,29 +417,16 @@ mod tests {
             stop_after: Some(1),
             ..Default::default()
         };
-        assert_eq!(
-            bounded(&mut fake, Limits::default()).await,
-            Err(Failure::Stopped)
-        );
+        assert_eq!(bounded(&mut fake, Limits::default()).await, Err(Failure::Stopped));
         assert_eq!(fake.executed, 1);
     }
 
     #[tokio::test]
     async fn autopilot_driver_caps_milestone_and_global_actions() {
         for (per_milestone, total, expected) in [(1, 20, "this milestone"), (20, 1, "Global")] {
-            let mut fake = Fake {
-                steps: [action(100.0, "a"), action(200.0, "a"), done()].into(),
-                ..Default::default()
-            };
-            let result = bounded(
-                &mut fake,
-                Limits {
-                    per_milestone,
-                    total,
-                    ..Default::default()
-                },
-            )
-            .await;
+            let mut fake =
+                Fake { steps: [action(100.0, "a"), action(200.0, "a"), done()].into(), ..Default::default() };
+            let result = bounded(&mut fake, Limits { per_milestone, total, ..Default::default() }).await;
             assert!(matches!(result, Err(Failure::Failed(message)) if message.contains(expected)));
             assert_eq!(fake.executed, 1);
         }
@@ -538,14 +435,7 @@ mod tests {
     #[tokio::test]
     async fn autopilot_driver_fails_without_progress() {
         let mut fake = Fake {
-            steps: [
-                action(100.0, "a"),
-                action(100.0, "a"),
-                action(100.0, "a"),
-                action(100.0, "a"),
-                done(),
-            ]
-            .into(),
+            steps: [action(100.0, "a"), action(100.0, "a"), action(100.0, "a"), action(100.0, "a"), done()].into(),
             ..Default::default()
         };
         assert!(
@@ -554,20 +444,10 @@ mod tests {
         let mut unchanged = action(200.0, "a").unwrap();
         unchanged.unchanged = true;
         let mut fake = Fake {
-            steps: [
-                action(100.0, "a"),
-                Ok(unchanged.clone()),
-                Ok(unchanged.clone()),
-                Ok(unchanged),
-                done(),
-            ]
-            .into(),
+            steps: [action(100.0, "a"), Ok(unchanged.clone()), Ok(unchanged.clone()), Ok(unchanged), done()].into(),
             ..Default::default()
         };
-        assert!(matches!(
-            bounded(&mut fake, Limits::default()).await,
-            Err(Failure::Failed(_))
-        ));
+        assert!(matches!(bounded(&mut fake, Limits::default()).await, Err(Failure::Failed(_))));
         assert_eq!(fake.executed, 1);
     }
 
@@ -590,35 +470,23 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(bounded(&mut recover, Limits::default()).await, Ok(2));
-        let mut injection = Fake {
-            steps: [action(100.0, "a"), done()].into(),
-            execution_error: true,
-            ..Default::default()
-        };
+        let mut injection =
+            Fake { steps: [action(100.0, "a"), done()].into(), execution_error: true, ..Default::default() };
         assert_eq!(
             bounded(&mut injection, Limits::default()).await,
             Err(Failure::Failed("Injection indisponible".into()))
         );
         let mut missing = action(100.0, "a").unwrap();
         missing.milestone = None;
-        let mut fake = Fake {
-            steps: [Ok(missing)].into(),
-            ..Default::default()
-        };
+        let mut fake = Fake { steps: [Ok(missing)].into(), ..Default::default() };
         assert!(
             matches!(bounded(&mut fake, Limits::default()).await, Err(Failure::Failed(message)) if message.contains("manquant"))
         );
-        let mut unknown = Fake {
-            steps: [Ok(agent::Step::default())].into(),
-            ..Default::default()
-        };
+        let mut unknown = Fake { steps: [Ok(agent::Step::default())].into(), ..Default::default() };
         assert!(
             matches!(bounded(&mut unknown, Limits::default()).await, Err(Failure::Failed(message)) if message.contains("unknown"))
         );
-        let mut pending = Fake {
-            pending: true,
-            ..Default::default()
-        };
+        let mut pending = Fake { pending: true, ..Default::default() };
         assert!(
             matches!(bounded(&mut pending, Limits { timeout: Duration::from_millis(1), ..Default::default() }).await, Err(Failure::Failed(message)) if message.contains("run time"))
         );
@@ -627,14 +495,7 @@ mod tests {
     #[tokio::test]
     async fn autopilot_driver_unchanged_screen_counts_as_failure_with_different_actions() {
         let mut fake = Fake {
-            steps: [
-                action(100.0, "a"),
-                action(200.0, "a"),
-                action(300.0, "a"),
-                action(400.0, "a"),
-                done(),
-            ]
-            .into(),
+            steps: [action(100.0, "a"), action(200.0, "a"), action(300.0, "a"), action(400.0, "a"), done()].into(),
             no_screen_change: true,
             ..Default::default()
         };

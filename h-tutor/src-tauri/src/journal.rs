@@ -172,7 +172,9 @@ pub fn current_dir() -> Option<PathBuf> {
 }
 
 pub fn set_mode(mode: &str) {
-    if let Some(j) = CURRENT.lock().unwrap().as_mut() { j.meta["mode"] = json!(mode); }
+    if let Some(j) = CURRENT.lock().unwrap().as_mut() {
+        j.meta["mode"] = json!(mode);
+    }
 }
 
 pub fn skill_run(mode: crate::skills::Mode, outcome: &str) -> Option<crate::skills::Run> {

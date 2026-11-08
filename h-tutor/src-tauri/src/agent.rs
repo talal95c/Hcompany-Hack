@@ -137,8 +137,9 @@ fn rio_tools(with_search: bool) -> Value {
     let items = list.as_array_mut().expect("tools");
     items.retain(|t| t["function"]["name"] != "ask_learner");
     for t in items.iter_mut().filter(|t| t["function"]["name"] == "answer") {
-        t["function"]["description"] =
-            json!("Report success with visible evidence, or report a blocked or unknown outcome. A blocked task is never a success.");
+        t["function"]["description"] = json!(
+            "Report success with visible evidence, or report a blocked or unknown outcome. A blocked task is never a success."
+        );
         t["function"]["parameters"] = json!({ "type": "object",
             "properties": {
                 "outcome": { "type": "string", "enum": ["success", "blocked", "unknown"] },
@@ -825,7 +826,10 @@ async fn advance_on(
         return Ok(Step { unchanged: true, ..session.step.clone() });
     }
     if let Some(ev) = &event {
-        journal::event(if session.rio { "rio_observation" } else { "learner" }, json!({ "milestone": session.current, "event": ev }));
+        journal::event(
+            if session.rio { "rio_observation" } else { "learner" },
+            json!({ "milestone": session.current, "event": ev }),
+        );
     }
     let shot_path = journal::shot(&shot.data_uri);
 
@@ -838,10 +842,7 @@ async fn advance_on(
     }
     while !session.finished {
         if let Some(ids) = &session.blocked {
-            return Err(format!(
-                "The tutorial is blocked: no remaining milestone can start ({}).",
-                ids.join(", ")
-            ));
+            return Err(format!("The tutorial is blocked: no remaining milestone can start ({}).", ids.join(", ")));
         }
         if session.current.is_none() {
             return Err("No milestone in progress".into());
@@ -960,12 +961,20 @@ async fn screen_verify(brain: &impl Brain, criterion: &str, claim: &str) -> Resu
     }
     let result = serde_json::from_str(calls[0]["function"]["arguments"].as_str().unwrap_or(""))
         .map_err(|_| "Incomplete visual check".to_string());
-    journal::event("milestone_check", json!({"criterion": criterion, "shot": shot_path, "result": calls[0]["function"]["arguments"]}));
+    journal::event(
+        "milestone_check",
+        json!({"criterion": criterion, "shot": shot_path, "result": calls[0]["function"]["arguments"]}),
+    );
     result
 }
 
 /// Rio's answer: only a success proven on a fresh screenshot closes the milestone.
-async fn verify_completion(brain: &impl Brain, session: &mut Session, claim: &str, outcome: &str) -> Result<Turn, String> {
+async fn verify_completion(
+    brain: &impl Brain,
+    session: &mut Session,
+    claim: &str,
+    outcome: &str,
+) -> Result<Turn, String> {
     let result = async {
         if outcome != "success" || claim.trim().is_empty() {
             return Err(format!("Holo did not confirm success: the task is {outcome}"));
@@ -1234,7 +1243,11 @@ fn validate(msg: &Value, offered: &Value) -> Result<(Value, Action), Invalid> {
             }
             let outcome = a.outcome.unwrap_or_else(|| "success".into());
             if !["success", "blocked", "unknown"].contains(&outcome.as_str()) {
-                return Err(Invalid::tell("unknown answer outcome", "Refused: outcome must be success, blocked or unknown.", Some(call)));
+                return Err(Invalid::tell(
+                    "unknown answer outcome",
+                    "Refused: outcome must be success, blocked or unknown.",
+                    Some(call),
+                ));
             }
             Action::Answer { evidence, outcome }
         }
@@ -1455,7 +1468,10 @@ async fn ask_holo(
         session.messages.push(json!({ "role": "tool", "tool_call_id": id, "content": content }));
     }
     // The very first look of a tutorial: what on screen stands in the way.
-    let first = session.actions.values().all(Vec::is_empty)
+    // Not for Rio's autopilot: it has no learner to ask (no ask_learner tool),
+    // and the note would make Holo reach for a tool it is not offered.
+    let first = !session.rio
+        && session.actions.values().all(Vec::is_empty)
         && session.status.values().all(|s| !matches!(s, Status::Done | Status::Skipped))
         && !session.messages.iter().any(|m| m["role"] == "assistant");
     observe(session, shot, first.then_some(FIRST_LOOK));
@@ -1777,7 +1793,8 @@ mod tests {
         assert!(v("unknown", &["Project created"]).check(c).is_err());
         let names: Vec<_> = rio_tools(true).as_array().unwrap().iter().map(|t| t["function"]["name"].clone()).collect();
         assert!(!names.contains(&json!("ask_learner")), "Rio has no learner to ask");
-        let answer = rio_tools(true).as_array().unwrap().iter().find(|t| t["function"]["name"] == "answer").cloned().unwrap();
+        let answer =
+            rio_tools(true).as_array().unwrap().iter().find(|t| t["function"]["name"] == "answer").cloned().unwrap();
         assert_eq!(answer["function"]["parameters"]["required"], json!(["outcome", "content"]));
     }
 
@@ -2473,12 +2490,12 @@ mod tests {
             let mut s = linear(1);
             s.rio = true;
             step_on(&Fake::new(vec![click()]), &mut s, "start", 100);
-            let brain = Fake::new(vec![Ok(call("answer", &format!(
-                r#"{{"content":"No visible effect","outcome":"{outcome}"}}"#
-            )))]);
-            let result = tauri::async_runtime::block_on(advance_on(
-                &brain, &mut s, Some("clicked".into()), shot_of(100), false,
-            ));
+            let brain = Fake::new(vec![Ok(call(
+                "answer",
+                &format!(r#"{{"content":"No visible effect","outcome":"{outcome}"}}"#),
+            ))]);
+            let result =
+                tauri::async_runtime::block_on(advance_on(&brain, &mut s, Some("clicked".into()), shot_of(100), false));
             assert!(result.unwrap_err().contains(outcome));
             assert_eq!(brain.requests(), 1);
             assert_eq!(s.current.as_deref(), Some("m0"));
@@ -2556,5 +2573,16 @@ mod tests {
         let last_obs =
             later[1]["messages"].as_array().unwrap().iter().rev().find(|m| m["role"] == "user").unwrap().to_string();
         assert!(!last_obs.contains("First look"));
+    }
+
+    #[test]
+    fn rio_autopilot_gets_no_first_look() {
+        let mut s = linear(1);
+        s.rio = true;
+        let brain = Fake::new(vec![click()]);
+        step_on(&brain, &mut s, "start", 100);
+        let body = brain.bodies.lock().unwrap()[0].clone();
+        assert!(!body["messages"].to_string().contains("First look"), "the note asks for ask_learner");
+        assert!(!body["tools"].to_string().contains("ask_learner"));
     }
 }

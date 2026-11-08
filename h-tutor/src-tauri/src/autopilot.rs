@@ -60,11 +60,7 @@ impl Controller {
 
     fn stop(&mut self, stop: &AtomicBool) -> Option<Done> {
         stop.store(true, Ordering::SeqCst);
-        self.active.take().map(|skill_id| Done {
-            skill_id,
-            outcome: "stopped".into(),
-            message: Some("Stopped".into()),
-        })
+        self.active.take().map(|skill_id| Done { skill_id, outcome: "stopped".into(), message: Some("Stopped".into()) })
     }
 
     fn begin_decline(&mut self, expected: Option<u64>) -> Option<(String, u64)> {
@@ -91,13 +87,7 @@ static APP: OnceLock<AppHandle> = OnceLock::new();
 static VISIBILITY_LOCK: Mutex<()> = Mutex::new(());
 static RUN_ID: AtomicU64 = AtomicU64::new(0);
 static IGNORE_CURSOR: AtomicBool = AtomicBool::new(false);
-static SURFACE: Mutex<Surface> = Mutex::new(Surface {
-    x: 192.0,
-    y: 8.0,
-    width: 136.0,
-    height: 32.0,
-    radius: 16.0,
-});
+static SURFACE: Mutex<Surface> = Mutex::new(Surface { x: 192.0, y: 8.0, width: 136.0, height: 32.0, radius: 16.0 });
 
 #[derive(Clone, Copy, Deserialize)]
 pub struct Surface {
@@ -110,9 +100,7 @@ pub struct Surface {
 
 impl Surface {
     fn valid(&self) -> bool {
-        [self.x, self.y, self.width, self.height, self.radius]
-            .iter()
-            .all(|v| v.is_finite())
+        [self.x, self.y, self.width, self.height, self.radius].iter().all(|v| v.is_finite())
             && self.x >= 0.0
             && self.y >= 0.0
             && self.width > 0.0
@@ -185,19 +173,14 @@ pub(crate) struct Done {
 }
 
 fn publish(app: &AppHandle, view: &View) -> Result<(), String> {
-    let window = app
-        .get_webview_window("notch")
-        .ok_or("Notch indisponible")?;
+    let window = app.get_webview_window("notch").ok_or("Notch indisponible")?;
     if !matches!(view.phase, Phase::Hidden) {
         if !app.global_shortcut().is_registered("Escape") {
-            app.global_shortcut()
-                .register("Escape")
-                .map_err(|e| e.to_string())?;
+            app.global_shortcut().register("Escape").map_err(|e| e.to_string())?;
         }
         let notch = window.clone();
         app.run_on_main_thread(move || {
-            if !CAPTURING.load(Ordering::SeqCst) && !matches!(autopilot_view().phase, Phase::Hidden)
-            {
+            if !CAPTURING.load(Ordering::SeqCst) && !matches!(autopilot_view().phase, Phase::Hidden) {
                 panel::show(&notch, false, panel::LEVEL_OVERLAY);
             }
         })
@@ -207,15 +190,11 @@ fn publish(app: &AppHandle, view: &View) -> Result<(), String> {
             let origin = monitor.position().to_logical::<f64>(scale);
             let size = monitor.size().to_logical::<f64>(scale);
             window
-                .set_position(tauri::LogicalPosition::new(
-                    origin.x + (size.width - 520.0) / 2.0,
-                    origin.y,
-                ))
+                .set_position(tauri::LogicalPosition::new(origin.x + (size.width - 520.0) / 2.0, origin.y))
                 .map_err(|e| e.to_string())?;
         }
     }
-    app.emit_to("notch", "autopilot:view", view)
-        .map_err(|e| e.to_string())
+    app.emit_to("notch", "autopilot:view", view).map_err(|e| e.to_string())
 }
 
 fn hide(app: &AppHandle, expected: Option<u64>) {
@@ -244,8 +223,7 @@ fn hide(app: &AppHandle, expected: Option<u64>) {
         if let Some(window) = app.get_webview_window("notch") {
             let w = window.clone();
             let _ = window.run_on_main_thread(move || {
-                let current = CONTROL.lock().unwrap().as_ref()
-                    .is_some_and(|c| c.generation == generation);
+                let current = CONTROL.lock().unwrap().as_ref().is_some_and(|c| c.generation == generation);
                 if current {
                     let _ = w.hide();
                 }
@@ -303,12 +281,7 @@ pub fn propose(app: &AppHandle, proposal: skills::Proposal) {
 
 #[tauri::command]
 pub fn autopilot_view() -> View {
-    CONTROL
-        .lock()
-        .unwrap()
-        .as_ref()
-        .map(|c| c.view.clone())
-        .unwrap_or_default()
+    CONTROL.lock().unwrap().as_ref().map(|c| c.view.clone()).unwrap_or_default()
 }
 
 #[tauri::command]
@@ -325,18 +298,12 @@ pub fn autopilot_accept(app: AppHandle, skill_id: String) -> Result<(), String> 
     if skill.graph.milestones.is_empty() {
         return Err("This skill has no milestones".into());
     }
-    skill
-        .graph
-        .validate()
-        .map_err(|e| format!("Graphe de skill invalide : {e}"))?;
+    skill.graph.validate().map_err(|e| format!("Graphe de skill invalide : {e}"))?;
     if !skill.runs.iter().any(|run| run.outcome == "completed") {
         return Err("This skill has not succeeded yet".into());
     }
     let state = app.state::<crate::AppState>();
-    let session = state
-        .session
-        .try_lock()
-        .map_err(|_| "A tutorial is in progress")?;
+    let session = state.session.try_lock().map_err(|_| "A tutorial is in progress")?;
     if session.as_ref().is_some_and(|s| !s.finished) {
         return Err("A tutorial is in progress".into());
     }
@@ -356,14 +323,9 @@ pub fn autopilot_accept(app: AppHandle, skill_id: String) -> Result<(), String> 
         driver_released();
         return Err(error);
     }
-    if let Err(error) = app.emit(
-        "autopilot:started",
-        Started {
-            skill_id: view.skill_id,
-            title: view.title,
-            total: view.total,
-        },
-    ) {
+    if let Err(error) =
+        app.emit("autopilot:started", Started { skill_id: view.skill_id, title: view.title, total: view.total })
+    {
         let _ = autopilot_stop(app.clone());
         driver_released();
         return Err(error.to_string());
@@ -377,16 +339,11 @@ pub fn autopilot_accept(app: AppHandle, skill_id: String) -> Result<(), String> 
 
 #[tauri::command]
 pub fn autopilot_stop(app: AppHandle) -> Result<(), String> {
-    let done = CONTROL
-        .lock()
-        .unwrap()
-        .as_mut()
-        .and_then(|c| c.stop(&STOP_REQUESTED));
+    let done = CONTROL.lock().unwrap().as_mut().and_then(|c| c.stop(&STOP_REQUESTED));
     debug_assert!(stop_requested());
     if let Some(done) = done {
         finish(&app, &done);
-        app.emit("autopilot:done", done)
-            .map_err(|e| e.to_string())?;
+        app.emit("autopilot:done", done).map_err(|e| e.to_string())?;
     }
     Ok(())
 }
@@ -407,11 +364,7 @@ pub(crate) fn failure_message(label: &str) -> String {
     } else {
         &short
     };
-    if short.is_empty() {
-        "Step blocked".into()
-    } else {
-        format!("Step blocked: {short}")
-    }
+    if short.is_empty() { "Step blocked".into() } else { format!("Step blocked: {short}") }
 }
 
 fn result_duration(outcome: &str) -> Duration {
@@ -442,13 +395,9 @@ pub(crate) fn finish(app: &AppHandle, done: &Done) {
         } else if done.outcome == "failed" {
             failure_message(&control.view.label)
         } else {
-            done.message.clone().unwrap_or_else(|| {
-                if done.outcome == "stopped" {
-                    "Stopped".into()
-                } else {
-                    "The task failed".into()
-                }
-            })
+            done.message
+                .clone()
+                .unwrap_or_else(|| if done.outcome == "stopped" { "Stopped".into() } else { "The task failed".into() })
         });
         (control.view.clone(), control.generation)
     };
@@ -481,15 +430,13 @@ pub fn setup(app: &AppHandle) {
                 {
                     return;
                 }
-                if let (Ok(cursor), Ok(origin), Ok(scale)) = (
-                    window.cursor_position(),
-                    window.inner_position(),
-                    window.scale_factor(),
-                ) {
-                    let inside = SURFACE.lock().unwrap().contains(
-                        (cursor.x - f64::from(origin.x)) / scale,
-                        (cursor.y - f64::from(origin.y)) / scale,
-                    );
+                if let (Ok(cursor), Ok(origin), Ok(scale)) =
+                    (window.cursor_position(), window.inner_position(), window.scale_factor())
+                {
+                    let inside = SURFACE
+                        .lock()
+                        .unwrap()
+                        .contains((cursor.x - f64::from(origin.x)) / scale, (cursor.y - f64::from(origin.y)) / scale);
                     let ignore = !inside;
                     if IGNORE_CURSOR.swap(ignore, Ordering::SeqCst) != ignore {
                         let _ = window.set_ignore_cursor_events(ignore);
@@ -538,27 +485,17 @@ pub fn mask_capture() -> Result<Option<CaptureMask>, String> {
     if !is_running() {
         return Ok(None);
     }
-    let lock = VISIBILITY_LOCK
-        .lock()
-        .map_err(|_| "Hiding lock unavailable")?;
-    let app = APP
-        .get()
-        .ok_or("Protection des captures indisponible")?
-        .clone();
+    let lock = VISIBILITY_LOCK.lock().map_err(|_| "Hiding lock unavailable")?;
+    let app = APP.get().ok_or("Protection des captures indisponible")?.clone();
     CAPTURING.store(true, Ordering::SeqCst);
-    let guard = CaptureMask {
-        app: app.clone(),
-        _lock: lock,
-    };
+    let guard = CaptureMask { app: app.clone(), _lock: lock };
     let (send, receive) = std::sync::mpsc::sync_channel(1);
     let handle = app.clone();
     app.run_on_main_thread(move || {
         let result = (|| {
             for label in ["main", "overlay", "notch"] {
                 if let Some(window) = handle.get_webview_window(label) {
-                    window
-                        .hide()
-                        .map_err(|e| format!("Could not hide Rio: {e}"))?;
+                    window.hide().map_err(|e| format!("Could not hide Rio: {e}"))?;
                 }
             }
             Ok::<_, String>(())
@@ -566,9 +503,7 @@ pub fn mask_capture() -> Result<Option<CaptureMask>, String> {
         let _ = send.send(result);
     })
     .map_err(|e| e.to_string())?;
-    receive
-        .recv_timeout(Duration::from_secs(2))
-        .map_err(|_| "Hiding Rio's windows timed out")??;
+    receive.recv_timeout(Duration::from_secs(2)).map_err(|_| "Hiding Rio's windows timed out")??;
     std::thread::sleep(Duration::from_millis(120));
     Ok(Some(guard))
 }
@@ -648,47 +583,20 @@ mod tests {
 
     #[test]
     fn autopilot_surface_leaves_transparent_margins_and_corners_click_through() {
-        let surface = Surface {
-            x: 20.0,
-            y: 8.0,
-            width: 480.0,
-            height: 180.0,
-            radius: 20.0,
-        };
+        let surface = Surface { x: 20.0, y: 8.0, width: 480.0, height: 180.0, radius: 20.0 };
         assert!(surface.valid());
         assert!(surface.contains(260.0, 90.0));
         assert!(!surface.contains(10.0, 90.0));
         assert!(!surface.contains(20.0, 8.0));
         assert!(!surface.contains(260.0, 200.0));
-        assert!(
-            !Surface {
-                width: 0.0,
-                ..surface
-            }
-            .valid()
-        );
-        assert!(
-            !Surface {
-                x: f64::NAN,
-                ..surface
-            }
-            .valid()
-        );
-        assert!(
-            !Surface {
-                width: 600.0,
-                ..surface
-            }
-            .valid()
-        );
+        assert!(!Surface { width: 0.0, ..surface }.valid());
+        assert!(!Surface { x: f64::NAN, ..surface }.valid());
+        assert!(!Surface { width: 600.0, ..surface }.valid());
     }
 
     #[test]
     fn autopilot_accept_is_exclusive_and_stop_releases_lock() {
-        let graph = crate::tutorial::Tutorial {
-            id: "test".into(),
-            ..Default::default()
-        };
+        let graph = crate::tutorial::Tutorial { id: "test".into(), ..Default::default() };
         let skill = skills::Skill {
             tutorial_id: graph.id.clone(),
             title: "Créer un dossier".into(),

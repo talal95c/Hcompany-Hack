@@ -36,47 +36,30 @@ fn interpreter(language: &str) -> Option<&'static str> {
 }
 
 fn env_for_script() -> Vec<(String, String)> {
-    [
-        "HOME",
-        "PATH",
-        "LANG",
-        "LC_ALL",
-        "DISPLAY",
-        "WAYLAND_DISPLAY",
-        "XDG_RUNTIME_DIR",
-        "TMPDIR",
-    ]
-    .into_iter()
-    .filter_map(|key| std::env::var(key).ok().map(|v| (key.into(), v)))
-    .collect()
+    ["HOME", "PATH", "LANG", "LC_ALL", "DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR", "TMPDIR"]
+        .into_iter()
+        .filter_map(|key| std::env::var(key).ok().map(|v| (key.into(), v)))
+        .collect()
 }
 
 pub async fn run(artifact: &devin::Compiled) -> Result<(), Failure> {
     let interpreter = interpreter(&artifact.output.language).ok_or(Failure::NotEligible)?;
-    if !artifact
-        .output
-        .script
-        .is_char_boundary(artifact.output.script.len())
-    {
+    if !artifact.output.script.is_char_boundary(artifact.output.script.len()) {
         return Err(Failure::Failed("Script non UTF-8".into()));
     }
-    let dir = tempfile::tempdir()
-        .map_err(|e| Failure::Failed(format!("Dossier temporaire indisponible : {e}")))?;
+    let dir = tempfile::tempdir().map_err(|e| Failure::Failed(format!("Dossier temporaire indisponible : {e}")))?;
     let extension = match artifact.output.language.as_str() {
         "bash" => "sh",
         "python" => "py",
         _ => "applescript",
     };
     let path = dir.path().join(format!("run.{extension}"));
-    std::fs::write(&path, &artifact.output.script)
-        .map_err(|e| Failure::Failed(format!("Script non lisible : {e}")))?;
+    std::fs::write(&path, &artifact.output.script).map_err(|e| Failure::Failed(format!("Script non lisible : {e}")))?;
     let mut command = Command::new(interpreter);
     command.arg(&path);
     command.args(default_params(artifact));
     command
-        .current_dir(Path::new(
-            &std::env::var("HOME").unwrap_or_else(|_| "/".into()),
-        ))
+        .current_dir(Path::new(&std::env::var("HOME").unwrap_or_else(|_| "/".into())))
         .env_clear()
         .envs(env_for_script())
         .kill_on_drop(true);
@@ -86,9 +69,7 @@ pub async fn run(artifact: &devin::Compiled) -> Result<(), Failure> {
         "script_start",
         serde_json::json!({ "sha256": artifact.sha256, "language": artifact.output.language }),
     );
-    let mut child = command
-        .spawn()
-        .map_err(|e| Failure::Failed(format!("Could not start the script: {e}")))?;
+    let mut child = command.spawn().map_err(|e| Failure::Failed(format!("Could not start the script: {e}")))?;
     let pid = child.id();
     let result = tokio::select! {
         _ = wait_stop() => { kill_process(&mut child, pid).await; Err(Failure::Stopped) },
@@ -100,10 +81,7 @@ pub async fn run(artifact: &devin::Compiled) -> Result<(), Failure> {
         }
     };
     if let Err(error) = &result {
-        journal::event(
-            "script_failure",
-            serde_json::json!({ "error": error.to_string() }),
-        );
+        journal::event("script_failure", serde_json::json!({ "error": error.to_string() }));
     }
     result
 }
@@ -125,12 +103,7 @@ async fn kill_process(child: &mut tokio::process::Child, pid: Option<u32>) {
 }
 
 pub fn default_params(artifact: &devin::Compiled) -> Vec<String> {
-    artifact
-        .output
-        .params
-        .iter()
-        .flat_map(|p| [format!("--{}", p.name), p.default.clone()])
-        .collect()
+    artifact.output.params.iter().flat_map(|p| [format!("--{}", p.name), p.default.clone()]).collect()
 }
 
 #[cfg(test)]

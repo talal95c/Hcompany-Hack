@@ -1,23 +1,23 @@
-mod agent;
 mod act;
-mod autopilot;
-mod autopilot_driver;
+mod agent;
 #[cfg(test)]
 mod app_icons;
 mod audio_out;
+mod autopilot;
+mod autopilot_driver;
 mod ax;
 mod cancel;
 mod capture;
-mod devin;
-mod script;
 mod clicks;
 mod debug;
+mod devin;
 mod holo;
 mod journal;
 mod panel;
 mod planner;
 mod platform;
 mod qa;
+mod script;
 mod search;
 /// Learner simulator, driven from tests only (never shipped in the app).
 #[cfg(test)]
@@ -192,8 +192,14 @@ fn to_overlay_coords(app: &AppHandle, nx: f64, ny: f64, label: String) -> Result
 
 fn normalized_screen_point(app: &AppHandle, nx: f64, ny: f64) -> Result<(f64, f64), String> {
     let monitor = app.primary_monitor().map_err(|e| e.to_string())?.ok_or("Primary display not found")?;
-    act::screen_point(nx, ny, monitor.position().x as f64, monitor.position().y as f64,
-        monitor.size().width as f64, monitor.size().height as f64)
+    act::screen_point(
+        nx,
+        ny,
+        monitor.position().x as f64,
+        monitor.position().y as f64,
+        monitor.size().width as f64,
+        monitor.size().height as f64,
+    )
 }
 
 /// Shows the step's pointer (click / write / scroll) or hides it.
@@ -732,7 +738,9 @@ fn set_overlay_visible(app: &AppHandle, visible: bool) {
 /// Called for every real left click on the machine. Clicks on the tutor panel
 /// are ignored; others are compared with the current target.
 fn on_user_click(app: &AppHandle, click: clicks::Click) {
-    if autopilot::is_running() { return; }
+    if autopilot::is_running() {
+        return;
+    }
     let state = app.state::<AppState>();
 
     if let Some(panel) = app.get_webview_window("main").filter(|p| p.is_visible().unwrap_or(false))
@@ -828,12 +836,20 @@ pub fn run() {
                 .expect("valid shortcut")
                 .with_handler(|app, shortcut, event| {
                     if event.state == tauri_plugin_global_shortcut::ShortcutState::Pressed {
-                        let escape = shortcut.matches(tauri_plugin_global_shortcut::Modifiers::empty(), tauri_plugin_global_shortcut::Code::Escape);
-                        if escape { autopilot::request_stop(); }
+                        let escape = shortcut.matches(
+                            tauri_plugin_global_shortcut::Modifiers::empty(),
+                            tauri_plugin_global_shortcut::Code::Escape,
+                        );
+                        if escape {
+                            autopilot::request_stop();
+                        }
                         let app = app.clone();
                         autopilot::dispatch_shortcut(move || {
-                            if escape { autopilot::escape(&app); }
-                            else { tray::toggle_bar(&app); }
+                            if escape {
+                                autopilot::escape(&app);
+                            } else {
+                                tray::toggle_bar(&app);
+                            }
                         });
                     }
                 })
