@@ -649,3 +649,19 @@ ul { list-style: none; }
   .nav-brand > span { display: none; }
   .nav-brand { width: 44px; padding: 0; justify-content: center; }
 }
+
+/* Calls to action: Sign in (text) + Get started in the nav; Get started free + Download for Mac under the headline. */
+.nav-login { display: flex; align-items: center; height: 44px; padding: 0 16px; border-radius: 100px; font-size: 14px; background: #ffffffd9; backdrop-filter: blur(14px); box-shadow: 0 0 0 1px rgba(26, 26, 26, 0.06); transition: background-color 0.3s; }
+.nav-login:hover { background: #fff; }
+.nav-sheet .nav-sheet-login { margin-top: 6px; border-top: 1px solid #1a1a1a12; border-radius: 0 0 14px 14px; color: #666; font-size: 15px; }
+.hero-demo-start { padding: 8px 12px; background: #1a1a1a14; color: #555; }
+.hero-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.hero-alt { display: inline-flex; align-items: center; gap: 9px; height: 56px; padding: 0 22px; border-radius: 16px; background: #ffffffd9; backdrop-filter: blur(14px); box-shadow: 0 0 0 1px rgba(26, 26, 26, 0.08); font-size: 15px; transition: background-color 0.3s; }
+.hero-alt:hover { background: #fff; }
+@media (max-width: 900px) { .nav-login { display: none; } }
+@media (max-width: 700px) {
+  .hero-ctas { gap: 10px; }
+  .hero-alt { height: 48px; padding: 0 16px; font-size: 14px; }
+  .hero-link-demo { margin-bottom: 16px; }
+}
+@media (max-width: 700px) { .hero-card { height: 740px; } .hero-bg { height: 56%; } }

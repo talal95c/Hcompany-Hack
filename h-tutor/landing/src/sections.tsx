@@ -15,7 +15,7 @@ import {
   ScrollRevealText,
   Ticker,
 } from "./ui";
-import { APP_URL, INSTALL_URL } from "./Teams";
+import { INSTALL_URL, SIGNIN_URL, SIGNUP_URL } from "./Teams";
 
 const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Finder", "Figma", "VS Code"];
 
@@ -68,7 +68,8 @@ export function Nav() {
         ))}
       </nav>
       <div className="nav-right">
-        <Btn label="Go to app" size="sm" href={APP_URL} className="nav-cta" />
+        <a href={SIGNIN_URL} className="nav-login">Sign in</a>
+        <Btn label="Get started" size="sm" href={SIGNUP_URL} className="nav-cta" />
         <button type="button" className="nav-menu" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           <span />
           <span />
@@ -86,6 +87,7 @@ export function Nav() {
             {links.map(([l, href]) => (
               <a key={l} href={href} onClick={() => setOpen(false)}>{l}</a>
             ))}
+            <a href={SIGNIN_URL} className="nav-sheet-login" onClick={() => setOpen(false)}>Sign in</a>
           </motion.div>
         )}
       </AnimatePresence>
@@ -180,7 +182,14 @@ export function Hero() {
           <motion.div className="hero-link-demo" {...up(0.5)} aria-label="Paste a tutorial link or type a goal to start a lesson">
             <span className="hero-demo-kind mono-12" aria-hidden>{src.kind}</span>
             <span className="hero-demo-url" aria-hidden>{typed}<span className="hero-caret" /></span>
-            <a className="hero-demo-start" href={APP_URL}>Start ↗</a>
+            <span className="hero-demo-start" aria-hidden>↵</span>
+          </motion.div>
+          <motion.div className="hero-ctas" {...up(0.56)}>
+            <Btn label="Get started free" href={SIGNUP_URL} />
+            <a className="hero-alt" href={INSTALL_URL}>
+              <svg width="15" height="18" viewBox="0 0 814 1000" aria-hidden><path fill="currentColor" d="M788 341c-6 4-108 62-108 190 0 148 130 200 134 202-1 3-21 72-69 142-43 62-88 124-156 124s-86-40-165-40c-77 0-104 41-166 41s-106-58-156-128C44 790 0 669 0 554 0 370 120 272 238 272c63 0 115 41 155 41 38 0 97-44 168-44 27 0 125 2 189 72zM554 160c29-35 50-83 50-131 0-7-1-13-2-19-47 2-104 32-138 72-27 31-52 79-52 128 0 7 1 15 2 17 3 1 8 1 13 1 42 0 96-28 127-68z"/></svg>
+              Download for Mac
+            </a>
           </motion.div>
         </div>
         <motion.div className="hero-bottom" {...up(0.85)}>
@@ -853,7 +862,7 @@ export function Pricing() {
             </div>
             <div className="plan-band">
               <p className="plan-tag">{p.tagline}</p>
-              <Btn label="Get started" size="sm" variant={p.dark ? "light" : "ghost"} href="#contact" />
+              <Btn label="Get started" size="sm" variant={p.dark ? "light" : "ghost"} href={SIGNUP_URL} />
             </div>
             <ul className="plan-feats">
               {p.f.map((f) => (
@@ -950,7 +959,7 @@ export function FaqInsights() {
 export function Footer() {
   const cols = [
     { h: "Product", l: [["Use cases", "#use-cases"], ["For teams", "#teams"], ["Pricing", "#pricing"], ["FAQ", "#faq"]] },
-    { h: "Get started", l: [["Go to app", APP_URL], ["Install the Mac app", INSTALL_URL]] },
+    { h: "Get started", l: [["Create an account", SIGNUP_URL], ["Sign in", SIGNIN_URL], ["Download for Mac", INSTALL_URL]] },
     { h: "Built with", l: [["H Company", "https://www.hcompany.ai"], ["Gladia", "https://www.gladia.io"], ["Gradium", "https://gradium.ai"]] },
   ];
   return (
@@ -964,7 +973,7 @@ export function Footer() {
             Rio is your live software coach. Tell it what you want to learn and it shows you the way, on your own screen.
           </p>
           <div className="footer-ctas">
-            <Btn label="Go to app" variant="light" size="sm" href={APP_URL} />
+            <Btn label="Get started free" variant="light" size="sm" href={SIGNUP_URL} />
           </div>
         </div>
         <div className="footer-cols">
