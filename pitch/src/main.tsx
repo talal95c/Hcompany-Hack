@@ -1,6 +1,6 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import {createRoot} from 'react-dom/client';
-import {motion} from 'motion/react';
+import {AnimatePresence, motion, useReducedMotion} from 'motion/react';
 import {Player} from '@remotion/player';
 import {Blender} from './usecases/Blender';
 import {Spreadsheet} from './usecases/Spreadsheet';
@@ -11,11 +11,32 @@ import '@fontsource-variable/inter';
 import '@fontsource/geist-mono/400.css';
 import '@fontsource/ibm-plex-mono/400.css';
 import './style.css';
+import './modern.css';
+import mark from '../public/rio-mark-black.svg?inline';
+import qr from '../public/qr.svg?inline';
+import revealImage from '../public/readme-hero.webp?inline';
+import closeImage from '../public/rio-hill.webp?inline';
 
 const print = new URLSearchParams(location.search).has('print');
-const asset=(s:string)=>import.meta.env.BASE_URL+s;
-function Cursor({x=1540,y=680}:{x?:number;y?:number}) {return <svg className="cursor" style={{left:x,top:y}} width="65" height="78" viewBox="0 0 31 38"><path d="M3 3L27 22L16 25L10 34Z" fill="#FF6B35" stroke="white" strokeWidth="2"/></svg>}
+const asset=(s:string)=>s==='qr.svg'?qr:mark;
+const EASE=[.22,1,.36,1] as const;
+function HeroTitle({lines}:{lines:string[]}) {
+ const reduced=useReducedMotion();
+ let index=0;
+ return <h1>{lines.map((line,i)=><React.Fragment key={line}>{i>0&&<br/>}{line.split(' ').map(word=><motion.span className="hero-word" key={index++} initial={print||reduced?false:{opacity:0,y:18,filter:'blur(5px)'}} animate={{opacity:1,y:0,filter:'blur(0px)'}} transition={{duration:.65,delay:print||reduced?0:index*.045,ease:EASE}}>{word}{' '}</motion.span>)}</React.Fragment>)}</h1>;
+}
+function BrandScene({close=false}:{close?:boolean}){
+ const reduced=useReducedMotion();
+ return <motion.img className="brand-scene" src={close?closeImage:revealImage} alt="" initial={false} animate={{scale:print||reduced?1:1.04}} transition={{duration:8,ease:'linear'}}/>;
+}
+function Cursor({x=1540,y=680}:{x?:number;y?:number}) {
+ const reduced=useReducedMotion();
+ return <motion.div className="cursor" style={{left:x,top:y}} initial={print||reduced?false:{x:-180,y:100,opacity:0}} animate={{x:[-180,-70,0],y:[100,-35,0],opacity:1}} transition={print||reduced?{duration:0}:{duration:1.25,ease:EASE,delay:.25}}>
+ <motion.span className="cursor-ripple" initial={false} animate={print||reduced?{}:{scale:[.3,1.4],opacity:[0,.6,0]}} transition={{delay:1.4,duration:.6}}/>
+ <svg width="65" height="78" viewBox="0 0 31 38"><path d="M3 3L27 22L16 25L10 34Z" fill="#FF6B35" stroke="white" strokeWidth="2"/></svg></motion.div>;
+}
 function Demo({kind='blender',large=false}:{kind?:string;large?:boolean}) {
+ const reduced=useReducedMotion();
  if(kind==='teams')return <div className="console-mock">
    <div className="console-top"><img src={asset('rio-mark-black.svg')} alt=""/><span>ACME / TEAM WORKSPACE</span><span className="console-avatar">AC</span></div>
    <div className="console-body"><nav><b>Workspace</b><span className="selected">Tutorials</span><span>Knowledge</span><span>Members</span><span>Usage</span></nav>
@@ -26,7 +47,7 @@ function Demo({kind='blender',large=false}:{kind?:string;large?:boolean}) {
    <div className="console-bottom"><span>Shared with your team</span><span>2 tutorials</span></div></div></div></div>;
  const c=kind==='voice'?Voice:kind==='sheet'?Spreadsheet:Blender;
  const frames=kind==='blender'?360:270;
- return <div className={'demo '+(large?'large':'')}><div className="demo-label">RIO / PRODUCT WALKTHROUGH</div><Player component={c} durationInFrames={frames} fps={30} compositionWidth={640} compositionHeight={400} autoPlay={!print} loop muted controls={false} initialFrame={kind==='blender'?260:130} style={{width:'100%'}}/></div>
+ return <div className={'demo '+(large?'large':'')}><div className="demo-label"><span className="window-dots"><i/><i/><i/></span><span>RIO / PRODUCT WALKTHROUGH</span><span>↗</span></div><Player component={c} durationInFrames={frames} fps={30} compositionWidth={640} compositionHeight={400} autoPlay={!print&&!reduced} loop muted controls={false} initialFrame={kind==='blender'?260:130} style={{width:'100%'}}/></div>
 }
 const features=[
  {title:'Any YouTube tutorial becomes a live lesson.',sub:'Paste a link. Start doing.',kind:'blender',problem:'A linear video cannot see your app.',how:'Transcript + key frames → milestones linked to video timestamps.',power:['Gladia','Holo vision','Holo 4 27B']},
@@ -36,31 +57,42 @@ const features=[
  {title:'Did it once? Rio does it for you next time.',sub:'Your consent. Stop anytime. Check the result.',kind:'blender',problem:'Learning the task should not mean repeating it forever.',how:'Reuse milestones → act → verify. Fast mode skips narration.',power:['Holo computer use','Devin · eligible runs → tested scripts']}
 ];
 function Feature({i}:{i:number}) {const f=features[i];return <><div className="feature"><div><p className="eyebrow">0{i+1} / {['PASTE A LINK','FOLLOW THE CURSOR','ASK ANYTHING','START WITH A GOAL','DELEGATE'][i]}</p><h1>{f.title}</h1><p className="sub">{f.sub}</p></div><Demo kind={f.kind}/></div><div className="triptych"><div><label>PROBLEM</label><p>{f.problem}</p></div><div><label>HOW IT WORKS →</label><p>{f.how}</p></div><div><label>POWERED BY</label><div className="pills">{f.power.map(p=><span key={p}>{p}</span>)}</div></div></div>{i===1&&<Cursor x={1460} y={570}/>}</>}
-function Pain(){return <><p className="eyebrow">THE TUTORIAL TAX</p><h1>A 10-min tutorial takes an hour.<br/>A 1-hour tutorial takes the afternoon.</h1><div className="timeline"><div className="video-time">10:00 <span>OF VIDEO</span></div><motion.div className="track" initial={{width:'22%'}} animate={{width:'100%'}} transition={{duration:2,ease:[.22,1, .36,1]}}/><div className="markers">{['Pause','Rewind','Alt-tab','Pause','Rewind','Alt-tab'].map((x,i)=><motion.span key={i} initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{delay:print?0:.3+i*.15}}>{x}</motion.span>)}</div><p className="elapsed">60:00 <span>OF YOUR TIME</span></p></div></>}
+function Pain(){
+ const reduced=useReducedMotion();
+ const counter=useRef<HTMLSpanElement>(null);
+ useEffect(()=>{
+  if(print||reduced)return;
+  let frame=0;const start=performance.now();
+  const tick=(now:number)=>{const t=Math.min(1,(now-start)/2400);const seconds=Math.round(600+3000*(1-Math.pow(1-t,3)));if(counter.current)counter.current.textContent=Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');if(t<1)frame=requestAnimationFrame(tick)};
+  frame=requestAnimationFrame(tick);return()=>cancelAnimationFrame(frame);
+ },[reduced]);
+ return <><p className="eyebrow">THE TUTORIAL TAX</p><h1>A 10-min tutorial takes an hour.<br/>A 1-hour tutorial takes the afternoon.</h1><div className="timeline"><div className="video-time">10:00 <span>OF VIDEO</span></div><motion.div className="track" initial={print||reduced?false:{width:'16.67%'}} animate={{width:'100%'}} transition={{duration:2.4,ease:EASE}}/><div className="markers">{['Pause','Rewind','Alt-tab','Pause','Rewind','Alt-tab'].map((x,i)=><motion.span key={i} initial={print||reduced?false:{opacity:0,y:12,scale:.9}} animate={{opacity:1,y:0,scale:1}} transition={{delay:print||reduced?0:.4+i*.17,ease:EASE}}>{x}</motion.span>)}</div><p className="elapsed"><span className="time-digits" ref={counter}>60:00</span><span>OF YOUR TIME</span></p></div></>;
+}
 function Market(){return <><p className="eyebrow">A CATEGORY ALREADY VALIDATED</p><h1>Software is everywhere.<br/>Knowing how to use it isn’t.</h1><div className="market"><div><strong>$816M</strong><h3>Digital adoption platforms</h3><p>2023 worldwide revenue estimate</p><small>Gartner, 2024 Market Guide<br/>via WalkMe · walkme.com/content/2024-gartner-market-guide-for-digital-adoption-platforms/</small></div><div><strong>$1.5B</strong><h3>SAP acquired WalkMe</h3><p>Equity value · completed Sept. 2024</p><small>SAP News Center · 12 Sep 2024<br/>news.sap.com/2024/09/sap-completes-walkme-acquisition/</small></div><div><strong>$104B</strong><h3>Corporate e-learning</h3><p>2024 global market</p><small>Grand View Research · 2025 report<br/>grandviewresearch.com/industry-analysis/corporate-e-learning-market-report</small></div></div><p className="position">Traditional authored flows require setup. Rio turns an existing tutorial into guidance.</p></>}
 function Architecture(){return <><p className="eyebrow">ARCHITECTURE / BUILT AROUND H COMPANY</p><h1>Local guidance. Connected intelligence.</h1><div className="architecture"><div className="stack"><label>USER’S COMPUTER</label><h3>React</h3><p>Bar · ghost cursor · notch</p><b>↕</b><h3>Tauri / Rust</h3><p>Tutor · autopilot · user’s software</p><b>↓</b><h3>Phonon</h3><p>Local voice synthesis</p></div><div className="stack central"><label>AI SERVICES ↔ DESKTOP + CLOUD</label><h2>H Company</h2><h3>Holo + H Agents</h3><p>Vision · grounding · planning<br/>Web reading · deep research</p><div className="pills"><span>Gladia · transcription</span><span>Linkup · web fallback</span><span>Devin · tested scripts</span></div></div><div className="stack"><label>RIO CLOUD ↔ DESKTOP</label><h3>Cloudflare Worker</h3><p>Rio API</p><b>↕</b><h3>D1 + knowledge</h3><p>Team library · search</p><b>↕</b><h3>Web console</h3><p>Members · usage · Stripe billing</p></div></div></>}
 function Content({n}:{n:number}) {
  if(n>=4&&n<=8)return <Feature i={n-4}/>;
  switch(n){
- case 0:return <div className="center cold"><h1>Who here learned<br/>a software from<br/>a YouTube tutorial?</h1></div>;
+ case 0:return <div className="center cold"><HeroTitle lines={['Who here learned','a software from','a YouTube tutorial?']}/></div>;
  case 1:return <Pain/>;
  case 2:return <><p className="eyebrow">WHY IT BREAKS</p><h1 className="huge">The video can’t<br/>see your screen.</h1><div className="reasons">{['The menu moved.','Your version is different.','You’re stuck and nobody tells you why.'].map((s,i)=><p key={s}><label>0{i+1}</label>{s}</p>)}</div><Cursor x={1380} y={350}/></>;
- case 3:return <div className="reveal"><img src={asset('rio-mark-black.svg')}/><p className="eyebrow">YOUR IN-APP LEARNING COMPANION</p><h1>That’s over.<br/>Meet Rio.</h1><p className="sub">Paste a tutorial. Rio walks you through it<br/>inside your own app.</p><Cursor x={1330} y={650}/></div>;
+ case 3:return <><BrandScene/><div className="reveal"><img src={mark}/><p className="eyebrow">YOUR IN-APP LEARNING COMPANION</p><HeroTitle lines={['That’s over. Meet Rio.']}/><p className="sub">Paste a tutorial. Rio walks you through it inside your own app.</p></div><Cursor x={1350} y={280}/></>;
  case 9:return <><div className="demo-title"><p className="eyebrow">DEMO / BLENDER</p><h1>Live: a donut in 5 steps in Blender.</h1></div><Demo large/></>;
  case 10:return <><div className="feature teams"><div><p className="eyebrow">WHO PAYS</p><h1>Every new hire replays the same tutorials.</h1><p className="sub">From individual learning to team onboarding.</p><div className="audiences"><p><label>01 / LEARNER + PRO</label>Individuals learning software</p><p><label>02 / TEAM</label>Internal tools. Shared knowledge.</p></div></div><Demo kind="teams"/></div><p className="bottom-line">The team console brings tutorials, knowledge, members and usage together.</p></>;
  case 11:return <><p className="eyebrow">PRICING / USD</p><h1>Start free. Grow with your team.</h1><div className="prices">{PLANS.map(p=><div key={p.id} className={p.dark?'dark':''}><label>{p.name}</label><strong>{p.monthly===null?'Custom':'$'+p.monthly}<small>{p.monthly? p.seats?'/seat/mo':'/mo':''}</small></strong><p>{p.annual? '$'+p.annual+(p.seats?'/seat/mo':'/mo')+' billed annually':p.tagline}</p><p>{p.f[0]}<br/>{p.f[1]}</p></div>)}</div><div className="economics"><label>WHY THE MARGINS CAN WORK</label><p>Fast model for step guidance → larger model for planning → research once at creation.</p><p>Reuse the tutorial across the team.</p></div><p className="footnote">Payments by Stripe</p></>;
  case 12:return <Market/>;
  case 13:return <><p className="eyebrow">GO-TO-MARKET / THE PLAN</p><h1>Win the learner.<br/>Become the team’s memory.</h1><div className="gtm">{[['01','Public tutorial library','SEO: “how to X in Y”','Meet people at the moment they are stuck.'],['02','Team console','Shared lessons + internal knowledge','One lesson becomes an onboarding asset.'],['03','Enterprise','Internal tools + SSO','Expand through deeper deployment needs.']].map(([a,b,c,d])=><div key={a}><label>{a} →</label><h2>{b}</h2><p>{c}</p><small>{d}</small></div>)}</div></>;
  case 14:return <Architecture/>;
- case 15:return <><div className="closing"><img className="mark" src={asset('rio-mark-black.svg')}/><h1>Stop watching<br/>tutorials.<br/>Do them.</h1><p className="sub">Built at the H Company hackathon.</p></div><div className="qr"><img src={asset('qr.svg')} alt="QR code to rio.vignemale.com"/><p>rio.vignemale.com</p></div><Cursor x={1330} y={530}/></>;
+ case 15:return <><BrandScene close/><div className="closing"><img className="mark" src={mark}/><HeroTitle lines={['Stop watching tutorials.','Do them.']}/><p className="sub">Built at the H Company hackathon.</p></div><div className="qr"><img src={qr} alt="QR code to rio.vignemale.com"/><p>rio.vignemale.com</p></div><Cursor x={1480} y={295}/></>;
  default:return <><p className="eyebrow">APPENDIX / HONEST LIMITS & HOW WE TEST</p><h1>Trust is earned<br/>on the actual screen.</h1><div className="limits"><div><label>TEST</label><h3>A learner simulator</h3><p>Replays real tutor runs with mistakes.<br/>Scores the actual app state, not just what the model says.</p></div><div><label>CONTROL</label><h3>You stay in charge</h3><p>Consent gate before autopilot actions.<br/>Stop anytime. Verify before reporting success.</p></div><div><label>LIMITS</label><h3>Not universal reliability</h3><p>Pointing accuracy. Vague requests.<br/>Linux Wayland unsupported.</p></div></div></>;
  }}
-function Slide({n}:{n:number}){return <section className={'slide slide-'+(n+1)}><motion.div className="slide-content" initial={print?false:{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{duration:.5,ease:[.22,1,.36,1]}}><Content n={n}/></motion.div><footer><span>{n===0?'':'RIO / LEARN BY DOING'}</span><span>{String(n+1).padStart(2,'0')} / 17</span></footer></section>}
+function Slide({n}:{n:number}){const reduced=useReducedMotion();return <section className={'slide slide-'+(n+1)+([1,9,14].includes(n)?' dark-slide':'')+(reduced?' reduced':'')}><div className="progress" style={{width:((n+1)/17*100)+'%'}}/><div className="slide-content"><Content n={n}/></div><footer><span>{n===0?'':'RIO / LEARN BY DOING'}</span><span>{String(n+1).padStart(2,'0')} / 17</span></footer></section>}
 function readHash(){const v=Number(location.hash.slice(1));return Number.isFinite(v)?Math.max(0,Math.min(16,v-1)):0}
 function App(){const [n,setN]=useState(readHash);const [show,setShow]=useState(false);const [scale,setScale]=useState(Math.min(innerWidth/1920,innerHeight/1080));
+ const reduced=useReducedMotion();
  const go=(x:number)=>{location.hash=String(Math.max(0,Math.min(16,x))+1)};
  useEffect(()=>{const resize=()=>setScale(Math.min(innerWidth/1920,innerHeight/1080));const hash=()=>setN(readHash());const key=(e:KeyboardEvent)=>{if(['ArrowRight',' ','PageDown','ArrowLeft','PageUp','Home','End','n','N','f','F'].includes(e.key))e.preventDefault();if(['ArrowRight',' ','PageDown'].includes(e.key))go(n+1);if(['ArrowLeft','PageUp'].includes(e.key))go(n-1);if(e.key==='Home')go(0);if(e.key==='End')go(16);if(e.key.toLowerCase()==='n')setShow(s=>!s);if(e.key.toLowerCase()==='f'){if(document.fullscreenElement)void document.exitFullscreen();else void document.documentElement.requestFullscreen().catch(()=>{});}};addEventListener('resize',resize);addEventListener('hashchange',hash);addEventListener('keydown',key);return()=>{removeEventListener('resize',resize);removeEventListener('hashchange',hash);removeEventListener('keydown',key)}},[n]);
  if(print)return <main className="print">{Array.from({length:17},(_,i)=><Slide key={i} n={i}/>)}</main>;
- return <><main className="viewport" onClick={e=>go(n+(e.clientX<innerWidth/2?-1:1))}><div className="stage" style={{transform:`translate(-50%,-50%) scale(${scale})`}}><Slide key={n} n={n}/></div></main>{show&&<aside className="notes" onClick={e=>e.stopPropagation()}><label>NOTES / {n+1} · N TO CLOSE</label><p>{notes[n]}</p></aside>}</>
+ return <><main className="viewport" onClick={e=>go(n+(e.clientX<innerWidth/2?-1:1))}><div className="stage" style={{transform:`translate(-50%,-50%) scale(${scale})`}}><AnimatePresence initial={false}><motion.div className="slide-transition" key={n} initial={reduced?false:{opacity:0,y:12,filter:'blur(5px)'}} animate={{opacity:1,y:0,filter:'blur(0px)'}} exit={{opacity:0,y:-8,filter:reduced?'blur(0px)':'blur(4px)'}} transition={{duration:reduced?0:.5,ease:EASE}}><Slide n={n}/></motion.div></AnimatePresence></div></main>{show&&<aside className="notes" onClick={e=>e.stopPropagation()}><label>NOTES / {n+1} · N TO CLOSE</label><p>{notes[n]}</p></aside>}</>
 }
 createRoot(document.getElementById('root')!).render(<App/>);

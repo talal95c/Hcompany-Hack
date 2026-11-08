@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/qr.mjs && tsc && vite build",
+    "build:single": "node scripts/qr.mjs && tsc && vite build --mode single && node scripts/single.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -20,6 +21,7 @@
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
+    "vite-plugin-singlefile": "2.3.4",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^6.0.2",

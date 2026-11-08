@@ -9,8 +9,9 @@ await mkdir(new URL('../out/shots/',import.meta.url),{recursive:true});
 for(let i=1;i<=17;i++){
   await page.goto('http://localhost:4174/#'+i);
   await page.evaluate(()=>document.fonts.ready);
-  await page.waitForTimeout(1600);
-  const text=await page.locator('.slide').innerText();
+  await page.waitForFunction(n=>document.querySelectorAll('.slide').length===1&&document.querySelector('.slide-'+n),i);
+  await page.waitForTimeout(i===2?2800:1800);
+  const text=await page.locator('.slide-'+i).innerText();
   if(/illustrative composition|illustrated example|composition fallback|Distribution roadmap|live billing status|Live inference still|broader context|Phonon requires setup/i.test(text))throw Error('Visible caveat on slide '+i);
   if(i===9&&!text.includes('Did it once? Rio does it for you next time.'))throw Error('Incorrect delegation title');
   if(i===11){
@@ -37,7 +38,8 @@ await page.waitForURL('**/#16');
 await page.mouse.click(1800,500);
 await page.waitForURL('**/#17');
 await page.goto('http://localhost:4174/#garbage');
-if(await page.locator('footer').innerText().then(t=>!t.includes('01 / 17')))throw Error('Invalid hash');
+await page.locator('.slide-1').waitFor();
+if(await page.locator('.slide-1 footer').innerText().then(t=>!t.includes('01 / 17')))throw Error('Invalid hash');
 if(errors.length)throw Error(errors.join('\n'));
 console.log('PASS: 17 screenshots at 1920×1080; keyboard, hash, notes, click navigation; zero page errors.');
 await context.close();
