@@ -141,11 +141,7 @@ fn record_at(root: &Path, mut graph: Tutorial, run: Run) -> Result<Skill, String
         graph.version = if structural_fingerprint(&graph) == structural_fingerprint(&skill.graph) {
             skill.graph.version
         } else {
-            skill
-                .graph
-                .version
-                .checked_add(1)
-                .ok_or("Skill version exhausted")?
+            skill.graph.version.checked_add(1).ok_or("Skill version exhausted")?
         };
         skill.title = graph.title.clone();
         skill.goal = graph.goal.clone();
@@ -283,7 +279,9 @@ pub fn spawn(app: AppHandle) {
                 .unwrap_or(30 * 60);
             loop {
                 std::thread::sleep(Duration::from_secs(3));
-                if crate::autopilot::is_running() { continue; }
+                if crate::autopilot::is_running() {
+                    continue;
+                }
                 let state = app.state::<crate::AppState>();
                 let Ok(session) = state.session.try_lock() else {
                     continue;
@@ -310,10 +308,10 @@ pub fn spawn(app: AppHandle) {
                             && ready(s, last, time, cooldown)
                     })
                 };
-                if let Some(skill) = candidate && emit(&app, skill).is_ok()
+                if let Some(skill) = candidate
+                    && emit(&app, skill).is_ok()
                 {
-                    PROPOSALS.lock().unwrap().get_or_insert_with(HashMap::new)
-                        .insert(app_key(&skill.app), time);
+                    PROPOSALS.lock().unwrap().get_or_insert_with(HashMap::new).insert(app_key(&skill.app), time);
                 }
             }
         })
@@ -404,10 +402,7 @@ mod tests {
             "test_platform": std::env::consts::OS, "test_evidence": "Exemple vérifié", "notes": ""
         }));
         write(&root, &first).unwrap();
-        let empty = Tutorial {
-            milestones: Vec::new(),
-            ..first.graph.clone()
-        };
+        let empty = Tutorial { milestones: Vec::new(), ..first.graph.clone() };
         assert!(record_at(&root, empty, run("completed")).is_err());
         assert!(crate::devin::selected(&read(&root, "example").unwrap()).is_some());
         for i in 1..=2 {
@@ -435,44 +430,23 @@ mod tests {
     fn skills_structure_covers_goals_edges_and_empty_graph_metadata() {
         let original = graph();
         for changed in [
+            Tutorial { goal: "Autre but".into(), ..original.clone() },
+            Tutorial { start: Some("first".into()), ..original.clone() },
             Tutorial {
-                goal: "Autre but".into(),
+                milestones: vec![Milestone { goal: "Autre étape".into(), ..original.milestones[0].clone() }],
                 ..original.clone()
             },
             Tutorial {
-                start: Some("first".into()),
+                milestones: vec![Milestone { next: vec!["first".into()], ..original.milestones[0].clone() }],
                 ..original.clone()
             },
-            Tutorial {
-                milestones: vec![Milestone {
-                    goal: "Autre étape".into(),
-                    ..original.milestones[0].clone()
-                }],
-                ..original.clone()
-            },
-            Tutorial {
-                milestones: vec![Milestone {
-                    next: vec!["first".into()],
-                    ..original.milestones[0].clone()
-                }],
-                ..original.clone()
-            },
-            Tutorial {
-                milestones: Vec::new(),
-                ..original.clone()
-            },
+            Tutorial { milestones: Vec::new(), ..original.clone() },
         ] {
-            assert_ne!(
-                structural_fingerprint(&original),
-                structural_fingerprint(&changed)
-            );
+            assert_ne!(structural_fingerprint(&original), structural_fingerprint(&changed));
         }
         let mut metadata = original.clone();
         metadata.title = "Autre titre".into();
         metadata.milestones[0].video_at = Some(30);
-        assert_eq!(
-            structural_fingerprint(&original),
-            structural_fingerprint(&metadata)
-        );
+        assert_eq!(structural_fingerprint(&original), structural_fingerprint(&metadata));
     }
 }
