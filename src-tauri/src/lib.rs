@@ -535,6 +535,58 @@ async fn tutor_stop(app: AppHandle, state: State<'_, AppState>) -> Result<(), St
 /// The app, for modules that emit UI events without a handle (live reasoning).
 pub static APP: std::sync::OnceLock<AppHandle> = std::sync::OnceLock::new();
 
+/// `RIO_RECORDABLE=1` (in `.env`): Rio's overlay and autopilot windows show up in screen recordings
+/// (for a demo video). Rio still hides them for the instant of each of its own captures, so Holo never sees them.
+pub fn recordable() -> bool {
+    std::env::var("RIO_RECORDABLE").is_ok_and(|v| v.trim() == "1")
+}
+
+/// While recordable: hides the overlay and autopilot windows for one capture, then shows the ones that were visible.
+pub struct RecordingMask(Vec<String>);
+
+pub fn mask_for_recording() -> RecordingMask {
+    if !recordable() || crate::autopilot::is_running() {
+        return RecordingMask(Vec::new());
+    }
+    let Some(app) = APP.get().cloned() else { return RecordingMask(Vec::new()) };
+    let (send, receive) = std::sync::mpsc::sync_channel(1);
+    let handle = app.clone();
+    let _ = app.run_on_main_thread(move || {
+        let mut hidden = Vec::new();
+        for label in ["overlay", "notch"] {
+            if let Some(w) = handle.get_webview_window(label) {
+                if w.is_visible().unwrap_or(false) && w.hide().is_ok() {
+                    hidden.push(label.to_string());
+                }
+            }
+        }
+        let _ = send.send(hidden);
+    });
+    let hidden = receive.recv_timeout(std::time::Duration::from_secs(2)).unwrap_or_default();
+    if !hidden.is_empty() {
+        std::thread::sleep(std::time::Duration::from_millis(120));
+    }
+    RecordingMask(hidden)
+}
+
+impl Drop for RecordingMask {
+    fn drop(&mut self) {
+        if self.0.is_empty() {
+            return;
+        }
+        let Some(app) = APP.get().cloned() else { return };
+        let labels = std::mem::take(&mut self.0);
+        let handle = app.clone();
+        let _ = app.run_on_main_thread(move || {
+            for label in labels {
+                if let Some(w) = handle.get_webview_window(&label) {
+                    let _ = w.show();
+                }
+            }
+        });
+    }
+}
+
 /// Shows what Holo is thinking about, live, while it decides the next step:
 /// the sentence being written, at most every 150 ms.
 pub fn emit_thinking(reasoning: &str) {
@@ -793,7 +845,7 @@ fn setup_windows(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .focusable(false)
         .visible(false)
         .visible_on_all_workspaces(true)
-        .content_protected(true)
+        .content_protected(!recordable())
         .position(pos.x, pos.y)
         .inner_size(size.width, size.height)
         .build()?;
@@ -811,7 +863,7 @@ fn setup_windows(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .focused(false)
         .visible(false)
         .visible_on_all_workspaces(true)
-        .content_protected(true)
+        .content_protected(!recordable())
         .position(pos.x + (size.width - 520.0) / 2.0, pos.y)
         .inner_size(520.0, 240.0)
         .build()?;
