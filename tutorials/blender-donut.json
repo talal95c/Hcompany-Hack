@@ -1,7 +1,7 @@
 {
-  "id": "blender-donut-demo",
+  "id": "blender-donut",
   "version": 1,
-  "title": "Donut in 5 steps (demo)",
+  "title": "Donut tutorial",
   "app": {
     "name": "Blender",
     "bundle_id": "org.blenderfoundation.blender",
