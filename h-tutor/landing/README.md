@@ -13,3 +13,15 @@ npm run build
 - `src/sections.tsx` : sections de la page (nav, hero, bento, works, capabilities, vision, témoignages, vidéo, process, équipe, pricing, FAQ, insights, footer).
 - `src/ui.tsx` : boutons, marquees, révélation au scroll lettre par lettre, compteurs, icônes.
 - `public/assets/` : images et vidéo du template original (réduites). Elles appartiennent au template : à remplacer avant toute publication.
+
+## Paiement (Stripe Checkout)
+
+Les boutons « Get started » de Pro et Team ouvrent une session Stripe Checkout en abonnement (mensuel ou annuel selon le toggle, sièges ajustables pour Team). En production, la route est servie par le Worker de `../platform` (secret `STRIPE_SECRET_KEY`) ; en local, par le plugin `stripe-api` de `vite.config.ts` :
+
+```bash
+STRIPE_SECRET_KEY=sk_test_... npm run dev   # ou dans .env.local (ignoré par git)
+```
+
+- `src/plans.ts` : catalogue unique, les prix affichés sont les prix facturés.
+- `server/stripe.ts` : `POST /api/checkout` et `GET /api/checkout-session?id=cs_…`. Les produits et prix Stripe sont créés au premier achat.
+- Carte de test : `4242 4242 4242 4242`.

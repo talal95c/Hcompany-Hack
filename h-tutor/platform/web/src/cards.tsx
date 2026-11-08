@@ -1,4 +1,5 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AppIcon, coverStyle } from "./appIcons";
 import { type TutorialRow, api, initials, isLive, kindOf, navigate } from "./lib";
 import { I } from "./ui";
@@ -141,15 +142,21 @@ export function Composer({ initial = "", autoFocus, placeholder }: { initial?: s
 
 type Recognition = { lang: string; interimResults: boolean; continuous: boolean; start(): void; stop(): void; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null };
 
+const PROMPT_HINTS = ["Ask or learn anything, or paste a YouTube link", "Export a scene to FBX in Blender", "Run your first Docker container", "Turn a YouTube tutorial into a team skill"];
+
 /**
  * The Rio bar from the Mac app, on the web: the same dark pill, spark, input,
  * library and mic buttons. Whatever you type becomes a tutorial.
  */
-export function RioBar({ initial = "" }: { initial?: string }) {
+export function RioBar({ initial = "", onActiveChange }: { initial?: string; onActiveChange?: (active: boolean) => void }) {
+  const reduced = useReducedMotion();
+  const [focused, setFocused] = useState(false);
   const [text, setText] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [listening, setListening] = useState(false);
+  const [hint, setHint] = useState(0);
+  const rotating = !text && !focused && !listening;
   const rec = useRef<Recognition | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const kind = kindOf(text);
@@ -157,6 +164,12 @@ export function RioBar({ initial = "" }: { initial?: string }) {
     (window as unknown as { webkitSpeechRecognition?: new () => Recognition }).webkitSpeechRecognition;
 
   useEffect(() => () => rec.current?.stop(), []);
+  useEffect(() => onActiveChange?.(focused || text.length > 0), [focused, text, onActiveChange]);
+  useEffect(() => {
+    if (!rotating) return;
+    const timer = window.setInterval(() => setHint((i) => (i + 1) % PROMPT_HINTS.length), 3600);
+    return () => window.clearInterval(timer);
+  }, [rotating]);
 
   async function submit(e?: FormEvent) {
     e?.preventDefault();
@@ -191,17 +204,25 @@ export function RioBar({ initial = "" }: { initial?: string }) {
 
   return (
     <div className="riobar-wrap">
-      <form className="riobar" onSubmit={submit}>
+      <motion.form layout={!reduced} className={`riobar ${focused ? "is-focused" : ""}`} onSubmit={submit}
+        onFocus={() => setFocused(true)} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false); }}
+        animate={{ height: focused && !reduced ? 70 : 62, y: focused && !reduced ? -4 : 0 }} transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 280, damping: 28 }}>
         <span className="riobar__lead">{busy ? <span className="spinner" /> : <I.Spark />}</span>
+        <div className="riobar__input">
         <input
           ref={input}
           value={text}
-          autoFocus
           onChange={(e) => setText(e.target.value)}
-          placeholder={listening ? "Listening…" : "Ask or learn anything, or paste a YouTube link"}
+          placeholder={listening ? "Listening…" : rotating ? "" : PROMPT_HINTS[0]}
           aria-label="New tutorial"
           spellCheck={false}
         />
+        {rotating && <div className="riobar__placeholder" aria-hidden="true">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span key={hint} initial={{ opacity: 0, y: reduced ? 0 : 8, filter: "blur(5px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, y: reduced ? 0 : -8, filter: "blur(5px)" }} transition={{ type: "tween", duration: 0.4 }}>{PROMPT_HINTS[hint]}</motion.span>
+          </AnimatePresence>
+        </div>}
+        </div>
         {kind && !busy && <span className="riobar__hint">{KIND[kind].label.split(" ·")[0]}</span>}
         <button type="button" className="riobar__tool" title="Library" onClick={() => navigate("/library")}>
           <I.Grid />
@@ -211,10 +232,10 @@ export function RioBar({ initial = "" }: { initial?: string }) {
             <I.Mic />
           </button>
         )}
-        <button className="riobar__key" disabled={!kind || busy} aria-label="Create tutorial">
+        <motion.button animate={{ scale: reduced ? 1 : kind && !busy ? 1 : 0.9 }} whileTap={reduced ? undefined : { scale: 0.92 }} className="riobar__key" disabled={!kind || busy} aria-label="Create tutorial">
           <I.Enter />
-        </button>
-      </form>
+        </motion.button>
+      </motion.form>
       {error && <p className="error" style={{ textAlign: "center", margin: "10px 0 0" }}>{error}</p>}
     </div>
   );
