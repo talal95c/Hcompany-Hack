@@ -190,7 +190,7 @@ struct LiveDriver<'a> {
     last: Option<agent::Step>,
 }
 
-fn narrate_enabled(value: Option<&str>) -> bool {
+pub(crate) fn narrate_enabled(value: Option<&str>) -> bool {
     value != Some("0")
 }
 
@@ -230,6 +230,9 @@ async fn wait_narration(
 }
 
 async fn narrate(app: &AppHandle, sentence: String, ticket: u64) {
+    if autopilot::stop_requested() || !autopilot::narrating() {
+        return;
+    }
     if SYNTHESIZING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
         eprintln!("[narration] TTS occupée, poursuite sans voix");
         return;
@@ -250,7 +253,10 @@ async fn narrate(app: &AppHandle, sentence: String, ticket: u64) {
         let duration = Duration::from_secs_f64(pcm.len() as f64 / rate as f64);
         tauri::async_runtime::spawn_blocking(move || {
             crate::audio_out::play_if(&pcm, rate, || {
-                !autopilot::stop_requested() && autopilot::run_id() == ticket && Instant::now() < deadline
+                !autopilot::stop_requested()
+                    && autopilot::narrating()
+                    && autopilot::run_id() == ticket
+                    && Instant::now() < deadline
             })
         })
         .await
@@ -258,7 +264,12 @@ async fn narrate(app: &AppHandle, sentence: String, ticket: u64) {
         tokio::time::sleep(duration).await;
         Ok::<(), String>(())
     };
-    if let Err(error) = wait_narration(speech, wait_stop(), Duration::from_secs(6)).await {
+    let interrupted = async {
+        while !autopilot::stop_requested() && autopilot::narrating() && autopilot::run_id() == ticket {
+            tokio::time::sleep(Duration::from_millis(30)).await;
+        }
+    };
+    if let Err(error) = wait_narration(speech, interrupted, Duration::from_secs(6)).await {
         eprintln!("[narration] {error}");
     }
     crate::audio_out::stop();
@@ -298,7 +309,7 @@ impl Driver for LiveDriver<'_> {
 
     async fn execute(&mut self, step: &agent::Step) -> Result<(), String> {
         let milestone = step.milestone.as_ref().ok_or("Jalon manquant")?;
-        let enabled = narrate_enabled(std::env::var("RIO_NARRATE").ok().as_deref());
+        let enabled = autopilot::narrating();
         let sentence = enabled.then(|| narration(step, self.narrated_milestone.as_deref() != Some(&milestone.id)));
         let graph = &self.session.tutorial;
         let index = graph.milestones.iter().position(|m| m.id == milestone.id).ok_or("Jalon inconnu")? + 1;

@@ -902,6 +902,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             autopilot::autopilot_accept,
             autopilot::autopilot_stop,
+            autopilot::autopilot_fast,
             autopilot::autopilot_decline,
             autopilot::autopilot_view,
             autopilot::notch_surface,

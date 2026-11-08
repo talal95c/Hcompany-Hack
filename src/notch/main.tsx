@@ -109,6 +109,7 @@ function Notch() {
             <>
               <div className="notch__task">
                 <h1>{view?.title}</h1>
+                {view?.narrating && <button className="notch__stop" onClick={() => { void api.autopilotFast().catch((e) => setError(errorText(e))); }}>Mode rapide</button>}
                 <button className="notch__stop" disabled={busy} onClick={() => { sfx.dismiss(); void act(api.autopilotStop); }}>Arrêter</button>
               </div>
               <motion.p key={view?.index} className="notch__status" title={view?.message ?? view?.label} initial={{ opacity: reduced ? 1 : 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.18 }}>Étape {view?.index ?? 0}/{view?.total ?? 0} · {view?.message ?? view?.label ?? ""}</motion.p>
