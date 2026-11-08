@@ -5,6 +5,8 @@ import { Btn, Label, Reveal } from "./ui";
 const APP_ORIGIN: string = import.meta.env.VITE_APP_URL ?? "https://rio.vignemale.com";
 export const APP_URL = `${APP_ORIGIN}/home`;
 export const INSTALL_URL = `${APP_ORIGIN}/get-rio`;
+export const SIGNUP_URL = `${APP_ORIGIN}/sign-up`;
+export const SIGNIN_URL = `${APP_ORIGIN}/sign-in`;
 
 const POINTS = [
   {

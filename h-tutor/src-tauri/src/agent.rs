@@ -315,6 +315,8 @@ impl ActionRecord {
 pub struct Session {
     /// Rio's autopilot drives this session itself (no learner).
     pub rio: bool,
+    /// Rio checked the request's goal as a whole before reporting done.
+    goal_checked: bool,
     pub tutorial: Tutorial,
     lang: Option<String>,
     status: HashMap<String, Status>,
@@ -375,6 +377,7 @@ impl Session {
             facts: Vec::new(),
             last_done: None,
             challenged: (None, 0),
+            goal_checked: false,
             knowledge_for: None,
             evidence: HashMap::new(),
             step: Step::default(),
@@ -465,6 +468,26 @@ impl Session {
         let goal = self.tutorial.milestone(&id).map(|m| m.goal.clone());
         crate::platform::event(kind, &self.tutorial, goal.as_deref());
         Some(id)
+    }
+
+    /// A last milestone whose criterion is the request's goal itself, after
+    /// every other one (Rio's goal check failed).
+    fn add_goal_milestone(&mut self) {
+        let id = "goal".to_string();
+        if self.tutorial.milestone(&id).is_some() {
+            return;
+        }
+        let requires = self.tutorial.milestones.iter().map(|m| m.id.clone()).collect();
+        self.tutorial.milestones.push(Milestone {
+            id: id.clone(),
+            goal: format!("Finish the task: {}", self.tutorial.goal),
+            done_when: self.tutorial.goal.clone(),
+            requires,
+            ..Default::default()
+        });
+        self.status.insert(id, Status::Todo);
+        self.finished = false;
+        self.start_next_milestone();
     }
 
     /// Skips the current milestone (the learner asked to move on).
@@ -862,6 +885,24 @@ async fn advance_on(
         }
     }
 
+    // Rio acts alone: every milestone verified is not enough, the request's
+    // goal as a whole must be visible. The benchmark saw "done" with the new
+    // name typed in a dialog never confirmed: each milestone true, the task
+    // not done. Checked once; if it fails, a last milestone aims at the goal.
+    if session.rio && !session.goal_checked {
+        session.goal_checked = true;
+        let goal = session.tutorial.goal.clone();
+        let verdict = screen_verify(brain, &goal, "Success: the whole goal is done, every milestone was verified")
+            .await
+            .and_then(|v| v.check(&goal));
+        if let Err(reason) = verdict {
+            journal::event("goal_check_failed", json!({ "goal": goal, "reason": reason }));
+            session.add_goal_milestone();
+            return Err(format!("The goal is not visible yet ({reason}); Rio adds a last milestone to reach it"));
+        }
+        journal::event("goal_check", json!({ "goal": goal }));
+    }
+
     // Tutorial complete: every required milestone is done or skipped.
     if session.rio
         && session.tutorial.milestones.iter().any(|m| !m.optional && session.status.get(&m.id) != Some(&Status::Done))
@@ -930,9 +971,19 @@ fn exact_text(criterion: &str) -> Option<String> {
     None
 }
 
+/// A fresh screenshot for Rio's acceptance check: the primary display, or,
+/// in the autopilot benchmark (tests only), the simulated browser's screen.
+async fn fresh_screen() -> Result<Shot, String> {
+    #[cfg(test)]
+    if let Some(shot) = crate::sim::autopilot::screen() {
+        return Ok(shot);
+    }
+    tauri::async_runtime::spawn_blocking(capture_primary).await.map_err(|e| e.to_string())?
+}
+
 /// Checks a criterion on a freshly captured screenshot; never acts.
 async fn screen_verify(brain: &impl Brain, criterion: &str, claim: &str) -> Result<Verification, String> {
-    let shot = tauri::async_runtime::spawn_blocking(capture_primary).await.map_err(|e| e.to_string())??;
+    let shot = fresh_screen().await?;
     let shot_path = journal::shot(&shot.data_uri);
     let body = json!({
         "model": holo::fast_model(), "temperature": 0,
@@ -1896,6 +1947,7 @@ mod tests {
             facts: Vec::new(),
             last_done: None,
             challenged: (None, 0),
+            goal_checked: false,
             knowledge_for: None,
             evidence: HashMap::new(),
             step: Step::default(),
@@ -2584,5 +2636,23 @@ mod tests {
         let body = brain.bodies.lock().unwrap()[0].clone();
         assert!(!body["messages"].to_string().contains("First look"), "the note asks for ask_learner");
         assert!(!body["tools"].to_string().contains("ask_learner"));
+    }
+
+    #[test]
+    fn a_failed_goal_check_adds_a_last_milestone() {
+        let mut s = linear(2);
+        s.rio = true;
+        s.close_current(Status::Done, "ok");
+        s.start_next_milestone();
+        s.close_current(Status::Done, "ok");
+        s.start_next_milestone();
+        assert!(s.finished);
+        s.add_goal_milestone();
+        assert!(!s.finished);
+        assert_eq!(s.current.as_deref(), Some("goal"));
+        assert_eq!(s.tutorial.milestones.last().unwrap().done_when, s.tutorial.goal);
+        // Only once.
+        s.add_goal_milestone();
+        assert_eq!(s.tutorial.milestones.iter().filter(|m| m.id == "goal").count(), 1);
     }
 }

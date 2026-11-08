@@ -76,7 +76,10 @@ pub async fn plan(holo: &Holo, request: &str, shot: &Shot, knowledge: Option<&st
          When the result is about placement, size or shape, write done_when relative to the other objects on \
          screen, never as a value to type: \"the sphere sits on top of the trunk, wider than it\", not \
          \"the sphere is at Z = 6\" or \"scaled to 0.5\". Read the scene first (what is there, how big it is) \
-         and build on it."
+         and build on it.\n\
+         The last milestone's done_when is the request's final result as a whole, confirmed and visible \
+         (\"a note named Journal is in the list, and none is named Untitled\"), never an intermediate state \
+         such as a name typed in a dialog not yet confirmed."
     );
     let prompt = match knowledge {
         Some(k) => format!(

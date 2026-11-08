@@ -15,9 +15,7 @@ import {
   ScrollRevealText,
   Ticker,
 } from "./ui";
-import { APP_URL, INSTALL_URL } from "./Teams";
-import { startCheckout } from "./checkout";
-import { PLANS, isPaid, type Billing, type Plan } from "./plans";
+import { INSTALL_URL, SIGNIN_URL, SIGNUP_URL } from "./Teams";
 
 const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Finder", "Figma", "VS Code"];
 
@@ -70,7 +68,8 @@ export function Nav() {
         ))}
       </nav>
       <div className="nav-right">
-        <Btn label="Go to app" size="sm" href={APP_URL} className="nav-cta" />
+        <a href={SIGNIN_URL} className="nav-login">Sign in</a>
+        <Btn label="Get started" size="sm" href={SIGNUP_URL} className="nav-cta" />
         <button type="button" className="nav-menu" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           <span />
           <span />
@@ -88,6 +87,7 @@ export function Nav() {
             {links.map(([l, href]) => (
               <a key={l} href={href} onClick={() => setOpen(false)}>{l}</a>
             ))}
+            <a href={SIGNIN_URL} className="nav-sheet-login" onClick={() => setOpen(false)}>Sign in</a>
           </motion.div>
         )}
       </AnimatePresence>
@@ -179,13 +179,17 @@ export function Hero() {
           <motion.p className="p-16 hero-sub" {...up(0.44)}>
             Rio turns it into steps, shows you where to click in your own app and checks each step. No link? Just type what you want to do.
           </motion.p>
-          <motion.div className="hero-link-demo" {...up(0.5)} aria-label="Illustration: paste a tutorial link or type a goal to start a lesson">
+          <motion.div className="hero-link-demo" {...up(0.5)} aria-label="Paste a tutorial link or type a goal to start a lesson">
             <span className="hero-demo-kind mono-12" aria-hidden>{src.kind}</span>
             <span className="hero-demo-url" aria-hidden>{typed}<span className="hero-caret" /></span>
-            <span className="hero-demo-start" aria-hidden>Start ↗</span>
+            <span className="hero-demo-start" aria-hidden>↵</span>
           </motion.div>
-          <motion.div {...up(0.56)}>
-            <Btn label="Try Rio" href={APP_URL} />
+          <motion.div className="hero-ctas" {...up(0.56)}>
+            <Btn label="Get started free" href={SIGNUP_URL} />
+            <a className="hero-alt" href={INSTALL_URL}>
+              <svg width="15" height="18" viewBox="0 0 814 1000" aria-hidden><path fill="currentColor" d="M788 341c-6 4-108 62-108 190 0 148 130 200 134 202-1 3-21 72-69 142-43 62-88 124-156 124s-86-40-165-40c-77 0-104 41-166 41s-106-58-156-128C44 790 0 669 0 554 0 370 120 272 238 272c63 0 115 41 155 41 38 0 97-44 168-44 27 0 125 2 189 72zM554 160c29-35 50-83 50-131 0-7-1-13-2-19-47 2-104 32-138 72-27 31-52 79-52 128 0 7 1 15 2 17 3 1 8 1 13 1 42 0 96-28 127-68z"/></svg>
+              Download for Mac
+            </a>
           </motion.div>
         </div>
         <motion.div className="hero-bottom" {...up(0.85)}>
@@ -797,7 +801,14 @@ export function Process() {
 
 /* ---------------- Pricing ---------------- */
 
-function Price({ value }: { value: number | null }) {
+const PLANS = [
+  { name: "Learner", price: 0, tagline: "One app at a time.", f: ["Tutorial library", "Typed goals", "Ghost cursor", "Community support"] },
+  { name: "Pro", price: 12, tagline: "Unlimited live coaching.", f: ["Unlimited goals", "Voice questions", "Save as tutorial", "Priority support"] },
+  { name: "Team", price: 29, tagline: "Onboard a whole team.", f: ["Team library", "Internal docs search", "Invites & admin", "Usage insights"], dark: true },
+  { name: "Enterprise", price: -1, tagline: "Your apps, your rules.", f: ["Custom tutorials", "SSO & admin", "Data controls", "Dedicated success"] },
+];
+
+function Price({ value }: { value: number }) {
   return (
     <AnimatePresence mode="popLayout" initial={false}>
       <motion.span
@@ -808,57 +819,9 @@ function Price({ value }: { value: number | null }) {
         transition={{ duration: 0.45, ease: EASE }}
         className="price-val"
       >
-        {value === null ? "Custom" : `$${value.toLocaleString("en-US")}`}
+        {value < 0 ? "Custom" : `$${value.toLocaleString("en-US")}`}
       </motion.span>
     </AnimatePresence>
-  );
-}
-
-function PlanCard({ plan: p, billing }: { plan: Plan; billing: Billing }) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const checkout = () => {
-    setBusy(true);
-    setError(null);
-    startCheckout(p.id, billing).catch((e: Error) => {
-      setError(e.message);
-      setBusy(false);
-    });
-  };
-  const variant = p.dark ? "light" : "ghost";
-  const terms =
-    p.monthly === null ? "Talk to us" : !isPaid(p) ? "Free forever" : `${p.seats ? "USD per seat" : "USD"}, billed ${billing === "year" ? "annually" : "monthly"}`;
-  return (
-    <div className={`plan ${p.dark ? "plan-dark" : ""}`}>
-      <img className="plan-wave" src={asset("lu9xdgbj7zB5GkewV6UCW9Y68.jpg")} alt="" />
-      <div className="plan-top">
-        <h6 className="plan-name">{p.name}</h6>
-        <p className="plan-price">
-          <Price value={billing === "year" ? p.annual : p.monthly} />
-          {p.monthly !== null && <span className="p-14l plan-mo">/mo</span>}
-        </p>
-        <p className="p-14l">{terms}</p>
-      </div>
-      <div className="plan-band">
-        <p className={`plan-tag ${error ? "plan-tag-error" : ""}`} role={error ? "alert" : undefined}>
-          {error ?? p.tagline}
-        </p>
-        {isPaid(p) ? (
-          <Btn label={busy ? "Redirecting…" : error ? "Try again" : "Get started"} size="sm" variant={variant} onClick={checkout} busy={busy} />
-        ) : p.monthly === null ? (
-          <Btn label="Contact us" size="sm" variant={variant} href="#contact" />
-        ) : (
-          <Btn label="Get started" size="sm" variant={variant} href={APP_URL} />
-        )}
-      </div>
-      <ul className="plan-feats">
-        {p.f.map((f) => (
-          <li key={f} className="p-14l">
-            {f}
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }
 
@@ -882,12 +845,33 @@ export function Pricing() {
           </button>
         </Reveal>
         <Reveal as="p" className="p-16 pricing-sub">
-          Start free. Upgrade when Rio becomes part of your day. Cancel anytime.
+          Simple plans for early access. Prices are indicative and will be confirmed at launch.
         </Reveal>
       </div>
       <Reveal className="plans">
         {PLANS.map((p) => (
-          <PlanCard key={p.id} plan={p} billing={annual ? "year" : "month"} />
+          <div key={p.name} className={`plan ${p.dark ? "plan-dark" : ""}`}>
+            <img className="plan-wave" src={asset("lu9xdgbj7zB5GkewV6UCW9Y68.jpg")} alt="" />
+            <div className="plan-top">
+              <h6 className="plan-name">{p.name}</h6>
+              <p className="plan-price">
+                <Price value={annual || p.price <= 0 ? p.price : Math.round(p.price / 0.8)} />
+                {p.price >= 0 && <span className="p-14l plan-mo">/mo</span>}
+              </p>
+              <p className="p-14l">{p.price < 0 ? "Talk to us" : p.price === 0 ? "Free forever" : `USD per seat, billed ${annual ? "annually" : "monthly"}`}</p>
+            </div>
+            <div className="plan-band">
+              <p className="plan-tag">{p.tagline}</p>
+              <Btn label="Get started" size="sm" variant={p.dark ? "light" : "ghost"} href={SIGNUP_URL} />
+            </div>
+            <ul className="plan-feats">
+              {p.f.map((f) => (
+                <li key={f} className="p-14l">
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
         ))}
       </Reveal>
       <Ticker />
@@ -975,7 +959,7 @@ export function FaqInsights() {
 export function Footer() {
   const cols = [
     { h: "Product", l: [["Use cases", "#use-cases"], ["For teams", "#teams"], ["Pricing", "#pricing"], ["FAQ", "#faq"]] },
-    { h: "Get started", l: [["Go to app", APP_URL], ["Install the Mac app", INSTALL_URL]] },
+    { h: "Get started", l: [["Create an account", SIGNUP_URL], ["Sign in", SIGNIN_URL], ["Download for Mac", INSTALL_URL]] },
     { h: "Built with", l: [["H Company", "https://www.hcompany.ai"], ["Gladia", "https://www.gladia.io"], ["Gradium", "https://gradium.ai"]] },
   ];
   return (
@@ -989,7 +973,7 @@ export function Footer() {
             Rio is your live software coach. Tell it what you want to learn and it shows you the way, on your own screen.
           </p>
           <div className="footer-ctas">
-            <Btn label="Go to app" variant="light" size="sm" href={APP_URL} />
+            <Btn label="Get started free" variant="light" size="sm" href={SIGNUP_URL} />
           </div>
         </div>
         <div className="footer-cols">

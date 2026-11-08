@@ -46,6 +46,7 @@
 .teams-demo-note { margin-top: 14px; color: #999; font-size: 10px; text-transform: uppercase; }
 @media (max-width: 900px) {
   .teams-grid { grid-template-columns: 1fr; gap: 40px; }
+  .teams > .label-row { margin: 0 var(--pad); }
 }
 @media (max-width: 700px) {
   .teams { padding-top: 76px; }
@@ -56,6 +57,7 @@
   .usecases-grid { grid-template-columns: 1fr; }
   .usecases-head { flex-direction: column; align-items: flex-start; }
   .usecase-copy h3, .usecase-copy > .p-14l { min-height: 0; max-width: none; }
+  .usecases > .label-row { margin: 0 var(--pad); }
 }
 @media (max-width: 600px) {
   .usecases { padding-top: 76px; }
@@ -439,8 +441,6 @@ ul { list-style: none; }
 .plan-dark .plan-band { background: #292828; }
 .plan-tag { font-size: 16px; line-height: 24px; max-width: 170px; }
 .plan-dark .plan-tag { color: rgba(255, 255, 255, 0.8); }
-.plan-tag-error { font-size: 14px; line-height: 20px; max-width: none; }
-.btn.is-busy { opacity: 0.7; cursor: progress; }
 .plan-band .btn { align-self: flex-start; }
 .plan-feats { padding: 46px 24px 0; display: flex; flex-direction: column; gap: 10px; }
 .pricing .ticker { margin-top: 180px; }
@@ -521,9 +521,18 @@ ul { list-style: none; }
   .article.flip .article-link { flex-direction: column; }
   .pricing-head { flex-direction: column; align-items: flex-start; gap: 24px; }
   .toggle-row { width: auto; }
-  .footer-inner { flex-direction: column; gap: 40px; bottom: 200px; }
+  .footer-inner { flex-direction: column; gap: 40px; bottom: 260px; }
   .footer-cols { width: 100%; }
+  /* Tablets: dim the photo so the links stay readable over the bright cube */
+  .footer-bg { opacity: 0.5; }
   }
+/* Short tablets (landscape): the fixed reveal footer would not fit, so it scrolls in like on phones */
+@media (max-width: 1100px) and (max-height: 860px) {
+  .page { margin-bottom: 0; }
+  .footer { position: relative; height: auto; padding: 140px var(--pad) 220px; }
+  .footer-inner { position: relative; left: 0; right: 0; bottom: 0; }
+  .footer-bg { height: 100%; }
+}
 @media (max-width: 700px) {
   :root { --pad: 20px; }
   .h-hero { font-size: 46px; line-height: 50px; letter-spacing: -1.8px; }
@@ -537,13 +546,14 @@ ul { list-style: none; }
   .cap-body { width: 100%; }
   .caps-acc { height: 520px; }
   .cap { width: 56px; }
-  .footer-cols { flex-direction: column; gap: 24px; }
+  .footer-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 16px; }
+  .footer-col { min-height: 0; }
   .footer-left { width: 100%; }
 }
 @media (max-width: 700px) {
   .process-foot { flex-direction: column; align-items: flex-start; gap: 24px; }
   .page { margin-bottom: 0; }
-  .footer { position: relative; height: auto; padding: 140px var(--pad) 160px; }
+  .footer { position: relative; height: auto; padding: 110px var(--pad) 170px; }
   .footer-inner { position: relative; left: 0; right: 0; bottom: 0; }
   .footer-bg { height: 100%; }
   .footer-word { bottom: -40px; }
@@ -562,6 +572,7 @@ ul { list-style: none; }
 .t-card:hover .t-app { color: rgba(255, 255, 255, 0.8); }
 .footer-wordmark { font-size: 44px; line-height: 44px; font-weight: 700; letter-spacing: -1.5px; }
 .footer-word { position: absolute; left: -10px; bottom: -150px; font-size: 520px; line-height: 1; font-weight: 800; letter-spacing: -30px; color: #fff; white-space: nowrap; pointer-events: none; }
+@media (max-width: 1100px) { .footer-word { font-size: 300px; bottom: -80px; letter-spacing: -14px; } }
 @media (max-width: 700px) { .footer-word { font-size: 220px; bottom: -60px; letter-spacing: -10px; } }
 @media (max-width: 700px) {
   .hero-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 62%; z-index: 0; background: linear-gradient(180deg, rgba(240, 240, 240, 0.95) 0%, rgba(240, 240, 240, 0.85) 65%, rgba(240, 240, 240, 0) 100%); pointer-events: none; }
@@ -580,7 +591,79 @@ ul { list-style: none; }
 }
 
 /* ---------- Get Rio (install page) ---------- */
+/* Phones: the artwork fills the lower part of the card, so the TV sits right under the call to action
+   instead of far below a band of empty sky. */
+@media (max-width: 700px) {
+  .hero { height: 100svh; min-height: 680px; }
+  .hero-bg { top: auto; bottom: 0; height: 58%; object-position: 50% 100%; }
+}
+/* Phones: keep it simple. Headlines, the demo, the cards, the prices and the buttons stay;
+   supporting copy, labels, tickers, mock-ups and feature lists go. */
+@media (max-width: 700px) {
+  .hero-sub, .hero-bottom { display: none; }
+  .hero-content { padding-top: 130px; }
+  .hero-link-demo { margin-top: 22px; }
 
-/* ---------- checkout notice ---------- */
-.notice { position: fixed; top: 24px; left: 50%; translate: -50% 0; z-index: 60; display: flex; align-items: center; gap: 16px; max-width: calc(100vw - 32px); padding: 14px 14px 14px 20px; border-radius: 14px; background: var(--ink); color: #fff; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18); }
-.notice-close { width: 28px; height: 28px; border-radius: 8px; background: var(--ink-2); color: #fff; font-size: 18px; line-height: 1; flex: none; }
+  .usecases, .teams { padding-top: 64px; }
+  .usecases .label-row, .teams .label-row, .faq .label-row { display: none; }
+  .usecases-head { margin-top: 0; margin-bottom: 24px; }
+  .usecases-head > p, .usecase-app, .usecase-copy > .p-14l, .usecase-chips, .usecases-note { display: none; }
+  .usecases-grid { gap: 12px; }
+  .usecase-copy { padding: 16px 12px 10px; }
+  .usecase-copy h3 { font-size: 20px; }
+
+  .teams-grid { margin-top: 0; gap: 0; }
+  .teams-grid > :last-child { display: none; }
+  .teams-sub, .teams-points .p-14l, .teams-n { display: none; }
+  .teams-points { margin-top: 20px; gap: 0; }
+  .teams-points li { display: block; padding: 14px 0; }
+  .teams-points h3 { font-size: 17px; }
+  .teams-cta { margin-top: 24px; }
+
+  .pricing { padding-top: 72px; }
+  .pricing .big-marquee, .pricing .ticker, .toggle-row, .pricing-sub, .plan-feats { display: none; }
+  .pricing-head { margin-top: 0; }
+  .pricing::before { content: "Pricing"; display: block; margin: 0 var(--pad) 20px; font-size: 38px; line-height: 42px; font-weight: 500; letter-spacing: -1.4px; }
+
+  .faq-card { padding: 64px var(--pad) 72px; }
+  .faq-card .big-marquee, .faq-sub { display: none; }
+  .faq-list > :nth-child(n + 5) { display: none; }
+
+  .footer-text, .footer-col:last-child { display: none; }
+}
+@media (max-width: 700px) {
+  .plans { margin-top: 0; }
+  .plan { height: auto; }
+  .plan-top { height: auto; padding: 22px 20px 14px; }
+  .plan-price { margin-top: 12px; }
+  .plan-band { padding-bottom: 20px; }
+}
+/* Phones: a shorter hero, so the TV sits right under the demo instead of a band of empty sky. */
+@media (max-width: 700px) {
+  .hero { height: auto; min-height: 0; }
+  .hero-card { height: 640px; }
+  .hero-bg { height: 66%; }
+}
+/* Phones: the R alone in the nav. */
+@media (max-width: 700px) {
+  .nav-brand > span { display: none; }
+  .nav-brand { width: 44px; padding: 0; justify-content: center; }
+}
+
+/* Calls to action: Sign in (text) + Get started in the nav; Get started free + Download for Mac under the headline. */
+.nav-login { display: flex; align-items: center; height: 44px; padding: 0 16px; border-radius: 100px; font-size: 14px; background: #ffffffd9; backdrop-filter: blur(14px); box-shadow: 0 0 0 1px rgba(26, 26, 26, 0.06); transition: background-color 0.3s; }
+.nav-login:hover { background: #fff; }
+.nav-sheet .nav-sheet-login { margin-top: 6px; border-top: 1px solid #1a1a1a12; border-radius: 0 0 14px 14px; color: #666; font-size: 15px; }
+.hero-demo-start { padding: 8px 12px; background: #1a1a1a14; color: #555; }
+.hero-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.hero-alt { display: inline-flex; align-items: center; gap: 9px; height: 56px; padding: 0 22px; border-radius: 16px; background: #ffffffd9; backdrop-filter: blur(14px); box-shadow: 0 0 0 1px rgba(26, 26, 26, 0.08); font-size: 15px; transition: background-color 0.3s; }
+.hero-alt:hover { background: #fff; }
+@media (max-width: 900px) { .nav-login { display: none; } }
+@media (max-width: 700px) {
+  .hero-ctas { gap: 10px; }
+  .hero-alt { height: 48px; padding: 0 16px; font-size: 14px; }
+  .hero-link-demo { margin-bottom: 16px; }
+}
+@media (max-width: 700px) { .hero-card { height: 740px; } .hero-bg { height: 56%; } }
+/* Phones: one call to action in the hero (Rio runs on a Mac, not on the phone). */
+@media (max-width: 700px) { .hero-alt { display: none; } .hero-card { height: 680px; } .hero-bg { height: 60%; } }

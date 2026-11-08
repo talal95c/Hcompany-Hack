@@ -113,7 +113,7 @@ export function UsagePage() {
                 <h2>Tutorials</h2>
               </div>
               {data.tutorials.length ? (
-                <table className="table">
+                <table className="table table--cards">
                   <thead>
                     <tr>
                       <th>Tutorial</th>
@@ -126,9 +126,9 @@ export function UsagePage() {
                     {data.tutorials.map((t) => (
                       <tr key={t.id}>
                         <td>{t.title ?? t.id}</td>
-                        <td className="num">{t.started}</td>
-                        <td className="num">{t.finished}</td>
-                        <td className="num dim">{t.skipped}</td>
+                        <td className="num" data-label="Started">{t.started}</td>
+                        <td className="num" data-label="Finished">{t.finished}</td>
+                        <td className="num dim" data-label="Skips">{t.skipped}</td>
                       </tr>
                     ))}
                   </tbody>

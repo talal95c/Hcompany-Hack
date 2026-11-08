@@ -30,7 +30,7 @@ export function TokensPage({ canManage }: { canManage: boolean }) {
         </div>
       ) : (
         <div className="table-wrap">
-          <table className="table">
+          <table className="table table--cards">
             <thead>
               <tr>
                 <th>Name</th>
@@ -46,9 +46,9 @@ export function TokensPage({ canManage }: { canManage: boolean }) {
                 <tr key={t.id}>
                   <td style={{ fontWeight: 500 }}>{t.name}</td>
                   <td className="mono dim">{t.prefix}…</td>
-                  <td className="dim">{t.createdBy ?? "—"}</td>
-                  <td className="dim">{ago(t.createdAt)}</td>
-                  <td className="dim">{ago(t.lastUsedAt)}</td>
+                  <td className="dim" data-label="By">{t.createdBy ?? "—"}</td>
+                  <td className="dim" data-label="Created">{ago(t.createdAt)}</td>
+                  <td className="dim" data-label="Last used">{ago(t.lastUsedAt)}</td>
                   {canManage && (
                     <td className="actions">
                       <button

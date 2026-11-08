@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { FaqInsights, Footer, Hero, Nav, Pricing } from "./sections";
 import { Teams } from "./Teams";
 import { UseCases } from "./usecases/UseCases";
-import { CheckoutNotice } from "./CheckoutNotice";
 
 export default function App() {
   useEffect(() => {
@@ -20,7 +19,6 @@ export default function App() {
         <FaqInsights />
       </main>
       <Footer />
-      <CheckoutNotice />
     </>
   );
 }
