@@ -1,30 +1,55 @@
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="brand/rio-mark-white.svg">
+  <img src="brand/rio-mark-black.svg" alt="Logo Rio" width="64">
+</picture>
+
 # Rio
 
-<img src="brand/rio-mark-black.svg" alt="Logo Rio" width="64">
+### Arrête de jongler entre le tuto et ton logiciel.
 
-**Colle un tutoriel : Rio te guide pas à pas dans ton propre logiciel, puis peut refaire avec ton accord ce que tu as appris.**
+Colle un tutoriel. Rio te guide dans ton application, répond à tes questions et peut refaire la tâche avec ton accord.
 
-**[Accéder à Rio](https://rio.vignemale.com)** · **[Installer l’application](#installation)** · **[Voir l’architecture](#architecture)**
+[![Essayer Rio](https://img.shields.io/badge/Essayer_Rio-FF6B35?style=for-the-badge&logoColor=white)](https://rio.vignemale.com)
+[![Installer l’application](https://img.shields.io/badge/Installer_l’application-24292F?style=for-the-badge)](#installation)
+[![Ouvrir la console](https://img.shields.io/badge/Console_équipe-64748B?style=for-the-badge)](https://rio.vignemale.com/home)
 
-Le site donne accès à la plateforme d’équipe. L’application de bureau se lance depuis les sources ; un installeur en un clic est prévu.
+**Le site pour découvrir Rio. La console pour ton équipe. L’application pour apprendre dans ton logiciel.**
+
+L’application de bureau se lance depuis les sources ; un installeur en un clic est prévu.
+
+</div>
 
 ## Problématique
 
-Apprendre Blender, DaVinci Resolve ou un outil interne, c’est souvent jongler entre un tutoriel et son logiciel :
-- faire pause et revenir en arrière pour retrouver la bonne manipulation ;
-- chercher un menu qui a changé de place dans sa version ;
-- rester bloqué sans savoir pourquoi le résultat diffère ;
-- devoir tout réapprendre une semaine plus tard.
+Un tutoriel montre une procédure. Il ne voit pas où tu bloques dans Blender, DaVinci Resolve ou ton outil interne.
 
-Un tutoriel montre une procédure, mais ne voit pas ce qui se passe sur ton écran. Rio accompagne la mise en pratique, directement là où tu travailles.
+| Aujourd’hui | Avec Rio |
+|---|---|
+| Pause, retour arrière, changement de fenêtre. | Des indications superposées à ton logiciel. |
+| Le menu n’est plus au même endroit. | Un guidage à partir de ce qui est visible à l’écran. |
+| Tu bloques sans comprendre pourquoi. | Des questions en texte ou à voix haute, pendant la leçon. |
+| La même tâche revient la semaine suivante. | Un parcours réussi réutilisable, à déléguer avec ton accord. |
 
 ## Solution
 
-1. **Pars de ton besoin.** Colle un lien YouTube ou une page web, choisis un tutoriel dans la bibliothèque, ou décris ce que tu veux apprendre. Rio prépare des étapes avec un résultat à atteindre.
-2. **Apprends dans ton logiciel.** Une barre flottante et un curseur superposé montrent où agir. Rio observe l’écran et suit ta progression, plutôt que de rejouer une vidéo figée.
-3. **Pose tes questions.** Tu peux écrire ou parler à Rio pendant la leçon. Il répond, peut montrer l’élément concerné et garde le contexte pour la suite. La voix nécessite une configuration supplémentaire.
-4. **Délègue avec ton accord.** Une leçon réussie peut être réutilisée. La petite barre en haut de l’écran propose « Rio le fait pour toi » : l’exécution démarre après ton acceptation, peut être arrêtée et vérifie les résultats à l’écran avant d’annoncer la réussite.
-5. **Partage avec ton équipe.** La [plateforme Rio](https://rio.vignemale.com) rassemble tutoriels, base de connaissances, membres et statistiques d’utilisation.
+```mermaid
+flowchart LR
+    Tuto["Colle un tuto"] --> Plan["Rio prépare les étapes"]
+    Plan --> Guide["Pratique dans ton logiciel"]
+    Guide <--> Questions["Questions voix ou texte"]
+    Guide --> Reuse["Parcours réussi"]
+    Reuse --> Consent{"Ton accord ?"}
+    Consent -->|Oui| Auto["Rio le fait pour toi"]
+    Consent -->|Non| Manual["Tu gardes la main"]
+```
+
+1. **Prépare.** Un lien YouTube, une page web, un tutoriel de la bibliothèque ou ton objectif devient une leçon en étapes.
+2. **Pratique.** Une barre flottante et un curseur superposé montrent où agir ; Rio suit ta progression à l’écran.
+3. **Demande.** Écris ou parle pendant la leçon : Rio répond et garde le contexte. La voix nécessite une configuration supplémentaire.
+4. **Délègue.** Après une leçon réussie, la barre en haut de l’écran propose « Rio le fait pour toi ». Tu acceptes ou refuses, tu peux arrêter ; Rio vérifie le résultat avant d’annoncer la réussite.
+5. **Partage.** La [console d’équipe](https://rio.vignemale.com/home) réunit tutoriels, connaissances, membres et statistiques d’utilisation.
 
 L’application vise macOS. L’autopilote fonctionne aussi sous Linux X11 ; Wayland est explicitement refusé. La précision du pointage et les demandes vagues restent des limites : Rio ne garantit pas la réussite de toute tâche.
 
@@ -32,14 +57,31 @@ L’application vise macOS. L’autopilote fonctionne aussi sous Linux X11 ; Way
 
 ```mermaid
 flowchart TD
-    User[Utilisateur] --> UI[React : barre, curseur, notch]
-    UI <--> Desktop[Tauri / Rust : tuteur, capture, voix, autopilote]
-    Desktop <--> App[Logiciel de l’utilisateur]
-    Desktop <--> Holo[H Company / Holo : vision et raisonnement]
-    Desktop <--> Voice[Gladia : transcription / Phonon : voix locale]
-    Desktop <--> API[Cloudflare Worker : API Rio]
-    Web[Site et console web] <--> API
-    API <--> Data[D1 et service de connaissances]
+    subgraph Local["Poste de l’utilisateur"]
+        UI["React : barre, curseur, notch"]
+        Desktop["Tauri / Rust : tuteur et autopilote"]
+        App["Logiciel de l’utilisateur"]
+        Voice["Phonon : voix locale"]
+        UI <--> Desktop
+        Desktop <--> App
+        Desktop --> Voice
+    end
+    subgraph Cloud["Cloud Rio"]
+        Web["Site et console web"]
+        API["Cloudflare Worker : API Rio"]
+        Data["D1 et service de connaissances"]
+        Web <--> API
+        API <--> Data
+    end
+    subgraph AI["Services IA"]
+        Holo["H Company / Holo : vision et planification"]
+        Gladia["Gladia : transcription"]
+    end
+    Desktop <--> Holo
+    Desktop <--> Gladia
+    Desktop <--> API
+    API <--> Holo
+    API <--> Gladia
 ```
 
 Le tuteur organise une leçon en **jalons vérifiables à l’écran**, pas en coordonnées fixes. Holo analyse les captures pour guider l’utilisateur. L’autopilote réutilise ces jalons et contrôle leur résultat sur de nouvelles captures. Certains parcours réussis peuvent aussi être compilés en scripts testés via Devin.
