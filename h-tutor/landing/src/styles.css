@@ -644,3 +644,8 @@ ul { list-style: none; }
   .hero-card { height: 640px; }
   .hero-bg { height: 66%; }
 }
+/* Phones: the R alone in the nav. */
+@media (max-width: 700px) {
+  .nav-brand > span { display: none; }
+  .nav-brand { width: 44px; padding: 0; justify-content: center; }
+}
