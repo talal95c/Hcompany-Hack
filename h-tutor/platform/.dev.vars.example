@@ -6,3 +6,4 @@ GOOGLE_CLIENT_SECRET=
 HAI_API_KEY=
 GLADIA_API_KEY=
 LINKUP_API_KEY=
+STRIPE_SECRET_KEY=     # optional: sk_test_… enables the landing's Pro/Team checkout

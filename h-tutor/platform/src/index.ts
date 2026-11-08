@@ -1,5 +1,6 @@
 // Rio platform (Cloudflare Worker).
 //   /api/auth/*  better-auth (accounts, organizations, members, invitations)
+//   /api/checkout, /api/checkout-session  Stripe Checkout for the landing's Pro and Team plans
 //   /api/app/*   the console's API, for a signed-in member of the active organization
 //   /v1/*        the Rio app's API, with `Authorization: Bearer <api token>`
 //   everything else: the console (React, static assets)
@@ -9,6 +10,7 @@
 // organization's own tutorials live here, in D1.
 
 import { Hono, type Context } from "hono";
+import { handleCheckout, handleSession } from "../../landing/server/stripe.ts";
 import { createAuth, googleEnabled } from "./auth.ts";
 import { type TutorialRow, advance, advancePending, kindOf, youtubeThumbnail } from "./ingest.ts";
 import { type RioTutorial, type SearchHit, search, summaryOf, tutorialsAsKb } from "./kb.ts";
@@ -24,6 +26,7 @@ export interface Env {
   HAI_API_KEY?: string;
   GLADIA_API_KEY?: string;
   LINKUP_API_KEY?: string;
+  STRIPE_SECRET_KEY?: string;
   HOLO_MODEL?: string;
   HOLO_DESIGN_MODEL?: string;
 }
@@ -151,6 +154,12 @@ app.get("/v1/health", (c) => c.json({ ok: true }));
 // Which sign-in methods the console shows (public, no secrets).
 app.get("/api/providers", (c) => c.json({ google: googleEnabled(c.env) }));
 app.on(["GET", "POST"], "/api/auth/*", (c) => createAuth(c.env).handler(c.req.raw));
+
+// ------------------------------------------------------------------ payments (landing pricing, public)
+
+const stripeEnv = (env: Env) => ({ STRIPE_SECRET_KEY: env.STRIPE_SECRET_KEY, SITE_URL: env.BETTER_AUTH_URL });
+app.post("/api/checkout", (c) => handleCheckout(c.req.raw, stripeEnv(c.env)));
+app.get("/api/checkout-session", (c) => handleSession(c.req.raw, stripeEnv(c.env)));
 
 // ------------------------------------------------------------------ Rio app API (/v1, bearer token)
 

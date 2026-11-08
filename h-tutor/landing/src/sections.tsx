@@ -16,6 +16,8 @@ import {
   Ticker,
 } from "./ui";
 import { APP_URL, INSTALL_URL } from "./Teams";
+import { startCheckout } from "./checkout";
+import { PLANS, isPaid, type Billing, type Plan } from "./plans";
 
 const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Finder", "Figma", "VS Code"];
 
@@ -795,14 +797,7 @@ export function Process() {
 
 /* ---------------- Pricing ---------------- */
 
-const PLANS = [
-  { name: "Learner", price: 0, tagline: "One app at a time.", f: ["Tutorial library", "Typed goals", "Ghost cursor", "Community support"] },
-  { name: "Pro", price: 12, tagline: "Unlimited live coaching.", f: ["Unlimited goals", "Voice questions", "Save as tutorial", "Priority support"] },
-  { name: "Team", price: 29, tagline: "Onboard a whole team.", f: ["Team library", "Internal docs search", "Invites & admin", "Usage insights"], dark: true },
-  { name: "Enterprise", price: -1, tagline: "Your apps, your rules.", f: ["Custom tutorials", "SSO & admin", "Data controls", "Dedicated success"] },
-];
-
-function Price({ value }: { value: number }) {
+function Price({ value }: { value: number | null }) {
   return (
     <AnimatePresence mode="popLayout" initial={false}>
       <motion.span
@@ -813,9 +808,57 @@ function Price({ value }: { value: number }) {
         transition={{ duration: 0.45, ease: EASE }}
         className="price-val"
       >
-        {value < 0 ? "Custom" : `$${value.toLocaleString("en-US")}`}
+        {value === null ? "Custom" : `$${value.toLocaleString("en-US")}`}
       </motion.span>
     </AnimatePresence>
+  );
+}
+
+function PlanCard({ plan: p, billing }: { plan: Plan; billing: Billing }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const checkout = () => {
+    setBusy(true);
+    setError(null);
+    startCheckout(p.id, billing).catch((e: Error) => {
+      setError(e.message);
+      setBusy(false);
+    });
+  };
+  const variant = p.dark ? "light" : "ghost";
+  const terms =
+    p.monthly === null ? "Talk to us" : !isPaid(p) ? "Free forever" : `${p.seats ? "USD per seat" : "USD"}, billed ${billing === "year" ? "annually" : "monthly"}`;
+  return (
+    <div className={`plan ${p.dark ? "plan-dark" : ""}`}>
+      <img className="plan-wave" src={asset("lu9xdgbj7zB5GkewV6UCW9Y68.jpg")} alt="" />
+      <div className="plan-top">
+        <h6 className="plan-name">{p.name}</h6>
+        <p className="plan-price">
+          <Price value={billing === "year" ? p.annual : p.monthly} />
+          {p.monthly !== null && <span className="p-14l plan-mo">/mo</span>}
+        </p>
+        <p className="p-14l">{terms}</p>
+      </div>
+      <div className="plan-band">
+        <p className={`plan-tag ${error ? "plan-tag-error" : ""}`} role={error ? "alert" : undefined}>
+          {error ?? p.tagline}
+        </p>
+        {isPaid(p) ? (
+          <Btn label={busy ? "Redirecting…" : error ? "Try again" : "Get started"} size="sm" variant={variant} onClick={checkout} busy={busy} />
+        ) : p.monthly === null ? (
+          <Btn label="Contact us" size="sm" variant={variant} href="#contact" />
+        ) : (
+          <Btn label="Get started" size="sm" variant={variant} href={APP_URL} />
+        )}
+      </div>
+      <ul className="plan-feats">
+        {p.f.map((f) => (
+          <li key={f} className="p-14l">
+            {f}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -839,33 +882,12 @@ export function Pricing() {
           </button>
         </Reveal>
         <Reveal as="p" className="p-16 pricing-sub">
-          Simple plans for early access. Prices are indicative and will be confirmed at launch.
+          Start free. Upgrade when Rio becomes part of your day. Cancel anytime.
         </Reveal>
       </div>
       <Reveal className="plans">
         {PLANS.map((p) => (
-          <div key={p.name} className={`plan ${p.dark ? "plan-dark" : ""}`}>
-            <img className="plan-wave" src={asset("lu9xdgbj7zB5GkewV6UCW9Y68.jpg")} alt="" />
-            <div className="plan-top">
-              <h6 className="plan-name">{p.name}</h6>
-              <p className="plan-price">
-                <Price value={annual || p.price <= 0 ? p.price : Math.round(p.price / 0.8)} />
-                {p.price >= 0 && <span className="p-14l plan-mo">/mo</span>}
-              </p>
-              <p className="p-14l">{p.price < 0 ? "Talk to us" : p.price === 0 ? "Free forever" : `USD per seat, billed ${annual ? "annually" : "monthly"}`}</p>
-            </div>
-            <div className="plan-band">
-              <p className="plan-tag">{p.tagline}</p>
-              <Btn label="Get started" size="sm" variant={p.dark ? "light" : "ghost"} href="#contact" />
-            </div>
-            <ul className="plan-feats">
-              {p.f.map((f) => (
-                <li key={f} className="p-14l">
-                  {f}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <PlanCard key={p.id} plan={p} billing={annual ? "year" : "month"} />
         ))}
       </Reveal>
       <Ticker />

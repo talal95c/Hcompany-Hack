@@ -96,15 +96,20 @@ export function Btn({
   variant = "dark",
   size = "lg",
   className = "",
+  onClick,
+  busy = false,
 }: {
   label: string;
   href?: string;
   variant?: BtnVariant;
   size?: "lg" | "sm";
   className?: string;
+  /** Renders a <button> instead of a link. */
+  onClick?: () => void;
+  busy?: boolean;
 }) {
-  return (
-    <a href={href} className={`btn btn-${variant} btn-${size} ${className}`}>
+  const inner = (
+    <>
       <span className="btn-box">
         <PixelArrow />
       </span>
@@ -113,6 +118,18 @@ export function Btn({
           {label}
         </span>
       </span>
+    </>
+  );
+  const cls = `btn btn-${variant} btn-${size} ${busy ? "is-busy" : ""} ${className}`;
+  if (onClick)
+    return (
+      <button type="button" className={cls} onClick={onClick} disabled={busy} aria-busy={busy}>
+        {inner}
+      </button>
+    );
+  return (
+    <a href={href} className={cls}>
+      {inner}
     </a>
   );
 }

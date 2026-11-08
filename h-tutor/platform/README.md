@@ -45,10 +45,17 @@ npx wrangler login
 npx wrangler d1 create rio                  # put the id in wrangler.toml
 (cd knowledge && npm run deploy)      # first: the platform binds to it
 npm run db:migrate
-for k in BETTER_AUTH_SECRET HAI_API_KEY GLADIA_API_KEY LINKUP_API_KEY; do npx wrangler secret put $k; done
+for k in BETTER_AUTH_SECRET HAI_API_KEY GLADIA_API_KEY LINKUP_API_KEY STRIPE_SECRET_KEY; do npx wrangler secret put $k; done
 npx wrangler secret put BETTER_AUTH_URL     # https://rio.vignemale.com (the route in wrangler.toml)
 npm run deploy
 ```
+
+## Payments (Stripe)
+The landing's Pro and Team buttons call `POST /api/checkout` (public), which opens a Stripe Checkout subscription
+(monthly or annual, adjustable seats for Team) and returns to `/?checkout=success|cancel`. The handler lives in
+`../landing/server/stripe.ts` and prices come from `../landing/src/plans.ts`: products `rio_pro`/`rio_team` and their
+prices (lookup keys `rio_<plan>_<month|year>`) are created in Stripe on first use. Without `STRIPE_SECRET_KEY` the
+buttons show "Payments are not configured yet". Return URLs use `BETTER_AUTH_URL` as the origin.
 
 ## Google sign-in (optional)
 The "Continue with Google" button shows only when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are both set.
