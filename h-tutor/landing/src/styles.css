@@ -665,3 +665,5 @@ ul { list-style: none; }
   .hero-link-demo { margin-bottom: 16px; }
 }
 @media (max-width: 700px) { .hero-card { height: 740px; } .hero-bg { height: 56%; } }
+/* Phones: one call to action in the hero (Rio runs on a Mac, not on the phone). */
+@media (max-width: 700px) { .hero-alt { display: none; } .hero-card { height: 680px; } .hero-bg { height: 60%; } }
