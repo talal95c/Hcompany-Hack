@@ -156,7 +156,7 @@ export function RioBar({ initial = "", onActiveChange }: { initial?: string; onA
   const [error, setError] = useState<string | null>(null);
   const [listening, setListening] = useState(false);
   const [hint, setHint] = useState(0);
-  const rotating = !text && !focused && !listening && !reduced;
+  const rotating = !text && !focused && !listening;
   const rec = useRef<Recognition | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const kind = kindOf(text);
@@ -206,7 +206,7 @@ export function RioBar({ initial = "", onActiveChange }: { initial?: string; onA
     <div className="riobar-wrap">
       <motion.form layout={!reduced} className={`riobar ${focused ? "is-focused" : ""}`} onSubmit={submit}
         onFocus={() => setFocused(true)} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false); }}
-        animate={{ height: focused ? 70 : 62, y: focused && !reduced ? -4 : 0 }} transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 280, damping: 28 }}>
+        animate={{ height: focused && !reduced ? 70 : 62, y: focused && !reduced ? -4 : 0 }} transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 280, damping: 28 }}>
         <span className="riobar__lead">{busy ? <span className="spinner" /> : <I.Spark />}</span>
         <div className="riobar__input">
         <input
@@ -219,7 +219,7 @@ export function RioBar({ initial = "", onActiveChange }: { initial?: string; onA
         />
         {rotating && <div className="riobar__placeholder" aria-hidden="true">
           <AnimatePresence mode="wait" initial={false}>
-            <motion.span key={hint} initial={{ opacity: 0, y: 8, filter: "blur(5px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, y: -8, filter: "blur(5px)" }} transition={{ type: "tween", duration: 0.4 }}>{PROMPT_HINTS[hint]}</motion.span>
+            <motion.span key={hint} initial={{ opacity: 0, y: reduced ? 0 : 8, filter: "blur(5px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, y: reduced ? 0 : -8, filter: "blur(5px)" }} transition={{ type: "tween", duration: 0.4 }}>{PROMPT_HINTS[hint]}</motion.span>
           </AnimatePresence>
         </div>}
         </div>

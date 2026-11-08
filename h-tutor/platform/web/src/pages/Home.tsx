@@ -18,14 +18,14 @@ export function HomePage() {
   const [chipsFocused, setChipsFocused] = useState(false);
   const [inputActive, setInputActive] = useState(false);
   useEffect(() => {
-    if (reduced || hovered || chipsFocused || inputActive) return;
+    if (hovered || chipsFocused || inputActive) return;
     const timer = window.setInterval(() => setGroup((i) => (i + 1) % (IDEAS.length / 3)), 4000);
     return () => window.clearInterval(timer);
-  }, [reduced, hovered, chipsFocused, inputActive]);
+  }, [hovered, chipsFocused, inputActive]);
   const enter = (delay: number) => ({
-    initial: { opacity: 0, y: reduced ? 0 : 12, filter: reduced ? "none" : "blur(6px)" },
+    initial: { opacity: 0, y: reduced ? 0 : 12, filter: "blur(6px)" },
     animate: { opacity: 1, y: 0, filter: "blur(0px)" },
-    transition: { duration: reduced ? 0 : 0.65, delay: reduced ? 0 : delay },
+    transition: { type: "tween" as const, duration: 0.65, delay },
   });
   const name = auth.useSession().data?.user.name?.split(" ")[0];
   const team = useApi<{ tutorials: TutorialRow[] }>("/tutorials");
@@ -40,9 +40,9 @@ export function HomePage() {
         <h1 aria-label={`What should your team learn${name ? `, ${name}` : ""}?`}>
           {`What should your team learn${name ? `, ${name}` : ""}?`.split(" ").map((word, index) => (
             <motion.span className="home__word" key={index} aria-hidden="true"
-              initial={{ opacity: reduced ? 1 : 0, y: reduced ? 0 : 24, filter: reduced ? "none" : "blur(12px)" }}
+              initial={{ opacity: 0, y: reduced ? 0 : 24, filter: "blur(12px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={reduced ? { duration: 0 } : { type: "spring", duration: 0.7, bounce: 0.12, delay: index * 0.075 }}
+              transition={reduced ? { type: "tween", duration: 0.7, delay: index * 0.075 } : { type: "spring", duration: 0.7, bounce: 0.12, delay: index * 0.075 }}
             >{word}{" "}</motion.span>
           ))}
         </h1>
@@ -50,16 +50,16 @@ export function HomePage() {
       <motion.div className="home__prompt" {...enter(0.4)}><RioBar initial={goal} key={goal} onActiveChange={setInputActive} /></motion.div>
       <div className="ideas" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
         onFocus={() => setChipsFocused(true)} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setChipsFocused(false); }}>
-        {IDEAS.slice((reduced ? 0 : group) * 3, (reduced ? 0 : group) * 3 + 3).map((idea, index) => (
+        {IDEAS.slice(group * 3, group * 3 + 3).map((idea, index) => (
           <motion.button layout={!reduced} {...enter(0.55 + index * 0.08)}
             transition={{ layout: { type: "spring", stiffness: 170, damping: 24, delay: reduced ? 0 : index * 0.08 } }}
             whileHover={reduced ? undefined : { y: -3 }} whileTap={reduced ? undefined : { scale: 0.97 }} key={index} className="chip" aria-label={idea} onClick={() => navigate(`/home?goal=${encodeURIComponent(idea)}`, true)}>
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.span key={idea} className="home__idea-text" aria-hidden="true"
-                initial={{ opacity: reduced ? 1 : 0, filter: reduced ? "none" : "blur(8px)", y: reduced ? 0 : 5 }}
+                initial={{ opacity: 0, filter: "blur(8px)", y: reduced ? 0 : 5 }}
                 animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-                exit={{ opacity: 0, filter: reduced ? "none" : "blur(8px)", y: reduced ? 0 : -5 }}
-                transition={{ type: "tween", duration: reduced ? 0 : 0.45, delay: reduced ? 0 : index * 0.08 }}
+                exit={{ opacity: 0, filter: "blur(8px)", y: reduced ? 0 : -5 }}
+                transition={{ type: "tween", duration: 0.45, delay: index * 0.08 }}
               >{idea}</motion.span>
             </AnimatePresence>
           </motion.button>

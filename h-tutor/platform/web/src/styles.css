@@ -360,7 +360,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .home .chip:focus-visible, .home .riobar button:focus-visible { outline: 2px solid #a29f98; outline-offset: 4px; }
 .home .recent { padding: 12px; border-radius: 20px; background: #ffffff50; border: 1px solid #ffffff90; backdrop-filter: blur(16px); }
 @media (max-width: 700px) { .home .riobar__hint { display: none; } .home .riobar { gap: 7px; padding-left: 12px; } .home .riobar input { font-size: 13px; } }
-@media (prefers-reduced-motion: reduce) { .home__atmosphere span { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .home__atmosphere span { animation: none; }
+  .home .riobar { transition: box-shadow 400ms, border-color 400ms !important; }
+  .home .riobar::before { transition: opacity 500ms !important; }
+  .home .riobar.is-focused::before { animation: home-sheen 9s linear infinite !important; }
+}
 .home .hello { padding: 0; }
 .home .hello h1 { font-size: clamp(26px, 3vw, 30px); }
 .recent { width: 100%; max-width: 680px; margin: 44px auto 0; }
