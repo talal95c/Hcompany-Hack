@@ -930,9 +930,19 @@ fn exact_text(criterion: &str) -> Option<String> {
     None
 }
 
+/// A fresh screenshot for Rio's acceptance check: the primary display, or,
+/// in the autopilot benchmark (tests only), the simulated browser's screen.
+async fn fresh_screen() -> Result<Shot, String> {
+    #[cfg(test)]
+    if let Some(shot) = crate::sim::autopilot::screen() {
+        return Ok(shot);
+    }
+    tauri::async_runtime::spawn_blocking(capture_primary).await.map_err(|e| e.to_string())?
+}
+
 /// Checks a criterion on a freshly captured screenshot; never acts.
 async fn screen_verify(brain: &impl Brain, criterion: &str, claim: &str) -> Result<Verification, String> {
-    let shot = tauri::async_runtime::spawn_blocking(capture_primary).await.map_err(|e| e.to_string())??;
+    let shot = fresh_screen().await?;
     let shot_path = journal::shot(&shot.data_uri);
     let body = json!({
         "model": holo::fast_model(), "temperature": 0,

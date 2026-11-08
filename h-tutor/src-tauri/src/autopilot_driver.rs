@@ -4,7 +4,7 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
 
 #[derive(Clone, Copy)]
-struct Limits {
+pub(crate) struct Limits {
     per_milestone: usize,
     total: usize,
     failures: usize,
@@ -18,12 +18,12 @@ impl Default for Limits {
 }
 
 #[derive(Debug, PartialEq)]
-enum Failure {
+pub(crate) enum Failure {
     Stopped,
     Failed(String),
 }
 
-trait Driver {
+pub(crate) trait Driver {
     fn stopped(&self) -> bool;
     fn replay(&mut self, step: agent::Step);
     fn progressed(&self) -> bool {
@@ -105,7 +105,7 @@ async fn drive<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failu
     }
 }
 
-async fn bounded<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failure> {
+pub(crate) async fn bounded<D: Driver>(driver: &mut D, limits: Limits) -> Result<usize, Failure> {
     tokio::time::timeout(limits.timeout, drive(driver, limits))
         .await
         .map_err(|_| Failure::Failed("The maximum run time was exceeded".into()))?
