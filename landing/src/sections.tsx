@@ -19,17 +19,6 @@ import { INSTALL_URL, SIGNIN_URL, SIGNUP_URL } from "./Teams";
 import { startCheckout } from "./checkout";
 import { PLANS, isPaid, type Billing, type Plan } from "./plans";
 
-const APPS = [
-  ["Blender", "blender.svg"],
-  ["LibreOffice Calc", "libreoffice-calc.svg"],
-  ["Excel", "excel.svg"],
-  ["Photoshop", "photoshop.svg"],
-  ["Docker", "docker.svg"],
-  ["Finder", "finder.svg"],
-  ["Figma", "figma.svg"],
-  ["VS Code", "vscode.svg"],
-];
-
 /* ---------------- Nav ---------------- */
 
 
@@ -207,11 +196,6 @@ export function Hero() {
           <p className="p-14 hero-trust">
             Works on top of the apps you already use, from 3D to spreadsheets.
           </p>
-          <Marquee duration={28} className="hero-logos">
-            {APPS.map(([name, file]) => (
-              <img key={name} className="app-logo" src={asset(`apps/${file}`)} alt={name} title={name} />
-            ))}
-          </Marquee>
         </motion.div>
       </div>
     </section>

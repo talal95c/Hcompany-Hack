@@ -209,9 +209,6 @@ ul { list-style: none; }
 @media (prefers-reduced-motion: reduce) { .hero-caret { animation: none; } }
 .hero-bottom { position: absolute; left: 0; right: 0; bottom: 40px; }
 .hero-trust { color: #fff; width: 300px; margin: 0 0 10px var(--pad); }
-.hero-logos { mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
-.hero-logos .marquee-group { gap: 10px; padding-right: 10px; }
-.hero-logos img { width: 189px; height: 57px; object-fit: contain; }
 
 .about { padding: 12px 12px 0; }
 .about-card { background: var(--mist); border-radius: 20px; padding: 208px var(--pad) 22px; overflow: hidden; }
@@ -568,7 +565,6 @@ ul { list-style: none; }
 .mark-sm { width: 22px; }
 .mark-md { width: 34px; }
 .mark-lg { width: 96px; }
-.hero-logos img.app-logo { width: 34px; height: 34px; margin: 0 34px; object-fit: contain; opacity: 0.85; }
 .work-app { width: auto; height: auto; filter: none; font-size: 30px; line-height: 36px; font-weight: 600; letter-spacing: -1px; color: rgba(26, 26, 26, 0.55); }
 .bento-mark { width: 34px; height: auto; }
 .t-app { font-family: var(--mono); font-size: 11px; text-transform: uppercase; padding: 0 6px 0 10px; color: rgba(26, 26, 26, 0.7); }
