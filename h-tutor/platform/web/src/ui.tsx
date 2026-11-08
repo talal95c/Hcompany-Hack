@@ -5,6 +5,8 @@ import { copy } from "./lib";
 
 const P = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" } as const;
 export const I = {
+  Video: () => <svg {...P}><rect x="3" y="5" width="18" height="14" rx="3" /><path d="m10 9 5 3-5 3z" /></svg>,
+  Wave: () => <svg {...P}><path d="M4 10v4M8 6v12M12 3v18M16 7v10M20 10v4" /></svg>,
   // Rio's mark (h-tutor/brand/rio-mark-black.svg).
   Mark: () => (
     <svg viewBox="0 0 96 84" aria-hidden>
