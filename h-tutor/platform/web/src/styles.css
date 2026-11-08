@@ -430,41 +430,37 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .auth__art { display: none; }
 }
 
-/* Codex-style shell: an icon rail on the grey backdrop, then one rounded card (panel + page) */
+/* Shell: the sidebar sits outside the app's card, on the grey backdrop; icons only or the full menu */
 .shell { display: flex; min-height: 100vh; background: #ececea; }
-.rail { position: sticky; top: 0; height: 100vh; width: 64px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 0 16px; }
-.rail__mark { display: grid; place-items: center; width: 36px; height: 36px; margin-bottom: 6px; color: var(--ink); }
-.rail__mark svg { width: 22px; height: auto; }
-.rail__btn { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; border: 0; background: none; color: var(--dim); cursor: pointer; text-decoration: none; }
+.rail { position: sticky; top: 0; height: 100vh; width: 64px; flex: none; display: flex; flex-direction: column; align-items: stretch; gap: 2px; padding: 12px; overflow: hidden; transition: width 0.26s cubic-bezier(0.23, 1, 0.32, 1); }
+.rail.is-open { width: 252px; }
+.rail__mark { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 9px; margin-bottom: 8px; border: 0; border-radius: 12px; background: none; color: var(--ink); cursor: pointer; white-space: nowrap; }
+.rail__mark:hover { background: rgba(0, 0, 0, 0.05); }
+.rail__mark svg { width: 22px; height: auto; flex: none; }
+.rail__name { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
+.rail .org { margin-bottom: 6px; }
+.rail__btn { position: relative; display: flex; align-items: center; gap: 11px; height: 40px; padding: 0 10px; border-radius: 12px; border: 0; background: none; color: var(--dim); font: inherit; font-size: 14px; cursor: pointer; text-decoration: none; white-space: nowrap; }
 .rail__btn:hover { background: rgba(0, 0, 0, 0.05); color: var(--text); }
-.rail__btn.is-on { background: rgba(0, 0, 0, 0.07); color: var(--text); }
-.rail__btn .nav__icon { width: 20px; height: 20px; }
-.rail__btn .nav__count { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; padding: 0; border-radius: 50%; background: var(--ink); font-size: 0; }
-.rail__sep { width: 28px; height: 1px; margin: 6px 0; background: rgba(0, 0, 0, 0.1); }
-.rail__foot { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.rail__btn.is-on { background: #fff; color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); font-weight: 500; }
+.rail__btn .nav__icon, .rail__btn > svg { width: 20px; height: 20px; flex: none; }
+.rail__btn .nav__count { margin-left: auto; font-size: 12px; color: var(--faint); }
+.rail:not(.is-open) .rail__btn .nav__count { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; margin: 0; border-radius: 50%; background: var(--ink); font-size: 0; }
+.rail__new { margin-bottom: 8px; color: var(--text); }
+.rail__sep { height: 1px; margin: 10px 8px; background: rgba(0, 0, 0, 0.1); }
+.rail__label { padding: 16px 10px 4px; font-size: 12px; color: var(--faint); white-space: nowrap; }
+.rail__foot { margin-top: auto; display: flex; flex-direction: column; gap: 2px; }
+.rail__me { display: flex; align-items: center; gap: 10px; padding: 8px 2px 0 6px; white-space: nowrap; }
+.rail:not(.is-open) .rail__me { flex-direction: column; padding: 8px 0 0; }
+.rail__me .who { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 13px; }
+.rail__me .who span { color: var(--faint); overflow: hidden; text-overflow: ellipsis; }
+.rail__out { width: 40px; justify-content: center; padding: 0; }
 .frame { flex: 1; min-width: 0; display: flex; margin: 10px 10px 10px 0; border-radius: 18px; overflow: hidden; background: var(--bg); border: 1px solid rgba(0, 0, 0, 0.06); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 16px 40px -24px rgba(0, 0, 0, 0.25); min-height: calc(100vh - 20px); }
-.panel { position: sticky; top: 0; align-self: flex-start; width: 268px; flex: none; height: calc(100vh - 20px); overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding: 14px 12px; background: #f6f6f4; border-right: 1px solid var(--line); transition: width 0.28s cubic-bezier(0.23, 1, 0.32, 1), padding 0.28s cubic-bezier(0.23, 1, 0.32, 1); }
-.is-collapsed .panel { width: 0; padding-left: 0; padding-right: 0; border-right: 0; overflow: hidden; }
-.panel .org { margin-bottom: 8px; }
-.panel .org__btn { padding: 8px 10px; }
-.panel .org__name { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
-.panel__row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 9px; background: none; color: var(--text); font: inherit; font-size: 14px; text-align: left; text-decoration: none; cursor: pointer; white-space: nowrap; }
-.panel__row:hover { background: rgba(0, 0, 0, 0.045); }
-.panel__row.is-on { background: rgba(0, 0, 0, 0.065); }
-.panel__new .nav__icon, .panel__new svg { width: 17px; height: 17px; flex: none; }
-.panel__here { padding: 6px 10px 0; font-size: 12px; color: var(--faint); }
-.panel__label { padding: 18px 10px 6px; font-size: 13px; color: var(--faint); white-space: nowrap; }
-.panel__item { color: var(--text); }
-.panel__text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.panel__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: none; }
-.panel__more { color: var(--faint); font-size: 13.5px; }
-.panel__empty { margin: 0; padding: 4px 10px; color: var(--faint); font-size: 13px; white-space: normal; }
 .main { flex: 1; min-width: 0; }
 @media (max-width: 860px) {
   .shell { flex-direction: column; }
-  .rail { position: static; flex-direction: row; width: auto; height: auto; padding: 8px 10px; overflow-x: auto; }
-  .rail__sep { width: 1px; height: 24px; margin: 0 4px; }
+  .rail, .rail.is-open { position: static; flex-direction: row; width: auto; height: auto; padding: 8px 10px; overflow-x: auto; }
+  .rail .org, .rail__label, .rail .nav__label, .rail__name, .rail__me .who { display: none; }
+  .rail__sep { width: 1px; height: 24px; margin: 8px 4px; }
   .rail__foot { margin: 0 0 0 auto; flex-direction: row; }
   .frame { margin: 0 8px 8px; }
-  .panel { display: none; }
 }
