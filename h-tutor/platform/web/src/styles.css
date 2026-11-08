@@ -456,11 +456,100 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .rail__out { width: 40px; justify-content: center; padding: 0; }
 .frame { flex: 1; min-width: 0; display: flex; margin: 10px 10px 10px 0; border-radius: 18px; overflow: hidden; background: var(--bg); border: 1px solid rgba(0, 0, 0, 0.06); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 16px 40px -24px rgba(0, 0, 0, 0.25); min-height: calc(100vh - 20px); }
 .main { flex: 1; min-width: 0; }
+.rail__menu { display: none; }
+.rail-scrim { display: none; }
+.graph__cols { position: sticky; top: 0; z-index: 1; background: var(--paper); }
+
+/* Phones and small tablets: the sidebar is a top bar of icons; the logo (or the menu button) opens
+   the full menu as a drawer over the page, with the workspace switcher and the account. */
 @media (max-width: 860px) {
   .shell { flex-direction: column; }
-  .rail, .rail.is-open { position: static; flex-direction: row; width: auto; height: auto; padding: 8px 10px; overflow-x: auto; }
-  .rail .org, .rail__label, .rail .nav__label, .rail__name, .rail__me .who { display: none; }
-  .rail__sep { width: 1px; height: 24px; margin: 8px 4px; }
-  .rail__foot { margin: 0 0 0 auto; flex-direction: row; }
-  .frame { margin: 0 8px 8px; }
+  .rail:not(.is-open) { position: sticky; top: 0; z-index: 40; flex-direction: row; align-items: center; width: auto; height: auto; padding: 8px 10px; background: #ececea; overflow-x: auto; scrollbar-width: none; transition: none; }
+  .rail:not(.is-open)::-webkit-scrollbar { display: none; }
+  .rail:not(.is-open) > * { flex: none; }
+  .rail:not(.is-open) .rail__mark, .rail:not(.is-open) .rail__new { margin-bottom: 0; }
+  .rail:not(.is-open) .rail__sep { width: 1px; height: 24px; margin: 0 6px; }
+  .rail:not(.is-open) .rail__foot { margin: 0 0 0 auto; flex-direction: row; align-items: center; }
+  .rail:not(.is-open) .rail__me { flex-direction: row; padding: 0 0 0 4px; }
+  .rail:not(.is-open) .rail__menu { display: flex; }
+  .rail.is-open { position: fixed; top: 0; left: 0; bottom: 0; z-index: 60; width: min(300px, 86vw); height: auto; padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); overflow-y: auto; background: #ececea; box-shadow: 0 0 60px -10px rgba(0, 0, 0, 0.35); transition: none; animation: rail-in 0.26s cubic-bezier(0.23, 1, 0.32, 1); }
+  .rail.is-open .rail__menu { display: flex; position: absolute; top: max(12px, env(safe-area-inset-top)); right: 12px; width: 40px; justify-content: center; padding: 0; }
+  .rail.is-open .org { flex: none; }
+  .rail.is-open .rail__btn { height: 44px; }
+  .rail.is-open .rail__out { width: 44px; }
+  .rail-scrim { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(25, 24, 23, 0.3); animation: fade 0.2s ease-out; }
+  .shell.has-drawer { padding-top: 56px; }
+  .menu button { min-height: 42px; }
+  .frame { margin: 0 8px 8px; min-height: calc(100vh - 64px); border-radius: 16px; }
+
+  /* Inputs at 16px so iOS does not zoom on focus; bigger touch targets. */
+  .input, .select, .textarea, .composer textarea, .riobar input, .ask input { font-size: 16px; }
+  .input, .select { min-height: 42px; }
+  .select--sm { min-height: 34px; height: 34px; font-size: 14px; }
+  .btn { height: 38px; }
+  .btn--sm { height: 34px; padding: 0 12px; }
+  .chip { height: 34px; }
+  .seg button { height: 32px; }
+  .tabs { overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs button { flex: none; height: 42px; white-space: nowrap; }
+  .riobar__tool { width: 36px; height: 36px; }
+  .riobar__key { width: 36px; height: 36px; }
+  .riobar { padding-right: 8px; gap: 6px; }
+
+  .home { min-height: calc(100svh - 150px); padding-bottom: 4vh; }
+  .section__title { flex-wrap: wrap; row-gap: 8px; }
+  .section__title > h2 { flex: none; }
+  .section__title > span { flex: 1 1 180px; }
+  .ask { padding-left: 14px; }
+  .ask input { min-width: 0; }
+  .ask__app { max-width: 128px; }
+  .graph__scroll { overflow-x: auto; }
+  .graph__scroll > * { min-width: 760px; }
+  .publish .menu { width: min(300px, calc(100vw - 48px)); }
+  .cell-title > div { min-width: 0; }
+  .cell-title b, .cell-title span { max-width: min(420px, 40vw); }
+  .hero__body { padding: 36px 20px 20px; }
+  .hero__cover { padding: 0 20px; }
+  .hero__title { font-size: 24px; }
+  .step { padding: 14px; gap: 12px; }
+}
+@keyframes rail-in { from { transform: translateX(-100%); } }
+
+/* Phones: tables become stacked rows, modals become bottom sheets. */
+@media (max-width: 600px) {
+  .rail:not(.is-open) .rail__team, .rail:not(.is-open) .rail__foot { display: none; }
+  .rail:not(.is-open) .rail__menu { margin-left: auto; }
+  .page { padding: 22px 16px 56px; }
+  .head h1 { font-size: 24px; }
+  .hello h1, .home .hello h1 { font-size: 25px; }
+
+  .table, .table tbody, .table tr, .table td { display: block; }
+  .table thead { display: none; }
+  .table tr { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .table tbody tr:last-child { border-bottom: 0; }
+  .table td, .table tr:last-child td { padding: 0; border: 0; min-width: 0; overflow-wrap: anywhere; }
+  .table td:first-child { flex: 1 1 0; min-width: 55%; }
+  .table--cards td:first-child { flex-basis: 100%; }
+  .table .num { text-align: left; }
+  .table .actions { margin-left: auto; width: auto; }
+  .table td[data-label]::before { content: attr(data-label) " "; color: var(--faint); }
+  .table .cell-title b, .table .cell-title span { max-width: none; }
+
+  .overlay { place-items: end center; padding: 0; }
+  .modal { max-width: none; max-height: 92vh; overflow-y: auto; border-radius: 20px 20px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+  .modal__foot { flex-wrap: wrap; }
+  .drawer__head, .drawer__body { padding-left: 16px; padding-right: 16px; }
+
+  .skill__head { flex-wrap: wrap; row-gap: 8px; }
+  .skill__name { flex: 1 1 calc(100% - 40px); }
+  .chev + .skill__name + .tag { margin-left: 28px; }
+  .tiles, .stats { gap: 8px; }
+  .tile, .stat { padding: 14px; }
+  .tile__value, .stat__value { font-size: 24px; }
+  .install__step { padding: 16px; }
+  .install__code { flex-direction: column; align-items: stretch; }
+  .install__code .btn { align-self: flex-end; }
+  .recent__when { display: none; }
+  .toast { left: 16px; right: 16px; transform: none; text-align: center; }
 }

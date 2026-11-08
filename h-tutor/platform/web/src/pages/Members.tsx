@@ -48,7 +48,7 @@ export function MembersPage({ canManage }: { canManage: boolean }) {
       ) : (
         <>
           <div className="table-wrap">
-            <table className="table">
+            <table className="table table--cards">
               <thead>
                 <tr>
                   <th>Member</th>
@@ -114,7 +114,7 @@ export function MembersPage({ canManage }: { canManage: boolean }) {
                 <h2>Pending invitations</h2>
                 <span>Share the link: there is no email service yet</span>
               </div>
-              <table className="table">
+              <table className="table table--cards">
                 <tbody>
                   {pending.map((i) => (
                     <tr key={i.id}>

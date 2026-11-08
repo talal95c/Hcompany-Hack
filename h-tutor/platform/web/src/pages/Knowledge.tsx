@@ -652,12 +652,12 @@ function GraphView({ appId }: { appId: string }) {
           {sources.length} sources · {skills.length} skills · {atoms.length} UI elements ({data.app?.current_version})
         </span>
       </div>
-      <div className="graph__cols">
-        <span>Sources</span>
-        <span>Skills</span>
-        <span>UI elements, as they are now</span>
-      </div>
       <div className="graph__scroll">
+        <div className="graph__cols">
+          <span>Sources</span>
+          <span>Skills</span>
+          <span>UI elements, as they are now</span>
+        </div>
         <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={`${data.app?.name} knowledge graph: ${sources.length} sources, ${skills.length} skills, ${atoms.length} UI elements`}>
           <g className="gedges">
             {skills.map((s) => {

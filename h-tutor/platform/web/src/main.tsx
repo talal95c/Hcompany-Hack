@@ -27,6 +27,20 @@ const TEAM = [
   { path: "/settings", label: "Settings", icon: I.Gear },
 ];
 const GET_RIO = { path: "/get-rio", label: "Get the Mac app", icon: I.Download };
+/** Below this width the sidebar becomes a top bar, and the full menu a drawer over the page. */
+const PHONE = "(max-width: 860px)";
+
+function useMedia(query: string) {
+  const [match, setMatch] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const m = window.matchMedia(query);
+    const change = () => setMatch(m.matches);
+    change();
+    m.addEventListener("change", change);
+    return () => m.removeEventListener("change", change);
+  }, [query]);
+  return match;
+}
 
 function App() {
   const path = usePath();
@@ -75,10 +89,26 @@ function Shell({ path, orgId }: { path: string; orgId: string }) {
       }
       return !c;
     });
+  // Phones and small tablets: icons in a top bar; the logo opens the full menu as a drawer.
+  const phone = useMedia(PHONE);
+  const [drawer, setDrawer] = useState(false);
+  const drawerOpen = phone && drawer;
+  useEffect(() => setDrawer(false), [path, phone]);
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const k = (e: KeyboardEvent) => e.key === "Escape" && setDrawer(false);
+    window.addEventListener("keydown", k);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", k);
+      document.body.style.overflow = "";
+    };
+  }, [drawerOpen]);
 
   return (
-    <div className={`shell ${collapsed ? "is-collapsed" : ""}`}>
-      <Rail path={path} orgId={orgId} open={!collapsed} onToggle={toggle} />
+    <div className={`shell ${collapsed ? "is-collapsed" : ""} ${drawerOpen ? "has-drawer" : ""}`}>
+      <Rail path={path} orgId={orgId} open={phone ? drawer : !collapsed} onToggle={phone ? () => setDrawer((d) => !d) : toggle} />
+      {drawerOpen && <div className="rail-scrim" onClick={() => setDrawer(false)} aria-hidden />}
       <div className="frame">
         <main className="main">
         <div className="page" key={`${orgId}-${tid ?? path}`}>
@@ -108,12 +138,12 @@ function Shell({ path, orgId }: { path: string; orgId: string }) {
   );
 }
 
-function NavLink({ to, label, icon: Icon, path, count, short }: { to: string; label: string; icon: () => React.ReactNode; path: string; count?: number; short?: boolean }) {
+function NavLink({ to, label, icon: Icon, path, count, short, className = "" }: { to: string; label: string; icon: () => React.ReactNode; path: string; count?: number; short?: boolean; className?: string }) {
   return (
     <a
       href={to}
       title={label}
-      className={`rail__btn ${path.startsWith(to) ? "is-on" : ""}`}
+      className={`rail__btn ${path.startsWith(to) ? "is-on" : ""} ${className}`}
       onClick={(e) => {
         e.preventDefault();
         navigate(to);
@@ -146,9 +176,9 @@ function Rail({ path, orgId, open, onToggle }: { path: string; orgId: string; op
       {MAIN.map((p) => (
         <NavLink key={p.path} short={short} to={p.path} label={p.label} icon={p.icon} path={path} count={p.path === "/library" ? drafts : undefined} />
       ))}
-      {open ? <div className="rail__label">Team</div> : <div className="rail__sep" />}
+      {open ? <div className="rail__label">Team</div> : <div className="rail__sep rail__team" />}
       {TEAM.map((p) => (
-        <NavLink key={p.path} short={short} to={p.path} label={p.label} icon={p.icon} path={path} />
+        <NavLink key={p.path} short={short} to={p.path} label={p.label} icon={p.icon} path={path} className="rail__team" />
       ))}
       <div className="rail__foot">
         <NavLink short={short} to={GET_RIO.path} label={GET_RIO.label} icon={GET_RIO.icon} path={path} />
@@ -175,6 +205,10 @@ function Rail({ path, orgId, open, onToggle }: { path: string; orgId: string; op
           </button>
         </div>
       </div>
+      {/* Phones only (hidden by CSS on wider screens): an explicit menu button next to the logo's toggle. */}
+      <button className="rail__btn rail__menu" onClick={onToggle} aria-expanded={open} aria-label={open ? "Close the menu" : "Open the menu"} title={open ? "Close" : "Menu"}>
+        {open ? <I.Close /> : <I.PanelLeft />}
+      </button>
     </nav>
   );
 }
