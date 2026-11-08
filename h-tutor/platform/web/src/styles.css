@@ -430,25 +430,41 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .auth__art { display: none; }
 }
 
-/* Floating sidebar: a card beside the app, not glued to its edge; collapses to icons */
-.shell { grid-template-columns: 260px 1fr; background: var(--side); transition: grid-template-columns 0.28s cubic-bezier(0.23, 1, 0.32, 1); }
-.shell.is-collapsed { grid-template-columns: 84px 1fr; }
-.side { top: 12px; height: calc(100vh - 24px); margin: 12px 0 12px 12px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 32px -18px rgba(0, 0, 0, 0.18); overflow: visible; }
-.main { margin: 12px; border: 1px solid var(--line); border-radius: 18px; background: var(--bg); min-height: calc(100vh - 24px); }
-.side__toggle { position: absolute; top: 18px; right: -13px; z-index: 2; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--line); background: var(--paper); color: var(--dim); box-shadow: var(--shadow); cursor: pointer; }
-.side__toggle:hover { color: var(--text); }
-.side .nav__label, .side .brand__name, .side .org__name { white-space: nowrap; overflow: hidden; }
-.is-collapsed .side { padding-left: 10px; padding-right: 10px; }
-.is-collapsed .nav { justify-content: center; padding: 9px 0; gap: 0; }
-.is-collapsed .nav__label, .is-collapsed .nav__count, .is-collapsed .brand__name, .is-collapsed .org__name, .is-collapsed .org__btn > svg, .is-collapsed .side__label, .is-collapsed .side__foot .who { display: none; }
-.is-collapsed .brand { justify-content: center; padding-left: 0; padding-right: 0; }
-.is-collapsed .org__btn { justify-content: center; padding: 7px 0; }
-.is-collapsed .side__new { padding-left: 0; padding-right: 0; justify-content: center; }
-.is-collapsed .side__label { display: block; height: 14px; padding: 0; font-size: 0; }
-.is-collapsed .side__foot { flex-direction: column; padding: 8px 0 2px; }
+/* Codex-style shell: an icon rail on the grey backdrop, then one rounded card (panel + page) */
+.shell { display: flex; min-height: 100vh; background: #ececea; }
+.rail { position: sticky; top: 0; height: 100vh; width: 64px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 0 16px; }
+.rail__mark { display: grid; place-items: center; width: 36px; height: 36px; margin-bottom: 6px; color: var(--ink); }
+.rail__mark svg { width: 22px; height: auto; }
+.rail__btn { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; border: 0; background: none; color: var(--dim); cursor: pointer; text-decoration: none; }
+.rail__btn:hover { background: rgba(0, 0, 0, 0.05); color: var(--text); }
+.rail__btn.is-on { background: rgba(0, 0, 0, 0.07); color: var(--text); }
+.rail__btn .nav__icon { width: 20px; height: 20px; }
+.rail__btn .nav__count { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; padding: 0; border-radius: 50%; background: var(--ink); font-size: 0; }
+.rail__sep { width: 28px; height: 1px; margin: 6px 0; background: rgba(0, 0, 0, 0.1); }
+.rail__foot { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.frame { flex: 1; min-width: 0; display: flex; margin: 10px 10px 10px 0; border-radius: 18px; overflow: hidden; background: var(--bg); border: 1px solid rgba(0, 0, 0, 0.06); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 16px 40px -24px rgba(0, 0, 0, 0.25); min-height: calc(100vh - 20px); }
+.panel { position: sticky; top: 0; align-self: flex-start; width: 268px; flex: none; height: calc(100vh - 20px); overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding: 14px 12px; background: #f6f6f4; border-right: 1px solid var(--line); transition: width 0.28s cubic-bezier(0.23, 1, 0.32, 1), padding 0.28s cubic-bezier(0.23, 1, 0.32, 1); }
+.is-collapsed .panel { width: 0; padding-left: 0; padding-right: 0; border-right: 0; overflow: hidden; }
+.panel .org { margin-bottom: 8px; }
+.panel .org__btn { padding: 8px 10px; }
+.panel .org__name { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+.panel__row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 9px; background: none; color: var(--text); font: inherit; font-size: 14px; text-align: left; text-decoration: none; cursor: pointer; white-space: nowrap; }
+.panel__row:hover { background: rgba(0, 0, 0, 0.045); }
+.panel__row.is-on { background: rgba(0, 0, 0, 0.065); }
+.panel__new .nav__icon, .panel__new svg { width: 17px; height: 17px; flex: none; }
+.panel__here { padding: 6px 10px 0; font-size: 12px; color: var(--faint); }
+.panel__label { padding: 18px 10px 6px; font-size: 13px; color: var(--faint); white-space: nowrap; }
+.panel__item { color: var(--text); }
+.panel__text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.panel__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: none; }
+.panel__more { color: var(--faint); font-size: 13.5px; }
+.panel__empty { margin: 0; padding: 4px 10px; color: var(--faint); font-size: 13px; white-space: normal; }
+.main { flex: 1; min-width: 0; }
 @media (max-width: 860px) {
-  .shell, .shell.is-collapsed { grid-template-columns: 1fr; }
-  .side { margin: 8px 8px 0; height: auto; position: static; }
-  .main { margin: 8px; }
-  .side__toggle { display: none; }
+  .shell { flex-direction: column; }
+  .rail { position: static; flex-direction: row; width: auto; height: auto; padding: 8px 10px; overflow-x: auto; }
+  .rail__sep { width: 1px; height: 24px; margin: 0 4px; }
+  .rail__foot { margin: 0 0 0 auto; flex-direction: row; }
+  .frame { margin: 0 8px 8px; }
+  .panel { display: none; }
 }

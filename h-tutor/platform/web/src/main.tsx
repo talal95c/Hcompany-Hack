@@ -78,8 +78,10 @@ function Shell({ path, orgId }: { path: string; orgId: string }) {
 
   return (
     <div className={`shell ${collapsed ? "is-collapsed" : ""}`}>
-      <Sidebar path={path} orgId={orgId} collapsed={collapsed} onToggle={toggle} />
-      <main className="main">
+      <Rail path={path} collapsed={collapsed} onToggle={toggle} />
+      <div className="frame">
+        <Panel path={path} orgId={orgId} />
+        <main className="main">
         <div className="page" key={`${orgId}-${tid ?? path}`}>
           {tid ? (
             <TutorialPage id={tid} />
@@ -102,65 +104,52 @@ function Shell({ path, orgId }: { path: string; orgId: string }) {
           )}
         </div>
       </main>
+      </div>
     </div>
   );
 }
 
-function NavLink({ to, label, icon: Icon, path, count }: { to: string; label: string; icon: () => React.ReactNode; path: string; count?: number }) {
+function NavLink({ to, label, icon: Icon, path, count, rail }: { to: string; label: string; icon: () => React.ReactNode; path: string; count?: number; rail?: boolean }) {
   return (
     <a
       href={to}
       title={label}
-      className={`nav ${path.startsWith(to) ? "is-on" : ""}`}
+      className={`${rail ? "rail__btn" : "nav"} ${path.startsWith(to) ? "is-on" : ""}`}
       onClick={(e) => {
         e.preventDefault();
         navigate(to);
       }}
     >
       <Icon />
-      <span className="nav__label">{label}</span>
+      {!rail && <span className="nav__label">{label}</span>}
       {count ? <span className="nav__count">{count}</span> : null}
     </a>
   );
 }
 
-function Sidebar({ path, orgId, collapsed, onToggle }: { path: string; orgId: string; collapsed: boolean; onToggle: () => void }) {
+/** The icon rail, outside the app's card (Codex-style): pages, the panel toggle, install, account. */
+function Rail({ path, collapsed, onToggle }: { path: string; collapsed: boolean; onToggle: () => void }) {
   const user = auth.useSession().data?.user;
-  const lib = useApi<{ tutorials: TutorialRow[] }>(`/tutorials?org=${orgId}`);
-  const drafts = lib.data?.tutorials.filter((t) => t.visibility === "draft").length;
   return (
-    <nav className="side">
-      <div className="brand">
-        <span className="brand__mark">
-          <I.Mark />
-        </span>
-        <span className="brand__name">Rio</span>
-      </div>
-      <button className="side__toggle" onClick={onToggle} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} title={collapsed ? "Expand" : "Collapse"}>
-        {collapsed ? <I.Right /> : <I.Back />}
+    <nav className="rail" aria-label="Pages">
+      <span className="rail__mark" aria-hidden>
+        <I.Mark />
+      </span>
+      <button className={`rail__btn ${collapsed ? "" : "is-soft"}`} onClick={onToggle} aria-label={collapsed ? "Show the panel" : "Hide the panel"} title={collapsed ? "Show the panel" : "Hide the panel"}>
+        <I.PanelLeft />
       </button>
-      <OrgSwitcher />
-      <button className="btn btn--primary side__new" onClick={() => navigate("/home")}>
-        <I.Plus /> <span className="nav__label">New tutorial</span>
-      </button>
+      <div className="rail__sep" />
       {MAIN.map((p) => (
-        <NavLink key={p.path} to={p.path} label={p.label} icon={p.icon} path={path} count={p.path === "/library" ? drafts : undefined} />
+        <NavLink key={p.path} rail to={p.path} label={p.label} icon={p.icon} path={path} />
       ))}
-      <div className="side__label">Team</div>
+      <div className="rail__sep" />
       {TEAM.map((p) => (
-        <NavLink key={p.path} to={p.path} label={p.label} icon={p.icon} path={path} />
+        <NavLink key={p.path} rail to={p.path} label={p.label} icon={p.icon} path={path} />
       ))}
-      <div className="side__get">
-        <NavLink to={GET_RIO.path} label={GET_RIO.label} icon={GET_RIO.icon} path={path} />
-      </div>
-      <div className="side__foot">
-        <Avatar name={user?.name || user?.email || "?"} />
-        <span className="who">
-          <b>{user?.name}</b>
-          <span>{user?.email}</span>
-        </span>
+      <div className="rail__foot">
+        <NavLink rail to={GET_RIO.path} label={GET_RIO.label} icon={GET_RIO.icon} path={path} />
         <button
-          className="btn btn--ghost btn--sm"
+          className="rail__btn"
           title="Sign out"
           aria-label="Sign out"
           onClick={async () => {
@@ -170,8 +159,49 @@ function Sidebar({ path, orgId, collapsed, onToggle }: { path: string; orgId: st
         >
           <I.Logout />
         </button>
+        <span title={user?.email ?? ""}>
+          <Avatar name={user?.name || user?.email || "?"} />
+        </span>
       </div>
     </nav>
+  );
+}
+
+/** The panel inside the card: workspace, new tutorial, the team's recent tutorials. */
+function Panel({ path, orgId }: { path: string; orgId: string }) {
+  const lib = useApi<{ tutorials: TutorialRow[] }>(`/tutorials?org=${orgId}`);
+  const recent = lib.data?.tutorials.slice(0, 12) ?? [];
+  const page = [...MAIN, ...TEAM, GET_RIO].find((p) => path.startsWith(p.path));
+  return (
+    <aside className="panel">
+      <OrgSwitcher />
+      <button className="panel__row panel__new" onClick={() => navigate("/home")}>
+        <I.Edit /> New tutorial
+      </button>
+      {page && page.path !== "/home" && <div className="panel__here">{page.label}</div>}
+      <div className="panel__label">Recent tutorials</div>
+      {lib.data && recent.length === 0 && <p className="panel__empty">Nothing yet. Paste a link on Home to make the first one.</p>}
+      {recent.map((t) => (
+        <a
+          key={t.id}
+          href={`/t/${t.id}`}
+          className={`panel__row panel__item ${path === `/t/${t.id}` ? "is-on" : ""}`}
+          onClick={(e) => {
+            e.preventDefault();
+            navigate(`/t/${t.id}`);
+          }}
+          title={t.title || t.input}
+        >
+          <span className="panel__text">{t.title || t.input}</span>
+          {t.visibility === "draft" && <span className="panel__dot" aria-label="Draft" />}
+        </a>
+      ))}
+      {recent.length > 0 && (
+        <button className="panel__row panel__more" onClick={() => navigate("/library")}>
+          Show all
+        </button>
+      )}
+    </aside>
   );
 }
 
