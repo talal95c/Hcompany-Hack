@@ -82,7 +82,8 @@ mod imp {
                         let _: () = msg_send![layer, setCornerRadius: 20.0_f64];
                         let flipped: Bool = msg_send![layer, isGeometryFlipped];
                         let corners = if flipped.as_bool() { 10_usize } else { 5_usize };
-                        let _: () = msg_send![layer, setMaskedCorners: corners];
+                        let _: () = msg_send![layer, setMaskedCorners: 15_usize]; // all four: the bar floats at the bottom
+                        let _ = corners;
                         let _: () = msg_send![layer, setMasksToBounds: Bool::YES];
                     }
                 }
