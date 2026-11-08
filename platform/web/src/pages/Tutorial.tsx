@@ -20,7 +20,7 @@ const STAGES: Record<TutorialRow["kind"], { id: string; label: string }[]> = {
   ],
   goal: [
     { id: "queued", label: "Finding the app and source material" },
-    { id: "browsing", label: "H's web agent is reading the official docs" },
+    { id: "browsing", label: "H's agents are researching the goal" },
     { id: "designing", label: "Writing the milestones (Holo)" },
   ],
 };
@@ -66,13 +66,13 @@ function Working({ t }: { t: TutorialRow }) {
     if (t.status === "browsing") setObservedBrowsing(true);
   }, [t.status]);
   const browsed = observedBrowsing || t.status === "browsing" || !!t.agentViewUrl ||
-    t.sources.some((s) => s.title === "How H's web agent read it (replay)" && !!s.url);
+    t.sources.some((s) => ["How H's web agent read it (replay)", "How H's agents researched it (replay)"].includes(s.title) && !!s.url);
   const stages = STAGES[t.kind].filter((s) => s.id !== "browsing" || t.status !== "designing" || browsed);
   const at = Math.max(0, stages.findIndex((s) => s.id === t.status));
   const descriptions: Record<string, string> = {
     queued: t.kind === "youtube" ? "Getting the video title and sending its link to Gladia" : t.kind === "page" ? "Fetching the page text and identifying the app" : "Identifying the app and looking for source material",
     transcribing: "Gladia transcribes the audio track",
-    browsing: "Opening relevant pages and collecting the steps and settings",
+    browsing: t.kind === "goal" ? "Comparing documentation and tutorials to collect reliable steps and settings" : "Opening relevant pages and collecting the steps and settings",
     designing: "Holo turns it into milestones you can check",
   };
   return (
@@ -131,7 +131,7 @@ function Working({ t }: { t: TutorialRow }) {
           <span className="progress__ongoing"><span className="progress__spinner" aria-hidden="true" />In progress</span>
         </footer>
         <p className="note progress__note">
-          {t.status === "browsing" ? "The agent browses like a person: a few minutes (est.). " : "Usually under a minute (est.). "}
+          {t.status === "browsing" ? t.kind === "goal" ? "The agents research several sources: a few minutes (est.). " : "The agent browses like a person: a few minutes (est.). " : "Usually under a minute (est.). "}
           You can leave this page: it keeps going.
           {t.agentViewUrl && (
             <>
