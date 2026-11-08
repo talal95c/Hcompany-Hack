@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
 import { AppIcon, coverStyle } from "../appIcons";
 import { Avatar, VIS } from "../cards";
 import { type RioTutorial, type TutorialRow, type Visibility, ago, api, auth, isLive, navigate, useApi } from "../lib";
@@ -8,7 +9,7 @@ type Milestone = RioTutorial["milestones"][number];
 
 const STAGES: Record<TutorialRow["kind"], { id: string; label: string }[]> = {
   youtube: [
-    { id: "queued", label: "Fetching the video" },
+    { id: "queued", label: "Starting the video transcription" },
     { id: "transcribing", label: "Listening to the video (Gladia)" },
     { id: "designing", label: "Writing the milestones (Holo)" },
   ],
@@ -18,13 +19,14 @@ const STAGES: Record<TutorialRow["kind"], { id: string; label: string }[]> = {
     { id: "designing", label: "Writing the milestones (Holo)" },
   ],
   goal: [
-    { id: "queued", label: "Finding the app" },
-    { id: "browsing", label: "H's web agent is reading the official docs" },
+    { id: "queued", label: "Finding the app and source material" },
+    { id: "browsing", label: "H's agents are researching the goal" },
     { id: "designing", label: "Writing the milestones (Holo)" },
   ],
 };
 
 export function TutorialPage({ id }: { id: string }) {
+  const reduced = useReducedMotion();
   const { data: t, error, reload } = useApi<TutorialRow>(`/tutorials/${id}`, isLive, 2500);
   const [toast, setToast] = useState<string | null>(null);
   const say = (m: string) => {
@@ -40,6 +42,9 @@ export function TutorialPage({ id }: { id: string }) {
       <button className="back" onClick={() => history.length > 1 ? history.back() : navigate("/library")}>
         <I.Back /> Back
       </button>
+      <AnimatePresence mode="wait" initial={false}>
+      <motion.div key={isLive(t) ? "working" : t.status === "failed" ? "failed" : "ready"}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduced ? 0 : 0.2 }}>
       {isLive(t) ? (
         <Working t={t} />
       ) : t.status === "failed" ? (
@@ -47,14 +52,29 @@ export function TutorialPage({ id }: { id: string }) {
       ) : (
         <Ready t={t} reload={reload} say={say} />
       )}
+      </motion.div>
+      </AnimatePresence>
       {toast && <div className="toast">{toast}</div>}
     </div>
   );
 }
 
 function Working({ t }: { t: TutorialRow }) {
-  const stages = STAGES[t.kind];
+  const reduced = useReducedMotion();
+  const [observedBrowsing, setObservedBrowsing] = useState(t.status === "browsing");
+  useEffect(() => {
+    if (t.status === "browsing") setObservedBrowsing(true);
+  }, [t.status]);
+  const browsed = observedBrowsing || t.status === "browsing" || !!t.agentViewUrl ||
+    t.sources.some((s) => ["How H's web agent read it (replay)", "How H's agents researched it (replay)"].includes(s.title) && !!s.url);
+  const stages = STAGES[t.kind].filter((s) => s.id !== "browsing" || t.status !== "designing" || browsed);
   const at = Math.max(0, stages.findIndex((s) => s.id === t.status));
+  const descriptions: Record<string, string> = {
+    queued: t.kind === "youtube" ? "Getting the video title and sending its link to Gladia" : t.kind === "page" ? "Fetching the page text and identifying the app" : "Identifying the app and looking for source material",
+    transcribing: "Gladia transcribes the audio track",
+    browsing: t.kind === "goal" ? "Comparing documentation and tutorials to collect reliable steps and settings" : "Opening relevant pages and collecting the steps and settings",
+    designing: "Holo turns it into milestones you can check",
+  };
   return (
     <>
       <div className="hero">
@@ -67,22 +87,51 @@ function Working({ t }: { t: TutorialRow }) {
           <p className="hero__goal">{t.input}</p>
         </div>
       </div>
-      <div className="progress" style={{ marginTop: 16 }}>
-        <h3>Rio is making your tutorial</h3>
+      <MotionConfig reducedMotion="user">
+      <section className="progress" style={{ marginTop: 16 }} aria-label="Tutorial progress">
+        <header className="progress__header">
+          <h3>Rio is making your tutorial</h3>
+          <span className="progress__count">{stages.length} steps</span>
+          <span className="progress__working"><span />Working</span>
+        </header>
         <ol>
-          {stages.map((s, i) => (
-            <li key={s.id} className={i < at ? "is-done" : i === at ? "is-now" : ""}>
-              <span className="dot">{i < at && <I.Check />}</span>
-              {s.label}
-            </li>
-          ))}
-          <li>
-            <span className="dot" />
-            Ready to review
-          </li>
+          <AnimatePresence>
+          {stages.map((s, i) => {
+            const status = i < at ? "Done" : i === at ? "Running" : "Queued";
+            const Icon = s.id === "designing" ? I.Spark : s.id === "transcribing" ? I.Wave : s.id === "browsing" ? I.Globe : t.kind === "youtube" ? I.Video : I.Globe;
+            return (
+              <motion.li key={s.id} className={i < at ? "is-done" : i === at ? "is-now" : ""}
+                aria-current={i === at ? "step" : undefined}
+                initial={{ opacity: 0, y: reduced ? 0 : 8 }} animate={{ opacity: 1, y: 0, height: "auto" }}
+                exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0, borderBottomWidth: 0, transition: { duration: reduced ? 0 : 0.2, delay: 0 } }}
+                transition={{ delay: reduced ? 0 : i * 0.07 }}>
+                <div className="progress__row">
+                  <span className="progress__icon" aria-hidden="true">
+                    {i < at ? <motion.span initial={{ scale: reduced ? 1 : 0.4 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 420, damping: 18 }}><I.Check /></motion.span>
+                      : i === at ? <span className="progress__spinner" /> : <Icon />}
+                  </span>
+                  <span className="progress__label">{s.label}{s.id === "browsing" && i > at && <small className="progress__optional">if needed</small>}</span>
+                  <span className="progress__status">
+                  <AnimatePresence initial={false}>
+                    <motion.span key={status} className={`progress__badge progress__badge--${status.toLowerCase()}`}
+                      initial={{ opacity: 0, scale: reduced ? 1 : 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: reduced ? 1 : 0.9 }} transition={{ duration: reduced ? 0 : 0.16 }}>{status}</motion.span>
+                  </AnimatePresence>
+                  </span>
+                </div>
+                <AnimatePresence initial={false}>
+                  {i === at && <motion.div className="progress__description" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: reduced ? 0 : 0.25 }}><p>{descriptions[s.id]}</p></motion.div>}
+                </AnimatePresence>
+              </motion.li>
+            );
+          })}
+          </AnimatePresence>
         </ol>
-        <p className="note" style={{ margin: "18px 0 0" }}>
-          {t.status === "browsing" ? "The agent browses like a person: a few minutes. " : "Usually under a minute. "}
+        <footer className="progress__footer">
+          <span className="progress__step" aria-live="polite">Step <span className="progress__digit"><AnimatePresence initial={false}><motion.span key={at} initial={{ y: reduced ? 0 : "100%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: reduced ? 0 : "-100%", opacity: 0 }} transition={{ duration: reduced ? 0 : 0.16 }}>{at + 1}</motion.span></AnimatePresence></span> of {stages.length}</span>
+          <span className="progress__ongoing"><span className="progress__spinner" aria-hidden="true" />In progress</span>
+        </footer>
+        <p className="note progress__note">
+          {t.status === "browsing" ? t.kind === "goal" ? "The agents research several sources: a few minutes (est.). " : "The agent browses like a person: a few minutes (est.). " : "Usually under a minute (est.). "}
           You can leave this page: it keeps going.
           {t.agentViewUrl && (
             <>
@@ -93,7 +142,8 @@ function Working({ t }: { t: TutorialRow }) {
             </>
           )}
         </p>
-      </div>
+      </section>
+      </MotionConfig>
     </>
   );
 }
