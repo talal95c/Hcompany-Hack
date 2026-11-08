@@ -73,22 +73,6 @@ function Shell({ path, orgId }: { path: string; orgId: string }) {
   const me = useApi<{ role: string; canManage: boolean }>(`/me?org=${orgId}`);
   const canManage = !!me.data?.canManage;
   const tid = path.match(/^\/t\/([\w-]+)/)?.[1];
-  const [collapsed, setCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem("rio.side") === "collapsed";
-    } catch {
-      return false;
-    }
-  });
-  const toggle = () =>
-    setCollapsed((c) => {
-      try {
-        localStorage.setItem("rio.side", c ? "open" : "collapsed");
-      } catch {
-        // private mode: the choice lasts for this visit only
-      }
-      return !c;
-    });
   // Phones and small tablets: icons in a top bar; the logo opens the full menu as a drawer.
   const phone = useMedia(PHONE);
   const [drawer, setDrawer] = useState(false);
@@ -106,9 +90,9 @@ function Shell({ path, orgId }: { path: string; orgId: string }) {
   }, [drawerOpen]);
 
   return (
-    <div className={`shell ${collapsed ? "is-collapsed" : ""} ${drawerOpen ? "has-drawer" : ""}`}>
-      <div className={`rail-slot ${!phone && !collapsed ? "is-pinned" : ""}`}>
-        <Rail path={path} orgId={orgId} open={phone ? drawer : !collapsed} onToggle={phone ? () => setDrawer((d) => !d) : toggle} hover={!phone && collapsed} />
+    <div className={`shell ${drawerOpen ? "has-drawer" : ""}`}>
+      <div className="rail-slot">
+        <Rail path={path} orgId={orgId} open={phone ? drawer : false} onToggle={phone ? () => setDrawer((d) => !d) : () => navigate("/home")} hover={!phone} />
       </div>
       {drawerOpen && <div className="rail-scrim" onClick={() => setDrawer(false)} aria-hidden />}
       <div className="frame">

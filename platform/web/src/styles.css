@@ -653,6 +653,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .rail-slot { position: sticky; top: 0; height: 100vh; width: 64px; flex: none; z-index: 30; transition: width 0.26s cubic-bezier(0.23, 1, 0.32, 1); }
   .rail-slot.is-pinned { width: 252px; }
   .rail-slot > .rail { position: absolute; top: 0; left: 0; height: 100%; background: #ececea; }
-  .rail.is-peek { box-shadow: 12px 0 40px -18px rgba(0, 0, 0, 0.25); border-radius: 0 18px 18px 0; }
+  .rail.is-peek { box-shadow: 16px 0 32px -24px rgba(0, 0, 0, 0.3); }
 }
 @media (max-width: 860px) { .rail-slot { display: contents; } }
