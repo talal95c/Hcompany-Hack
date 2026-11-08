@@ -219,6 +219,8 @@ class GenericCompiler(HoloCompiler):
                         error_check = _sanitize_check(
                             error["check"], self.profile, ui_map, unresolved
                         )
+                        if self.profile.outcome_adapter:
+                            self.profile.outcome_adapter.validate_error(check, error_check)
                     except ValueError as exc:
                         dropped.setdefault(step_id, []).append({"error": error, "reason": str(exc)})
                         continue
@@ -260,6 +262,8 @@ class GenericCompiler(HoloCompiler):
                     "ui_path_verified": False,
                 },
             }
+            if not rejected and self.profile.outcome_adapter:
+                step["runtime_check"] = self.profile.outcome_adapter.runtime_check(check)
             steps.append(step)
         lesson = {
             "schema_version": "2.0",

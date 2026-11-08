@@ -207,6 +207,41 @@ class CalcAdapter:
     compiler_rules = COMPILER_RULES
 
     @staticmethod
+    def validate_error(success: dict[str, Any], error: dict[str, Any]) -> None:
+        if success["name"] != "calc.range_bold" or error["name"] != "calc.range_bold":
+            return
+        expected, candidate = success["params"], error["params"]
+        if expected["sheet"] != candidate["sheet"] or expected.get("bold", True) != candidate.get(
+            "bold", True
+        ):
+            return
+        r1, c1, r2, c2 = area(expected["range"])
+        er1, ec1, er2, ec2 = area(candidate["range"])
+        if r1 <= er1 <= er2 <= r2 and c1 <= ec1 <= ec2 <= c2:
+            raise ValueError("Le check d'erreur est impliqué par la réussite")
+
+    @staticmethod
+    def runtime_check(check: dict[str, Any]) -> dict[str, Any]:
+        params = check["params"]
+        if check["name"] == "calc.cell_formula":
+            return {
+                "name": "element_value",
+                "params": {
+                    "target": {
+                        "description": params["cell"],
+                        "role": "cell",
+                        "name": params["cell"],
+                    },
+                    "value": params["value"],
+                },
+            }
+        if check["name"] == "calc.range_bold":
+            assertion = f"Are all cells in {params['range']} in sheet {params['sheet']} bold?"
+        else:
+            assertion = f"Is a chart of {params['range']} visible in sheet {params['sheet']}?"
+        return {"name": "visual_assert", "params": {"assertion": assertion}}
+
+    @staticmethod
     def validate_success(check: dict[str, Any], ui_map: dict) -> None:
         if check.get("name") not in CHECKS:
             raise ValueError(
@@ -244,9 +279,9 @@ class CalcAdapter:
         selection = params.get("cell") or params["range"]
         return (
             f"The exact target is {params['sheet']}.{selection}. Select it yourself first "
-            "(a second plain click replaces the selection, so for a range click its first "
-            "cell then extend with the keys shift+right / shift+down, one key action per "
-            "extra column or row), apply the operation once, commit any cell "
+            f"using the Name Box to the left of the formula bar: click that box, press "
+            f"ctrl+a, type {selection}, press Enter. This selects the entire range without "
+            "replacing it with a single cell. Then apply the operation once, commit any cell "
             "edit with Enter, finish any wizard, then call done."
         )
 

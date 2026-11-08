@@ -145,7 +145,7 @@ async def test_compile_model_fallback():
     client = HoloStub(
         [RateLimitError("Quota", response=response, body={}), json.dumps(model_lesson())]
     )
-    compiler = HoloCompiler(client=client)
+    compiler = HoloCompiler(client=client, model="holo4-35b-a3b")
     result = await compiler.compile(
         transcript(), ui_map(), lesson_id="cube", blender_version="4.5.9"
     )

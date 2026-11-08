@@ -38,7 +38,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--language")
     result.add_argument("--source-version")
     result.add_argument("--lesson-id")
-    result.add_argument("--holo-model", default="holo4-35b-a3b")
+    result.add_argument("--holo-model", default="holo4-27b")
     result.add_argument("--holo-fallback-model", default="holo4-27b")
     return result
 

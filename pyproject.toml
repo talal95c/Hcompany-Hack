@@ -43,7 +43,3 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
-
-[tool.ruff.lint.per-file-ignores]
-# HTML and CSS templates of the session report.
-"h-tutor/tools/session_explorer.py" = ["E501"]

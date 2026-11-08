@@ -1470,7 +1470,11 @@ async fn ask_holo(
     if session.challenged.0 != session.current {
         session.challenged = (session.current.clone(), 0);
     }
-    if !session.rio && matches!(action, Action::Answer { .. }) && session.unproven() && session.challenged.1 < MAX_CHALLENGES {
+    if !session.rio
+        && matches!(action, Action::Answer { .. })
+        && session.unproven()
+        && session.challenged.1 < MAX_CHALLENGES
+    {
         session.challenged.1 += 1;
         journal::event("answer_challenged", json!({ "milestone": session.current }));
         if let Some(id) = session.pending_call.take() {
@@ -2461,6 +2465,28 @@ mod tests {
         assert_eq!(s.current.as_deref(), Some("m0"));
         step_on(&Fake::new(vec![answer(), click()]), &mut s, "clicked", 100);
         assert_eq!(s.current.as_deref(), Some("m1"));
+    }
+
+    #[test]
+    fn rio_unproven_outcomes_still_fail_closed_without_learner_challenges() {
+        for outcome in ["blocked", "unknown"] {
+            let mut s = linear(1);
+            s.rio = true;
+            step_on(&Fake::new(vec![click()]), &mut s, "start", 100);
+            let brain = Fake::new(vec![Ok(call("answer", &format!(
+                r#"{{"content":"No visible effect","outcome":"{outcome}"}}"#
+            )))]);
+            let result = tauri::async_runtime::block_on(advance_on(
+                &brain, &mut s, Some("clicked".into()), shot_of(100), false,
+            ));
+            assert!(result.unwrap_err().contains(outcome));
+            assert_eq!(brain.requests(), 1);
+            assert_eq!(s.current.as_deref(), Some("m0"));
+            assert!(!s.finished);
+            assert_eq!(s.challenged.1, 0);
+            let offered = brain.bodies.lock().unwrap()[0]["tools"].as_array().unwrap().clone();
+            assert!(!offered.iter().any(|t| t["function"]["name"] == "ask_learner"));
+        }
     }
 
     #[test]

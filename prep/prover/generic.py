@@ -139,6 +139,13 @@ async def completion_check(
     verdict = await evaluate_check(step["check"], sandbox, operator, wait_for_pass=False)
     if verdict["result"] != "pass":
         return verdict
+    if step.get("runtime_check"):
+        runtime = await evaluate_check(
+            step["runtime_check"], sandbox, operator, wait_for_pass=False
+        )
+        verdict["runtime_check"] = runtime
+        if runtime["result"] != "pass":
+            return {**verdict, "result": runtime["result"]}
     if step["check"]["name"] not in GENERIC_CHECKS or step["check"]["name"] == "visual_assert":
         dialogs = await visual_dialogs(sandbox, operator)
     else:
@@ -223,8 +230,8 @@ async def drive_step(
             history.append(
                 ActTurn(
                     action,
-                    "refused: the expected result is not observed in the app yet; observed "
-                    + json.dumps({k: v for k, v in verdict.items() if k != "duration"})[:300],
+                    "refused: the step is not yet done. Inspect the visible application "
+                    "and finish the requested result.",
                 )
             )
             continue
@@ -298,6 +305,7 @@ async def prove_generic_lesson(
         hashes = {
             "version": digest(version),
             "check": digest(check),
+            "runtime_check": digest(step.get("runtime_check")),
             "known_errors": digest(step.get("known_errors", [])),
             "params": digest(
                 {

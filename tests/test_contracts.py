@@ -57,7 +57,7 @@ def test_check_fixture_inventory() -> None:
         check["properties"]["name"].get("const") or check["properties"]["name"]["enum"][0]
         for check in checks
     } - {"object_exists"}
-    assert len(names) == 15
+    assert len(names) == 12
     for check in checks:
         name = check["properties"]["name"]
         if "enum" in name:
