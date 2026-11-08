@@ -61,7 +61,13 @@ export function TutorialPage({ id }: { id: string }) {
 
 function Working({ t }: { t: TutorialRow }) {
   const reduced = useReducedMotion();
-  const stages = STAGES[t.kind];
+  const [observedBrowsing, setObservedBrowsing] = useState(t.status === "browsing");
+  useEffect(() => {
+    if (t.status === "browsing") setObservedBrowsing(true);
+  }, [t.status]);
+  const browsed = observedBrowsing || t.status === "browsing" || !!t.agentViewUrl ||
+    t.sources.some((s) => s.title === "How H's web agent read it (replay)" && !!s.url);
+  const stages = STAGES[t.kind].filter((s) => s.id !== "browsing" || t.status !== "designing" || browsed);
   const at = Math.max(0, stages.findIndex((s) => s.id === t.status));
   const descriptions: Record<string, string> = {
     queued: t.kind === "youtube" ? "Getting the video title and sending its link to Gladia" : t.kind === "page" ? "Fetching the page text and identifying the app" : "Identifying the app and looking for source material",
@@ -89,23 +95,28 @@ function Working({ t }: { t: TutorialRow }) {
           <span className="progress__working"><span />Working</span>
         </header>
         <ol>
+          <AnimatePresence>
           {stages.map((s, i) => {
             const status = i < at ? "Done" : i === at ? "Running" : "Queued";
             const Icon = s.id === "designing" ? I.Spark : s.id === "transcribing" ? I.Wave : s.id === "browsing" ? I.Globe : t.kind === "youtube" ? I.Video : I.Globe;
             return (
               <motion.li key={s.id} className={i < at ? "is-done" : i === at ? "is-now" : ""}
                 aria-current={i === at ? "step" : undefined}
-                initial={{ opacity: 0, y: reduced ? 0 : 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: reduced ? 0 : i * 0.07 }}>
+                initial={{ opacity: 0, y: reduced ? 0 : 8 }} animate={{ opacity: 1, y: 0, height: "auto" }}
+                exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0, borderBottomWidth: 0, transition: { duration: reduced ? 0 : 0.2, delay: 0 } }}
+                transition={{ delay: reduced ? 0 : i * 0.07 }}>
                 <div className="progress__row">
                   <span className="progress__icon" aria-hidden="true">
                     {i < at ? <motion.span initial={{ scale: reduced ? 1 : 0.4 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 420, damping: 18 }}><I.Check /></motion.span>
                       : i === at ? <span className="progress__spinner" /> : <Icon />}
                   </span>
-                  <span className="progress__label">{s.label}</span>
-                  <AnimatePresence mode="wait" initial={false}>
+                  <span className="progress__label">{s.label}{s.id === "browsing" && i > at && <small className="progress__optional">if needed</small>}</span>
+                  <span className="progress__status">
+                  <AnimatePresence initial={false}>
                     <motion.span key={status} className={`progress__badge progress__badge--${status.toLowerCase()}`}
                       initial={{ opacity: 0, scale: reduced ? 1 : 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: reduced ? 1 : 0.9 }} transition={{ duration: reduced ? 0 : 0.16 }}>{status}</motion.span>
                   </AnimatePresence>
+                  </span>
                 </div>
                 <AnimatePresence initial={false}>
                   {i === at && <motion.div className="progress__description" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: reduced ? 0 : 0.25 }}><p>{descriptions[s.id]}</p></motion.div>}
@@ -113,9 +124,10 @@ function Working({ t }: { t: TutorialRow }) {
               </motion.li>
             );
           })}
+          </AnimatePresence>
         </ol>
         <footer className="progress__footer">
-          <span className="progress__step" aria-live="polite">Step <AnimatePresence mode="wait" initial={false}><motion.span key={at} initial={{ y: reduced ? 0 : 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: reduced ? 0 : -8, opacity: 0 }} transition={{ duration: reduced ? 0 : 0.18 }}>{at + 1}</motion.span></AnimatePresence> of {stages.length}</span>
+          <span className="progress__step" aria-live="polite">Step <span className="progress__digit"><AnimatePresence initial={false}><motion.span key={at} initial={{ y: reduced ? 0 : "100%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: reduced ? 0 : "-100%", opacity: 0 }} transition={{ duration: reduced ? 0 : 0.16 }}>{at + 1}</motion.span></AnimatePresence></span> of {stages.length}</span>
           <span className="progress__ongoing"><span className="progress__spinner" aria-hidden="true" />In progress</span>
         </footer>
         <p className="note progress__note">
