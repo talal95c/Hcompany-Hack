@@ -199,6 +199,14 @@ Both windows are excluded from screen captures, so Holo never sees the app itsel
 
 ### Opt-in skill observation
 
+Autopilot GUI actions are narrated in French by the local Phonon TTS, including
+the first action of each new milestone. The sentence is also shown in the notch.
+Set `RIO_NARRATE=0` to disable narration (default on). Speech waits at most six
+seconds including synthesis (est.), then is cut off before the action; Stop
+interrupts playback immediately. Missing/unavailable TTS is logged and does not
+prevent execution. No extra model call is made for narration: the existing action
+response supplies the French sentence.
+
 `RIO_OBSERVE=1` enables cloud vision observation while no tutorial or autopilot
 is running. Default off: the existing focus-only proposals do not send observation
 screenshots to Holo. Only apps with a previously successful, unmuted skill are

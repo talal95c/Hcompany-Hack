@@ -53,7 +53,7 @@ impl Controller {
             title: skill.title.clone(),
             goal: skill.goal.clone(),
             total: skill.graph.milestones.len(),
-            label: "Watching the screen".into(),
+            label: "J’observe l’écran".into(),
             mode: crate::devin::mode(skill).into(),
             ..View::default()
         };
@@ -65,7 +65,7 @@ impl Controller {
         self.active.take().map(|skill_id| Done {
             skill_id,
             outcome: "stopped".into(),
-            message: Some("Stopped".into()),
+            message: Some("Arrêté".into()),
         })
     }
 
@@ -150,6 +150,7 @@ pub fn stop_requested() -> bool {
 
 pub(crate) fn request_stop() {
     STOP_REQUESTED.store(true, Ordering::SeqCst);
+    crate::audio_out::stop();
 }
 
 pub fn is_running() -> bool {
@@ -177,6 +178,8 @@ pub(crate) struct Progress {
     pub index: usize,
     pub total: usize,
     pub label: String,
+    #[serde(default)]
+    pub message: Option<String>,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -388,6 +391,7 @@ pub fn autopilot_stop(app: AppHandle) -> Result<(), String> {
         .unwrap()
         .as_mut()
         .and_then(|c| c.stop(&STOP_REQUESTED));
+    crate::audio_out::stop();
     debug_assert!(stop_requested());
     if let Some(done) = done {
         finish(&app, &done);
@@ -414,9 +418,9 @@ pub(crate) fn failure_message(label: &str) -> String {
         &short
     };
     if short.is_empty() {
-        "Step blocked".into()
+        "Étape bloquée".into()
     } else {
-        format!("Step blocked: {short}")
+        format!("Étape bloquée : {short}")
     }
 }
 
@@ -450,9 +454,9 @@ pub(crate) fn finish(app: &AppHandle, done: &Done) {
         } else {
             done.message.clone().unwrap_or_else(|| {
                 if done.outcome == "stopped" {
-                    "Stopped".into()
+                    "Arrêté".into()
                 } else {
-                    "The task failed".into()
+                    "La tâche a échoué".into()
                 }
             })
         });
@@ -529,6 +533,7 @@ pub fn setup(app: &AppHandle) {
             control.view.index = progress.index;
             control.view.total = progress.total;
             control.view.label = progress.label;
+            control.view.message = progress.message;
             control.view.clone()
         };
         let _ = publish(&handle, &view);
@@ -601,13 +606,13 @@ mod tests {
 
     #[test]
     fn autopilot_failure_messages_are_short_and_failures_stay_longer() {
-        assert_eq!(failure_message("Créer le projet"), "Step blocked: Créer le projet");
-        assert_eq!(failure_message("  \n "), "Step blocked");
-        assert_eq!(failure_message("Créer   le\nprojet"), "Step blocked: Créer le projet");
+        assert_eq!(failure_message("Créer le projet"), "Étape bloquée : Créer le projet");
+        assert_eq!(failure_message("  \n "), "Étape bloquée");
+        assert_eq!(failure_message("Créer   le\nprojet"), "Étape bloquée : Créer le projet");
         let long = failure_message("Créer le projet avec un bouton désactivé et un service indisponible");
-        assert_eq!(long, "Step blocked: Créer le projet avec un bouton");
+        assert_eq!(long, "Étape bloquée : Créer le projet avec un bouton");
         assert!(!long.contains('…'));
-        assert_eq!(failure_message(&"é".repeat(80)).chars().count(), "Step blocked: ".chars().count() + 32);
+        assert_eq!(failure_message(&"é".repeat(80)).chars().count(), "Étape bloquée : ".chars().count() + 32);
         assert_eq!(result_duration("failed"), Duration::from_secs(6));
         assert_eq!(result_duration("completed"), Duration::from_secs(3));
         assert_eq!(result_duration("stopped"), Duration::from_secs(3));

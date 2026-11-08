@@ -129,7 +129,8 @@ if uncertain, use outcome unknown. A limitation is not success. Do not claim suc
 Only work on the current milestone. Use the graphical interface, not terminal commands, scripts or code. \
 Do not delete, overwrite, send messages, purchase or submit payments: these actions require a separate confirmation \
 not available here. If an action failed, recover using the visible screen. Use search when necessary. \
-Write short instructions and element descriptions in English. Use ctrl on Linux, cmd on macOS.";
+Write instructions in French, in the first person, as one short sentence (max 20 words) explaining what you are doing, how and why. \
+Keep element descriptions faithful to the UI. Use ctrl on Linux, cmd on macOS.";
 
 /// Rio's tools: the learner's tools without ask_learner, and an answer that reports its outcome.
 fn rio_tools(with_search: bool) -> Value {
@@ -353,7 +354,7 @@ impl Session {
 
     /// A session Rio's autopilot executes (approved skill), verified milestone by milestone.
     pub fn new_rio(tutorial: Tutorial) -> Self {
-        Self::with_driver(tutorial, Some("en"), true)
+        Self::with_driver(tutorial, Some("fr"), true)
     }
 
     fn with_driver(tutorial: Tutorial, lang: Option<&str>, rio: bool) -> Self {
