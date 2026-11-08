@@ -11,6 +11,7 @@
 //! `cargo test --lib sim::tests::simulate -- --ignored --nocapture`
 //! with `SIM_SCENARIO`, `SIM_PERSONA` (comma list), `SIM_SEEDS` (count).
 
+pub mod autopilot;
 pub mod browser;
 pub mod learner;
 
