@@ -1455,7 +1455,10 @@ async fn ask_holo(
         session.messages.push(json!({ "role": "tool", "tool_call_id": id, "content": content }));
     }
     // The very first look of a tutorial: what on screen stands in the way.
-    let first = session.actions.values().all(Vec::is_empty)
+    // Not for Rio's autopilot: it has no learner to ask (no ask_learner tool),
+    // and the note would make Holo reach for a tool it is not offered.
+    let first = !session.rio
+        && session.actions.values().all(Vec::is_empty)
         && session.status.values().all(|s| !matches!(s, Status::Done | Status::Skipped))
         && !session.messages.iter().any(|m| m["role"] == "assistant");
     observe(session, shot, first.then_some(FIRST_LOOK));
@@ -2557,4 +2560,16 @@ mod tests {
             later[1]["messages"].as_array().unwrap().iter().rev().find(|m| m["role"] == "user").unwrap().to_string();
         assert!(!last_obs.contains("First look"));
     }
+
+    #[test]
+    fn rio_autopilot_gets_no_first_look() {
+        let mut s = linear(1);
+        s.rio = true;
+        let brain = Fake::new(vec![click()]);
+        step_on(&brain, &mut s, "start", 100);
+        let body = brain.bodies.lock().unwrap()[0].clone();
+        assert!(!body["messages"].to_string().contains("First look"), "the note asks for ask_learner");
+        assert!(!body["tools"].to_string().contains("ask_learner"));
+    }
+
 }
