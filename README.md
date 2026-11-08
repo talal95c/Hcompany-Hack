@@ -48,6 +48,18 @@ flowchart LR
 
 The app targets macOS. The autopilot also works on Linux X11; Wayland is explicitly refused. Pointing accuracy and vague requests remain limitations: Rio does not guarantee that every task will succeed.
 
+### In practice
+
+Photos taken on a Mac during a real session. The orange cursor and the bubbles come from Rio; the learner does the clicks.
+
+| 1. Ask in plain words | 2. Rio points to the next step |
+|---|---|
+| ![The bar in Blender: "help me make it blue", Rio states the goal](docs/photos/blender-ask.jpg) | ![Rio shows the Material Properties tab and explains why](docs/photos/blender-material-tab.jpg) |
+| The learner types “help me make it blue”. Rio turns it into a goal: make the selected cube blue with a material. | Each step has one instruction, the reason behind it, and a cursor on the right button. |
+| **3. The next step after a check** | **4. Any app, not only Blender** |
+| ![Rio points to the Base Color field, the previous step is checked](docs/photos/blender-base-color.jpg) | ![Rio answers "How to create a new conversation?" in a desktop app](docs/photos/desktop-app-guide.jpg) |
+| Rio sees that the material tab is open, ticks the step, then points to Base Color. | Asked how to start a new conversation, Rio answers and offers “Show me” or “Guide me”. |
+
 ## Architecture
 
 ```mermaid
