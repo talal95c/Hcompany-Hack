@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="landing/public/assets/PXNhr4LbXoJRWLAHfzNTYjvdR5Y.png" alt="Rio" width="100%">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="brand/rio-mark-white.svg">
   <img src="brand/rio-mark-black.svg" alt="Rio logo" width="64">
