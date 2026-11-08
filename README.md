@@ -16,6 +16,14 @@ The desktop app runs from source; a one-click installer is planned.
 
 </div>
 
+<p align="center">
+  <a href="brand/rio-demo.mp4">
+    <img src="brand/rio-demo.gif" alt="Rio demo: creating a tutorial from a YouTube link, the library, the community and the team knowledge base" width="100%">
+  </a>
+  <br>
+  <sub>Preview at 1.5× speed. <a href="brand/rio-demo.mp4">Watch the full video (1 min 19)</a>.</sub>
+</p>
+
 ## Problem
 
 A tutorial shows a procedure. It cannot see where you get stuck in Blender, DaVinci Resolve or your internal tool.
