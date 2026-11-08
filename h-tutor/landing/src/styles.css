@@ -441,6 +441,8 @@ ul { list-style: none; }
 .plan-dark .plan-band { background: #292828; }
 .plan-tag { font-size: 16px; line-height: 24px; max-width: 170px; }
 .plan-dark .plan-tag { color: rgba(255, 255, 255, 0.8); }
+.plan-tag-error { font-size: 14px; line-height: 20px; max-width: none; }
+.btn.is-busy { opacity: 0.7; cursor: progress; }
 .plan-band .btn { align-self: flex-start; }
 .plan-feats { padding: 46px 24px 0; display: flex; flex-direction: column; gap: 10px; }
 .pricing .ticker { margin-top: 180px; }
@@ -667,3 +669,7 @@ ul { list-style: none; }
 @media (max-width: 700px) { .hero-card { height: 740px; } .hero-bg { height: 56%; } }
 /* Phones: one call to action in the hero (Rio runs on a Mac, not on the phone). */
 @media (max-width: 700px) { .hero-alt { display: none; } .hero-card { height: 680px; } .hero-bg { height: 60%; } }
+
+/* ---------- checkout notice ---------- */
+.notice { position: fixed; top: 24px; left: 50%; translate: -50% 0; z-index: 60; display: flex; align-items: center; gap: 16px; max-width: calc(100vw - 32px); padding: 14px 14px 14px 20px; border-radius: 14px; background: var(--ink); color: #fff; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18); }
+.notice-close { width: 28px; height: 28px; border-radius: 8px; background: var(--ink-2); color: #fff; font-size: 18px; line-height: 1; flex: none; }
