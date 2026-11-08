@@ -107,7 +107,9 @@ function Shell({ path, orgId }: { path: string; orgId: string }) {
 
   return (
     <div className={`shell ${collapsed ? "is-collapsed" : ""} ${drawerOpen ? "has-drawer" : ""}`}>
-      <Rail path={path} orgId={orgId} open={phone ? drawer : !collapsed} onToggle={phone ? () => setDrawer((d) => !d) : toggle} />
+      <div className={`rail-slot ${!phone && !collapsed ? "is-pinned" : ""}`}>
+        <Rail path={path} orgId={orgId} open={phone ? drawer : !collapsed} onToggle={phone ? () => setDrawer((d) => !d) : toggle} hover={!phone && collapsed} />
+      </div>
       {drawerOpen && <div className="rail-scrim" onClick={() => setDrawer(false)} aria-hidden />}
       <div className="frame">
         <main className="main">
@@ -157,13 +159,21 @@ function NavLink({ to, label, icon: Icon, path, count, short, className = "" }: 
 }
 
 /** The sidebar, outside the app's card: icons only, or the full menu. The logo opens and closes it. */
-function Rail({ path, orgId, open, onToggle }: { path: string; orgId: string; open: boolean; onToggle: () => void }) {
+function Rail({ path, orgId, open: pinned, onToggle, hover = false }: { path: string; orgId: string; open: boolean; onToggle: () => void; hover?: boolean }) {
+  // Collapsed on a desktop: the menu opens while the pointer is over it, above the page (the logo pins it open).
+  const [peek, setPeek] = useState(false);
+  const open = pinned || (hover && peek);
   const user = auth.useSession().data?.user;
   const lib = useApi<{ tutorials: TutorialRow[] }>(`/tutorials?org=${orgId}`);
   const drafts = lib.data?.tutorials.filter((t) => t.visibility === "draft").length;
   const short = !open;
   return (
-    <nav className={`rail ${open ? "is-open" : ""}`} aria-label="Pages">
+    <nav
+      className={`rail ${open ? "is-open" : ""} ${hover && peek ? "is-peek" : ""}`}
+      aria-label="Pages"
+      onMouseEnter={() => hover && setPeek(true)}
+      onMouseLeave={() => setPeek(false)}
+    >
       <button className="rail__mark" onClick={onToggle} aria-expanded={open} aria-label={open ? "Collapse the menu" : "Expand the menu"} title={open ? "Collapse" : "Expand"}>
         <I.Mark />
         {open && <span className="rail__name">Rio</span>}
