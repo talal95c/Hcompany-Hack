@@ -44,6 +44,7 @@ export type Skill = {
   declines: number;
 };
 export type AutopilotView = {
+  narrating: boolean;
   done: number;
   matched: string[];
   phase: "hidden" | "expanded" | "compact";
@@ -100,6 +101,7 @@ export const api = {
   skillProposeNow: (skillId: string) => invoke("skill_propose_now", { skillId }),
   autopilotAccept: (skillId: string) => invoke("autopilot_accept", { skillId }),
   autopilotStop: () => invoke("autopilot_stop"),
+  autopilotFast: () => invoke("autopilot_fast"),
   autopilotDecline: () => invoke("autopilot_decline"),
   autopilotView: () => invoke<AutopilotView>("autopilot_view"),
   notchSurface: (surface: { x: number; y: number; width: number; height: number; radius: number }) => invoke("notch_surface", { surface }),

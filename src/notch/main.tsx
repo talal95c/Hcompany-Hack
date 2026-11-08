@@ -109,7 +109,8 @@ function Notch() {
             <>
               <div className="notch__task">
                 <h1>{view?.title}</h1>
-                <button className="notch__stop" disabled={busy} onClick={() => { sfx.dismiss(); void act(api.autopilotStop); }}>Arrêter</button>
+                {view?.narrating && <button className="notch__stop" disabled={busy} onClick={() => { void act(api.autopilotFast); }}>Mode rapide</button>}
+                <button className="notch__stop" onClick={() => { sfx.dismiss(); void act(api.autopilotStop); }}>Arrêter</button>
               </div>
               <motion.p key={view?.index} className="notch__status" title={view?.message ?? view?.label} initial={{ opacity: reduced ? 1 : 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.18 }}>Étape {view?.index ?? 0}/{view?.total ?? 0} · {view?.message ?? view?.label ?? ""}</motion.p>
               <div className="notch__progress" role="progressbar" aria-label="Progression de la tâche" aria-valuemin={0} aria-valuemax={view?.total || 1} aria-valuenow={view?.index ?? 0}>

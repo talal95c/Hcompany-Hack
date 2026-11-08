@@ -190,7 +190,7 @@ struct LiveDriver<'a> {
     last: Option<agent::Step>,
 }
 
-fn narrate_enabled(value: Option<&str>) -> bool {
+pub(crate) fn narrate_enabled(value: Option<&str>) -> bool {
     value != Some("0")
 }
 
@@ -250,7 +250,10 @@ async fn narrate(app: &AppHandle, sentence: String, ticket: u64) {
         let duration = Duration::from_secs_f64(pcm.len() as f64 / rate as f64);
         tauri::async_runtime::spawn_blocking(move || {
             crate::audio_out::play_if(&pcm, rate, || {
-                !autopilot::stop_requested() && autopilot::run_id() == ticket && Instant::now() < deadline
+                !autopilot::stop_requested()
+                    && autopilot::narrating()
+                    && autopilot::run_id() == ticket
+                    && Instant::now() < deadline
             })
         })
         .await
@@ -258,7 +261,8 @@ async fn narrate(app: &AppHandle, sentence: String, ticket: u64) {
         tokio::time::sleep(duration).await;
         Ok::<(), String>(())
     };
-    if let Err(error) = wait_narration(speech, wait_stop(), Duration::from_secs(6)).await {
+    let interrupted = wait_until(|| autopilot::stop_requested() || !autopilot::narrating());
+    if let Err(error) = wait_narration(speech, interrupted, Duration::from_secs(6)).await {
         eprintln!("[narration] {error}");
     }
     crate::audio_out::stop();
@@ -298,7 +302,7 @@ impl Driver for LiveDriver<'_> {
 
     async fn execute(&mut self, step: &agent::Step) -> Result<(), String> {
         let milestone = step.milestone.as_ref().ok_or("Jalon manquant")?;
-        let enabled = narrate_enabled(std::env::var("RIO_NARRATE").ok().as_deref());
+        let enabled = autopilot::narrating();
         let sentence = enabled.then(|| narration(step, self.narrated_milestone.as_deref() != Some(&milestone.id)));
         let graph = &self.session.tutorial;
         let index = graph.milestones.iter().position(|m| m.id == milestone.id).ok_or("Jalon inconnu")? + 1;
@@ -353,8 +357,8 @@ impl Driver for LiveDriver<'_> {
     }
 }
 
-async fn wait_stop() {
-    while !autopilot::stop_requested() {
+async fn wait_until(done: impl Fn() -> bool) {
+    while !done() {
         tokio::time::sleep(Duration::from_millis(30)).await;
     }
 }
@@ -391,7 +395,7 @@ pub fn spawn(app: AppHandle, skill: skills::Skill, observed: bool) {
             };
             tokio::select! {
                 biased;
-                _ = wait_stop() => Err(Failure::Stopped),
+                _ = wait_until(autopilot::stop_requested) => Err(Failure::Stopped),
                 result = tokio::time::timeout(Limits::default().timeout, after_script(&mut driver, script_result, &mut run_mode)) => {
                     result.unwrap_or_else(|_| Err(Failure::Failed("The maximum run time was exceeded".into())))
                 }

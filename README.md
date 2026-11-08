@@ -420,6 +420,8 @@ proposition et les refus conservent la sourdine habituelle.
 
 Autopilot GUI actions are narrated in French by the local Phonon TTS, including
 the first action of each new milestone. The sentence is also shown in the notch.
+**Mode rapide** cuts speech for this run only; action verification and Stop stay unchanged.
+The next run uses `RIO_NARRATE` again.
 Set `RIO_NARRATE=0` to disable narration (default on). Speech waits at most six
 seconds including synthesis (est.), then is cut off before the action; Stop
 interrupts playback immediately. Missing/unavailable TTS is logged and does not

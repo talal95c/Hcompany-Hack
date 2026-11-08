@@ -29,6 +29,7 @@ pub struct View {
     pub mode: String,
     pub done: usize,
     pub matched: Vec<String>,
+    pub narrating: bool,
 }
 
 #[derive(Default)]
@@ -40,7 +41,7 @@ struct Controller {
 }
 
 impl Controller {
-    fn accept(&mut self, skill: &skills::Skill, stop: &AtomicBool) -> Result<(), String> {
+    fn accept(&mut self, skill: &skills::Skill, stop: &AtomicBool, narrating: bool) -> Result<(), String> {
         if self.active.is_some() || self.declining {
             return Err("Rio is already running a task".into());
         }
@@ -55,9 +56,18 @@ impl Controller {
             total: skill.graph.milestones.len(),
             label: "J’observe l’écran".into(),
             mode: crate::devin::mode(skill).into(),
+            narrating,
             ..View::default()
         };
         Ok(())
+    }
+
+    fn fast(&mut self) -> bool {
+        if self.active.is_none() || !self.view.narrating {
+            return false;
+        }
+        self.view.narrating = false;
+        true
     }
 
     fn stop(&mut self, stop: &AtomicBool) -> Option<Done> {
@@ -149,6 +159,10 @@ pub fn is_running() -> bool {
 
 pub(crate) fn run_id() -> u64 {
     RUN_ID.load(Ordering::SeqCst)
+}
+
+pub(crate) fn narrating() -> bool {
+    CONTROL.lock().unwrap().as_ref().is_some_and(|c| c.active.is_some() && c.view.narrating)
 }
 
 pub(crate) fn driver_released() {
@@ -324,7 +338,8 @@ pub fn autopilot_accept(app: AppHandle, skill_id: String) -> Result<(), String> 
         let mut guard = CONTROL.lock().unwrap();
         let control = guard.get_or_insert_with(Controller::default);
         let observed = control.view.skill_id == skill_id && !control.view.matched.is_empty();
-        control.accept(&skill, &STOP_REQUESTED)?;
+        let narrating = crate::autopilot_driver::narrate_enabled(std::env::var("RIO_NARRATE").ok().as_deref());
+        control.accept(&skill, &STOP_REQUESTED, narrating)?;
         RUN_ID.fetch_add(1, Ordering::SeqCst);
         RUNNING.store(true, Ordering::SeqCst);
         (control.view.clone(), observed)
@@ -346,6 +361,20 @@ pub fn autopilot_accept(app: AppHandle, skill_id: String) -> Result<(), String> 
     drop(session);
     crate::autopilot_driver::spawn(app.clone(), skill, observed);
     Ok(())
+}
+
+#[tauri::command]
+pub fn autopilot_fast(app: AppHandle) -> Result<(), String> {
+    let view = {
+        let mut guard = CONTROL.lock().unwrap();
+        let Some(control) = guard.as_mut() else { return Ok(()) };
+        if !control.fast() {
+            return Ok(());
+        }
+        control.view.clone()
+    };
+    crate::audio_out::stop();
+    publish(&app, &view)
 }
 
 #[tauri::command]
@@ -542,6 +571,22 @@ mod tests {
     use super::*;
 
     #[test]
+    fn fast_mode_suppresses_narration_only_for_the_active_run() {
+        let skill: skills::Skill =
+            serde_json::from_str(include_str!("../../demo/textedit-courses/skill.json")).unwrap();
+        let mut controller = Controller::default();
+        let stop = AtomicBool::new(true);
+        assert!(!controller.fast());
+        controller.accept(&skill, &stop, true).unwrap();
+        assert!(controller.fast());
+        assert!(!controller.view.narrating);
+        controller.stop(&stop).unwrap();
+        assert!(!controller.fast());
+        controller.accept(&skill, &stop, true).unwrap();
+        assert!(controller.view.narrating);
+    }
+
+    #[test]
     fn autopilot_failure_messages_are_short_and_failures_stay_longer() {
         assert_eq!(failure_message("Créer le projet"), "Étape bloquée : Créer le projet");
         assert_eq!(failure_message("  \n "), "Étape bloquée");
@@ -624,14 +669,14 @@ mod tests {
         let mut controller = Controller::default();
         let stop = AtomicBool::new(true);
         assert!(controller.stop(&stop).is_none());
-        controller.accept(&skill, &stop).unwrap();
+        controller.accept(&skill, &stop, true).unwrap();
         assert!(!stop.load(Ordering::SeqCst));
         assert!(matches!(controller.view.phase, Phase::Compact));
-        assert!(controller.accept(&skill, &stop).is_err());
+        assert!(controller.accept(&skill, &stop, true).is_err());
         assert_eq!(controller.stop(&stop).unwrap().outcome, "stopped");
         assert!(stop.load(Ordering::SeqCst));
         assert!(controller.active.is_none());
-        controller.accept(&skill, &stop).unwrap();
+        controller.accept(&skill, &stop, true).unwrap();
         assert!(!stop.load(Ordering::SeqCst));
     }
 }
