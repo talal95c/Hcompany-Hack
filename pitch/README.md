@@ -13,11 +13,11 @@ npm run build:single
 npx vite preview --port 4174 --host
 ```
 
-Build generates the QR SVG locally. Assets are self-contained; the Remotion compositions are copied from landing (including TutorialPlayer inside Blender), rendered in grayscale so orange belongs only to the deck's ghost cursor. Slide 11 uses a static, deck-styled console mock for a consistently finished presentation in browser and PDF. No paid template assets.
+Build generates the QR SVG locally. Assets are self-contained; the colored Remotion compositions are copied from landing (including TutorialPlayer inside Blender). Slide 11 uses a static, deck-styled console mock for a consistently finished presentation in browser and PDF. No paid template assets. HTML/SVG illustrations, tutorial thumbnails, and charts are presentation mockups, not product screenshots or measured usage.
 
 `npm run build:single` writes `out/rio-pitch.html`: double-click to open offline, with JS, CSS, fonts, QR and imagery inlined. It does not replace the normal `dist/` build. `node scripts/check-single.mjs` verifies local-file rendering with Chrome CDP on port 29229.
 
-Reveal/close use monochrome compressed versions of the two brand hill images (each under 65 KB). The baked wordmark is removed from the reveal image's white sky; the deck uses only the standalone R mark. Motion respects reduced-motion preferences. Print mode freezes players and renders all animated content at its final state.
+Reveal/close use compressed color versions of the two brand hill images (each under 400 KB). The baked wordmark is removed from the reveal image's white sky; the deck uses only the standalone R mark. Hill greens, poppy orange, earth, cream and sky tints carry through the visual scenes. Market circles are explicitly not to scale; the e-learning figure is adjacent context, not a Rio TAM. Sponsor chips are styled text, not invented logos. Motion respects reduced-motion preferences. Print mode freezes players and renders all animated content at its final state.
 
 Navigation: left/right, Space, PageUp/PageDown, Home/End. Click either half of the screen. N toggles notes, F fullscreen. Hashes are one-based: `#5`. Invalid hashes fall back to slide 1. The fixed 1920×1080 stage scales to fit any viewport.
 
