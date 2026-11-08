@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   asset,
   Asterisk,
@@ -15,41 +15,138 @@ import {
   ScrollRevealText,
   Ticker,
 } from "./ui";
+import { APP_URL, INSTALL_URL } from "./Teams";
 
 const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Finder", "Figma", "VS Code"];
 
 /* ---------------- Nav ---------------- */
 
-export const GET_RIO = "#/get-rio";
 
 export function Nav() {
-  const links = ["Use cases", "Pricing", "FAQ"];
-  const ids = ["use-cases", "pricing", "faq"];
+  const links = [
+    ["Use cases", "#use-cases"],
+    ["Teams", "#teams"],
+    ["Pricing", "#pricing"],
+    ["FAQ", "#faq"],
+  ];
+  const [open, setOpen] = useState(false);
+  const [hover, setHover] = useState<string | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    addEventListener("hashchange", close);
+    return () => removeEventListener("hashchange", close);
+  }, [open]);
   return (
     <motion.header
-      className="nav"
+      className={`nav ${open ? "nav-open" : ""}`}
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: EASE, delay: 0.1 }}
     >
-      <nav className="nav-pill">
-        <a href="#top" className="nav-logo" aria-label="Home">
-          <PillLogo size="md" />
-        </a>
-        {links.map((l, i) => (
-          <a key={l} href={`#${ids[i]}`} className="nav-link">
-            <span data-label={l}>{l}</span>
+      <a href="#top" className="nav-brand" aria-label="Rio home">
+        <PillLogo size="sm" />
+        <span>Rio</span>
+      </a>
+      <nav className="nav-pill" aria-label="Main" onMouseLeave={() => setHover(null)}>
+        {links.map(([l, href]) => (
+          <a key={l} href={href} className="nav-link" onMouseEnter={() => setHover(l)} onFocus={() => setHover(l)} onBlur={() => setHover(null)}>
+            <AnimatePresence>
+              {hover === l && (
+                <motion.span
+                  layoutId="nav-hover"
+                  className="nav-hover"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 520, damping: 38, opacity: { duration: 0.15 } }}
+                />
+              )}
+            </AnimatePresence>
+            <span className="nav-text">{l}</span>
           </a>
         ))}
       </nav>
-      <Btn label="Get Rio" variant="light" size="sm" href={GET_RIO} className="nav-cta" />
+      <div className="nav-right">
+        <Btn label="Go to app" size="sm" href={APP_URL} className="nav-cta" />
+        <button type="button" className="nav-menu" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          <span />
+          <span />
+        </button>
+      </div>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="nav-sheet"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25, ease: EASE }}
+          >
+            {links.map(([l, href]) => (
+              <a key={l} href={href} onClick={() => setOpen(false)}>{l}</a>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.header>
   );
 }
 
 /* ---------------- Hero ---------------- */
 
+/** What people paste or type in Rio, shown in turn in the hero. */
+const SOURCES = [
+  { word: "YouTube tutorial.", kind: "YouTube", input: "youtube.com/watch?v=your-first-donut" },
+  { word: "blog post.", kind: "Article", input: "notes.design/how-to-export-for-web-in-figma" },
+  { word: "help page.", kind: "Docs", input: "docs.blender.org/manual/modeling/bevel.html" },
+];
+const TYPE_MS = 38;
+const HOLD_MS = 2200;
+
+/** Cycles through SOURCES, typing each input like someone pasting or asking. */
+function useSource() {
+  const reduced = useReducedMotion();
+  const [i, setI] = useState(0);
+  const [n, setN] = useState(0);
+  const full = SOURCES[i].input.length;
+  useEffect(() => {
+    if (reduced) {
+      const t = setTimeout(() => setI((i + 1) % SOURCES.length), HOLD_MS + 1200);
+      return () => clearTimeout(t);
+    }
+    if (n < full) {
+      const t = setTimeout(() => setN(n + 1), TYPE_MS);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => {
+      setN(0);
+      setI((i + 1) % SOURCES.length);
+    }, HOLD_MS);
+    return () => clearTimeout(t);
+  }, [i, n, full, reduced]);
+  return { src: SOURCES[i], i, typed: reduced ? SOURCES[i].input : SOURCES[i].input.slice(0, n) };
+}
+
+function HeroLine({ text, k }: { text: string; k: number }) {
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.span
+        key={k}
+        className="hero-swap"
+        initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        exit={{ opacity: 0, y: -18, filter: "blur(8px)" }}
+        transition={{ duration: 0.45, ease: EASE }}
+      >
+        {text}
+      </motion.span>
+    </AnimatePresence>
+  );
+}
+
 export function Hero() {
+  const { src, i, typed } = useSource();
   const up = (d: number) => ({
     initial: { opacity: 0, y: 40, filter: "blur(10px)" },
     animate: { opacity: 1, y: 0, filter: "blur(0px)" },
@@ -70,20 +167,23 @@ export function Hero() {
         <div className="hero-content">
           <h1 className="h-hero">
             <motion.span className="hero-l1" {...up(0.2)}>
-              Paste a YouTube tutorial.
+              <span className="sr-only">Paste a YouTube tutorial, a blog post or a help page.</span>
+              <span aria-hidden>Paste a <HeroLine text={src.word} k={i} /></span>
             </motion.span>
             <motion.span className="hero-l2" {...up(0.32)}>
               Do it with Rio.
             </motion.span>
           </h1>
           <motion.p className="p-16 hero-sub" {...up(0.44)}>
-            Rio turns the video into steps, shows you where to click in your own app and checks each step. You do it for real.
+            Rio turns it into steps, shows you where to click in your own app and checks each step. No link? Just type what you want to do.
           </motion.p>
-          <motion.div className="hero-link-demo" {...up(0.5)} aria-label="Illustration: paste a YouTube tutorial link to start a lesson">
-            <span className="hero-demo-url" aria-hidden>youtube.com/watch?v=your-first-donut</span><span className="hero-demo-start" aria-hidden>Start ↗</span>
+          <motion.div className="hero-link-demo" {...up(0.5)} aria-label="Illustration: paste a tutorial link or type a goal to start a lesson">
+            <span className="hero-demo-kind mono-12" aria-hidden>{src.kind}</span>
+            <span className="hero-demo-url" aria-hidden>{typed}<span className="hero-caret" /></span>
+            <span className="hero-demo-start" aria-hidden>Start ↗</span>
           </motion.div>
           <motion.div {...up(0.56)}>
-            <Btn label="Try Rio" href={GET_RIO} />
+            <Btn label="Try Rio" href={APP_URL} />
           </motion.div>
         </div>
         <motion.div className="hero-bottom" {...up(0.85)}>
@@ -698,7 +798,7 @@ export function Process() {
 const PLANS = [
   { name: "Learner", price: 0, tagline: "One app at a time.", f: ["Tutorial library", "Typed goals", "Ghost cursor", "Community support"] },
   { name: "Pro", price: 12, tagline: "Unlimited live coaching.", f: ["Unlimited goals", "Voice questions", "Save as tutorial", "Priority support"] },
-  { name: "Team", price: 29, tagline: "Onboard a whole team.", f: ["Shared library", "Session journals", "Admin seats", "Slack support"], dark: true },
+  { name: "Team", price: 29, tagline: "Onboard a whole team.", f: ["Team library", "Internal docs search", "Invites & admin", "Usage insights"], dark: true },
   { name: "Enterprise", price: -1, tagline: "Your apps, your rules.", f: ["Custom tutorials", "SSO & admin", "Data controls", "Dedicated success"] },
 ];
 
@@ -779,6 +879,7 @@ const FAQ = [
   { q: "Can I use any YouTube tutorial?", a: "Paste a YouTube tutorial link and Rio turns it into a step-by-step lesson in your app. Blender is our starting point. A lesson needs to be checked against the app and version you use; not every video can become a verified lesson. You stay in control of the clicks." },
   { q: "Does Rio click for me?", a: "No. Rio points with a ghost cursor and you make every click. Learning sticks because you do it yourself." },
   { q: "Which apps does Rio work with?", a: "Any desktop app. Tutorials ship for Blender, LibreOffice Calc, Docker and Finder, and you can type a goal for anything else." },
+  { q: "Can Rio learn our internal tools?", a: "Yes, on a team workspace. Add the Markdown guides of your in-house apps in the console: Rio turns them into procedures and finds them when someone asks. Your notes stay in your workspace." },
   { q: "What does Rio see on my screen?", a: "A screenshot of your main display when it plans or checks a step. Rio's own windows are excluded from captures." },
   { q: "Can I ask questions out loud?", a: "Yes. Click the mic and ask “where is it?”, “I'm done” or “show me again”: Rio answers out loud, points, skips or repeats." },
   { q: "What if the menus have changed?", a: "Tutorials are graphs of milestones, not click scripts. Rio finds the current path on screen, so outdated hints don't break the lesson." },
@@ -851,15 +952,9 @@ export function FaqInsights() {
 
 export function Footer() {
   const cols = [
-    { h: "Product", l: ["Home", "How it works", "Library", "Pricing"] },
-    { h: "Company", l: ["About", "Contact", "H Company", "Careers"] },
-    { h: "Policies", l: ["Terms & Conditions", "Privacy Policy"] },
-  ];
-  const socials = [
-    { n: "xLogo" as const, href: "https://x.com" },
-    { n: "linkedin" as const, href: "https://www.linkedin.com" },
-    { n: "youtube" as const, href: "https://youtube.com" },
-    { n: "instagram" as const, href: "https://instagram.com" },
+    { h: "Product", l: [["Use cases", "#use-cases"], ["For teams", "#teams"], ["Pricing", "#pricing"], ["FAQ", "#faq"]] },
+    { h: "Get started", l: [["Go to app", APP_URL], ["Install the Mac app", INSTALL_URL]] },
+    { h: "Built with", l: [["H Company", "https://www.hcompany.ai"], ["Gladia", "https://www.gladia.io"], ["Gradium", "https://gradium.ai"]] },
   ];
   return (
     <footer className="footer" id="contact">
@@ -871,40 +966,16 @@ export function Footer() {
           <p className="p-15 footer-text">
             Rio is your live software coach. Tell it what you want to learn and it shows you the way, on your own screen.
           </p>
-          <form className="subscribe" onSubmit={(e) => e.preventDefault()}>
-            <input type="email" name="Email" placeholder="you@company.com" aria-label="Email" />
-            <button type="submit" className="btn btn-light btn-sm">
-              <span className="btn-box">
-                <svg viewBox="0 0 30 15" width={30} height={15} className="px-arrow" aria-hidden>
-                  {[1, 4].map((dx) =>
-                    [[0, 0], [1, 1], [2, 2], [1, 3], [0, 4]].map(([x, y]) => (
-                      <rect key={`${dx}${x}${y}`} x={(x + dx) * 3} y={y * 3} width={3} height={3} fill="currentColor" />
-                    )),
-                  )}
-                </svg>
-              </span>
-              <span className="btn-label">
-                <span className="btn-label-inner" data-label="Subscribe">
-                  Subscribe
-                </span>
-              </span>
-            </button>
-          </form>
-          <p className="mono-12">Follow Us:</p>
-          <div className="socials">
-            {socials.map((s) => (
-              <a key={s.n} href={s.href} aria-label={s.n}>
-                <Icon name={s.n} size={20} />
-              </a>
-            ))}
+          <div className="footer-ctas">
+            <Btn label="Go to app" variant="light" size="sm" href={APP_URL} />
           </div>
         </div>
         <div className="footer-cols">
           {cols.map((c) => (
             <div key={c.h} className="footer-col">
               <p className="mono-16w">{c.h}</p>
-              {c.l.map((l) => (
-                <a key={l} href="#top" className="p-14l footer-link">
+              {c.l.map(([l, href]) => (
+                <a key={l} href={href} className="p-14l footer-link" {...(href.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})}>
                   {l}
                 </a>
               ))}
