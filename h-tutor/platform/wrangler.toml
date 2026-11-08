@@ -1,0 +1,27 @@
+name = "rio-platform"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# The console (React, built by `npm run build:web`). /api and /v1 go to the Worker first.
+[assets]
+directory = "./web/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*", "/v1/*"]
+
+# `npx wrangler d1 create rio` prints the id to put here.
+[[d1_databases]]
+binding = "DB"
+database_name = "rio"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+# The global knowledge base (knowledge/: ReStep's graphs and core, search only).
+[[services]]
+binding = "KNOWLEDGE"
+service = "rio-knowledge"
+
+# Tutorial jobs (transcription, design) move along every minute.
+[triggers]
+crons = ["* * * * *"]

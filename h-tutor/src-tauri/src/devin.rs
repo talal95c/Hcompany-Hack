@@ -32,7 +32,7 @@ pub struct Output {
 
 pub fn parse_output(value: Value) -> Result<Output, String> {
     let output: Output =
-        serde_json::from_value(value).map_err(|_| "Sortie structurée Devin invalide")?;
+        serde_json::from_value(value).map_err(|_| "Invalid Devin structured output")?;
     if !matches!(output.language.as_str(), "bash" | "python" | "osascript")
         || output.script.trim().is_empty()
         || output.script.len() > 65536
@@ -44,7 +44,7 @@ pub fn parse_output(value: Value) -> Result<Output, String> {
         || output.tested
             && (output.test_evidence.trim().is_empty() || output.test_command.trim().is_empty())
     {
-        return Err("Script ou preuves de test Devin invalides".into());
+        return Err("Invalid Devin script or test evidence".into());
     }
     let mut names = HashSet::new();
     for param in &output.params {
@@ -59,7 +59,7 @@ pub fn parse_output(value: Value) -> Result<Output, String> {
             || param.default.contains('\0')
             || param.default.len() > 4096
         {
-            return Err("Paramètres du script Devin invalides".into());
+            return Err("Invalid Devin script parameters".into());
         }
     }
     Ok(output)
@@ -196,24 +196,24 @@ impl Client {
         let response = request
             .send()
             .await
-            .map_err(|_| "Connexion à Devin impossible ou délai dépassé")?;
+            .map_err(|_| "Could not reach Devin, or it timed out")?;
         let status = response.status();
         if !status.is_success() {
             return Err(match status.as_u16() {
                 401 | 403 => {
-                    "Accès Devin refusé ; vérifiez la clé service user v3 et l'organisation".into()
+                    "Devin refused access; check the v3 service user key and the organization".into()
                 }
-                429 => "Limite de requêtes Devin atteinte".into(),
+                429 => "Devin rate limit reached".into(),
                 400 => {
-                    "Plateforme ou configuration de session Devin indisponible (HTTP 400)".into()
+                    "Devin platform or session configuration unavailable (HTTP 400)".into()
                 }
-                _ => format!("L'API Devin a refusé la requête (HTTP {status})"),
+                _ => format!("The Devin API refused the request (HTTP {status})"),
             });
         }
         response
             .json()
             .await
-            .map_err(|_| "Réponse de session Devin invalide".into())
+            .map_err(|_| "Invalid Devin session response".into())
     }
 
     pub async fn create(&self, skill: &Skill, os: &str) -> Result<Session, String> {
@@ -224,7 +224,7 @@ impl Client {
         {
             Err(e) if os == "macos" && e.contains("HTTP 400") => {
                 body.as_object_mut()
-                    .ok_or("Requête Devin invalide")?
+                    .ok_or("Invalid Devin request")?
                     .remove("platform");
                 self.request(reqwest::Method::POST, None, Some(body)).await
             }
@@ -323,10 +323,10 @@ fn acquire(id: &str) -> Result<Lease, String> {
     if !IN_FLIGHT
         .get_or_init(Default::default)
         .lock()
-        .map_err(|_| "Verrou de compilation indisponible")?
+        .map_err(|_| "Compilation lock unavailable")?
         .insert(id.into())
     {
-        return Err("Une compilation est déjà en cours pour ce skill".into());
+        return Err("A compilation is already running for this skill".into());
     }
     Ok(Lease(id.into()))
 }
@@ -382,13 +382,13 @@ async fn compile_inner(skill: Skill, app: Option<&AppHandle>) -> Result<Compiled
             tokio::time::sleep(Duration::from_secs(30)).await;
         }
         if !session.successful() {
-            return Err("La session Devin s'est arrêtée sans terminer la compilation".to_string());
+            return Err("The Devin session stopped before finishing the compilation".to_string());
         }
         parse_output(
             session
                 .structured_output
                 .clone()
-                .ok_or("Devin n'a fourni aucune sortie structurée")?,
+                .ok_or("Devin returned no structured output")?,
         )
     })
     .await;
@@ -407,7 +407,7 @@ async fn compile_inner(skill: Skill, app: Option<&AppHandle>) -> Result<Compiled
         }
         Err(_) => {
             artifact.status = "timeout".into();
-            Some("La compilation Devin a dépassé le délai maximal".into())
+            Some("The Devin compilation timed out".into())
         }
     };
     if artifact.output.script.is_empty()

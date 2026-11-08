@@ -9,7 +9,7 @@ use crate::capture::capture_primary;
 use crate::holo::{self, Holo};
 use crate::search::{self, Source};
 use serde::Serialize;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 #[derive(Serialize)]
 pub struct QaAnswer {
@@ -107,15 +107,13 @@ pub async fn answer_question(
         });
         let (msg, _, _) = holo.chat_stream(&body, &crate::emit_thinking).await?;
         let Some(call) = msg["tool_calls"].as_array().and_then(|c| c.first()).cloned() else { continue };
-        let args: Value = call["function"]["arguments"]
-            .as_str()
-            .and_then(|a| serde_json::from_str(a).ok())
-            .unwrap_or(json!({}));
+        let args: Value =
+            call["function"]["arguments"].as_str().and_then(|a| serde_json::from_str(a).ok()).unwrap_or(json!({}));
         let s = |k: &str| args[k].as_str().unwrap_or("").to_string();
 
         if call["function"]["name"] == "search" && searches.len() < 2 {
             let (app_name, query) = (s("app_name"), s("query"));
-            crate::emit_status(&format!("Recherche dans la documentation de {app_name} : {query}"));
+            crate::emit_status(&format!("Searching {app_name} docs: {query}"));
             let r = search::run(holo, &app_name, &query).await;
             searches.push(SearchDone { app_name, query, backend: r.backend.clone() });
             sources.extend(r.sources.clone());
@@ -160,5 +158,5 @@ pub async fn answer_question(
         messages.push(json!({ "role": "tool", "tool_call_id": call["id"],
             "content": "No more searches: reply now with what you know and what is on screen." }));
     }
-    Err("Holo n'a pas répondu".into())
+    Err("Holo did not answer".into())
 }

@@ -26,7 +26,9 @@ struct PlanMilestone {
     teach: String,
 }
 
-pub async fn plan(holo: &Holo, request: &str, shot: &Shot) -> Result<Tutorial, String> {
+/// `knowledge`: what the organization's knowledge base knows about the request
+/// (platform.rs), so milestones and hints follow its proven paths.
+pub async fn plan(holo: &Holo, request: &str, shot: &Shot, knowledge: Option<&str>) -> Result<Tutorial, String> {
     let schema = json!({
         "type": "object",
         "properties": {
@@ -64,9 +66,15 @@ pub async fn plan(holo: &Holo, request: &str, shot: &Shot) -> Result<Tutorial, S
          - teach: one sentence about the concept behind it, or empty.\n\
          Use the application visible on screen when relevant. Keep the tutorial focused on the request."
     );
-    let p: Plan = holo
-        .structured("plan", &holo::smart_model(), &[&shot.data_uri], &prompt, schema)
-        .await?;
+    let prompt = match knowledge {
+        Some(k) => format!(
+            "{prompt}\n\nThe organization's knowledge base has these paths. When they match the request, build the \
+             milestones from them and use their steps as hints (menu paths and shortcuts for the learner's version); \
+             ignore the ones that do not match.\n{k}"
+        ),
+        None => prompt,
+    };
+    let p: Plan = holo.structured("plan", &holo::smart_model(), &[&shot.data_uri], &prompt, schema).await?;
 
     let milestones: Vec<Milestone> = p
         .milestones

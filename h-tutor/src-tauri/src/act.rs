@@ -25,7 +25,7 @@ pub fn screen_point(
         || !(0.0..=1000.0).contains(&nx)
         || !(0.0..=1000.0).contains(&ny)
     {
-        return Err("Point Holo hors écran".into());
+        return Err("Holo's point is off screen".into());
     }
     Ok((x + nx / 1000.0 * width, y + ny / 1000.0 * height))
 }
@@ -36,7 +36,7 @@ fn check(ticket: u64) -> Result<(), String> {
 
 fn authorization(stopped: bool, ticket: u64, current: u64) -> Result<(), String> {
     if stopped || ticket != current {
-        Err("Arrêt demandé".into())
+        Err("Stop requested".into())
     } else {
         Ok(())
     }
@@ -64,20 +64,20 @@ fn key(value: &str) -> Result<Key, String> {
         s if s.chars().count() == 1 && s.chars().all(|c| c.is_ascii_alphanumeric()) => {
             Key::Unicode(s.chars().next().ok_or("Touche vide")?)
         }
-        _ => return Err(format!("Touche non autorisée : {value}")),
+        _ => return Err(format!("Key not allowed: {value}")),
     })
 }
 
 pub fn perform(app: &AppHandle, step: &Step, ticket: u64) -> Result<(), String> {
     let _lock = INPUT_LOCK
         .lock()
-        .map_err(|_| "Verrou d'injection indisponible")?;
+        .map_err(|_| "Input injection lock unavailable")?;
     check(ticket)?;
     #[cfg(target_os = "linux")]
     if std::env::var("XDG_SESSION_TYPE").is_ok_and(|v| v == "wayland")
         || std::env::var("DISPLAY").is_err()
     {
-        return Err("L'exécution nécessite une session Linux X11".into());
+        return Err("Running requires a Linux X11 session".into());
     }
     let settings = Settings {
         event_source_user_data: Some(RIO_EVENT_TAG),
@@ -85,18 +85,18 @@ pub fn perform(app: &AppHandle, step: &Step, ticket: u64) -> Result<(), String> 
         ..Default::default()
     };
     let mut device = Enigo::new(&settings).map_err(|e| {
-        format!("Injection indisponible ; vérifiez l'autorisation Accessibilité : {e}")
+        format!("Input injection unavailable; check the Accessibility permission: {e}")
     })?;
     check(ticket)?;
     if matches!(step.kind.as_str(), "click" | "write" | "scroll") {
-        let (nx, ny) = step.point.ok_or("L'action Holo ne contient pas de point")?;
+        let (nx, ny) = step.point.ok_or("Holo's action has no point")?;
         let (x, y) = crate::normalized_screen_point(app, nx, ny)?;
         #[cfg(target_os = "macos")]
         let (x, y) = {
             let scale = app
                 .primary_monitor()
                 .map_err(|e| e.to_string())?
-                .ok_or("Écran introuvable")?
+                .ok_or("Display not found")?
                 .scale_factor();
             (x / scale, y / scale)
         };
@@ -114,7 +114,7 @@ pub fn perform(app: &AppHandle, step: &Step, ticket: u64) -> Result<(), String> 
                 || step.text.chars().count() > 512
                 || step.text.contains(['\n', '\r', '\0'])
             {
-                return Err("Texte vide, trop long ou multiligne refusé".into());
+                return Err("Empty, too long or multi-line text refused".into());
             }
             device
                 .button(Button::Left, Direction::Click)
@@ -132,7 +132,7 @@ pub fn perform(app: &AppHandle, step: &Step, ticket: u64) -> Result<(), String> 
                 "down" => (3, Axis::Vertical),
                 "left" => (-3, Axis::Horizontal),
                 "right" => (3, Axis::Horizontal),
-                _ => return Err("Direction de défilement invalide".into()),
+                _ => return Err("Invalid scroll direction".into()),
             };
             device.scroll(amount, axis).map_err(|e| e.to_string())?;
         }

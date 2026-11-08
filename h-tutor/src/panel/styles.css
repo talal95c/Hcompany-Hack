@@ -9,6 +9,8 @@
   --dim: rgba(255, 255, 255, 0.62);
   --faint: rgba(255, 255, 255, 0.38);
   --ink: #0b0b0b;
+  --accent: #ffffff;
+  --grad: #ffffff;
   --ok: var(--text);
   --mono: "Geist Mono Variable", monospace;
   --ease: cubic-bezier(0.23, 1, 0.32, 1);
@@ -103,6 +105,15 @@ p { margin: 0; }
   user-select: text;
 }
 .row--input input::placeholder { color: var(--faint); }
+.row-status {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .row--input input:disabled { color: var(--dim); }
 
 .key {
@@ -246,7 +257,6 @@ p { margin: 0; }
   border-radius: 14px;
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .explain__q { font-size: 14px; color: var(--dim); margin-bottom: 16px; }
 .explain__a { font-family: var(--display); font-size: 15px; line-height: 1.45; letter-spacing: -0.015em; margin: 0; user-select: text; }

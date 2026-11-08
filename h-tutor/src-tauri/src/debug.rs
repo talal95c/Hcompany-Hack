@@ -3,11 +3,11 @@
 //! Localizations also get a copy of the screenshot with the predicted point
 //! drawn on it. Disable with HOLO_DEBUG=0.
 
-use base64::{engine::general_purpose::STANDARD, Engine};
-use serde_json::{json, Value};
+use base64::{Engine, engine::general_purpose::STANDARD};
+use serde_json::{Value, json};
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::OnceLock;
+use std::sync::atomic::{AtomicU32, Ordering};
 
 static DIR: OnceLock<Option<PathBuf>> = OnceLock::new();
 static COUNTER: AtomicU32 = AtomicU32::new(0);
@@ -17,10 +17,8 @@ fn dir() -> Option<&'static PathBuf> {
         if std::env::var("HOLO_DEBUG").is_ok_and(|v| v == "0") {
             return None;
         }
-        let stamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs())
-            .unwrap_or(0);
+        let stamp =
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
         // Outside src-tauri so writing here never triggers a dev rebuild.
         let d = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../debug").join(stamp.to_string());
         std::fs::create_dir_all(&d).ok()?;
@@ -39,10 +37,13 @@ pub fn record(tag: &str, model: &str, images: &[&str], prompt: &str, response: &
     if crate::journal::current_dir().is_some() {
         let shots: Vec<String> = images.iter().filter_map(|u| crate::journal::shot(u)).collect();
         let parsed: Value = serde_json::from_str(response).unwrap_or(Value::Null);
-        crate::journal::event(tag, json!({
-            "model": model, "latency_ms": ms, "shots": shots, "prompt": prompt,
-            "response": if parsed.is_null() { json!(response) } else { parsed },
-        }));
+        crate::journal::event(
+            tag,
+            json!({
+                "model": model, "latency_ms": ms, "shots": shots, "prompt": prompt,
+                "response": if parsed.is_null() { json!(response) } else { parsed },
+            }),
+        );
         return shots.first().map(|s| format!("journal:{s}"));
     }
     let dir = dir()?;
@@ -75,28 +76,7 @@ pub fn mark_point(id: &str, data_uri: &str, nx: f64, ny: f64) {
     let Some(bytes) = decode_data_uri(data_uri) else { return };
     let Ok(img) = image::load_from_memory(&bytes) else { return };
     let mut img = img.to_rgb8();
-    let (w, h) = img.dimensions();
-    let (cx, cy) = ((nx / 1000.0 * w as f64) as i64, (ny / 1000.0 * h as f64) as i64);
-    let red = image::Rgb([255, 0, 0]);
-    let mut put = |x: i64, y: i64| {
-        if x >= 0 && y >= 0 && (x as u32) < w && (y as u32) < h {
-            img.put_pixel(x as u32, y as u32, red);
-        }
-    };
-    for d in -28..=28i64 {
-        for t in -1..=1i64 {
-            if d.abs() > 6 {
-                put(cx + d, cy + t);
-                put(cx + t, cy + d);
-            }
-        }
-    }
-    for a in 0..360 {
-        let r = (a as f64).to_radians();
-        for rad in [18.0, 19.0] {
-            put(cx + (rad * r.cos()) as i64, cy + (rad * r.sin()) as i64);
-        }
-    }
+    crate::journal::crosshair(&mut img, nx, ny);
     let _ = img.save(dir.join(format!("{id}-marked.jpg")));
 }
 
