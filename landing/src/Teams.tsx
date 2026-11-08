@@ -1,4 +1,8 @@
 import { Btn, Label, Reveal } from "./ui";
+import { useEffect, useRef, useState } from 'react';
+import { Player } from '@remotion/player';
+import { TeamsSearch, TeamsSearchScene, TEAMS_SEARCH_DURATION } from './usecases/TeamsSearch';
+import { FPS } from './usecases/primitives';
 
 /** The web console for companies: where a team's tutorials and internal knowledge live. */
 // VITE_APP_URL="" when the console serves this page itself (same origin).
@@ -27,31 +31,24 @@ const POINTS = [
   },
 ];
 
-const RESULTS = [
-  { title: "Refund an order", src: "Team docs · Comptoir guide", steps: "Orders › Order › Refund" },
-  { title: "Create a promo code", src: "Team docs · Comptoir guide", steps: "Marketing › Discounts › New" },
-  { title: "Render the final video", src: "Team library · DaVinci Resolve", steps: "Deliver › Add to Render Queue" },
-];
-
 function Search() {
+  const container = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ width: 548, height: 366 });
+  const [reduced, setReduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const change = () => setReduced(media.matches);
+    media.addEventListener('change', change);
+    const observer = new ResizeObserver(([entry]) => setSize({ width: entry.contentRect.width, height: entry.contentRect.height }));
+    if (container.current) observer.observe(container.current);
+    return () => { media.removeEventListener('change', change); observer.disconnect(); };
+  }, []);
   return (
-    <div className="teams-demo" aria-label="Illustration: Rio searching a team's tutorials and internal docs">
-      <div className="teams-demo-bar">
-        <span className="teams-demo-q">how do I refund a customer?</span>
-        <span className="teams-demo-k">⌘K</span>
-      </div>
-      <ul className="teams-demo-list">
-        {RESULTS.map((r, i) => (
-          <li key={r.title} className={i === 0 ? "on" : ""}>
-            <p className="teams-demo-title">{r.title}</p>
-            <p className="teams-demo-meta">
-              <span>{r.src}</span>
-              <span>{r.steps}</span>
-            </p>
-          </li>
-        ))}
-      </ul>
-      <p className="teams-demo-note mono-12">Illustrated example</p>
+    <div ref={container} style={{ position: 'relative' }} aria-label="Illustration: Rio searching a team's tutorials and internal docs">
+      <div style={{ opacity: reduced ? 1 : 0 }}><TeamsSearchScene /></div>
+      {!reduced && <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        <Player component={TeamsSearch} inputProps={{ width: size.width }} compositionWidth={Math.ceil(size.width)} compositionHeight={Math.ceil(size.height)} durationInFrames={TEAMS_SEARCH_DURATION} fps={FPS} autoPlay loop initiallyMuted controls={false} clickToPlay={false} doubleClickToFullscreen={false} spaceKeyToPlayOrPause={false} acknowledgeRemotionLicense style={{ width: Math.ceil(size.width), height: Math.ceil(size.height) }} />
+      </div>}
     </div>
   );
 }
