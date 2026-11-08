@@ -350,8 +350,11 @@ fn observe(app: &AppHandle) {
     loop {
         std::thread::sleep(Duration::from_secs(3));
         let state = app.state::<crate::AppState>();
-        let Ok(session) = state.session.try_lock() else { continue };
-        if crate::autopilot::is_running() || session.as_ref().is_some_and(|s| !s.finished) {
+        let tutorial_running = {
+            let Ok(session) = state.session.try_lock() else { continue };
+            session.as_ref().is_some_and(|s| !s.finished)
+        };
+        if crate::autopilot::is_running() || tutorial_running {
             progress = crate::observe::Progress::default();
             previous = None;
             pending = false;
@@ -406,7 +409,17 @@ fn observe(app: &AppHandle) {
             .await
             .is_ok_and(|r| r.is_ok())
         });
-        if !state.generation.is_current(generation) || focused_app().is_none_or(|n| !n.eq_ignore_ascii_case(&name)) {
+        let tutorial_running = {
+            match state.session.try_lock() {
+                Ok(session) => session.as_ref().is_some_and(|s| !s.finished),
+                Err(_) => true,
+            }
+        };
+        if tutorial_running
+            || crate::autopilot::is_running()
+            || !state.generation.is_current(generation)
+            || focused_app().is_none_or(|n| !n.eq_ignore_ascii_case(&name))
+        {
             progress = crate::observe::Progress::default();
             previous = None;
             continue;
