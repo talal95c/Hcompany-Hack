@@ -1,0 +1,77 @@
+/* Orange ghost: an orange arrow with a thin dark edge (readable on any background), no glow. */
+:root {
+  --g1: #ffb15c;
+  --g2: #ff8a1f;
+  --g3: #f26a00;
+  --ok: #ff8a1f;
+}
+
+.ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  font-family: "Geist Variable", -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+}
+
+/* The tip of the arrow sits at (2, 2) of a 24 box drawn at 26 px. */
+.ghost__cursor {
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  width: 26px;
+  height: 26px;
+}
+.ghost__cursor svg {
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
+}
+.ghost__cursor svg path:first-of-type { stroke: #0b0b0b; stroke-width: 1.2; stroke-linejoin: round; }
+.ghost__grain { display: none; }
+.ghost--trail svg { position: absolute; left: -2px; top: -2px; }
+
+.ghost__halo {
+  position: absolute;
+  left: -20px;
+  top: -20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 138, 31, 0.55);
+}
+.ghost--hit .ghost__halo { border-color: var(--ok); }
+
+.ghost__label {
+  position: absolute;
+  left: 24px;
+  top: 26px;
+  max-width: 220px;
+  width: max-content;
+  padding: 5px 10px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 11.5px;
+  line-height: 1.35;
+  font-weight: 500;
+  background: rgba(11, 11, 11, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+.ghost__label.is-left { left: auto; right: 10px; }
+.ghost__label.is-up { top: auto; bottom: 10px; }
+
+/* The real element (from the accessibility tree): a plain orange ring. */
+.ghost-box {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255, 138, 31, 0.9);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.ghost-box--hit { border-color: var(--ok); background: rgba(255, 138, 31, 0.1); }

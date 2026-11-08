@@ -1,5 +1,0 @@
-.                                                                        [100%]
-==================================== PASSES ====================================
-=========================== short test summary info ============================
-PASSED tests/services/test_verify_live.py::test_live_verifier_real_screenshots
-1 passed, 3 deselected in 28.76s
