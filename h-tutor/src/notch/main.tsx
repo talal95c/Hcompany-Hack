@@ -93,7 +93,7 @@ function Notch() {
           transition={{ duration: reduced ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}>
           {phase === "expanded" ? (
             <>
-              <h1>Want me to do <span>{view?.title}</span>?</h1>
+              <h1>{view?.done ? <>Tu es en train de faire <span>{view.title}</span> ({view.done}/{view.total}). Je termine pour toi ?</> : <>Want me to do <span>{view?.title}</span>?</>}</h1>
               <p className="notch__goal" title={view?.goal}>{view?.goal}</p>
               <div className="notch__actions">
                 <button className="notch__secondary" disabled={busy} onClick={() => { sfx.dismiss(); void act(api.autopilotDecline); }}>Not now <kbd>esc</kbd></button>

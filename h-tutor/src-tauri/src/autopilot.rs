@@ -27,6 +27,8 @@ pub struct View {
     pub outcome: Option<String>,
     pub message: Option<String>,
     pub mode: String,
+    pub done: usize,
+    pub matched: Vec<String>,
 }
 
 #[derive(Default)]
@@ -285,6 +287,9 @@ pub fn propose(app: &AppHandle, proposal: skills::Proposal) {
             title: proposal.title,
             goal: proposal.goal,
             mode: proposal.mode,
+            done: proposal.done,
+            total: proposal.total,
+            matched: proposal.matched,
             ..View::default()
         };
         (control.view.clone(), control.generation)
@@ -343,13 +348,14 @@ pub fn autopilot_accept(app: AppHandle, skill_id: String) -> Result<(), String> 
     if is_running() {
         return Err("Rio is already finishing a task".into());
     }
-    let view = {
+    let (view, observed) = {
         let mut guard = CONTROL.lock().unwrap();
         let control = guard.get_or_insert_with(Controller::default);
+        let observed = control.view.skill_id == skill_id && !control.view.matched.is_empty();
         control.accept(&skill, &STOP_REQUESTED)?;
         RUN_ID.fetch_add(1, Ordering::SeqCst);
         RUNNING.store(true, Ordering::SeqCst);
-        control.view.clone()
+        (control.view.clone(), observed)
     };
     if let Err(error) = publish(&app, &view) {
         let _ = autopilot_stop(app.clone());
@@ -371,7 +377,7 @@ pub fn autopilot_accept(app: AppHandle, skill_id: String) -> Result<(), String> 
     crate::watch::disarm();
     crate::set_overlay_visible(&app, false);
     drop(session);
-    crate::autopilot_driver::spawn(app.clone(), skill);
+    crate::autopilot_driver::spawn(app.clone(), skill, observed);
     Ok(())
 }
 

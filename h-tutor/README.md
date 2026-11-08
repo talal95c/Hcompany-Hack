@@ -197,5 +197,22 @@ Both windows are excluded from screen captures, so Holo never sees the app itsel
 
 ## Next
 
+### Opt-in skill observation
+
+`RIO_OBSERVE=1` enables cloud vision observation while no tutorial or autopilot
+is running. Default off: the existing focus-only proposals do not send observation
+screenshots to Holo. Only apps with a previously successful, unmuted skill are
+observed. A local thumbnail change followed by a stable sample triggers at most
+one fresh visual check, at most ten checks/minute. The watcher samples every
+three seconds (est.); progress resets on app change or five minutes of inactivity
+(est.). `RIO_OBSERVE_STEPS` sets the proposal threshold (default 3).
+
+Only explicit `met` with evidence counts. A unique leading skill is proposed;
+cooldown and two-declines mute still apply. Acceptance remains required. Observed
+proposals always use the Rio GUI driver, never a full-task Devin script. The
+driver checks existing milestones on fresh screens before continuing rather than
+trusting old observation matches as completed work. Observation captures the
+primary display, so keep the target app there for this demo.
+
 - Import a tutorial from a URL with the Agents SDK (`h/web-surfer-pro` + `answerSchema`).
 - "Do it for me" button with the desktop agent (`holo local desktop`).

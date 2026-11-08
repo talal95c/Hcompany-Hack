@@ -44,6 +44,8 @@ export type Skill = {
   declines: number;
 };
 export type AutopilotView = {
+  done: number;
+  matched: string[];
   phase: "hidden" | "expanded" | "compact";
   skill_id: string;
   title: string;

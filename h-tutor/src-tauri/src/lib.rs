@@ -23,6 +23,7 @@ mod search;
 #[cfg(test)]
 mod sim;
 mod skills;
+mod observe;
 mod stt;
 mod tray;
 mod tutorial;

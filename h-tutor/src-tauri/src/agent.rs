@@ -964,6 +964,13 @@ async fn screen_verify(brain: &impl Brain, criterion: &str, claim: &str) -> Resu
     result
 }
 
+pub async fn observe_milestone(brain: &impl Brain, criterion: &str) -> Result<String, String> {
+    if criterion.trim().is_empty() {
+        return Err("Empty success criterion".into());
+    }
+    screen_verify(brain, criterion, "The milestone is complete.").await?.check(criterion)
+}
+
 /// Rio's answer: only a success proven on a fresh screenshot closes the milestone.
 async fn verify_completion(brain: &impl Brain, session: &mut Session, claim: &str, outcome: &str) -> Result<Turn, String> {
     let result = async {

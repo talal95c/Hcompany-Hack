@@ -268,7 +268,7 @@ async fn wait_stop() {
     }
 }
 
-pub fn spawn(app: AppHandle, skill: skills::Skill) {
+pub fn spawn(app: AppHandle, skill: skills::Skill, observed: bool) {
     let ticket = autopilot::run_id();
     tauri::async_runtime::spawn(async move {
         let state = app.state::<crate::AppState>();
@@ -283,7 +283,9 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
             ticket,
             pending: None,
         };
-        let candidate = crate::script::eligible(&skill);
+        // Full-task scripts cannot resume part way through. The GUI driver
+        // verifies each existing milestone on a fresh screen before acting.
+        let candidate = if observed { None } else { crate::script::eligible(&skill) };
         let mut run_mode = if candidate.is_some() {
             skills::Mode::Script
         } else {
