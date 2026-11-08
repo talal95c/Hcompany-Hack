@@ -182,9 +182,6 @@ export function Hero() {
             <span className="hero-demo-url" aria-hidden>{typed}<span className="hero-caret" /></span>
             <span className="hero-demo-start" aria-hidden>Start ↗</span>
           </motion.div>
-          <motion.div {...up(0.56)}>
-            <Btn label="Try Rio" href={APP_URL} />
-          </motion.div>
         </div>
         <motion.div className="hero-bottom" {...up(0.85)}>
           <p className="p-14 hero-trust">
