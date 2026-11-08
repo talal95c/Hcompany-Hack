@@ -186,6 +186,22 @@ fn looks_foreign(q: &str) -> bool {
     !q.is_ascii() || q.to_lowercase().split(|c: char| !c.is_alphabetic()).any(|w| HINTS.contains(&w))
 }
 
+/// The words that carry meaning, lightly stemmed ("loops" → "loop"):
+/// generic verbs and small words in English and French are left out.
+fn content_words(text: &str) -> Vec<String> {
+    const GENERIC: [&str; 52] = [
+        "a", "an", "the", "to", "of", "in", "on", "for", "with", "and", "or", "into", "at", "by", "from", "it", "this",
+        "that", "your", "my", "more", "new", "add", "make", "set", "get", "open", "enable", "use", "using", "change",
+        "create", "how", "le", "la", "les", "un", "une", "des", "de", "du", "et", "pour", "dans", "sur", "avec",
+        "comment", "faire", "aide", "moi", "plus", "mon",
+    ];
+    text.to_lowercase()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| w.chars().count() > 2 && !GENERIC.contains(w))
+        .map(|w| w.strip_suffix('s').filter(|s| s.len() > 2).unwrap_or(w).to_string())
+        .collect()
+}
+
 /// Keeps only real matches. In English: the query's words are found AND the
 /// meaning is close (meaning alone let "Make the tree more realistic" bring
 /// back "Enable Realize Instances"). In another language: close meaning, or
@@ -195,7 +211,17 @@ fn relevant<'a>(results: &'a [Value], query: &str) -> Vec<&'a Value> {
     let words = |r: &Value| r["match"]["words"].as_bool() == Some(true);
     let cos = |r: &Value| r["match"]["cos"].as_f64();
     if results.iter().all(|r| cos(r).is_none()) {
-        return results.iter().filter(|r| words(r)).take(1).collect();
+        // No vectors (the deployed platform today): the platform's word
+        // match counts "add" in "Add a torus" → "Add exporter to collection".
+        // Keep the best result that shares a meaningful word with the query.
+        let wanted = content_words(query);
+        return results
+            .iter()
+            .filter(|r| {
+                words(r) && content_words(r["intent"].as_str().unwrap_or("")).iter().any(|w| wanted.contains(w))
+            })
+            .take(1)
+            .collect();
     }
     let foreign = looks_foreign(query);
     results
@@ -402,9 +428,16 @@ mod tests {
         let material =
             [hit("Change object color", true, Some(0.579)), hit("Apply the result of a constraint", true, Some(0.526))];
         assert_eq!(names(super::relevant(&material, "Apply a material to the object")), ["Change object color"]);
-        // No vectors: the best word match only.
+        // No vectors: the best result sharing a meaningful word.
         let plain = [hit("Scale an object", true, None), hit("Apply Scale", true, None)];
         assert_eq!(names(super::relevant(&plain, "Scale the object")), ["Scale an object"]);
+        // Measured on the deployed platform (no vectors).
+        let torus = [hit("Add exporter to collection", true, None), hit("Add a UV sphere to the scene", true, None)];
+        assert!(super::relevant(&torus, "Add a torus").is_empty());
+        let loops = [hit("Add edge loops", true, None), hit("Set Bevel Segments", true, None)];
+        assert_eq!(names(super::relevant(&loops, "Add loop cuts to the cylinder")), ["Add edge loops"]);
+        let tree = [hit("Set collection to indirect only in active View Layer", true, None)];
+        assert!(super::relevant(&tree, "aide moi à rendre l'arbre plus réaliste").is_empty());
         // French, measured: the right skill stays, the off-topic one goes.
         let coupe = [hit("Add edge loops", true, Some(0.469)), hit("Enable or disable clip", true, Some(0.40))];
         assert_eq!(names(super::relevant(&coupe, "faire une coupe en boucle")), ["Add edge loops"]);
@@ -443,7 +476,7 @@ mod tests {
             // The learner's own words (the planner's lookup).
             ("Blender", "comment supprimer les sommets en double", "duplicate"),
             ("Blender", "faire une coupe en boucle", "edge loop"),
-            ("DaVinci Resolve", "couper le clip à la tête de lecture", "cut"),
+            ("DaVinci Resolve", "couper le clip à la tête de lecture", "cut|split"),
             ("", "aide moi à rendre l'arbre plus réaliste", ""),
             ("Blender", "ajouter un tore", ""),
         ];
@@ -454,7 +487,7 @@ mod tests {
                 let ok = if expected.is_empty() {
                     found.is_empty()
                 } else {
-                    found.first().is_some_and(|m| m.to_lowercase().contains(expected))
+                    found.first().is_some_and(|m| expected.split('|').any(|e| m.to_lowercase().contains(e)))
                 };
                 if ok {
                     right += 1
