@@ -591,3 +591,9 @@ ul { list-style: none; }
 }
 
 /* ---------- Get Rio (install page) ---------- */
+/* Phones: the artwork fills the lower part of the card, so the TV sits right under the call to action
+   instead of far below a band of empty sky. */
+@media (max-width: 700px) {
+  .hero { height: 100svh; min-height: 680px; }
+  .hero-bg { top: auto; bottom: 0; height: 58%; object-position: 50% 100%; }
+}
