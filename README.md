@@ -2,80 +2,80 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="brand/rio-mark-white.svg">
-  <img src="brand/rio-mark-black.svg" alt="Logo Rio" width="64">
+  <img src="brand/rio-mark-black.svg" alt="Rio logo" width="64">
 </picture>
 
 # Rio
 
-### Arrête de jongler entre le tuto et ton logiciel.
+### Stop juggling between the tutorial and your software.
 
-Colle un tutoriel. Rio te guide dans ton application, répond à tes questions et peut refaire la tâche avec ton accord.
+Paste a tutorial. Rio guides you inside your application, answers your questions and can do the task again for you, with your consent.
 
-[![Essayer Rio](https://img.shields.io/badge/Essayer_Rio-FF6B35?style=for-the-badge&logoColor=white)](https://rio.vignemale.com)
-[![Installer l’application](https://img.shields.io/badge/Installer_l’application-24292F?style=for-the-badge)](#installation)
-[![Ouvrir la console](https://img.shields.io/badge/Console_équipe-64748B?style=for-the-badge)](https://rio.vignemale.com/home)
+[![Try Rio](https://img.shields.io/badge/Try_Rio-FF6B35?style=for-the-badge&logoColor=white)](https://rio.vignemale.com)
+[![Install the app](https://img.shields.io/badge/Install_the_app-24292F?style=for-the-badge)](#installation)
+[![Open the console](https://img.shields.io/badge/Team_console-64748B?style=for-the-badge)](https://rio.vignemale.com/home)
 
-**Le site pour découvrir Rio. La console pour ton équipe. L’application pour apprendre dans ton logiciel.**
+**The website to discover Rio. The console for your team. The app to learn inside your software.**
 
-L’application de bureau se lance depuis les sources ; un installeur en un clic est prévu.
+The desktop app runs from source; a one-click installer is planned.
 
 </div>
 
-## Problématique
+## Problem
 
-Un tutoriel montre une procédure. Il ne voit pas où tu bloques dans Blender, DaVinci Resolve ou ton outil interne.
+A tutorial shows a procedure. It cannot see where you get stuck in Blender, DaVinci Resolve or your internal tool.
 
-| Aujourd’hui | Avec Rio |
+| Today | With Rio |
 |---|---|
-| Pause, retour arrière, changement de fenêtre. | Des indications superposées à ton logiciel. |
-| Le menu n’est plus au même endroit. | Un guidage à partir de ce qui est visible à l’écran. |
-| Tu bloques sans comprendre pourquoi. | Des questions en texte ou à voix haute, pendant la leçon. |
-| La même tâche revient la semaine suivante. | Un parcours réussi réutilisable, à déléguer avec ton accord. |
+| Pause, rewind, switch windows. | Guidance overlaid on your software. |
+| The menu is no longer where the video shows it. | Guidance based on what is actually on screen. |
+| You get stuck without knowing why. | Ask questions by text or voice, during the lesson. |
+| The same task comes back the following week. | A successful run you can reuse and delegate, with your consent. |
 
 ## Solution
 
 ```mermaid
 flowchart LR
-    Tuto["Colle un tuto"] --> Plan["Rio prépare les étapes"]
-    Plan --> Guide["Pratique dans ton logiciel"]
-    Guide <--> Questions["Questions voix ou texte"]
-    Guide --> Reuse["Parcours réussi"]
-    Reuse --> Consent{"Ton accord ?"}
-    Consent -->|Oui| Auto["Rio le fait pour toi"]
-    Consent -->|Non| Manual["Tu gardes la main"]
+    Tuto["Paste a tutorial"] --> Plan["Rio prepares the steps"]
+    Plan --> Guide["Practice in your software"]
+    Guide <--> Questions["Voice or text questions"]
+    Guide --> Reuse["Successful run"]
+    Reuse --> Consent{"Your consent?"}
+    Consent -->|Yes| Auto["Rio does it for you"]
+    Consent -->|No| Manual["You stay in control"]
 ```
 
-1. **Prépare.** Un lien YouTube, une page web, un tutoriel de la bibliothèque ou ton objectif devient une leçon en étapes.
-2. **Pratique.** Une barre flottante et un curseur superposé montrent où agir ; Rio suit ta progression à l’écran.
-3. **Demande.** Écris ou parle pendant la leçon : Rio répond et garde le contexte. La voix nécessite une configuration supplémentaire.
-4. **Délègue.** Après une leçon réussie, la barre en haut de l’écran propose « Rio le fait pour toi ». Tu acceptes ou refuses, tu peux arrêter ; Rio vérifie le résultat avant d’annoncer la réussite.
-5. **Partage.** La [console d’équipe](https://rio.vignemale.com/home) réunit tutoriels, connaissances, membres et statistiques d’utilisation.
+1. **Prepare.** A YouTube link, a web page, a tutorial from the library or your goal becomes a step-by-step lesson.
+2. **Practice.** A floating bar and an overlaid cursor show where to act; Rio follows your progress on screen.
+3. **Ask.** Type or speak during the lesson: Rio answers and keeps the context. Voice requires extra setup.
+4. **Delegate.** After a successful lesson, the bar at the top of the screen offers “Rio does it for you”. You accept or decline, and you can stop it at any time; Rio checks the result before reporting success.
+5. **Share.** The [team console](https://rio.vignemale.com/home) brings together tutorials, knowledge, members and usage statistics.
 
-L’application vise macOS. L’autopilote fonctionne aussi sous Linux X11 ; Wayland est explicitement refusé. La précision du pointage et les demandes vagues restent des limites : Rio ne garantit pas la réussite de toute tâche.
+The app targets macOS. The autopilot also works on Linux X11; Wayland is explicitly refused. Pointing accuracy and vague requests remain limitations: Rio does not guarantee that every task will succeed.
 
 ## Architecture
 
 ```mermaid
 flowchart TD
-    subgraph Local["Poste de l’utilisateur"]
-        UI["React : barre, curseur, notch"]
-        Desktop["Tauri / Rust : tuteur et autopilote"]
-        App["Logiciel de l’utilisateur"]
-        Voice["Phonon : voix locale"]
+    subgraph Local["User's computer"]
+        UI["React: bar, cursor, notch"]
+        Desktop["Tauri / Rust: tutor and autopilot"]
+        App["User's software"]
+        Voice["Phonon: local voice"]
         UI <--> Desktop
         Desktop <--> App
         Desktop --> Voice
     end
-    subgraph Cloud["Cloud Rio"]
-        Web["Site et console web"]
-        API["Cloudflare Worker : API Rio"]
-        Data["D1 et service de connaissances"]
+    subgraph Cloud["Rio cloud"]
+        Web["Website and web console"]
+        API["Cloudflare Worker: Rio API"]
+        Data["D1 and knowledge service"]
         Web <--> API
         API <--> Data
     end
-    subgraph AI["Services IA"]
-        Holo["H Company / Holo : vision et planification"]
-        Gladia["Gladia : transcription"]
+    subgraph AI["AI services"]
+        Holo["H Company / Holo: vision and planning"]
+        Gladia["Gladia: transcription"]
     end
     Desktop <--> Holo
     Desktop <--> Gladia
@@ -84,52 +84,52 @@ flowchart TD
     API <--> Gladia
 ```
 
-Le tuteur organise une leçon en **jalons vérifiables à l’écran**, pas en coordonnées fixes. Holo analyse les captures pour guider l’utilisateur. L’autopilote réutilise ces jalons et contrôle leur résultat sur de nouvelles captures. Certains parcours réussis peuvent aussi être compilés en scripts testés via Devin.
+The tutor organizes a lesson into **milestones that can be checked on screen**, not fixed coordinates. Holo analyzes screenshots to guide the user. The autopilot reuses these milestones and checks their outcome on fresh screenshots. Some successful runs can also be compiled into tested scripts through Devin.
 
-### Organisation du dépôt
+### Repository layout
 
-| Dossier | Rôle et documentation |
+| Folder | Role and documentation |
 |---|---|
-| [`src/`](src/) | Interface React/TypeScript : barre de commande, curseur et notch. |
-| [`src-tauri/`](src-tauri/) | Application native Rust/Tauri : tuteur, capture, voix et autopilote. |
-| [`landing/`](landing/) | Site public [rio.vignemale.com](https://rio.vignemale.com). [Guide du site](landing/README.md). |
-| [`platform/`](platform/) | Worker Cloudflare, API, console et D1. [Installation et API](platform/README.md). |
-| [`platform/knowledge/`](platform/knowledge/) | Service de recherche dans la base de connaissances. |
-| [`tutorials/`](tutorials/) | Tutoriels d’exemple sous forme de graphes de jalons. |
-| [`sim/`](sim/) | Scénarios et applications de test. [Guide du simulateur](sim/README.md). |
-| [`tools/`](tools/) | Outils, dont l’explorateur des journaux de session. |
-| [`demo/`](demo/) | Préparation des démonstrations et installation de skills d’exemple. |
-| [`brand/`](brand/) | Logos et visuels Rio. |
-| [`.prime/agent/skills/rio-harness-core/`](.prime/agent/skills/rio-harness-core/) | [Guide technique pour les agents](.prime/agent/skills/rio-harness-core/SKILL.md), invariants et scripts de validation. |
+| [`src/`](src/) | React/TypeScript interface: command bar, cursor and notch. |
+| [`src-tauri/`](src-tauri/) | Native Rust/Tauri app: tutor, capture, voice and autopilot. |
+| [`landing/`](landing/) | Public website [rio.vignemale.com](https://rio.vignemale.com). [Website guide](landing/README.md). |
+| [`platform/`](platform/) | Cloudflare Worker, API, console and D1. [Setup and API](platform/README.md). |
+| [`platform/knowledge/`](platform/knowledge/) | Knowledge base search service. |
+| [`tutorials/`](tutorials/) | Sample tutorials as milestone graphs. |
+| [`sim/`](sim/) | Test scenarios and applications. [Simulator guide](sim/README.md). |
+| [`tools/`](tools/) | Tools, including the session log explorer. |
+| [`demo/`](demo/) | Demo preparation and sample skill installation. |
+| [`brand/`](brand/) | Rio logos and visuals. |
+| [`.prime/agent/skills/rio-harness-core/`](.prime/agent/skills/rio-harness-core/) | [Technical guide for agents](.prime/agent/skills/rio-harness-core/SKILL.md), invariants and validation scripts. |
 
-### Services et recherche web
+### Services and web search
 
-H Company fournit la vision et la planification, Gladia transcrit voix et vidéos YouTube, et Phonon synthétise la voix localement. Cloudflare héberge le site, la console et l’API.
+H Company provides vision and planning, Gladia transcribes voice and YouTube videos, and Phonon synthesizes speech locally. Cloudflare hosts the website, the console and the API.
 
 <a id="web-search-h-agents-and-linkup"></a>
 
-- **Pendant une leçon** : base de connaissances de l’équipe, puis Linkup si configuré ; sans résultat, Holo peut répondre à partir de ses connaissances, avec cette origine signalée.
-- **Tutoriel créé depuis un objectif** : agent H `h/deep-search-pro`, puis Linkup en secours.
-- **Page web collée** : texte de la page ; l’agent H `h/web-surfer-pro` intervient si le contenu est insuffisant.
-- **Lien YouTube** : transcription Gladia, puis préparation des étapes par Holo.
+- **During a lesson**: the team's knowledge base, then Linkup if configured; with no result, Holo can answer from its own knowledge, and says so.
+- **Tutorial created from a goal**: H agent `h/deep-search-pro`, with Linkup as a fallback.
+- **Pasted web page**: the page's text; the H agent `h/web-surfer-pro` steps in if the content is not enough.
+- **YouTube link**: Gladia transcription, then Holo prepares the steps.
 
-### Validation et journaux
+### Validation and logs
 
-Le [simulateur d’apprenant](sim/README.md) exécute le vrai tuteur dans un Chrome sans interface, avec des profils et des erreurs rejouables. Des contrôles de l’état réel de l’application notent le résultat et repèrent les réussites annoncées à tort. Ces évaluations complètent les tests Rust ; elles ne prouvent pas une fiabilité universelle.
+The [learner simulator](sim/README.md) runs the real tutor in a headless Chrome, with replayable profiles and mistakes. Checks on the app's actual state score the outcome and flag successes that were wrongly reported. These evaluations complement the Rust tests; they do not prove universal reliability.
 
-Pour explorer les sessions locales :
+To explore local sessions:
 
 ```bash
 python3 tools/session_explorer.py --open
 ```
 
-Les journaux dans `sessions/` contiennent des captures de l’écran : ils ne doivent pas être publiés sans vérification.
+Logs in `sessions/` contain screenshots: do not publish them without checking them first.
 
 ## Installation
 
-### Application de bureau — macOS
+### Desktop app — macOS
 
-Prérequis : [Node.js](https://nodejs.org) **22.12 ou plus récent**, [Rust](https://rustup.rs) et les outils Apple (`xcode-select --install`).
+Requirements: [Node.js](https://nodejs.org) **22.12 or later**, [Rust](https://rustup.rs) and the Apple developer tools (`xcode-select --install`).
 
 ```bash
 git clone https://github.com/talal95c/Hcompany-Hack.git
@@ -137,26 +137,26 @@ cd Hcompany-Hack
 cp .env.example .env
 ```
 
-Renseigne `HAI_API_KEY` dans `.env` avec une [clé H Company](https://platform.hcompany.ai/settings/api-keys), puis lance Rio :
+Set `HAI_API_KEY` in `.env` to an [H Company key](https://platform.hcompany.ai/settings/api-keys), then start Rio:
 
 ```bash
 npm install
 npm run tauri dev
 ```
 
-Dans **Réglages Système → Confidentialité et sécurité**, autorise le terminal pour l’enregistrement de l’écran, l’accessibilité et la surveillance de l’entrée. Ajoute l’autorisation microphone pour la voix, puis redémarre Rio.
+In **System Settings → Privacy & Security**, allow your terminal for Screen Recording, Accessibility and Input Monitoring. Add Microphone access for voice, then restart Rio.
 
-Ouvre la barre avec **⌥ ⇧ Espace** ou l’icône de la barre des menus. Décris ton objectif ou colle un lien de tutoriel, puis suis le curseur.
+Open the bar with **⌥ ⇧ Space** or the menu bar icon. Describe your goal or paste a tutorial link, then follow the cursor.
 
-Options dans [`.env.example`](.env.example) :
-- `GLADIA_API_KEY` active la transcription vocale ;
-- `HF_TOKEN` donne accès à [Phonon 40m](https://huggingface.co/gradium/phonon-40m-multilingual), après acceptation des conditions ; sans accès, Rio utilise le modèle public 31m. Les poids Phonon sont sous licence non commerciale CC BY-NC 4.0 ;
-- `RIO_API_URL=https://rio.vignemale.com` et `RIO_API_TOKEN` relient l’application à l’équipe ; le jeton se crée dans **Settings** sur la console ;
-- `LINKUP_API_KEY` ajoute la recherche web de secours.
+Options in [`.env.example`](.env.example):
+- `GLADIA_API_KEY` enables voice transcription;
+- `HF_TOKEN` gives access to [Phonon 40m](https://huggingface.co/gradium/phonon-40m-multilingual) once you accept its terms; without access, Rio uses the public 31m model. Phonon weights are under the non-commercial CC BY-NC 4.0 license;
+- `RIO_API_URL=https://rio.vignemale.com` and `RIO_API_TOKEN` connect the app to your team; create the token in **Settings** in the console;
+- `LINKUP_API_KEY` adds fallback web search.
 
-### Développement web
+### Web development
 
-Pour travailler uniquement sur le site :
+To work on the website only:
 
 ```bash
 cd landing
@@ -164,8 +164,8 @@ npm install
 npm run dev
 ```
 
-Pour la console, l’API et les migrations locales, suivre le [guide de la plateforme](platform/README.md#run-it-locally). Les clés restent dans les fichiers locaux ignorés par Git ou dans les secrets Cloudflare.
+For the console, the API and local migrations, follow the [platform guide](platform/README.md#run-it-locally). Keys stay in local files ignored by Git or in Cloudflare secrets.
 
-### Vérifications
+### Checks
 
-Depuis la racine, `npm run build` vérifie TypeScript et construit l’interface. Les tests natifs se lancent avec `cd src-tauri && cargo test`. Les tests web et de simulation sont détaillés dans les guides de la [plateforme](platform/README.md) et du [simulateur](sim/README.md).
+From the repository root, `npm run build` type-checks TypeScript and builds the interface. Run the native tests with `cd src-tauri && cargo test`. Web and simulation tests are described in the [platform](platform/README.md) and [simulator](sim/README.md) guides.
