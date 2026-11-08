@@ -17,6 +17,7 @@ On first use, macOS asks for **Screen Recording** permission (System Settings �
 ## Use
 
 - **⌥⇧Space** (or the cursor icon in the menu bar) opens the bar at the bottom of the screen, even over full-screen apps.
+- **Language**: the `Auto / EN / FR` button next to the mic. *Auto* detects each sentence (an accent can fool it: "help me" heard as "m'a aidé"); *EN* or *FR* pins what the speech recognizer hears and the language Holo answers in. The choice is remembered.
 - Type a goal, press Enter. Follow the ghost cursor; progress also shows in the menu bar.
 - Esc hides the bar when no tutorial is running. Right-click the menu bar icon to quit.
 

@@ -43,8 +43,19 @@ pub fn listen_stop() {
     }
 }
 
+/// Which languages Gladia may hear. "Auto" detects per sentence among the
+/// supported ones, which an accent can fool: "help me" spoken with a French
+/// accent came back as "m'a aidé". A language chosen by the learner pins it.
+fn language_config(lang: Option<&str>) -> serde_json::Value {
+    const SUPPORTED: [&str; 5] = ["en", "fr", "de", "es", "pt"];
+    match lang.filter(|l| SUPPORTED.contains(l)) {
+        Some(l) => json!({ "languages": [l], "code_switching": false }),
+        None => json!({ "languages": SUPPORTED, "code_switching": true }),
+    }
+}
+
 #[tauri::command]
-pub async fn listen_start(app: AppHandle) -> Result<(), String> {
+pub async fn listen_start(app: AppHandle, lang: Option<String>) -> Result<(), String> {
     let key = api_key().ok_or("GLADIA_API_KEY is missing from .env")?;
     listen_stop();
     let stop = Arc::new(AtomicBool::new(false));
@@ -61,7 +72,7 @@ pub async fn listen_start(app: AppHandle) -> Result<(), String> {
             "channels": 1,
             "endpointing": 0.7,
             "maximum_duration_without_endpointing": 15,
-            "language_config": { "languages": ["en", "fr", "de", "es", "pt"], "code_switching": true },
+            "language_config": language_config(lang.as_deref()),
             "messages_config": { "receive_partial_transcripts": true }
         }))
         .send()
@@ -72,7 +83,7 @@ pub async fn listen_start(app: AppHandle) -> Result<(), String> {
     if !status.is_success() {
         return Err(format!("Gladia {status}: {body}"));
     }
-    let url = body["url"].as_str().ok_or("Gladia : pas d'URL de session")?.to_string();
+    let url = body["url"].as_str().ok_or("Gladia: no session URL")?.to_string();
 
     // 2. Start the microphone on its own thread (cpal streams are not Send).
     let (audio_tx, audio_rx) = mpsc::unbounded_channel::<Vec<u8>>();
@@ -243,5 +254,16 @@ impl Resampler {
                 let _ = self.tx.send(std::mem::take(&mut self.out));
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod lang_tests {
+    #[test]
+    fn a_chosen_language_pins_transcription() {
+        assert_eq!(super::language_config(Some("en"))["languages"], serde_json::json!(["en"]));
+        assert_eq!(super::language_config(Some("en"))["code_switching"], false);
+        assert_eq!(super::language_config(None)["code_switching"], true);
+        assert_eq!(super::language_config(Some("xx"))["code_switching"], true);
     }
 }

@@ -62,6 +62,23 @@ export default function App() {
   /** Learner's language: updated by everything they say (Gladia) or type
    *  (text detection), sent to Holo with every step. Never taken from the screen. */
   const langRef = useRef<string | null>(null);
+  // The language the learner chose to speak and read ("auto": detected).
+  const [speechLang, setSpeechLang] = useState<SpeechLang>(() => loadSpeechLang());
+  const speechLangRef = useRef(speechLang);
+  speechLangRef.current = speechLang;
+  /** The learner's language for something said or typed: the chosen one, else detected. */
+  async function learnerLang(text: string, spoken: string | null): Promise<string> {
+    const chosen = speechLangRef.current;
+    if (chosen !== "auto") return chosen;
+    return api.resolveLang(text, spoken, langRef.current);
+  }
+  function cycleSpeechLang() {
+    const next = SPEECH_LANGS[(SPEECH_LANGS.indexOf(speechLang) + 1) % SPEECH_LANGS.length];
+    setSpeechLang(next);
+    saveSpeechLang(next);
+    if (next !== "auto") langRef.current = next;
+    if (listening) api.listenStop();
+  }
   const voiceRef = useRef(voice);
   voiceRef.current = voice;
   const liveRef = useRef({ phase, stepState, step, explain });
@@ -220,7 +237,7 @@ export default function App() {
     setThinking("");
     setQa({ question: q });
     setGoal("");
-    langRef.current = await api.resolveLang(q, spoken, langRef.current);
+    langRef.current = await learnerLang(q, spoken);
     try {
       const result = await api.answerQuestion(q, langRef.current);
       if (result.kind === "guide") {
@@ -261,7 +278,9 @@ export default function App() {
     setPlanning(false);
     setTitle(g);
     // A typed or spoken goal sets the language; a library pick keeps the current one.
-    langRef.current = tutorialId ? lang ?? langRef.current : await api.resolveLang(g, lang, langRef.current);
+    langRef.current = tutorialId
+      ? speechLangRef.current !== "auto" ? speechLangRef.current : lang ?? langRef.current
+      : await learnerLang(g, lang);
     liveRef.current.step = null;
     setStep(null);
     setPhase("planning");
@@ -329,7 +348,7 @@ export default function App() {
     const q = text.trim();
     if (!q || phase !== "running") return;
     if (liveRef.current.step?.kind === "ask_learner") return answerHolo(q);
-    langRef.current = await api.resolveLang(q, spoken, langRef.current);
+    langRef.current = await learnerLang(q, spoken);
     stopSpeaking();
     api.hidePointer();
     setQuestion("");
@@ -378,7 +397,7 @@ export default function App() {
     }
     stopSpeaking();
     try {
-      await api.listenStart();
+      await api.listenStart(speechLang === "auto" ? null : speechLang);
     } catch (e) {
       const m = errorText(e);
       if (liveRef.current.phase === "running") setMessage(m);
@@ -552,6 +571,9 @@ export default function App() {
                 >
                   <IconGrid />
                 </button>
+                <button type="button" className="tool tool--text" onClick={cycleSpeechLang} title={SPEECH_LANG_TITLE[speechLang]}>
+                  {SPEECH_LANG_LABEL[speechLang]}
+                </button>
                 <button
                   type="button"
                   className={`tool ${listening ? "tool--rec" : ""}`}
@@ -581,7 +603,7 @@ export default function App() {
           transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
         >
           <div className="row row--meta">
-            <div className="segments" aria-label="Étapes">
+            <div className="segments" aria-label="Milestones">
               {progress.map((m) => (
                 <span
                   key={m.id}
@@ -594,6 +616,9 @@ export default function App() {
               {step.milestone?.goal ?? ""}
             </span>
             <div className="tools">
+              <button className="tool tool--text" onClick={cycleSpeechLang} title={SPEECH_LANG_TITLE[speechLang]}>
+                {SPEECH_LANG_LABEL[speechLang]}
+              </button>
               <button
                 className={`tool ${listening ? "tool--rec" : ""}`}
                 onClick={toggleMic}
@@ -604,7 +629,7 @@ export default function App() {
               <button
                 className={`tool ${asking ? "tool--on" : ""}`}
                 onClick={() => setAsking((a) => !a)}
-                title="Écrire une question"
+                title="Type a question"
               >
                 <IconKeyboard />
               </button>
@@ -822,6 +847,33 @@ export default function App() {
     </div>
     </div>
   );
+}
+
+type SpeechLang = "auto" | "en" | "fr";
+const SPEECH_LANGS: SpeechLang[] = ["auto", "en", "fr"];
+const SPEECH_LANG_LABEL: Record<SpeechLang, string> = { auto: "Auto", en: "EN", fr: "FR" };
+const SPEECH_LANG_TITLE: Record<SpeechLang, string> = {
+  auto: "Language: detected (click for English)",
+  en: "Language: English (click for French)",
+  fr: "Language: French (click for automatic)",
+};
+const SPEECH_LANG_KEY = "rio.speechLang";
+
+function loadSpeechLang(): SpeechLang {
+  try {
+    const v = localStorage.getItem(SPEECH_LANG_KEY);
+    return v === "en" || v === "fr" ? v : "auto";
+  } catch {
+    return "auto";
+  }
+}
+
+function saveSpeechLang(v: SpeechLang) {
+  try {
+    localStorage.setItem(SPEECH_LANG_KEY, v);
+  } catch {
+    // Not remembered: the choice still holds for this run.
+  }
 }
 
 function doneLine(lang: string | null): string {

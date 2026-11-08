@@ -100,7 +100,8 @@ export const api = {
   hideBar: () => invoke("hide_bar"),
   resizeBar: (height: number, width: number) => invoke("resize_bar", { height, width }),
   setSticky: (sticky: boolean) => invoke("set_bar_sticky", { sticky }),
-  listenStart: () => invoke("listen_start"),
+  /** `lang`: the language the learner chose to speak, or null to detect it. */
+  listenStart: (lang: string | null) => invoke("listen_start", { lang }),
   listenStop: () => invoke("listen_stop"),
 };
 
