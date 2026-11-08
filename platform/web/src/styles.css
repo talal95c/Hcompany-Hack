@@ -648,11 +648,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .frame { background: #fff; }
 .home__atmosphere, .home .riobar-wrap::after { display: none; }
 
-/* Desktop: the collapsed rail keeps its 64px slot; hovering it opens the full menu above the page. */
-@media (min-width: 861px) {
-  .rail-slot { position: sticky; top: 0; height: 100vh; width: 64px; flex: none; z-index: 30; transition: width 0.26s cubic-bezier(0.23, 1, 0.32, 1); }
-  .rail-slot.is-pinned { width: 252px; }
-  .rail-slot > .rail { position: absolute; top: 0; left: 0; height: 100%; background: #ececea; }
-  .rail.is-peek { box-shadow: 16px 0 32px -24px rgba(0, 0, 0, 0.3); }
-}
-@media (max-width: 860px) { .rail-slot { display: contents; } }
+/* Desktop: the same sidebar as before (it widens and the page makes room), opened by hovering instead of clicking. */
+.rail-slot { display: contents; }
+
