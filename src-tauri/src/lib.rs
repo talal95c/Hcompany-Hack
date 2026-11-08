@@ -13,6 +13,7 @@ mod debug;
 mod devin;
 mod holo;
 mod journal;
+mod observe;
 mod panel;
 mod planner;
 mod platform;

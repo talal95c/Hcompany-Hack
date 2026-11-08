@@ -300,6 +300,147 @@ user clicks ───────────▶   clicks.rs: real click near ta
 
 Both windows are excluded from screen captures, so Holo never sees the app itself.
 
+## Démo observation
+
+Depuis la racine du dépôt, sur macOS :
+
+```sh
+npm run demo:skill
+RIO_OBSERVE=1 RIO_OBSERVE_STEPS=3 RIO_SKILLS_COOLDOWN_SECONDS=0 RIO_AUTO_COMPILE=0 npm run tauri dev
+```
+
+Le modèle Holo doit déjà être configuré et Rio doit avoir l’autorisation
+d’enregistrer l’écran. L’observation envoie des captures au cloud : utiliser un
+bureau de démonstration sans données privées, sur l’écran principal. Ne pas
+lancer de tutoriel ni d’autopilot pendant l’observation.
+
+L’installateur copie `demo/textedit-courses/skill.json` vers
+`skills/demo-textedit-courses/skill.json`, exactement le dossier lu par
+`skills::dir()` (pas de variable d’environnement de remplacement actuellement).
+Ce dossier local est ignoré par Git. Une installation identique est laissée
+inchangée ; un dossier différent provoque un refus explicite, sans écrasement.
+La fixture contient **une réussite synthétique réservée à la démo**, pas une
+preuve d’une exécution réelle, et aucun script compilé. Le graphe est inclus
+dans `skill.json` : aucun tutoriel séparé n’est nécessaire.
+
+1. Ouvrir **TextEdit**, créer un document vide avec `⌘N`, choisir **Format →
+   Convertir au format RTF** si le document est en texte brut. Fermer les
+   dialogues ; garder le document sur l’écran principal et TextEdit au premier
+   plan. Son nom d’application est `TextEdit` (xcap lit `kCGWindowOwnerName` ;
+   le watcher compare les noms sans tenir compte de la casse).
+2. Attendre une première prise de référence locale (environ 4 s, est.), puis
+   redimensionner franchement la fenêtre et la laisser immobile environ 20 s
+   (est.). Cela déclenche le contrôle du premier jalon : document ouvert.
+3. Saisir exactement **`Liste de courses`**, sans Retour. Redimensionner à
+   nouveau la fenêtre, puis attendre environ 20 s (est.), sans changer d’app.
+4. Sélectionner le titre avec `⌘A`, puis `⌘B` pour le mettre en gras. Avec la
+   souris, placer le curseur à la fin du titre, sans Retour. Redimensionner à
+   nouveau et attendre environ 20 s (est.).
+5. La proposition attendue est **« Tu es en train de faire Préparer une liste
+   de courses (3/6). Je termine pour toi ? »**. Cliquer **Oui, vas-y**.
+   Rio GUI revérifie les jalons existants puis ajoute `Pommes`, `Pain`, `Lait`,
+   chacun sur sa propre ligne, en expliquant ses actions en français.
+
+Le premier critère reste vrai après la saisie du titre : c’est volontaire pour
+que la reprise GUI puisse revérifier les trois premiers jalons sans effacer le
+travail déjà fait. Les critères suivants exigent le texte exact et l’ordre des
+lignes. Résultat attendu :
+
+```text
+Liste de courses     ← en gras
+Pommes
+Pain
+Lait
+```
+
+Les changements de quelques lettres peuvent être trop petits pour la miniature
+locale ; le redimensionnement après chaque étape assure un changement net avant
+la stabilisation. Si la proposition n’apparaît pas, rester dans TextEdit et
+redimensionner à nouveau. Une vérification inconnue ne compte jamais. Une autre
+skill TextEdit à égalité empêche la proposition ; changer d’app réinitialise les
+jalons observés. Deux refus activent toujours la sourdine de 24 h, même avec le
+cooldown à zéro. L’installateur ne réinitialise pas une skill modifiée : sauvegarder
+ou déplacer explicitement son dossier local avant une nouvelle installation.
+
+### Variante Microsoft Excel pour Mac — Calculer le total des courses
+
+Microsoft Excel doit être installé et activé sur le Mac. Depuis la racine du dépôt :
+
+```sh
+npm run demo:skill -- excel
+RIO_OBSERVE=1 RIO_OBSERVE_STEPS=3 RIO_SKILLS_COOLDOWN_SECONDS=0 RIO_AUTO_COMPILE=0 npm run tauri dev
+```
+
+Sans argument, l’installateur continue d’installer TextEdit. L’argument `excel`
+installe `demo/excel-courses/skill.json` dans
+`skills/demo-excel-courses/skill.json`, sans toucher à TextEdit. Les mêmes règles
+de refus d’écrasement s’appliquent. La réussite incluse est synthétique, réservée
+à la démo, et aucun script n’est compilé. Le nom d’application attendu par xcap
+est **`Microsoft Excel`**, pas `Excel`.
+
+Les permissions, l’écran principal et les précautions de confidentialité décrits
+ci-dessus restent nécessaires. Garder Excel au premier plan pendant les étapes :
+
+1. Ouvrir un **nouveau classeur vierge** avec `⌘N`. Fermer les dialogues,
+   afficher la feuille avec **A1:B5** visibles et la barre de formule affichée
+   (onglet **Affichage**, si nécessaire). Attendre environ 4 s (est.) pour la
+   référence locale, redimensionner franchement la fenêtre, puis la laisser
+   immobile environ 20 s (est.) pour le premier contrôle.
+2. Cliquer **A1**, saisir exactement **`Produit`**, appuyer sur **Tab**, saisir
+   **`Prix`**, puis **Entrée** pour valider. Redimensionner à nouveau et attendre
+   environ 20 s (est.), sans changer d’application.
+3. Cliquer **A2**, saisir exactement **`Pommes`**, **Entrée**, **`Pain`**,
+   **Entrée**, **`Lait`**, **Entrée**. Ne pas saisir les prix soi-même.
+   Redimensionner à nouveau et attendre environ 20 s (est.).
+4. Accepter **« Tu es en train de faire Calculer le total des courses (3/7).
+   Je termine pour toi ? »** avec **Oui, vas-y**. Rio GUI revérifie les trois
+   jalons puis saisit les prix, la somme, et met les deux lignes en gras.
+
+Résultat attendu :
+
+| Cellule | Contenu |
+|---|---|
+| A1 / B1 | **Produit / Prix** |
+| A2 / B2 | Pommes / 2 |
+| A3 / B3 | Pain / 3 |
+| A4 / B4 | Lait / 1,5 (ou 1.5) |
+| A5 / B5 | **Total / 6,5 (ou 6.5)** |
+
+Pour prouver le cinquième jalon sur **une seule capture**, B5 doit être
+sélectionnée : la cellule affiche **6,5** ou **6.5** et la barre de formule
+montre **`=SOMME(B2:B4)`** ou **`=SUM(B2:B4)`**, selon la langue d’Excel.
+Une constante `6,5` ne suffit pas. Les hints indiquent les deux noms de fonction,
+le séparateur décimal local et les actions concrètes cellule/Entrée/Tab/`⌘B`.
+Le premier critère reste vrai après remplissage du classeur pour permettre la
+reprise sans effacer les données. Si le contrôle reste inconnu, redimensionner
+de nouveau en gardant Excel actif ; une autre skill Excel à égalité empêche la
+proposition et les refus conservent la sourdine habituelle.
+
+### Opt-in skill observation
+
+Autopilot GUI actions are narrated in French by the local Phonon TTS, including
+the first action of each new milestone. The sentence is also shown in the notch.
+Set `RIO_NARRATE=0` to disable narration (default on). Speech waits at most six
+seconds including synthesis (est.), then is cut off before the action; Stop
+interrupts playback immediately. Missing/unavailable TTS is logged and does not
+prevent execution. No extra model call is made for narration: the existing action
+response supplies the French sentence.
+
+`RIO_OBSERVE=1` enables cloud vision observation while no tutorial or autopilot
+is running. Default off: the existing focus-only proposals do not send observation
+screenshots to Holo. Only apps with a previously successful, unmuted skill are
+observed. A local thumbnail change followed by a stable sample triggers at most
+one fresh visual check, at most ten checks/minute. The watcher samples every
+three seconds (est.); progress resets on app change or five minutes of inactivity
+(est.). `RIO_OBSERVE_STEPS` sets the proposal threshold (default 3).
+
+Only explicit `met` with evidence counts. A unique leading skill is proposed;
+cooldown and two-declines mute still apply. Acceptance remains required. Observed
+proposals always use the Rio GUI driver, never a full-task Devin script. The
+driver checks existing milestones on fresh screens before continuing rather than
+trusting old observation matches as completed work. Observation captures the
+primary display, so keep the target app there for this demo.
+
 ## Next
 
 - Apply the autopilot's final goal check to tutor mode, which can still announce "done" too early.

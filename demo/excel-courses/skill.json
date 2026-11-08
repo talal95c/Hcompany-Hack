@@ -1,0 +1,79 @@
+{
+  "tutorial_id": "demo-excel-courses",
+  "title": "Calculer le total des courses",
+  "goal": "Créer dans Excel un tableau de courses avec les prix, une formule de somme et les en-têtes et le total en gras.",
+  "app": { "name": "Microsoft Excel", "bundle_id": "com.microsoft.Excel" },
+  "graph": {
+    "id": "demo-excel-courses",
+    "version": 1,
+    "title": "Calculer le total des courses",
+    "goal": "Créer dans Excel un tableau de courses avec les prix, une formule de somme et les en-têtes et le total en gras.",
+    "app": { "name": "Microsoft Excel", "bundle_id": "com.microsoft.Excel" },
+    "language": "fr",
+    "source": "authored",
+    "start": "m1",
+    "milestones": [
+      {
+        "id": "m1",
+        "goal": "Ouvrir un classeur Excel vierge.",
+        "done_when": "Une fenêtre de classeur Microsoft Excel est ouverte avec une feuille de calcul visible et les cellules A1:B5 à l’écran, vides ou déjà remplies.",
+        "hints": ["Dans Microsoft Excel, utiliser Fichier → Nouveau classeur (cmd+n), puis fermer les dialogues et afficher la feuille."],
+        "next": ["m2"]
+      },
+      {
+        "id": "m2",
+        "goal": "Écrire Produit en A1 et Prix en B1.",
+        "done_when": "La cellule A1 contient le texte exact «Produit» et la cellule B1 contient uniquement Prix, tous deux lisibles dans la feuille Excel.",
+        "hints": ["Cliquer A1, saisir Produit, appuyer sur Tab, saisir Prix, puis appuyer sur Entrée pour valider."],
+        "requires": ["m1"],
+        "next": ["m3"]
+      },
+      {
+        "id": "m3",
+        "goal": "Écrire Pommes, Pain et Lait dans A2:A4.",
+        "done_when": "La cellule A2 contient le texte exact «Pommes», A3 contient uniquement Pain et A4 contient uniquement Lait, sous Produit en A1 et Prix en B1, tous visibles dans la feuille Excel.",
+        "hints": ["Cliquer A2, saisir Pommes, Entrée, saisir Pain, Entrée, saisir Lait, puis Entrée pour valider."],
+        "requires": ["m2"],
+        "next": ["m4"]
+      },
+      {
+        "id": "m4",
+        "goal": "Saisir les prix 2, 3 et 1,5 dans B2:B4.",
+        "done_when": "La cellule B2 affiche le texte exact «2», B3 affiche 3 et B4 affiche 1,5 ou 1.5 selon la locale ; les produits Pommes, Pain et Lait sont visibles respectivement en A2, A3 et A4.",
+        "hints": ["Cliquer B2, saisir 2 puis Entrée, saisir 3 puis Entrée, saisir 1,5 dans une locale française ou 1.5 dans une locale anglaise puis Entrée. Utiliser le séparateur décimal reconnu par Excel et ne pas saisir d’apostrophe."],
+        "requires": ["m3"],
+        "next": ["m5"]
+      },
+      {
+        "id": "m5",
+        "goal": "Calculer la somme des prix en B5 et écrire Total en A5.",
+        "done_when": "A5 contient le texte exact «Total». B5 est sélectionnée, affiche le résultat numérique 6,5 ou 6.5 selon la locale, et la barre de formule visible montre =SUM(B2:B4) ou =SOMME(B2:B4), pas une constante ; les cellules B2:B4 affichent respectivement 2, 3 et 1,5 ou 1.5.",
+        "hints": ["Cliquer A5, saisir Total puis Tab. En B5, saisir =SOMME(B2:B4) si Excel est en français, ou =SUM(B2:B4) si Excel est en anglais, puis Entrée. Si Excel indique un nom de fonction inconnu, utiliser l’autre nom localisé. Recliquer B5 pour afficher la formule dans la barre de formule et laisser A1:B5 visibles. Si nécessaire, afficher la barre de formule via l’onglet Affichage."],
+        "requires": ["m4"],
+        "next": ["m6"]
+      },
+      {
+        "id": "m6",
+        "goal": "Mettre les en-têtes A1:B1 en gras.",
+        "done_when": "Le texte exact «Produit» en A1 et Prix en B1 sont tous deux visiblement en gras ; le tableau A1:B5 reste visible avec les trois produits, leurs prix et le total 6,5 ou 6.5.",
+        "hints": ["Sélectionner A1:B1 en faisant glisser de A1 à B1. Appuyer sur cmd+b uniquement si le gras n’est pas déjà actif, puis cliquer une autre cellule pour voir les en-têtes en gras."],
+        "requires": ["m5"],
+        "next": ["m7"]
+      },
+      {
+        "id": "m7",
+        "goal": "Mettre le total A5:B5 en gras.",
+        "done_when": "Le texte exact «Total» en A5 et le résultat 6,5 ou 6.5 en B5 sont tous deux visiblement en gras ; A1 Produit et B1 Prix restent en gras, et le tableau A1:B5 est entièrement visible avec Pommes, Pain, Lait et leurs prix.",
+        "hints": ["Sélectionner A5:B5 en faisant glisser de A5 à B5, appuyer sur cmd+b uniquement si le gras n’est pas déjà actif, puis cliquer B5 pour laisser la formule de somme visible dans la barre de formule. Ne pas remplacer la formule par une valeur."],
+        "requires": ["m6"],
+        "next": []
+      }
+    ]
+  },
+  "runs": [
+    { "date": 0, "mode": "learner", "outcome": "completed", "duration_s": 0, "session_id": "demo-fixture-not-a-user-run" }
+  ],
+  "compiled": [],
+  "muted_until": null,
+  "declines": 0
+}

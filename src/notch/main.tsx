@@ -74,7 +74,7 @@ function Notch() {
   }
 
   return (
-    <motion.section ref={surface} className={`notch notch--${phase}`} aria-live="polite" aria-label="Rio does it for you" aria-hidden={phase === "closed"}
+    <motion.section ref={surface} className={`notch notch--${phase}`} aria-live="polite" aria-label="Rio le fait pour toi" aria-hidden={phase === "closed"}
       initial={shapes.closed}
       animate={{ ...shapes[phase], opacity: phase === "closed" ? 0 : 1 }}
       transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 36, mass: 0.8, opacity: { duration: 0.14, delay: phase === "closed" ? 0.42 : 0 } }}
@@ -83,7 +83,7 @@ function Notch() {
         <svg width="16" height="14" viewBox="0 0 96 84" fill="currentColor">
           <path d="M24 0H84V40L64 60V20H24V60L0 84V24Z M24 60H64L96 84H48Z" />
         </svg>
-        <span>{phase === "closed" ? "RIO" : "RIO DOES IT FOR YOU"}</span>
+        <span>{phase === "closed" ? "RIO" : "RIO LE FAIT POUR TOI"}</span>
       </div>
       <AnimatePresence initial={false}>
         {phase !== "closed" && <motion.div key={phase} className="notch__content" style={{ width: shapes[phase].width - 40 }}
@@ -93,11 +93,11 @@ function Notch() {
           transition={{ duration: reduced ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}>
           {phase === "expanded" ? (
             <>
-              <h1>Want me to do <span>{view?.title}</span>?</h1>
+              <h1>{view?.done ? <>Tu es en train de faire <span>{view.title}</span> ({view.done}/{view.total}). Je termine pour toi ?</> : <>Tu veux que je fasse <span>{view?.title}</span> pour toi ?</>}</h1>
               <p className="notch__goal" title={view?.goal}>{view?.goal}</p>
               <div className="notch__actions">
-                <button className="notch__secondary" disabled={busy} onClick={() => { sfx.dismiss(); void act(api.autopilotDecline); }}>Not now <kbd>esc</kbd></button>
-                <button className="notch__primary" disabled={busy} onClick={() => { sfx.confirm(); void act(() => api.autopilotAccept(view!.skill_id)); }}>Yes</button>
+                <button className="notch__secondary" disabled={busy} onClick={() => { sfx.dismiss(); void act(api.autopilotDecline); }}>Pas maintenant <kbd>échap</kbd></button>
+                <button className="notch__primary" disabled={busy} onClick={() => { sfx.confirm(); void act(() => api.autopilotAccept(view!.skill_id)); }}>Oui, vas-y</button>
               </div>
             </>
           ) : phase === "final" ? (
@@ -109,15 +109,15 @@ function Notch() {
             <>
               <div className="notch__task">
                 <h1>{view?.title}</h1>
-                <button className="notch__stop" disabled={busy} onClick={() => { sfx.dismiss(); void act(api.autopilotStop); }}>Stop</button>
+                <button className="notch__stop" disabled={busy} onClick={() => { sfx.dismiss(); void act(api.autopilotStop); }}>Arrêter</button>
               </div>
-              <motion.p key={view?.index} className="notch__status" initial={{ opacity: reduced ? 1 : 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.18 }}>Step {view?.index ?? 0}/{view?.total ?? 0} · {view?.label ?? ""}</motion.p>
-              <div className="notch__progress" role="progressbar" aria-label="Task progress" aria-valuemin={0} aria-valuemax={view?.total || 1} aria-valuenow={view?.index ?? 0}>
+              <motion.p key={view?.index} className="notch__status" title={view?.message ?? view?.label} initial={{ opacity: reduced ? 1 : 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.18 }}>Étape {view?.index ?? 0}/{view?.total ?? 0} · {view?.message ?? view?.label ?? ""}</motion.p>
+              <div className="notch__progress" role="progressbar" aria-label="Progression de la tâche" aria-valuemin={0} aria-valuemax={view?.total || 1} aria-valuenow={view?.index ?? 0}>
                 <motion.span animate={{ width: `${100 * (view?.index ?? 0) / (view?.total || 1)}%` }} transition={{ duration: reduced ? 0 : 0.4, ease: [0.22, 1, 0.36, 1] }} />
               </div>
             </>
           )}
-          {view?.mode === "script" && <span className="notch__badge">Script tested by Devin</span>}
+          {view?.mode === "script" && <span className="notch__badge">Script testé par Devin</span>}
           {error && <p className="notch__error" role="alert">{error}</p>}
         </motion.div>}
       </AnimatePresence>

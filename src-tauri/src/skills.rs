@@ -48,6 +48,12 @@ pub struct Proposal {
     pub goal: String,
     pub app: App,
     pub mode: String,
+    #[serde(default)]
+    pub done: usize,
+    #[serde(default)]
+    pub total: usize,
+    #[serde(default)]
+    pub matched: Vec<String>,
 }
 
 pub fn now() -> u64 {
@@ -243,6 +249,9 @@ fn emit(app: &AppHandle, skill: &Skill) -> Result<(), String> {
             goal: skill.goal.clone(),
             app: skill.app.clone(),
             mode: crate::devin::mode(skill).into(),
+            done: 0,
+            total: skill.graph.milestones.len(),
+            matched: Vec::new(),
         },
     )
     .map_err(|e| e.to_string())
@@ -273,6 +282,10 @@ pub fn spawn(app: AppHandle) {
     std::thread::Builder::new()
         .name("skill-context".into())
         .spawn(move || {
+            if crate::observe::enabled(std::env::var("RIO_OBSERVE").ok().as_deref()) {
+                observe(&app);
+                return;
+            }
             let cooldown = std::env::var("RIO_SKILLS_COOLDOWN_SECONDS")
                 .ok()
                 .and_then(|v| v.parse::<u64>().ok())
@@ -318,10 +331,180 @@ pub fn spawn(app: AppHandle) {
         .expect("spawn skill context watcher");
 }
 
+fn focused_app() -> Option<String> {
+    xcap::Window::all().ok()?.iter().find(|w| w.is_focused().unwrap_or(false))?.app_name().ok()
+}
+
+fn observe(app: &AppHandle) {
+    use crate::capture::{SCREEN_CHANGED, capture_thumb, thumb_diff};
+    let threshold = std::env::var("RIO_OBSERVE_STEPS").ok().and_then(|v| v.parse::<usize>().ok()).unwrap_or(3).max(1);
+    let cooldown =
+        std::env::var("RIO_SKILLS_COOLDOWN_SECONDS").ok().and_then(|v| v.parse::<u64>().ok()).unwrap_or(30 * 60);
+    let mut progress = crate::observe::Progress::default();
+    let mut previous = None;
+    let mut pending = false;
+    let mut last_check = 0;
+    let mut cursor = 0usize;
+    loop {
+        std::thread::sleep(Duration::from_secs(3));
+        let state = app.state::<crate::AppState>();
+        let tutorial_running = {
+            let Ok(session) = state.session.try_lock() else { continue };
+            session.as_ref().is_some_and(|s| !s.finished)
+        };
+        if crate::autopilot::is_running() || tutorial_running {
+            progress = crate::observe::Progress::default();
+            previous = None;
+            pending = false;
+            continue;
+        }
+        let name = focused_app().unwrap_or_default().to_lowercase();
+        let time = now();
+        if progress.context(&name, time, false) {
+            previous = None;
+            pending = false;
+        }
+        let Ok(skills) = list() else { continue };
+        let candidates: Vec<_> = skills
+            .iter()
+            .filter(|s| !name.is_empty() && s.app.name.eq_ignore_ascii_case(&name) && eligible(s, time))
+            .collect();
+        progress.matched.retain(|id, _| candidates.iter().any(|s| &s.tutorial_id == id));
+        if candidates.is_empty() {
+            continue;
+        }
+        let Ok(thumb) = capture_thumb() else { continue };
+        let difference = previous.as_ref().map(|p| thumb_diff(p, &thumb));
+        previous = Some(thumb);
+        if difference.is_some_and(|d| d >= SCREEN_CHANGED) {
+            progress.context(&name, time, true);
+            pending = true;
+            continue;
+        }
+        if !pending || difference.is_none_or(|d| d > 0.35) || time.saturating_sub(last_check) < 6 {
+            continue;
+        }
+        pending = false;
+        let mut checks = Vec::new();
+        for skill in &candidates {
+            let matched = progress.matched.entry(skill.tutorial_id.clone()).or_default();
+            for milestone in crate::observe::frontier(&skill.graph, matched) {
+                checks.push((*skill, milestone));
+            }
+        }
+        if checks.is_empty() {
+            continue;
+        }
+        let (skill, milestone) = checks[cursor % checks.len()];
+        cursor = cursor.wrapping_add(1);
+        last_check = time;
+        let generation = state.generation.current();
+        let met = tauri::async_runtime::block_on(async {
+            tokio::time::timeout(
+                Duration::from_secs(15),
+                crate::agent::observe_milestone(&state.holo, &milestone.done_when),
+            )
+            .await
+            .is_ok_and(|r| r.is_ok())
+        });
+        let tutorial_running = {
+            match state.session.try_lock() {
+                Ok(session) => session.as_ref().is_some_and(|s| !s.finished),
+                Err(_) => true,
+            }
+        };
+        if tutorial_running
+            || crate::autopilot::is_running()
+            || !state.generation.is_current(generation)
+            || focused_app().is_none_or(|n| !n.eq_ignore_ascii_case(&name))
+        {
+            progress = crate::observe::Progress::default();
+            previous = None;
+            continue;
+        }
+        if met {
+            progress.matched.entry(skill.tutorial_id.clone()).or_default().insert(milestone.id.clone());
+        }
+        let Some(id) = progress.leader(threshold) else { continue };
+        let Some(skill) = candidates.iter().find(|s| s.tutorial_id == id) else { continue };
+        let mut guard = PROPOSALS.lock().unwrap();
+        let last = guard.get_or_insert_with(HashMap::new);
+        if !ready(skill, last, now(), cooldown) {
+            continue;
+        }
+        let mut matched: Vec<_> = progress.matched[id].iter().cloned().collect();
+        matched.sort();
+        if app
+            .emit(
+                "autopilot:propose",
+                Proposal {
+                    skill_id: skill.tutorial_id.clone(),
+                    title: skill.title.clone(),
+                    goal: skill.goal.clone(),
+                    app: skill.app.clone(),
+                    mode: "rio".into(),
+                    done: matched.len(),
+                    total: skill.graph.milestones.len(),
+                    matched,
+                },
+            )
+            .is_ok()
+        {
+            last.insert(app_key(&skill.app), now());
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::tutorial::Milestone;
+
+    #[test]
+    fn textedit_demo_is_eligible_and_starts_at_first_milestone() {
+        let skill: Skill = serde_json::from_str(include_str!("../../demo/textedit-courses/skill.json")).unwrap();
+        skill.graph.validate().unwrap();
+        assert_eq!(skill.app.name, "TextEdit");
+        assert!(skill.app.name.eq_ignore_ascii_case("TextEdit"));
+        assert!(eligible(&skill, 0));
+        assert_eq!(skill.runs.len(), 1);
+        assert_eq!(skill.runs[0].outcome, "completed");
+        assert!(skill.compiled.is_empty());
+        assert_eq!(skill.graph.milestones.len(), 6);
+        let mut matched = std::collections::HashSet::new();
+        for milestone in &skill.graph.milestones {
+            let frontier = crate::observe::frontier(&skill.graph, &matched);
+            assert_eq!(frontier.len(), 1);
+            assert_eq!(frontier[0].id, milestone.id);
+            matched.insert(milestone.id.clone());
+        }
+        assert!(crate::observe::frontier(&skill.graph, &matched).is_empty());
+    }
+
+    #[test]
+    fn excel_demo_is_eligible_and_starts_at_first_milestone() {
+        let skill: Skill = serde_json::from_str(include_str!("../../demo/excel-courses/skill.json")).unwrap();
+        skill.graph.validate().unwrap();
+        assert_eq!(skill.app.name, "Microsoft Excel");
+        assert_eq!(skill.graph.app.name, skill.app.name);
+        assert!(eligible(&skill, 0));
+        assert_eq!(skill.runs.len(), 1);
+        assert_eq!(skill.runs[0].outcome, "completed");
+        assert!(skill.compiled.is_empty());
+        assert_eq!(skill.graph.milestones.len(), 7);
+        let mut matched = std::collections::HashSet::new();
+        for milestone in &skill.graph.milestones {
+            let frontier = crate::observe::frontier(&skill.graph, &matched);
+            assert_eq!(frontier.len(), 1);
+            assert_eq!(frontier[0].id, milestone.id);
+            matched.insert(milestone.id.clone());
+        }
+        assert!(crate::observe::frontier(&skill.graph, &matched).is_empty());
+        let formula = &skill.graph.milestone("m5").unwrap().done_when;
+        for alternative in ["6,5", "6.5", "=SUM(B2:B4)", "=SOMME(B2:B4)"] {
+            assert!(formula.contains(alternative));
+        }
+    }
 
     fn graph() -> Tutorial {
         Tutorial {

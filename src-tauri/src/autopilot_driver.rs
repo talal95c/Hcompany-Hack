@@ -1,6 +1,7 @@
 use crate::{agent, autopilot, journal, skills};
 use std::collections::HashMap;
-use std::time::Duration;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 
 #[derive(Clone, Copy)]
@@ -184,8 +185,83 @@ struct LiveDriver<'a> {
     progressed: bool,
     ticket: u64,
     pending: Option<agent::Step>,
+    narrated_milestone: Option<String>,
     /// The last action Rio performed.
     last: Option<agent::Step>,
+}
+
+fn narrate_enabled(value: Option<&str>) -> bool {
+    value != Some("0")
+}
+
+fn narration(step: &agent::Step, new_milestone: bool) -> String {
+    let action = if !step.instruction.trim().is_empty() {
+        step.instruction.clone()
+    } else {
+        match step.kind.as_str() {
+            "click" => {
+                format!("Je clique sur {}.", if step.element.trim().is_empty() { "la cible" } else { &step.element })
+            }
+            "write" => "Je saisis le texte dans le champ sélectionné.".into(),
+            "press_key" => format!("J’utilise le raccourci {}.", step.keys),
+            "scroll" => "Je fais défiler la vue pour atteindre la prochaine cible.".into(),
+            _ => "Je vérifie l’étape en cours.".into(),
+        }
+    };
+    let short = action.split_whitespace().take(24).collect::<Vec<_>>().join(" ");
+    let short: String = short.chars().take(180).collect();
+    if new_milestone { format!("Nouvelle étape : {short}") } else { short }
+}
+
+static SYNTHESIZING: AtomicBool = AtomicBool::new(false);
+
+async fn wait_narration(
+    speech: impl std::future::Future<Output = Result<(), String>>,
+    stopped: impl std::future::Future<Output = ()>,
+    limit: Duration,
+) -> Result<(), String> {
+    tokio::select! {
+        biased;
+        _ = stopped => Ok(()),
+        result = tokio::time::timeout(limit, speech) => {
+            result.unwrap_or_else(|_| Err("Délai vocal dépassé, poursuite sans voix".into()))
+        }
+    }
+}
+
+async fn narrate(app: &AppHandle, sentence: String, ticket: u64) {
+    if SYNTHESIZING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
+        eprintln!("[narration] TTS occupée, poursuite sans voix");
+        return;
+    }
+    crate::audio_out::stop();
+    let handle = app.clone();
+    let synthesis = tauri::async_runtime::spawn_blocking(move || {
+        let result = handle.state::<crate::AppState>().tts.say(sentence, Some("fr".into()));
+        SYNTHESIZING.store(false, Ordering::SeqCst);
+        result
+    });
+    let deadline = Instant::now() + Duration::from_secs(6);
+    let speech = async {
+        let (pcm, rate) = synthesis.await.map_err(|e| e.to_string())??;
+        if pcm.is_empty() || rate == 0 {
+            return Err("TTS sans audio".to_string());
+        }
+        let duration = Duration::from_secs_f64(pcm.len() as f64 / rate as f64);
+        tauri::async_runtime::spawn_blocking(move || {
+            crate::audio_out::play_if(&pcm, rate, || {
+                !autopilot::stop_requested() && autopilot::run_id() == ticket && Instant::now() < deadline
+            })
+        })
+        .await
+        .map_err(|e| e.to_string())??;
+        tokio::time::sleep(duration).await;
+        Ok::<(), String>(())
+    };
+    if let Err(error) = wait_narration(speech, wait_stop(), Duration::from_secs(6)).await {
+        eprintln!("[narration] {error}");
+    }
+    crate::audio_out::stop();
 }
 
 impl Driver for LiveDriver<'_> {
@@ -222,6 +298,8 @@ impl Driver for LiveDriver<'_> {
 
     async fn execute(&mut self, step: &agent::Step) -> Result<(), String> {
         let milestone = step.milestone.as_ref().ok_or("Jalon manquant")?;
+        let enabled = narrate_enabled(std::env::var("RIO_NARRATE").ok().as_deref());
+        let sentence = enabled.then(|| narration(step, self.narrated_milestone.as_deref() != Some(&milestone.id)));
         let graph = &self.session.tutorial;
         let index = graph.milestones.iter().position(|m| m.id == milestone.id).ok_or("Jalon inconnu")? + 1;
         self.app
@@ -232,9 +310,17 @@ impl Driver for LiveDriver<'_> {
                     index,
                     total: graph.milestones.len(),
                     label: milestone.goal.clone(),
+                    message: sentence.clone(),
                 },
             )
             .map_err(|e| e.to_string())?;
+        if self.stopped() {
+            return Err("Stop requested".into());
+        }
+        if let Some(sentence) = sentence {
+            narrate(&self.app, sentence, self.ticket).await;
+            self.narrated_milestone = Some(milestone.id.clone());
+        }
         if self.stopped() {
             return Err("Stop requested".into());
         }
@@ -273,7 +359,7 @@ async fn wait_stop() {
     }
 }
 
-pub fn spawn(app: AppHandle, skill: skills::Skill) {
+pub fn spawn(app: AppHandle, skill: skills::Skill, observed: bool) {
     let ticket = autopilot::run_id();
     tauri::async_runtime::spawn(async move {
         let state = app.state::<crate::AppState>();
@@ -287,9 +373,12 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
             progressed: true,
             ticket,
             pending: None,
+            narrated_milestone: None,
             last: None,
         };
-        let candidate = crate::script::eligible(&skill);
+        // Full-task scripts cannot resume part way through. The GUI driver
+        // verifies each existing milestone on a fresh screen before acting.
+        let candidate = if observed { None } else { crate::script::eligible(&skill) };
         let mut run_mode = if candidate.is_some() { skills::Mode::Script } else { skills::Mode::Rio };
         let result = if journal::current_dir().is_none() {
             Err(Failure::Failed("Could not open the journal; no action was run".into()))
@@ -309,11 +398,11 @@ pub fn spawn(app: AppHandle, skill: skills::Skill) {
             }
         };
         let (outcome, message) = if autopilot::stop_requested() {
-            ("stopped", Some("Stopped".into()))
+            ("stopped", Some("Arrêté".into()))
         } else {
             match result {
                 Ok(_) => ("completed", None),
-                Err(Failure::Stopped) => ("stopped", Some("Stopped".into())),
+                Err(Failure::Stopped) => ("stopped", Some("Arrêté".into())),
                 Err(Failure::Failed(message)) => ("failed", Some(message)),
             }
         };
@@ -365,6 +454,40 @@ mod tests {
     }
     use super::*;
     use std::collections::VecDeque;
+
+    #[test]
+    fn narration_is_default_on_short_and_marks_new_milestones() {
+        assert!(narrate_enabled(None));
+        assert!(narrate_enabled(Some("1")));
+        assert!(!narrate_enabled(Some("0")));
+        let mut step = agent::Step {
+            kind: "click".into(),
+            instruction: "J’ouvre le menu Format pour mettre le titre en gras.".into(),
+            ..Default::default()
+        };
+        assert_eq!(narration(&step, false), step.instruction);
+        assert!(narration(&step, true).starts_with("Nouvelle étape : J’ouvre"));
+        step.instruction.clear();
+        assert_eq!(narration(&step, false), "Je clique sur la cible.");
+        step.kind = "write".into();
+        step.text = "private input".into();
+        assert_eq!(narration(&step, false), "Je saisis le texte dans le champ sélectionné.");
+        step.instruction = "Très longue phrase ".repeat(100);
+        assert!(narration(&step, false).chars().count() <= 180);
+    }
+
+    #[tokio::test]
+    async fn narration_stops_without_waiting_and_bounds_unavailable_tts() {
+        use std::future::{pending, ready};
+        let limit = Duration::from_millis(5);
+        assert_eq!(wait_narration(pending(), ready(()), limit).await, Ok(()));
+        assert!(wait_narration(pending(), pending(), limit).await.unwrap_err().contains("Délai vocal"));
+        assert_eq!(
+            wait_narration(ready(Err("TTS indisponible".into())), pending(), limit).await,
+            Err("TTS indisponible".into())
+        );
+        assert_eq!(wait_narration(ready(Ok(())), pending(), limit).await, Ok(()));
+    }
 
     #[derive(Default)]
     struct Fake {

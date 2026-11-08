@@ -95,6 +95,10 @@ fn start() -> Option<Player> {
 
 /// Plays `pcm` (mono, `src_rate` Hz) right away, replacing what was playing.
 pub fn play(pcm: &[f32], src_rate: u32) -> Result<(), String> {
+    play_if(pcm, src_rate, || true)
+}
+
+pub(crate) fn play_if(pcm: &[f32], src_rate: u32, allowed: impl FnOnce() -> bool) -> Result<(), String> {
     let p = player().ok_or("No audio output device")?;
     // Linear resampling to the device rate.
     let step = src_rate as f64 / p.rate as f64;
@@ -108,7 +112,10 @@ pub fn play(pcm: &[f32], src_rate: u32) -> Result<(), String> {
         let b = pcm[(k + 1).min(pcm.len() - 1)];
         out.push_back(a + (b - a) * frac);
     }
-    *p.queue.lock().unwrap() = out;
+    let mut queue = p.queue.lock().unwrap();
+    if allowed() {
+        *queue = out;
+    }
     Ok(())
 }
 
