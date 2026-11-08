@@ -25,7 +25,7 @@ const APPS = [
   ["Excel", "excel.svg"],
   ["Photoshop", "photoshop.svg"],
   ["Docker", "docker.svg"],
-  ["Finder", "finder.png"],
+  ["Finder", "finder.svg"],
   ["Figma", "figma.svg"],
   ["VS Code", "vscode.svg"],
 ];
