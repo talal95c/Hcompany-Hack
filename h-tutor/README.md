@@ -1,8 +1,71 @@
-# Rio
+# Rio — le prof qui te regarde faire
 
 [![Rio](brand/rio-hill.jpg)](https://rio.vignemale.com)
 
-A live software coach. Tell it what you want to learn: Holo (H Company) looks at your screen, breaks the task into steps, and a ghost cursor shows you where to click. You do each action yourself; the app sees your click and moves on.
+> Dis ce que tu veux apprendre, colle un tuto YouTube ou choisis-en un dans la bibliothèque. Rio le transforme en **prof qui te regarde faire, dans ta version du logiciel**, et qui s'efface quand tu sais.
+> Puis la même leçon, réussie une fois, devient un **skill** : Rio peut la refaire à ta place, en vérifiant chaque étape à l'écran.
+
+## Le problème
+
+Apprendre un logiciel (Blender, DaVinci Resolve, un outil interne…), c'est un tuto d'un côté et le logiciel de l'autre :
+- tu fais sans arrêt pause et retour en arrière ;
+- le tuto est sur une autre version que la tienne, les menus ont bougé ;
+- personne ne te dit si tu as bien fait, ni pourquoi ça ne marche pas ;
+- une semaine plus tard, tu ne sais plus le refaire.
+
+Les assistants « je vois ton écran, je te montre le bouton » répondent à la question, mais tu n'apprends pas : ils font à ta place ou te donnent la réponse, sans vérifier que tu as compris ni que le résultat est vraiment là.
+
+## Ce que fait Rio
+
+1. **Préparer.** Un objectif, un tuto YouTube (transcrit par Gladia) ou une page web devient un **graphe de jalons** : chaque jalon est un sous-but vérifiable à l'écran (« une note Groceries existe »), pas une suite de clics. La base de connaissances de l'équipe (aujourd'hui Blender 5.2.3 : 162 skills, et DaVinci Resolve 20.1 : 110 skills, recalés sur ta version) est donnée à Holo **à chaque jalon** : « Ctrl+R, puis Entrée pour confirmer » plutôt qu'une supposition.
+2. **Apprendre.** Tu fais chaque action toi-même. Un curseur fantôme montre où cliquer, Rio regarde ton écran (captures, clics, rythme des frappes, jamais leur contenu) et réagit : réussite, erreur, blocage. Tu peux lui poser une question à voix haute en cours de route ; il te répond, te montre l'élément, et s'en souvient pour la suite. Il te pose aussi des questions (« à ton avis, quel menu ? »), et **son aide s'efface** : sur une action que tu as déjà réussie, plus de pointeur, juste la consigne, avec « Show me » si tu bloques.
+3. **Déléguer.** Une fois qu'un tuto a réussi, il devient un skill. La prochaine fois que tu es dans le logiciel, la notch propose « Rio le fait pour toi ». Rio exécute alors lui-même, avec ta permission, et ne dit « Fait ✓ » qu'après avoir **vérifié chaque jalon puis le but entier sur une capture neuve**. Quand c'est possible, un script compilé par Devin remplace les clics.
+4. **Partager.** La plateforme ([rio.vignemale.com](https://rio.vignemale.com)) réunit la bibliothèque de tutoriels de l'équipe, sa base de connaissances, ses membres et ses statistiques (questions sans réponse, jalons où l'on bloque). Le cœur du harness est aussi décrit comme un skill pour les agents (`.prime/agent/skills/rio-harness-core/`).
+
+## Comment on sait que ça marche
+
+Rio est **mesuré**, pas seulement testé. Un **apprenant simulé** (un modèle qui joue un débutant, un distrait, un curieux…) suit de vrais tutoriels dans un Chrome invisible, avec des erreurs tirées au sort mais rejouables, et **c'est du code qui note le résultat** en lisant l'état réel de l'app. Chaque changement du tuteur est comparé à la version précédente sur les mêmes scénarios et les mêmes graines, une idée reprise de [harness2](https://github.com/google-research/harness2) (Google).
+
+Ce que ça a déjà donné (petits échantillons, des tendances plutôt que des preuves) :
+- **Tuteur** : 3 réussites sur 8 contre 2 avant les corrections, et moins de « terminé » annoncé à tort. Corrections trouvées en lisant les journaux : validation sans preuve contestée, acharnement sur un élément mort repéré, réponses honnêtes aux questions, plans qui gardent les noms de la demande.
+- **Autopilote** : de 0 à **6 réussites sur 8**, et de 6 à **0 fausse réussite**, grâce à la vérification du but entier avant « Fait ✓ ».
+- 110 tests Rust, et un explorateur HTML de toutes les sessions (`python3 tools/session_explorer.py --open`).
+
+## Partenaires
+
+| Brique | Rôle dans Rio |
+|---|---|
+| **H Company · Holo4** (Models API, Agents API) | voir l'écran et choisir chaque action (`holo4-27b`), localiser et vérifier vite (`holo4-35b-a3b`), planifier les jalons, vérifier un résultat sur capture, jouer l'apprenant du simulateur ; agents `h/deep-search-pro` et `h/web-surfer-pro` pour fabriquer un tuto depuis un objectif ou une page |
+| **Gladia** | ta voix en direct (langue détectée ou fixée : Auto / EN / FR) et la transcription des tutos YouTube |
+| **Gradium** | la voix de Rio, synthétisée en local (Phonon) |
+| **Linkup** | recherche web de secours quand la base de l'équipe n'a rien |
+| **Devin** | compile les skills réussis en scripts testés, et relit les PR |
+| **Cloudflare** (Workers, D1) | la plateforme : API, console, base de connaissances |
+
+## Plateformes
+
+L'app desktop tourne sur **macOS** (Tauri v2, Rust + React). L'autopilote fonctionne aussi sous **Linux X11** ; Wayland est refusé explicitement. La plateforme et la console tournent sur Cloudflare.
+
+## Le dépôt
+
+```
+src-tauri/   l'app desktop en Rust : boucle du tuteur, autopilote, voix, capture, simulateur (src/sim)
+src/         l'interface de l'app : barre, curseur fantôme, notch
+platform/    l'API et la console web (Cloudflare Worker), base de connaissances (platform/knowledge)
+landing/     le site rio.vignemale.com
+tutorials/   tutoriels d'exemple (graphes de jalons)
+sim/         scénarios et app de test du simulateur
+tools/       explorateur de sessions
+.prime/      skill « rio-harness-core » pour les agents
+```
+
+## État
+
+Rio se lance depuis les sources (`npm run tauri dev`, détail ci-dessous) ; un installeur en un clic est prévu. Le tuteur, l'autopilote et la plateforme fonctionnent de bout en bout ; leurs points faibles mesurés sont la précision du pointage de Holo (environ 79 % des clics à moins de 30 points de la cible) et les plans faits sur des demandes vagues (« rends l'arbre plus réaliste »).
+
+---
+
+*Documentation technique (en anglais).*
 
 ## Run
 
@@ -210,5 +273,7 @@ Both windows are excluded from screen captures, so Holo never sees the app itsel
 
 ## Next
 
-- Import a tutorial from a URL with the Agents SDK (`h/web-surfer-pro` + `answerSchema`).
-- "Do it for me" button with the desktop agent (`holo local desktop`).
+- Apply the autopilot's final goal check to tutor mode, which can still announce "done" too early.
+- Ask the learner what they want before planning a vague request ("more realistic": bark? leaves? shape?).
+- Pre-localize the pointer at the start of a step and cache it, to cut the wait before the ghost cursor appears.
+- A one-click installer for macOS.
