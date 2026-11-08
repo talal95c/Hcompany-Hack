@@ -8,9 +8,10 @@ import { FPS } from './usecases/primitives';
 // VITE_APP_URL="" when the console serves this page itself (same origin).
 const APP_ORIGIN: string = import.meta.env.VITE_APP_URL ?? "https://rio.vignemale.com";
 export const APP_URL = `${APP_ORIGIN}/home`;
+/** "Download for Mac": the install guide in the README (no installer yet; no login needed). */
+export const INSTALL_URL = "https://github.com/Jacqkues/rio#how-to-install";
 export const SIGNUP_URL = `${APP_ORIGIN}/sign-up`;
 export const SIGNIN_URL = `${APP_ORIGIN}/sign-in`;
-export const INSTALL_URL = `${APP_ORIGIN}/get-rio`;
 
 const POINTS = [
   {
