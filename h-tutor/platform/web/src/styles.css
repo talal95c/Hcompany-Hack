@@ -565,3 +565,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .shell, .shell.has-drawer { padding-top: 0; padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
   .frame { margin: 8px 8px 0; min-height: calc(100svh - 76px); }
 }
+/* Phones and small tablets: keep it plain. The page fills the screen (no floating card), the tab bar is
+   a flat strip, and the explanatory text goes away: page subtitles, Home's suggestions, section notes. */
+@media (max-width: 860px) {
+  .shell { background: var(--bg); }
+  .frame { margin: 0; border: 0; border-radius: 0; box-shadow: none; min-height: calc(100svh - 60px); }
+  .rail:not(.is-open) { background: var(--paper); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .rail.is-open { box-shadow: none; border-right: 1px solid var(--line); background: var(--paper); }
+  .head p, .ideas, .section__title span, .tile__sub { display: none; }
+  .head { margin-bottom: 16px; }
+  .head h1 { font-size: 24px; }
+  .hello h1 { font-size: 24px; }
+}
