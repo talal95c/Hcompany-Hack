@@ -1,18 +1,23 @@
+mod act;
 mod agent;
 #[cfg(test)]
 mod app_icons;
 mod audio_out;
+mod autopilot;
+mod autopilot_driver;
 mod ax;
 mod cancel;
 mod capture;
 mod clicks;
 mod debug;
+mod devin;
 mod holo;
 mod journal;
 mod panel;
 mod planner;
 mod platform;
 mod qa;
+mod script;
 mod search;
 /// Learner simulator, driven from tests only (never shipped in the app).
 #[cfg(test)]
@@ -179,11 +184,22 @@ fn to_overlay_coords(app: &AppHandle, nx: f64, ny: f64, label: String) -> Result
     let overlay = app.get_webview_window("overlay").ok_or("Overlay window missing")?;
     let origin = overlay.outer_position().map_err(|e| e.to_string())?;
     let scale = monitor.scale_factor();
-    let phys_x = monitor.position().x as f64 + nx / 1000.0 * monitor.size().width as f64;
-    let phys_y = monitor.position().y as f64 + ny / 1000.0 * monitor.size().height as f64;
+    let (phys_x, phys_y) = normalized_screen_point(app, nx, ny)?;
     let pointer =
         Pointer { x: (phys_x - origin.x as f64) / scale, y: (phys_y - origin.y as f64) / scale, label, rect: None };
     Ok((pointer, (phys_x / scale, phys_y / scale)))
+}
+
+fn normalized_screen_point(app: &AppHandle, nx: f64, ny: f64) -> Result<(f64, f64), String> {
+    let monitor = app.primary_monitor().map_err(|e| e.to_string())?.ok_or("Primary display not found")?;
+    act::screen_point(
+        nx,
+        ny,
+        monitor.position().x as f64,
+        monitor.position().y as f64,
+        monitor.size().width as f64,
+        monitor.size().height as f64,
+    )
 }
 
 /// Shows the step's pointer (click / write / scroll) or hides it.
@@ -289,6 +305,10 @@ async fn tutor_start(
     app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<agent::Step, String> {
+    // Rio's autopilot drives the screen on its own: no tutorial meanwhile.
+    if autopilot::is_running() {
+        return Err("Rio is already running a task".into());
+    }
     let generation = state.generation.current();
     // Both entries end up as a milestone graph: a saved tutorial, or one
     // planned by Holo from the goal and the current screen.
@@ -323,6 +343,9 @@ async fn tutor_start(
     let mut guard = state.session.lock().await;
     if !state.generation.is_current(generation) {
         return Err(cancel::STOPPED.into());
+    }
+    if autopilot::is_running() {
+        return Err("Rio is already running a task".into());
     }
     let session = guard.insert(agent::Session::new(tutorial, lang.as_deref()));
     if let Some(note) = plan_note.lock().unwrap().take() {
@@ -702,8 +725,12 @@ fn set_overlay_visible(app: &AppHandle, visible: bool) {
         }
         #[cfg(not(target_os = "macos"))]
         {
-            let _ = w.set_ignore_cursor_events(true);
-            let _ = if visible { w.show() } else { w.hide() };
+            if visible {
+                let _ = w.show();
+                let _ = w.set_ignore_cursor_events(true);
+            } else {
+                let _ = w.hide();
+            }
         }
     });
 }
@@ -711,6 +738,9 @@ fn set_overlay_visible(app: &AppHandle, visible: bool) {
 /// Called for every real left click on the machine. Clicks on the tutor panel
 /// are ignored; others are compared with the current target.
 fn on_user_click(app: &AppHandle, click: clicks::Click) {
+    if autopilot::is_running() {
+        return;
+    }
     let state = app.state::<AppState>();
 
     if let Some(panel) = app.get_webview_window("main").filter(|p| p.is_visible().unwrap_or(false))
@@ -744,7 +774,7 @@ fn on_user_click(app: &AppHandle, click: clicks::Click) {
 }
 
 fn setup_windows(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let monitor = app.primary_monitor()?.ok_or("no primary monitor")?;
+    let monitor = app.primary_monitor()?.ok_or("No primary display")?;
     let scale = monitor.scale_factor();
     let pos = monitor.position().to_logical::<f64>(scale);
     let size = monitor.size().to_logical::<f64>(scale);
@@ -766,8 +796,25 @@ fn setup_windows(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .position(pos.x, pos.y)
         .inner_size(size.width, size.height)
         .build()?;
+    #[cfg(not(target_os = "linux"))]
     overlay.set_ignore_cursor_events(true)?;
     panel::make_panel(&overlay, false, panel::LEVEL_OVERLAY);
+    let notch = WebviewWindowBuilder::new(app, "notch", WebviewUrl::App("notch.html".into()))
+        .title("Rio · Autopilot")
+        .transparent(true)
+        .decorations(false)
+        .shadow(false)
+        .resizable(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .focused(false)
+        .visible(false)
+        .visible_on_all_workspaces(true)
+        .content_protected(true)
+        .position(pos.x + (size.width - 520.0) / 2.0, pos.y)
+        .inner_size(520.0, 240.0)
+        .build()?;
+    panel::make_panel(&notch, false, panel::LEVEL_OVERLAY);
     if let Some(bar) = app.get_webview_window("main") {
         panel::make_panel(&bar, true, panel::LEVEL_BAR);
     }
@@ -787,9 +834,23 @@ pub fn run() {
             tauri_plugin_global_shortcut::Builder::new()
                 .with_shortcuts(["alt+shift+space"])
                 .expect("valid shortcut")
-                .with_handler(|app, _shortcut, event| {
+                .with_handler(|app, shortcut, event| {
                     if event.state == tauri_plugin_global_shortcut::ShortcutState::Pressed {
-                        tray::toggle_bar(app);
+                        let escape = shortcut.matches(
+                            tauri_plugin_global_shortcut::Modifiers::empty(),
+                            tauri_plugin_global_shortcut::Code::Escape,
+                        );
+                        if escape {
+                            autopilot::request_stop();
+                        }
+                        let app = app.clone();
+                        autopilot::dispatch_shortcut(move || {
+                            if escape {
+                                autopilot::escape(&app);
+                            } else {
+                                tray::toggle_bar(&app);
+                            }
+                        });
                     }
                 })
                 .build(),
@@ -811,6 +872,7 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             setup_windows(app)?;
+            autopilot::setup(app.handle());
             tray::setup(app)?;
             let handle = app.handle().clone();
             // Typing in Rio's own panel (a question) is not the learner's step.
@@ -837,9 +899,15 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            autopilot::autopilot_accept,
+            autopilot::autopilot_stop,
+            autopilot::autopilot_decline,
+            autopilot::autopilot_view,
+            autopilot::notch_surface,
             skills::skills_list,
             skills::skill_decline,
             skills::skill_propose_now,
+            devin::skill_compile,
             tray::set_tray_status,
             tray::hide_bar,
             tray::resize_bar,

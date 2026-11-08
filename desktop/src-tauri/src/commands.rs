@@ -24,12 +24,25 @@ pub async fn receive(app: &AppHandle, state: &Arc<State>, packet: Value) {
     }
     let payload = &packet["payload"];
     match packet["type"].as_str().unwrap() {
+        "a11y.cancel" => state.a11y.cancel(payload["request_id"].as_str().unwrap()),
         "a11y.request" => {
             let payload = payload.clone();
             let state = state.clone();
+            let request_id = payload["request_id"].as_str().unwrap().to_owned();
+            let (abort, registration) = futures_util::future::AbortHandle::new_pair();
+            state.a11y.track(request_id.clone(), abort);
             tauri::async_runtime::spawn(async move {
-                let result = state.a11y.request(&state, payload).await;
-                let _ = state.send("a11y.result", result, Some(&id));
+                let work = async {
+                    let watch = payload["op"] == "watch";
+                    let mut result = state.a11y.request(&state, payload).await;
+                    if watch && result["complete"] == true {
+                        result["events_supported"] =
+                            json!(crate::a11y::Service::start_events(state.clone()).await);
+                    }
+                    let _ = state.send("a11y.result", result, Some(&id));
+                };
+                let _ = futures_util::future::Abortable::new(work, registration).await;
+                state.a11y.finish(&request_id);
             });
         }
         "ping" => {
@@ -299,25 +312,180 @@ async fn highlight(
     guide::show_if_current(app, "guide:highlight", event, duration, revision);
 }
 
-fn pointer(app: &AppHandle, state: &State, payload: &Value, budget: f64, command: &str) {
+fn pointer(app: &AppHandle, state: &Arc<State>, payload: &Value, budget: f64, command: &str) {
+    let generation = state.generation.load(Ordering::SeqCst);
+    let (app, state, payload, command) = (
+        app.clone(),
+        state.clone(),
+        payload.clone(),
+        command.to_owned(),
+    );
+    tauri::async_runtime::spawn(async move {
+        let result = tokio::time::timeout(Duration::from_secs_f64(budget / 1000.), async {
+            let _capture_lock = state.capture_lock.lock().await;
+            pointer_current(&app, &state, &payload).await?;
+            if generation != state.generation.load(Ordering::SeqCst) {
+                return Err("stale");
+            }
+            draw_pointer(&app, &state, &payload, budget, &command)
+        })
+        .await;
+        let reason = match result {
+            Ok(Ok(())) => None,
+            Ok(Err(reason)) => Some(reason),
+            Err(_) => Some("deadline"),
+        };
+        if let Some(reason) = reason {
+            eprintln!("desktop point_rejected reason={reason}");
+            let _ = state.send("input.result", json!({"command_id":command,"status":"rejected","detail":format!("pointer_{reason}")}), None);
+        }
+    });
+}
+
+fn reference_patch(
+    reference: &image::RgbaImage,
+    crop: crate::coordinates::Rect,
+    x: f64,
+    y: f64,
+    encoded_size: (u32, u32),
+) -> Option<(crate::coordinates::Rect, image::RgbaImage)> {
+    let (x, y) = ((x - crop.x).floor(), (y - crop.y).floor());
+    if !x.is_finite()
+        || !y.is_finite()
+        || x < 0.
+        || y < 0.
+        || x >= reference.width() as f64
+        || y >= reference.height() as f64
+    {
+        return None;
+    }
+    if encoded_size.0 == 0 || encoded_size.1 == 0 {
+        return None;
+    }
+    let (half_width, half_height) = (
+        (160. * reference.width() as f64 / encoded_size.0 as f64).ceil() as u32 + 2,
+        (96. * reference.height() as f64 / encoded_size.1 as f64).ceil() as u32 + 2,
+    );
+    let (left, top) = (
+        (x as u32).saturating_sub(half_width),
+        (y as u32).saturating_sub(half_height),
+    );
+    let (width, height) = (
+        (reference.width() - left).min(2 * half_width),
+        (reference.height() - top).min(2 * half_height),
+    );
+    Some((
+        crate::coordinates::Rect {
+            x: crop.x + left as f64,
+            y: crop.y + top as f64,
+            width: width as f64,
+            height: height as f64,
+        },
+        image::imageops::crop_imm(reference, left, top, width, height).to_image(),
+    ))
+}
+
+async fn pointer_current(
+    app: &AppHandle,
+    state: &State,
+    payload: &Value,
+) -> Result<(), &'static str> {
+    let (crop, monitor, x, y, patch) = {
+        let captures = state.captures.lock().unwrap();
+        let c = captures
+            .get(payload["capture_id"].as_str().unwrap())
+            .ok_or("stale")?;
+        if c.ui_revision != state.revision.load(Ordering::SeqCst)
+            || c.at.elapsed() > Duration::from_secs(10)
+        {
+            return Err("stale");
+        }
+        let (x, y) = c
+            .monitor
+            .physical_point(
+                c.crop,
+                payload["x"].as_f64().unwrap(),
+                payload["y"].as_f64().unwrap(),
+            )
+            .map_err(|_| "outside_capture")?;
+        (
+            c.crop,
+            c.monitor.clone(),
+            x,
+            y,
+            reference_patch(&c.reference, c.crop, x, y, c.encoded_size).ok_or("outside_capture")?,
+        )
+    };
+    if let Some(pill) = app.get_webview_window("pill") {
+        if pill.is_visible().unwrap_or(true) {
+            let position = pill.outer_position().map_err(|_| "geometry_unavailable")?;
+            let size = pill.outer_size().map_err(|_| "geometry_unavailable")?;
+            if x >= position.x as f64
+                && y >= position.y as f64
+                && x < position.x as f64 + size.width as f64
+                && y < position.y as f64 + size.height as f64
+            {
+                return Err("occluded");
+            }
+        }
+    }
+    if let (Some(reference), Some(snapshot)) =
+        (payload["ref"].as_str(), payload["snapshot_id"].as_str())
+    {
+        let bounds = state
+            .a11y
+            .highlight_bounds(reference, snapshot, payload["app"].as_str())
+            .await
+            .map_err(|_| "stale_ref")?;
+        if x < bounds.x
+            || y < bounds.y
+            || x >= bounds.x + bounds.width
+            || y >= bounds.y + bounds.height
+        {
+            return Err("outside_target_bounds");
+        }
+    } else {
+        let (rect, expected) = patch;
+        if !monitor.contains(crop) {
+            return Err("outside_capture");
+        }
+        let image = crate::bridge::capture_without_overlays(app, rect, &monitor)
+            .await
+            .map_err(|_| "capture_unavailable")?;
+        let actual = image::load_from_memory(&image)
+            .map_err(|_| "capture_unavailable")?
+            .to_rgba8();
+        if actual != expected {
+            return Err("screen_changed");
+        }
+    }
+    Ok(())
+}
+
+fn draw_pointer(
+    app: &AppHandle,
+    state: &State,
+    payload: &Value,
+    budget: f64,
+    command: &str,
+) -> Result<(), &'static str> {
     let captures = state.captures.lock().unwrap();
     let Some(c) = captures.get(payload["capture_id"].as_str().unwrap()) else {
-        return;
+        return Err("stale");
     };
     if c.ui_revision != payload["ui_revision"].as_u64().unwrap()
+        || c.ui_revision != state.revision.load(Ordering::SeqCst)
         || c.at.elapsed() > Duration::from_secs(10)
     {
-        return;
+        return Err("stale");
     }
-    let Ok((x, y)) = c.monitor.point(
-        c.crop,
-        payload["x"].as_f64().unwrap(),
-        payload["y"].as_f64().unwrap(),
-    ) else {
-        return;
-    };
+    let u = payload["x"].as_f64().unwrap();
+    let v = payload["y"].as_f64().unwrap();
+    if c.monitor.physical_point(c.crop, u, v).is_err() {
+        return Err("outside_capture");
+    }
     let Some(guide) = app.get_webview_window("guide") else {
-        return;
+        return Err("overlay_unavailable");
     };
     let mut pos = guide.outer_position().unwrap_or_default();
     if let Ok(monitors) = guide.available_monitors() {
@@ -327,16 +495,23 @@ fn pointer(app: &AppHandle, state: &State, payload: &Value, budget: f64, command
                 && (m.position().x as f64 + m.size().width as f64) > c.crop.x
                 && (m.position().y as f64 + m.size().height as f64) > c.crop.y
         }) {
-            let _ = guide.set_position(*m.position());
-            let _ = guide.set_size(*m.size());
+            guide
+                .set_position(*m.position())
+                .map_err(|_| "geometry_unavailable")?;
+            guide
+                .set_size(*m.size())
+                .map_err(|_| "geometry_unavailable")?;
             pos = *m.position();
         }
     }
-    let scale = guide.scale_factor().unwrap_or(1.);
-    #[cfg(target_os = "macos")]
-    let (css_x, css_y) = (x - c.monitor.logical_x, y - c.monitor.logical_y);
-    #[cfg(not(target_os = "macos"))]
-    let (css_x, css_y) = ((x - pos.x as f64) / scale, (y - pos.y as f64) / scale);
+    let scale = guide.scale_factor().map_err(|_| "geometry_unavailable")?;
+    let pos = guide.inner_position().unwrap_or(pos);
+    let Ok((css_x, css_y)) =
+        c.monitor
+            .overlay_point(c.crop, u, v, (pos.x as f64, pos.y as f64), scale)
+    else {
+        return Err("geometry_unavailable");
+    };
     let zone = json!({"x":(c.crop.x-pos.x as f64)/scale,"y":(c.crop.y-pos.y as f64)/scale,"width":c.crop.width/scale,"height":c.crop.height/scale});
     guide::show(
         app,
@@ -344,11 +519,39 @@ fn pointer(app: &AppHandle, state: &State, payload: &Value, budget: f64, command
         json!({"x":css_x,"y":css_y,"zone":zone,"duration_ms":budget.min(5000.),"command_id":command}),
         budget.min(5000.),
     );
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn pointer_patch_is_physical_bounded_and_detects_changed_pixels() {
+        let source = image::RgbaImage::from_pixel(80, 60, image::Rgba([1, 2, 3, 255]));
+        let crop = crate::coordinates::Rect {
+            x: -100.,
+            y: 200.,
+            width: 80.,
+            height: 60.,
+        };
+        let (rect, expected) = reference_patch(&source, crop, -60., 230., (80, 60)).unwrap();
+        assert_eq!(
+            (rect.x, rect.y, rect.width, rect.height),
+            (-100., 200., 80., 60.)
+        );
+        assert_eq!(expected, source);
+        let mut changed = expected.clone();
+        changed.put_pixel(16, 16, image::Rgba([4, 5, 6, 255]));
+        assert_ne!(expected, changed);
+        let (_, edge) = reference_patch(&source, crop, -21., 259., (40, 30)).unwrap();
+        assert_eq!((edge.width(), edge.height()), (80, 60));
+        assert!(reference_patch(&source, crop, -101., 200., (80, 60)).is_none());
+        assert!(reference_patch(&source, crop, -20., 200., (80, 60)).is_none());
+        assert!(reference_patch(&source, crop, -60., 230., (0, 0)).is_none());
+        assert!(
+            reference_patch(&image::RgbaImage::new(0, 0), crop, -100., 200., (80, 60)).is_none()
+        );
+    }
     #[test]
     fn highlight_rect_matches_wire_schema_not_capture_shape() {
         let payload =

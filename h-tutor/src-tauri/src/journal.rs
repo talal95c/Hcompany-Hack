@@ -34,12 +34,12 @@ fn now_secs() -> u64 {
 }
 
 /// Opens a new session folder; closes the previous one as abandoned.
-pub fn begin(tutorial: &crate::tutorial::Tutorial, lang: Option<&str>) -> Option<PathBuf> {
+pub fn begin(tutorial: &crate::tutorial::Tutorial, lang: Option<&str>, mode: &str) -> Option<PathBuf> {
     end("abandoned");
     let stamp = now_secs();
     let dir = sessions_dir().join(format!("{stamp}-{}", crate::tutorial::slug(&tutorial.title)));
     std::fs::create_dir_all(dir.join("shots")).ok()?;
-    let _ = std::fs::write(dir.join("tutorial.json"), serde_json::to_vec_pretty(tutorial).ok()?);
+    std::fs::write(dir.join("tutorial.json"), serde_json::to_vec_pretty(tutorial).ok()?).ok()?;
     let meta = json!({
         "id": dir.file_name()?.to_string_lossy(),
         "tutorial_id": tutorial.id,
@@ -49,11 +49,12 @@ pub fn begin(tutorial: &crate::tutorial::Tutorial, lang: Option<&str>) -> Option
         "goal": tutorial.goal,
         "app": tutorial.app.name,
         "language": lang,
+        "mode": mode,
         "started_at": stamp,
         "ended_at": null,
         "outcome": "in_progress",
     });
-    let _ = std::fs::write(dir.join("session.json"), serde_json::to_vec_pretty(&meta).ok()?);
+    std::fs::write(dir.join("session.json"), serde_json::to_vec_pretty(&meta).ok()?).ok()?;
     *CURRENT.lock().unwrap() = Some(Journal { dir: dir.clone(), started: Instant::now(), shots: 0, meta });
     Some(dir)
 }
@@ -170,13 +171,19 @@ pub fn current_dir() -> Option<PathBuf> {
     CURRENT.lock().unwrap().as_ref().map(|j| j.dir.clone())
 }
 
-pub fn skill_run() -> Option<crate::skills::Run> {
+pub fn set_mode(mode: &str) {
+    if let Some(j) = CURRENT.lock().unwrap().as_mut() {
+        j.meta["mode"] = json!(mode);
+    }
+}
+
+pub fn skill_run(mode: crate::skills::Mode, outcome: &str) -> Option<crate::skills::Run> {
     let guard = CURRENT.lock().unwrap();
     let j = guard.as_ref()?;
     Some(crate::skills::Run {
         date: now_secs(),
-        mode: crate::skills::Mode::Learner,
-        outcome: "completed".into(),
+        mode,
+        outcome: outcome.into(),
         duration_s: j.started.elapsed().as_secs(),
         session_id: j.dir.file_name()?.to_string_lossy().into_owned(),
     })

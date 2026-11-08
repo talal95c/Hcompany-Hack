@@ -126,6 +126,14 @@ impl Monitor {
     }
 
     pub fn point(&self, crop: Rect, u: f64, v: f64) -> Result<(f64, f64), String> {
+        let (px, py) = self.physical_point(crop, u, v)?;
+        Ok((
+            self.logical_x + (px - self.physical.x) / self.scale,
+            self.logical_y + (py - self.physical.y) / self.scale,
+        ))
+    }
+
+    pub fn physical_point(&self, crop: Rect, u: f64, v: f64) -> Result<(f64, f64), String> {
         if !self.contains(crop)
             || !u.is_finite()
             || !v.is_finite()
@@ -136,10 +144,22 @@ impl Monitor {
         }
         let px = crop.x + (u * crop.width / 1000.0).min(crop.width - 1.0);
         let py = crop.y + (v * crop.height / 1000.0).min(crop.height - 1.0);
-        Ok((
-            self.logical_x + (px - self.physical.x) / self.scale,
-            self.logical_y + (py - self.physical.y) / self.scale,
-        ))
+        Ok((px, py))
+    }
+
+    pub fn overlay_point(
+        &self,
+        crop: Rect,
+        u: f64,
+        v: f64,
+        origin: (f64, f64),
+        scale: f64,
+    ) -> Result<(f64, f64), String> {
+        if !scale.is_finite() || scale <= 0. || !origin.0.is_finite() || !origin.1.is_finite() {
+            return Err("Invalid overlay geometry".into());
+        }
+        let (x, y) = self.physical_point(crop, u, v)?;
+        Ok(((x - origin.0) / scale, (y - origin.1) / scale))
     }
 }
 
@@ -173,6 +193,42 @@ pub fn ax_rect(monitors: &[Monitor], logical: Rect) -> Option<Rect> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn pointer_to_overlay_divides_scale_once_and_uses_content_origin() {
+        for scale in [1., 2.] {
+            let monitor = Monitor {
+                id: "m".into(),
+                physical: Rect {
+                    x: -3200.,
+                    y: 0.,
+                    width: 3200.,
+                    height: 2000.,
+                },
+                logical_x: -1600.,
+                logical_y: 0.,
+                scale,
+            };
+            let crop = Rect {
+                x: -3000.,
+                y: 100.,
+                width: 800.,
+                height: 600.,
+            };
+            assert_eq!(
+                monitor.physical_point(crop, 500., 500.).unwrap(),
+                (-2600., 400.)
+            );
+            assert_eq!(
+                monitor
+                    .overlay_point(crop, 500., 500., (-3200., 19.), scale)
+                    .unwrap(),
+                (600. / scale, 381. / scale)
+            );
+            assert!(monitor
+                .overlay_point(crop, -1., 500., (0., 0.), scale)
+                .is_err());
+        }
+    }
     #[test]
     fn ax_monitor_selection_prefers_origin_on_mixed_scale_screens() {
         let main = Monitor {

@@ -161,7 +161,7 @@ export function Reveal({
   className?: string;
   delay?: number;
   y?: number;
-  as?: "div" | "p" | "h2" | "h3" | "h6" | "span";
+  as?: "div" | "p" | "h2" | "h3" | "h6" | "span" | "li";
 }) {
   const M = motion[as];
   return (

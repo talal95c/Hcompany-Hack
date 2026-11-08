@@ -257,7 +257,7 @@ class DesktopServer:
                     if message["type"] not in {
                         "hello", "permissions", "ping", "pong", "user.intent", "input.result",
                         "capture.result", "ptt.start", "ptt.stop", "audio.chunk", "error",
-                        "a11y.result", "app.focus",
+                        "a11y.result", "a11y.event", "app.focus",
                     }:
                         raise ValueError("Direction invalide")
                     if not hello and message["type"] != "hello":

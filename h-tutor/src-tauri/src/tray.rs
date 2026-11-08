@@ -1,4 +1,4 @@
-//! Where the app lives: a floating bar at the bottom center of the screen,
+//! Where the app lives: a notch at the top center of the monitor work area,
 //! toggled from a menu bar icon or a global shortcut. The menu bar title
 //! mirrors tutorial progress.
 
@@ -17,7 +17,6 @@ const ICON_PX: u32 = 36; // 18pt @2x
 pub const BAR_WIDTH: f64 = 560.0;
 /// Current window width: wider while the tutorial palette is open.
 static WIDTH: Mutex<f64> = Mutex::new(BAR_WIDTH);
-const BAR_BOTTOM_GAP: f64 = 18.0;
 
 /// While a tutorial runs the bar stays put; otherwise it hides on blur.
 static STICKY: AtomicBool = AtomicBool::new(false);
@@ -82,7 +81,7 @@ fn inside(poly: &[(f64, f64)], x: f64, y: f64) -> bool {
 }
 
 pub fn setup(app: &tauri::App) -> tauri::Result<()> {
-    let quit = MenuItem::with_id(app, "quit", "Quit Rio", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quitter Rio", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&quit])?;
 
     TrayIconBuilder::with_id(TRAY_ID)
@@ -124,14 +123,17 @@ pub fn toggle_bar(app: &AppHandle) {
 }
 
 pub fn show_bar(app: &AppHandle) {
+    if crate::autopilot::is_running() {
+        return;
+    }
     let Some(bar) = app.get_webview_window("main") else { return };
     let height = bar.inner_size().ok().zip(bar.scale_factor().ok()).map_or(64.0, |(s, f)| s.height as f64 / f);
     place_bar(app, height, *WIDTH.lock().unwrap());
     crate::panel::show(&bar, true, crate::panel::LEVEL_BAR);
 }
 
-/// Sizes the window to the bar's content and keeps it anchored bottom-center,
-/// above the Dock. A window exactly the size of the bar never blocks clicks
+/// Sizes the window to the content, flush with the work area's top edge
+/// (below the menu bar). A window exactly the size of the bar never blocks clicks
 /// on the app underneath.
 fn place_bar(app: &AppHandle, height: f64, width: f64) {
     let Some(bar) = app.get_webview_window("main") else { return };
@@ -140,9 +142,9 @@ fn place_bar(app: &AppHandle, height: f64, width: f64) {
     let f = m.scale_factor();
     let wa = m.work_area();
     let (wx, wy) = (wa.position.x as f64 / f, wa.position.y as f64 / f);
-    let (ww, wh) = (wa.size.width as f64 / f, wa.size.height as f64 / f);
+    let ww = wa.size.width as f64 / f;
     let _ = bar.set_size(LogicalSize::new(width, height));
-    let _ = bar.set_position(LogicalPosition::new(wx + (ww - width) / 2.0, wy + wh - height - BAR_BOTTOM_GAP));
+    let _ = bar.set_position(LogicalPosition::new(wx + (ww - width) / 2.0, wy));
 }
 
 #[tauri::command]

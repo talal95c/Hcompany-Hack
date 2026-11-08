@@ -1,0 +1,289 @@
+{
+  "rule": "visible=true, normalized point inside crop, independent yes/direct target rectangle containing point with 2-pixel inset",
+  "labels": "Human target row/cell interiors; other rows, header and background negative",
+  "tp": 0,
+  "fp": 0,
+  "fn": 4,
+  "tn": 8,
+  "precision": null,
+  "recall": 0.0,
+  "samples": [
+    {
+      "image": "pointer-calc.png",
+      "sha256": "6086ed934107ad99ce5befd9d5aa0b18a120a965a73d30f3db11f5a2fe70b339",
+      "image_size": [
+        1307,
+        801
+      ],
+      "target": "Cellule A1",
+      "point": [
+        48,
+        211
+      ],
+      "label": true,
+      "accepted": false,
+      "proof": {
+        "answer": "yes",
+        "evidence": "ambiguous",
+        "bounds": [
+          0,
+          0,
+          1000,
+          1000
+        ]
+      },
+      "latency_ms": 2807.6924339984544
+    },
+    {
+      "image": "pointer-calc.png",
+      "sha256": "6086ed934107ad99ce5befd9d5aa0b18a120a965a73d30f3db11f5a2fe70b339",
+      "image_size": [
+        1307,
+        801
+      ],
+      "target": "Cellule A1",
+      "point": [
+        42,
+        207
+      ],
+      "label": true,
+      "accepted": false,
+      "proof": {
+        "answer": "yes",
+        "evidence": "ambiguous",
+        "bounds": [
+          100,
+          389,
+          300,
+          444
+        ]
+      },
+      "latency_ms": 280.5389240020304
+    },
+    {
+      "image": "pointer-calc.png",
+      "sha256": "6086ed934107ad99ce5befd9d5aa0b18a120a965a73d30f3db11f5a2fe70b339",
+      "image_size": [
+        1307,
+        801
+      ],
+      "target": "Cellule A1",
+      "point": [
+        48,
+        185
+      ],
+      "label": false,
+      "accepted": false,
+      "proof": {
+        "answer": "no",
+        "evidence": "ambiguous",
+        "bounds": null
+      },
+      "latency_ms": 306.5952399992966
+    },
+    {
+      "image": "pointer-calc.png",
+      "sha256": "6086ed934107ad99ce5befd9d5aa0b18a120a965a73d30f3db11f5a2fe70b339",
+      "image_size": [
+        1307,
+        801
+      ],
+      "target": "Cellule A1",
+      "point": [
+        105,
+        210
+      ],
+      "label": false,
+      "accepted": false,
+      "proof": {
+        "answer": "yes",
+        "evidence": "ambiguous",
+        "bounds": [
+          0,
+          427,
+          1000,
+          1000
+        ]
+      },
+      "latency_ms": 322.7446509990841
+    },
+    {
+      "image": "pointer-calc.png",
+      "sha256": "6086ed934107ad99ce5befd9d5aa0b18a120a965a73d30f3db11f5a2fe70b339",
+      "image_size": [
+        1307,
+        801
+      ],
+      "target": "Cellule A1",
+      "point": [
+        48,
+        227
+      ],
+      "label": false,
+      "accepted": false,
+      "proof": {
+        "answer": "yes",
+        "evidence": "ambiguous",
+        "bounds": [
+          0,
+          0,
+          1000,
+          1000
+        ]
+      },
+      "latency_ms": 251.19446899770992
+    },
+    {
+      "image": "pointer-calc.png",
+      "sha256": "6086ed934107ad99ce5befd9d5aa0b18a120a965a73d30f3db11f5a2fe70b339",
+      "image_size": [
+        1307,
+        801
+      ],
+      "target": "Cellule A1",
+      "point": [
+        500,
+        500
+      ],
+      "label": false,
+      "accepted": false,
+      "proof": {
+        "answer": "no",
+        "evidence": "ambiguous",
+        "bounds": null
+      },
+      "latency_ms": 235.2360260047135
+    },
+    {
+      "image": "pointer-blender.png",
+      "sha256": "36747f5f500563111ae9f66d3e70a1750eac8081b836d7c20b5cb0c088154822",
+      "image_size": [
+        907,
+        802
+      ],
+      "target": "Ajouter › Maillage › Tore",
+      "point": [
+        400,
+        681
+      ],
+      "label": true,
+      "accepted": false,
+      "proof": {
+        "answer": "no",
+        "evidence": "ambiguous",
+        "bounds": null
+      },
+      "latency_ms": 211.48233699932462
+    },
+    {
+      "image": "pointer-blender.png",
+      "sha256": "36747f5f500563111ae9f66d3e70a1750eac8081b836d7c20b5cb0c088154822",
+      "image_size": [
+        907,
+        802
+      ],
+      "target": "Ajouter › Maillage › Tore",
+      "point": [
+        377,
+        681
+      ],
+      "label": true,
+      "accepted": false,
+      "proof": {
+        "answer": "no",
+        "evidence": "ambiguous",
+        "bounds": null
+      },
+      "latency_ms": 211.2279739958467
+    },
+    {
+      "image": "pointer-blender.png",
+      "sha256": "36747f5f500563111ae9f66d3e70a1750eac8081b836d7c20b5cb0c088154822",
+      "image_size": [
+        907,
+        802
+      ],
+      "target": "Ajouter › Maillage › Tore",
+      "point": [
+        400,
+        655
+      ],
+      "label": false,
+      "accepted": false,
+      "proof": {
+        "answer": "no",
+        "evidence": "ambiguous",
+        "bounds": null
+      },
+      "latency_ms": 228.25706499861553
+    },
+    {
+      "image": "pointer-blender.png",
+      "sha256": "36747f5f500563111ae9f66d3e70a1750eac8081b836d7c20b5cb0c088154822",
+      "image_size": [
+        907,
+        802
+      ],
+      "target": "Ajouter › Maillage › Tore",
+      "point": [
+        400,
+        630
+      ],
+      "label": false,
+      "accepted": false,
+      "proof": {
+        "answer": "no",
+        "evidence": "ambiguous",
+        "bounds": null
+      },
+      "latency_ms": 206.7333189988858
+    },
+    {
+      "image": "pointer-blender.png",
+      "sha256": "36747f5f500563111ae9f66d3e70a1750eac8081b836d7c20b5cb0c088154822",
+      "image_size": [
+        907,
+        802
+      ],
+      "target": "Ajouter › Maillage › Tore",
+      "point": [
+        400,
+        707
+      ],
+      "label": false,
+      "accepted": false,
+      "proof": {
+        "answer": "yes",
+        "evidence": "direct",
+        "bounds": [
+          287,
+          375,
+          892,
+          469
+        ]
+      },
+      "latency_ms": 275.6157809999422
+    },
+    {
+      "image": "pointer-blender.png",
+      "sha256": "36747f5f500563111ae9f66d3e70a1750eac8081b836d7c20b5cb0c088154822",
+      "image_size": [
+        907,
+        802
+      ],
+      "target": "Ajouter › Maillage › Tore",
+      "point": [
+        600,
+        681
+      ],
+      "label": false,
+      "accepted": false,
+      "proof": {
+        "answer": "no",
+        "evidence": "ambiguous",
+        "bounds": null
+      },
+      "latency_ms": 368.0277900057263
+    }
+  ]
+}

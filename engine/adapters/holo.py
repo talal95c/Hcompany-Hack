@@ -7,6 +7,7 @@ import time
 from email.utils import parsedate_to_datetime
 
 from engine.interfaces import LocalizeResult
+from engine.pointer import verify_point
 from engine.services.errors import (
     InvalidResponse,
     QuotaExceeded,
@@ -94,6 +95,9 @@ class PacedHoloAdapter:
 
     def budget_s(self, timeout_s: float) -> float:
         return self.requests.budget_s(timeout_s)
+
+    async def verify_point(self, image_png, description, point, *, timeout_s):
+        return await verify_point(self.requests, image_png, description, point, timeout_s=timeout_s)
 
     async def localize(self, image_png: bytes, description: str, *, timeout_s: float):
         from engine.services.holo import (

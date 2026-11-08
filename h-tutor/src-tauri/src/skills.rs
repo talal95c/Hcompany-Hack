@@ -41,12 +41,13 @@ pub struct Skill {
     pub declines: u32,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Proposal {
     pub skill_id: String,
     pub title: String,
     pub goal: String,
     pub app: App,
+    pub mode: String,
 }
 
 pub fn now() -> u64 {
@@ -95,7 +96,30 @@ fn write(root: &Path, skill: &Skill) -> Result<(), String> {
     result.map_err(|e: std::io::Error| e.to_string())
 }
 
-fn record_at(root: &Path, graph: Tutorial, run: Run) -> Result<Skill, String> {
+fn structural_fingerprint(graph: &Tutorial) -> String {
+    let milestones: Vec<_> = graph
+        .milestones
+        .iter()
+        .map(|m| {
+            let mut next = m.next.clone();
+            let mut requires = m.requires.clone();
+            next.sort();
+            requires.sort();
+            serde_json::json!({
+                "id": m.id, "goal": m.goal, "done_when": m.done_when,
+                "next": next, "requires": requires, "optional": m.optional,
+            })
+        })
+        .collect();
+    crate::devin::hash(
+        &serde_json::json!({
+            "goal": graph.goal, "start": graph.start, "milestones": milestones,
+        })
+        .to_string(),
+    )
+}
+
+fn record_at(root: &Path, mut graph: Tutorial, run: Run) -> Result<Skill, String> {
     graph.validate()?;
     let target = path(root, &graph.id)?;
     let mut skill = if target.exists() {
@@ -114,6 +138,11 @@ fn record_at(root: &Path, graph: Tutorial, run: Run) -> Result<Skill, String> {
         }
     };
     if run.outcome == "completed" {
+        graph.version = if structural_fingerprint(&graph) == structural_fingerprint(&skill.graph) {
+            skill.graph.version
+        } else {
+            skill.graph.version.checked_add(1).ok_or("Skill version exhausted")?
+        };
         skill.title = graph.title.clone();
         skill.goal = graph.goal.clone();
         skill.app = graph.app.clone();
@@ -129,8 +158,27 @@ pub fn record_run(mut graph: Tutorial, run: Run) -> Result<Skill, String> {
     // Platform tutorials have ids like "rio:org:<uuid>": keep the skill's
     // folder name to safe characters.
     graph.id = safe_id(&graph.id);
+    let succeeded = run.outcome == "completed";
+    let skill = {
+        let _guard = STORE.lock().unwrap();
+        record_at(&dir(), graph, run)?
+    };
+    if succeeded {
+        crate::devin::auto_compile(&skill);
+    }
+    Ok(skill)
+}
+
+pub fn save_compilation(id: &str, artifact: &crate::devin::Compiled) -> Result<(), String> {
     let _guard = STORE.lock().unwrap();
-    record_at(&dir(), graph, run)
+    let mut skill = read(&dir(), id)?;
+    let value = serde_json::to_value(artifact).map_err(|_| "Compilation cannot be serialized")?;
+    if let Some(old) = skill.compiled.iter_mut().find(|v| v["session_id"] == artifact.session_id) {
+        *old = value;
+    } else {
+        skill.compiled.push(value);
+    }
+    write(&dir(), &skill)
 }
 
 fn safe_id(id: &str) -> String {
@@ -194,6 +242,7 @@ fn emit(app: &AppHandle, skill: &Skill) -> Result<(), String> {
             title: skill.title.clone(),
             goal: skill.goal.clone(),
             app: skill.app.clone(),
+            mode: crate::devin::mode(skill).into(),
         },
     )
     .map_err(|e| e.to_string())
@@ -215,9 +264,8 @@ pub fn skill_propose_now(app: AppHandle, skill_id: String) -> Result<(), String>
     if !skill.runs.iter().any(|r| r.outcome == "completed") {
         return Err("This skill has not succeeded yet".into());
     }
-    let mut guard = PROPOSALS.lock().unwrap();
     emit(&app, &skill)?;
-    guard.get_or_insert_with(HashMap::new).insert(app_key(&skill.app), now());
+    PROPOSALS.lock().unwrap().get_or_insert_with(HashMap::new).insert(app_key(&skill.app), now());
     Ok(())
 }
 
@@ -231,6 +279,9 @@ pub fn spawn(app: AppHandle) {
                 .unwrap_or(30 * 60);
             loop {
                 std::thread::sleep(Duration::from_secs(3));
+                if crate::autopilot::is_running() {
+                    continue;
+                }
                 let state = app.state::<crate::AppState>();
                 let Ok(session) = state.session.try_lock() else {
                     continue;
@@ -247,16 +298,20 @@ pub fn spawn(app: AppHandle) {
                     continue;
                 };
                 let Ok(skills) = list() else { continue };
-                let mut guard = PROPOSALS.lock().unwrap();
-                let last = guard.get_or_insert_with(HashMap::new);
                 let time = now();
-                if let Some(skill) = skills.iter().find(|s| {
-                    !s.app.name.trim().is_empty()
-                        && s.app.name.eq_ignore_ascii_case(&name)
-                        && ready(s, last, time, cooldown)
-                }) && emit(&app, skill).is_ok()
+                let candidate = {
+                    let mut guard = PROPOSALS.lock().unwrap();
+                    let last = guard.get_or_insert_with(HashMap::new);
+                    skills.iter().find(|s| {
+                        !s.app.name.trim().is_empty()
+                            && s.app.name.eq_ignore_ascii_case(&name)
+                            && ready(s, last, time, cooldown)
+                    })
+                };
+                if let Some(skill) = candidate
+                    && emit(&app, skill).is_ok()
                 {
-                    last.insert(app_key(&skill.app), time);
+                    PROPOSALS.lock().unwrap().get_or_insert_with(HashMap::new).insert(app_key(&skill.app), time);
                 }
             }
         })
@@ -331,5 +386,67 @@ mod tests {
         assert!(ready(&skill, &last, 1901 + MUTE_SECONDS, 1800));
         assert!(path(Path::new("."), "../escape").is_err());
         assert_eq!(safe_id("rio:org:5f2a-9c"), "rio_org_5f2a-9c");
+    }
+
+    #[test]
+    fn skills_structural_version_preserves_script_across_runs() {
+        let root = dir().join(format!("test-structure-{}", std::process::id()));
+        let mut first = record_at(&root, graph(), run("completed")).unwrap();
+        let script = "echo exemple";
+        first.compiled.push(serde_json::json!({
+            "graph_version": first.graph.version, "session_id": "test", "url": "",
+            "status": "completed", "date": 100, "sha256": crate::devin::hash(script),
+            "target_os": std::env::consts::OS, "acus_consumed": 0,
+            "language": "bash", "script": script, "params": [],
+            "test_command": "bash script", "tested": true,
+            "test_platform": std::env::consts::OS, "test_evidence": "Exemple vérifié", "notes": ""
+        }));
+        write(&root, &first).unwrap();
+        let empty = Tutorial { milestones: Vec::new(), ..first.graph.clone() };
+        assert!(record_at(&root, empty, run("completed")).is_err());
+        assert!(crate::devin::selected(&read(&root, "example").unwrap()).is_some());
+        for i in 1..=2 {
+            let mut replay = first.graph.clone();
+            replay.version += i;
+            replay.milestones[0].hints = vec![format!("Autre hint {i}")];
+            replay.language = Some("fr".into());
+            replay.source = "recorded".into();
+            replay.milestones[0].teach = Some("Explication".into());
+            let saved = record_at(&root, replay, run("completed")).unwrap();
+            assert_eq!(saved.graph.version, first.graph.version);
+            assert!(crate::devin::selected(&saved).is_some());
+        }
+        let mut changed = first.graph.clone();
+        changed.milestones[0].done_when = "Nouvelle preuve obligatoire".into();
+        let saved = record_at(&root, changed, run("completed")).unwrap();
+        assert_eq!(saved.graph.version, first.graph.version + 1);
+        assert!(crate::devin::selected(&saved).is_none());
+        let unchanged = record_at(&root, saved.graph.clone(), run("failed")).unwrap();
+        assert_eq!(unchanged.graph.version, saved.graph.version);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn skills_structure_covers_goals_edges_and_empty_graph_metadata() {
+        let original = graph();
+        for changed in [
+            Tutorial { goal: "Autre but".into(), ..original.clone() },
+            Tutorial { start: Some("first".into()), ..original.clone() },
+            Tutorial {
+                milestones: vec![Milestone { goal: "Autre étape".into(), ..original.milestones[0].clone() }],
+                ..original.clone()
+            },
+            Tutorial {
+                milestones: vec![Milestone { next: vec!["first".into()], ..original.milestones[0].clone() }],
+                ..original.clone()
+            },
+            Tutorial { milestones: Vec::new(), ..original.clone() },
+        ] {
+            assert_ne!(structural_fingerprint(&original), structural_fingerprint(&changed));
+        }
+        let mut metadata = original.clone();
+        metadata.title = "Autre titre".into();
+        metadata.milestones[0].video_at = Some(30);
+        assert_eq!(structural_fingerprint(&original), structural_fingerprint(&metadata));
     }
 }

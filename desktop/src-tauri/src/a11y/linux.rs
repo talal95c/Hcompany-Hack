@@ -8,12 +8,27 @@ use atspi::zbus::fdo::PropertiesProxy;
 use atspi::zbus::{self, proxy::CacheProperties};
 use atspi::{AccessibilityConnection, CoordType, Interface, Role, State as NativeState, StateSet};
 use futures_util::{stream, FutureExt, StreamExt};
-use std::{collections::HashSet, future::Future};
+use std::{
+    collections::{HashMap, HashSet},
+    future::Future,
+};
 use tokio::sync::OnceCell;
 
 #[derive(Default)]
 pub struct Sensor {
     connection: OnceCell<AccessibilityConnection>,
+    geometry: Mutex<Geometry>,
+}
+
+type ObjectKey = (String, String);
+#[derive(Default)]
+struct Geometry {
+    windows: HashMap<ObjectKey, (f64, f64)>,
+    owners: HashMap<ObjectKey, ObjectKey>,
+}
+
+fn object_key(handle: &Handle) -> ObjectKey {
+    (handle.bus.clone(), handle.path.clone())
 }
 
 struct Observation {
@@ -86,6 +101,77 @@ macro_rules! proxy {
 }
 
 impl Sensor {
+    fn inherit_geometry(&self, parent: &Handle, child: &Handle) {
+        let mut geometry = self.geometry.lock().unwrap();
+        let child = object_key(child);
+        let owner = if geometry.windows.contains_key(&child) {
+            Some(child.clone())
+        } else {
+            geometry.owners.get(&object_key(parent)).cloned()
+        };
+        if let Some(owner) = owner {
+            geometry.owners.insert(child, owner);
+        } else {
+            geometry.owners.remove(&child);
+        }
+    }
+    async fn scoped_children(
+        &self,
+        parent: &Handle,
+        budget: usize,
+    ) -> Result<(Vec<RawNode>, usize), Error> {
+        let conn = self.connection().await?;
+        let accessible = proxy!(AccessibleProxy, conn, parent);
+        let count = call(accessible.child_count()).await?;
+        if count < 0 || count as usize > budget {
+            return Err(Error::StaleRef);
+        }
+        let children = call(accessible.get_children()).await?;
+        if children.len() != count as usize {
+            return Err(Error::StaleRef);
+        }
+        let children = children
+            .into_iter()
+            .map(handle)
+            .collect::<Result<Vec<_>, _>>()?;
+        for child in &children {
+            self.inherit_geometry(parent, child);
+        }
+        let results = stream::iter(children)
+            .map(|h| async move {
+                let accessible = proxy!(AccessibleProxy, conn, &h);
+                let (observation, actual_parent) =
+                    tokio::try_join!(self.read(&h, false), call(accessible.parent()))?;
+                let actual_parent = handle(actual_parent)?;
+                if actual_parent.bus != parent.bus
+                    || actual_parent.path != parent.path
+                    || observation.reasons.iter().any(|(r, _)| {
+                        !matches!(
+                            r,
+                            Reason::DepthLimit | Reason::InvisibleSkipped | Reason::DefunctSkipped
+                        )
+                    })
+                    || (observation.node.is_some() && !observation.valid_bounds)
+                {
+                    return Err(Error::StaleRef);
+                }
+                Ok(observation.node.map(|node| RawNode {
+                    node,
+                    handle: h,
+                    parent: None,
+                }))
+            })
+            .buffered(16)
+            .collect::<Vec<Result<Option<RawNode>, Error>>>()
+            .await;
+        let mut nodes = Vec::new();
+        for result in results {
+            if let Some(node) = result? {
+                nodes.push(node);
+            }
+        }
+        Ok((nodes, count as usize))
+    }
     async fn connection(&self) -> Result<&zbus::Connection, Error> {
         self.connection
             .get_or_try_init(|| async {
@@ -101,6 +187,14 @@ impl Sensor {
             .map(|c| c.connection())
     }
     async fn read(&self, h: &Handle, expand: bool) -> Result<Observation, Error> {
+        let origin = {
+            let geometry = self.geometry.lock().unwrap();
+            geometry
+                .owners
+                .get(&object_key(h))
+                .and_then(|owner| geometry.windows.get(owner))
+                .copied()
+        };
         let conn = self.connection().await?;
         let a = proxy!(AccessibleProxy, conn, h);
         let properties = proxy!(PropertiesProxy, conn, h);
@@ -145,7 +239,7 @@ impl Sensor {
                 .is_some_and(|interfaces| interfaces.contains(Interface::Component))
             {
                 let component = proxy!(ComponentProxy, conn, h);
-                call(component.get_extents(CoordType::Screen))
+                call(component.get_extents(CoordType::Window))
                     .await
                     .map(Some)
             } else {
@@ -191,8 +285,15 @@ impl Sensor {
             .try_into()
             .map_err(|_| Error::StaleRef)?;
         let count = count.max(0) as usize;
-        let bounds =
-            extents?.and_then(|(x, y, w, h)| crate::coordinates::Rect::atspi_screen(x, y, w, h));
+        let bounds = extents?.and_then(|(x, y, w, h)| {
+            let rect = crate::coordinates::Rect::atspi_screen(x, y, w, h)?;
+            let (x, y) = origin?;
+            Some(crate::coordinates::Rect {
+                x: x + rect.x,
+                y: y + rect.y,
+                ..rect
+            })
+        });
         let attributes = if matches!(role, Role::Entry | Role::Text) {
             call(a.get_attributes()).await?
         } else {
@@ -257,6 +358,12 @@ impl Sensor {
         };
         let (value, children) = tokio::join!(value, children);
         let mut reasons = Vec::new();
+        if interfaces.contains(Interface::Component)
+            && origin.is_none()
+            && role != Role::Application
+        {
+            reasons.push((Reason::ChildReadError, node.role.clone()));
+        }
         match value {
             Ok(value) => node.value = value,
             Err(error) => reasons.push((
@@ -323,11 +430,24 @@ impl Sensor {
         let component = proxy!(ComponentProxy, conn, h);
         let table = proxy!(TableProxy, conn, h);
         let b = node.bounds;
+        let (origin_x, origin_y) = {
+            let geometry = self.geometry.lock().unwrap();
+            geometry
+                .owners
+                .get(&object_key(h))
+                .and_then(|owner| geometry.windows.get(owner))
+                .copied()
+        }
+        .ok_or(Error::StaleRef)?;
         let mut corners = Vec::new();
         for (x, y) in [(b.x + 1., b.y + 1.), (b.x + b.w - 2., b.y + b.h - 2.)] {
             let cell = handle(
-                call(component.get_accessible_at_point(x as i32, y as i32, CoordType::Screen))
-                    .await?,
+                call(component.get_accessible_at_point(
+                    (x - origin_x) as i32,
+                    (y - origin_y) as i32,
+                    CoordType::Window,
+                ))
+                .await?,
             )?;
             let cell_a = proxy!(AccessibleProxy, conn, &cell);
             let index = call(cell_a.get_index_in_parent()).await?;
@@ -381,6 +501,310 @@ impl Sensor {
 }
 
 impl AccessibilitySensor for Sensor {
+    fn position<'a>(
+        &'a self,
+        parent: &'a Handle,
+        target: &'a Handle,
+    ) -> Task<'a, Option<scoped::Position>> {
+        Box::pin(async move {
+            let conn = self.connection().await?;
+            let accessible = proxy!(AccessibleProxy, conn, parent);
+            if call(accessible.get_role()).await? != Role::Table {
+                return Ok(None);
+            }
+            let table = proxy!(TableProxy, conn, parent);
+            let cell = proxy!(AccessibleProxy, conn, target);
+            let index = call(cell.get_index_in_parent()).await?;
+            if index < 0 {
+                return Err(Error::StaleRef);
+            }
+            let (row, column, rows, columns) = tokio::try_join!(
+                call(table.get_row_at_index(index)),
+                call(table.get_column_at_index(index)),
+                call(table.n_rows()),
+                call(table.n_columns())
+            )?;
+            if row < 0 || column < 0 || row >= rows || column >= columns {
+                return Err(Error::StaleRef);
+            }
+            Ok(Some(scoped::Position {
+                row,
+                column,
+                rows,
+                columns,
+            }))
+        })
+    }
+
+    fn scoped<'a>(
+        &'a self,
+        binding: &'a scoped::Binding,
+        _deadline: Instant,
+        budget: usize,
+    ) -> Task<'a, Tree> {
+        Box::pin(async move {
+            if binding.ancestors.is_empty() || binding.ancestors.len() >= budget {
+                return Err(Error::StaleRef);
+            }
+            let conn = self.connection().await?;
+            let ancestors = stream::iter(binding.ancestors.clone().into_iter().enumerate())
+                .map(|(i, (old, h))| async move {
+                    let expected = if i == 0 {
+                        &binding.app
+                    } else {
+                        &binding.ancestors[i - 1].1
+                    };
+                    let accessible = proxy!(AccessibleProxy, conn, &h);
+                    let (observation, parent) =
+                        tokio::try_join!(self.read(&h, false), call(accessible.parent())).inspect_err(|error| {
+                            if std::env::var_os("RIO_A11Y_TRACE").is_some() { eprintln!("a11y scoped ancestor read_failed index={i} role={} code={}", old.role, error.code()); }
+                        })?;
+                    let parent = handle(parent)?;
+                    let node = observation.node.ok_or(Error::StaleRef)?;
+                    let mut linked = parent.bus == expected.bus && parent.path == expected.path;
+                    if !linked && (h.bus != binding.app.bus || h.path != binding.app.path) {
+                        let expected_proxy = proxy!(AccessibleProxy, conn, expected);
+                        let count = call(expected_proxy.child_count()).await?;
+                        if count >= 0 && count as usize <= budget {
+                            let children = call(expected_proxy.get_children()).await?;
+                            if children.len() == count as usize {
+                                let children = children.into_iter().map(handle).collect::<Result<Vec<_>, _>>()?;
+                                linked = children.iter().filter(|child| child.bus == h.bus && child.path == h.path).count() == 1;
+                            }
+                        }
+                    }
+                    if observation.reasons.iter().any(|(r, _)| {
+                        !matches!(r, Reason::DepthLimit | Reason::InvisibleSkipped | Reason::DefunctSkipped)
+                    }) || node.role != old.role
+                        || ((h.bus != binding.app.bus || h.path != binding.app.path)
+                            && !linked)
+                    {
+                        if std::env::var_os("RIO_A11Y_TRACE").is_some() {
+                            eprintln!("a11y scoped ancestor mismatch index={i} role={} parent={}:{} expected={}:{}", old.role, parent.bus, parent.path, expected.bus, expected.path);
+                        }
+                        return Err(Error::StaleRef);
+                    }
+                    Ok(RawNode {
+                        node,
+                        handle: h,
+                        parent: i.checked_sub(1),
+                    })
+                })
+                .buffered(16)
+                .collect::<Vec<Result<RawNode, Error>>>()
+                .await;
+            let mut nodes: Vec<RawNode> = Vec::new();
+            let mut used = binding.ancestors.len();
+            for (i, ancestor) in ancestors.into_iter().enumerate() {
+                let unchanged_parent = i == 0
+                    || (nodes[i - 1].handle.bus == binding.ancestors[i - 1].1.bus
+                        && nodes[i - 1].handle.path == binding.ancestors[i - 1].1.path);
+                if let Ok(node) = ancestor {
+                    if unchanged_parent {
+                        nodes.push(node);
+                        continue;
+                    }
+                }
+                if i == 0 {
+                    return Err(Error::StaleRef);
+                }
+                let (candidates, count) = self
+                    .scoped_children(&nodes[i - 1].handle, budget.saturating_sub(used))
+                    .await?;
+                used += count;
+                let old = &binding.ancestors[i].0;
+                let node = scoped::unique_ancestor(candidates, old, i - 1)?;
+                nodes.push(node);
+                if std::env::var_os("RIO_A11Y_TRACE").is_some() {
+                    eprintln!(
+                        "a11y scoped recovered ancestor role={} examined={count}",
+                        old.role
+                    );
+                }
+            }
+            let parent_index = nodes.len() - 1;
+            let parent_handle = nodes[parent_index].handle.clone();
+            let parent = &parent_handle;
+            if used >= budget {
+                return Err(Error::StaleRef);
+            }
+            let handles = if let Some(position) = binding.position {
+                let table = proxy!(TableProxy, conn, parent);
+                let (rows, columns, object, index) = tokio::try_join!(
+                    call(table.n_rows()),
+                    call(table.n_columns()),
+                    call(table.get_accessible_at(position.row, position.column)),
+                    call(table.get_index_at(position.row, position.column))
+                )?;
+                if rows != position.rows || columns != position.columns {
+                    return Err(Error::StaleRef);
+                }
+                let h = handle(object)?;
+                self.inherit_geometry(parent, &h);
+                let cell = proxy!(AccessibleProxy, conn, &h);
+                if index < 0 || call(cell.get_index_in_parent()).await? != index {
+                    return Err(Error::StaleRef);
+                }
+                vec![h]
+            } else {
+                let (children, _) = self.scoped_children(parent, budget - used).await?;
+                for mut child in children {
+                    child.parent = Some(parent_index);
+                    nodes.push(child);
+                }
+                return Ok(Tree {
+                    nodes,
+                    complete: true,
+                    reasons: BTreeMap::new(),
+                });
+            };
+            let candidates = stream::iter(handles)
+                .map(|h| async move {
+                    let accessible = proxy!(AccessibleProxy, conn, &h);
+                    let (observation, actual_parent) =
+                        tokio::try_join!(self.read(&h, false), call(accessible.parent()))?;
+                    let actual_parent = handle(actual_parent)?;
+                    if actual_parent.bus != parent.bus || actual_parent.path != parent.path {
+                        return Err(Error::StaleRef);
+                    }
+                    if observation.reasons.iter().any(|(r, _)| {
+                        !matches!(
+                            r,
+                            Reason::DepthLimit | Reason::InvisibleSkipped | Reason::DefunctSkipped
+                        )
+                    }) {
+                        return Err(Error::StaleRef);
+                    }
+                    if observation.node.is_some() && !observation.valid_bounds {
+                        return Err(Error::StaleRef);
+                    }
+                    Ok(observation
+                        .node
+                        .filter(|_| observation.valid_bounds)
+                        .map(|node| RawNode {
+                            node,
+                            handle: h,
+                            parent: Some(parent_index),
+                        }))
+                })
+                .buffered(16)
+                .collect::<Vec<Result<Option<RawNode>, Error>>>()
+                .await;
+            for candidate in candidates {
+                if let Some(node) = candidate? {
+                    nodes.push(node);
+                }
+            }
+            Ok(Tree {
+                nodes,
+                complete: true,
+                reasons: BTreeMap::new(),
+            })
+        })
+    }
+
+    fn supports_events(&self) -> bool {
+        true
+    }
+
+    fn subscribe(
+        &self,
+        sender: tokio::sync::mpsc::Sender<events::Change>,
+        ready: tokio::sync::oneshot::Sender<bool>,
+    ) -> Task<'_, ()> {
+        Box::pin(async move {
+            use atspi::events::{
+                Event, EventProperties, EventTypeProperties, FocusEvents, ObjectEvents,
+                WindowEvents,
+            };
+            let connection = AccessibilityConnection::new()
+                .await
+                .map_err(|_| Error::PermissionDenied)?;
+            connection
+                .register_event::<ObjectEvents>()
+                .await
+                .map_err(|_| Error::PermissionDenied)?;
+            connection
+                .register_event::<FocusEvents>()
+                .await
+                .map_err(|_| Error::PermissionDenied)?;
+            connection
+                .register_event::<WindowEvents>()
+                .await
+                .map_err(|_| Error::PermissionDenied)?;
+            let stream = connection.event_stream();
+            tokio::pin!(stream);
+            let _ = ready.send(true);
+            while let Some(event) = stream.next().await {
+                let event = event.map_err(|_| Error::StaleRef)?;
+                if matches!(
+                    &event,
+                    Event::Window(WindowEvents::Raise(_) | WindowEvents::Lower(_))
+                ) {
+                    continue;
+                }
+                let selector_changed = matches!(&event, Event::Object(ObjectEvents::PropertyChange(e))
+                    if matches!(e.property.as_str(), "accessible-name" | "accessible-role" | "accessible-parent"));
+                let reconcile = selector_changed
+                    || matches!(
+                        &event,
+                        Event::Object(
+                            ObjectEvents::ChildrenChanged(_)
+                                | ObjectEvents::RowInserted(_)
+                                | ObjectEvents::RowDeleted(_)
+                                | ObjectEvents::ColumnInserted(_)
+                                | ObjectEvents::ColumnDeleted(_)
+                        ) | Event::Window(_)
+                    );
+                let focus = matches!(&event, Event::Focus(_) | Event::Window(_));
+                if reconcile && std::env::var_os("RIO_A11Y_TRACE").is_some() {
+                    let property = match &event {
+                        Event::Object(ObjectEvents::PropertyChange(e)) if selector_changed => {
+                            e.property.as_str()
+                        }
+                        _ => "-",
+                    };
+                    eprintln!(
+                        "a11y structural category={} property={} source={}:{}",
+                        event.member(),
+                        property,
+                        event.sender(),
+                        event.path()
+                    );
+                }
+                if !reconcile
+                    && !focus
+                    && !matches!(
+                        &event,
+                        Event::Object(
+                            ObjectEvents::TextChanged(_)
+                                | ObjectEvents::StateChanged(_)
+                                | ObjectEvents::PropertyChange(_)
+                                | ObjectEvents::VisibleDataChanged(_)
+                                | ObjectEvents::ModelChanged(_)
+                                | ObjectEvents::SelectionChanged(_)
+                                | ObjectEvents::ActiveDescendantChanged(_)
+                        )
+                    )
+                {
+                    continue;
+                }
+                let change = events::Change {
+                    source: Handle {
+                        bus: event.sender().to_string(),
+                        path: event.path().to_string(),
+                    },
+                    reconcile,
+                    focus,
+                    scoped: !focus
+                        && (selector_changed
+                            || matches!(&event, Event::Object(ObjectEvents::ChildrenChanged(_)))),
+                };
+                sender.send(change).await.map_err(|_| Error::StaleRef)?;
+            }
+            Ok(())
+        })
+    }
     fn apps(&self) -> Task<'_, Vec<App>> {
         Box::pin(async move {
             let started = Instant::now();
@@ -416,10 +840,44 @@ impl AccessibilitySensor for Sensor {
                     .and_then(|p| p.file_name().map(|v| v.to_string_lossy().into_owned()))
                     .unwrap_or_default();
                 let mut focused = call(a.get_state()).await?.contains(NativeState::Active);
+                let mut matched = Vec::new();
                 for object in call(a.get_children()).await? {
                     let child = handle(object)?;
                     let frame = proxy!(AccessibleProxy, conn.connection(), &child);
                     focused |= call(frame.get_state()).await?.contains(NativeState::Active);
+                    let component = proxy!(ComponentProxy, conn.connection(), &child);
+                    let (screen, local) = tokio::join!(
+                        call(component.get_extents(CoordType::Screen)),
+                        call(component.get_extents(CoordType::Window))
+                    );
+                    let (Ok((sx, sy, _, _)), Ok((wx, wy, _, _))) = (screen, local) else {
+                        continue;
+                    };
+                    let candidates: Vec<_> = windows
+                        .iter()
+                        .filter(|w| {
+                            w.pid == pid
+                                && w.window_bounds.x == (sx as f64 - wx as f64)
+                                && w.window_bounds.y == (sy as f64 - wy as f64)
+                        })
+                        .collect();
+                    if std::env::var_os("RIO_A11Y_TRACE").is_some() {
+                        eprintln!("a11y coordinate_frame pid={pid} screen_origin=({sx},{sy}) window_origin=({wx},{wy}) candidates={} native={:?}", candidates.len(), windows.iter().map(|w| (w.pid,w.window_bounds)).collect::<Vec<_>>());
+                    }
+                    if candidates.len() == 1 {
+                        matched.push((object_key(&child), candidates[0].window_bounds));
+                    }
+                }
+                {
+                    let mut geometry = self.geometry.lock().unwrap();
+                    geometry.windows.retain(|(bus, _), _| bus != &h.bus);
+                    if geometry.owners.len() > 16_384 {
+                        geometry.owners.clear();
+                    }
+                    for (key, bounds) in matched {
+                        geometry.windows.insert(key.clone(), (bounds.x, bounds.y));
+                        geometry.owners.insert(key.clone(), key);
+                    }
                 }
                 let window = windows.iter().find(|w| w.pid == pid);
                 apps.push(App {
@@ -546,11 +1004,12 @@ impl AccessibilitySensor for Sensor {
                         child_parent = Some(tree.nodes.len());
                         tree.nodes.push(RawNode {
                             node,
-                            handle: h,
+                            handle: h.clone(),
                             parent,
                         });
                     }
                     for child in observation.children {
+                        self.inherit_geometry(&h, &child);
                         if next.len() >= 8192 {
                             tree.record(Reason::NodeCap, "unknown");
                             break;
@@ -566,6 +1025,13 @@ impl AccessibilitySensor for Sensor {
                 );
                 level = next;
                 depth_index += 1;
+            }
+            if std::env::var_os("RIO_A11Y_TRACE").is_some() {
+                eprintln!(
+                    "a11y coordinate_snapshot nodes={} reasons={:?}",
+                    tree.nodes.len(),
+                    tree.reasons
+                );
             }
             Ok(tree)
         })
@@ -676,6 +1142,37 @@ impl AccessibilitySensor for Sensor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn geometry_is_inherited_only_from_identified_native_window() {
+        let sensor = Sensor::default();
+        let handle = |path: &str| Handle {
+            bus: "app".into(),
+            path: path.into(),
+        };
+        let frame = handle("frame");
+        let cell = handle("cell");
+        let other = handle("unknown");
+        {
+            let mut geometry = sensor.geometry.lock().unwrap();
+            geometry.windows.insert(object_key(&frame), (200., 119.));
+            geometry
+                .owners
+                .insert(object_key(&frame), object_key(&frame));
+        }
+        sensor.inherit_geometry(&frame, &cell);
+        {
+            let geometry = sensor.geometry.lock().unwrap();
+            let owner = geometry.owners.get(&object_key(&cell)).unwrap();
+            assert_eq!(geometry.windows[owner], (200., 119.));
+        }
+        sensor.inherit_geometry(&other, &cell);
+        assert!(!sensor
+            .geometry
+            .lock()
+            .unwrap()
+            .owners
+            .contains_key(&object_key(&cell)));
+    }
     #[tokio::test]
     async fn individual_calls_bound_hangs_and_preserve_errors() {
         assert_eq!(call(async { Ok::<_, Error>(7) }).await, Ok(7));

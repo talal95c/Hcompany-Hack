@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   asset,
   Asterisk,
@@ -15,40 +15,138 @@ import {
   ScrollRevealText,
   Ticker,
 } from "./ui";
-import { APP_ICONS } from "./appIcons";
-import { RioArrow } from "./cursor";
+import { APP_URL, INSTALL_URL } from "./Teams";
 
+const APPS = ["Blender", "LibreOffice Calc", "Excel", "Photoshop", "Docker", "Finder", "Figma", "VS Code"];
 
 /* ---------------- Nav ---------------- */
 
+
 export function Nav() {
-  const links = ["Home", "Pricing", "Contact"];
-  const ids = ["top", "pricing", "contact"];
+  const links = [
+    ["Use cases", "#use-cases"],
+    ["Teams", "#teams"],
+    ["Pricing", "#pricing"],
+    ["FAQ", "#faq"],
+  ];
+  const [open, setOpen] = useState(false);
+  const [hover, setHover] = useState<string | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    addEventListener("hashchange", close);
+    return () => removeEventListener("hashchange", close);
+  }, [open]);
   return (
     <motion.header
-      className="nav"
+      className={`nav ${open ? "nav-open" : ""}`}
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: EASE, delay: 0.1 }}
     >
-      <nav className="nav-pill">
-        <a href="#top" className="nav-logo" aria-label="Home">
-          <PillLogo size="md" />
-        </a>
-        {links.map((l, i) => (
-          <a key={l} href={`#${ids[i]}`} className="nav-link">
-            <span data-label={l}>{l}</span>
+      <a href="#top" className="nav-brand" aria-label="Rio home">
+        <PillLogo size="sm" />
+        <span>Rio</span>
+      </a>
+      <nav className="nav-pill" aria-label="Main" onMouseLeave={() => setHover(null)}>
+        {links.map(([l, href]) => (
+          <a key={l} href={href} className="nav-link" onMouseEnter={() => setHover(l)} onFocus={() => setHover(l)} onBlur={() => setHover(null)}>
+            <AnimatePresence>
+              {hover === l && (
+                <motion.span
+                  layoutId="nav-hover"
+                  className="nav-hover"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 520, damping: 38, opacity: { duration: 0.15 } }}
+                />
+              )}
+            </AnimatePresence>
+            <span className="nav-text">{l}</span>
           </a>
         ))}
       </nav>
-      <Btn label="Get Rio" variant="light" size="sm" href="#contact" className="nav-cta" />
+      <div className="nav-right">
+        <Btn label="Go to app" size="sm" href={APP_URL} className="nav-cta" />
+        <button type="button" className="nav-menu" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          <span />
+          <span />
+        </button>
+      </div>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="nav-sheet"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25, ease: EASE }}
+          >
+            {links.map(([l, href]) => (
+              <a key={l} href={href} onClick={() => setOpen(false)}>{l}</a>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.header>
   );
 }
 
 /* ---------------- Hero ---------------- */
 
+/** What people paste or type in Rio, shown in turn in the hero. */
+const SOURCES = [
+  { word: "YouTube tutorial.", kind: "YouTube", input: "youtube.com/watch?v=your-first-donut" },
+  { word: "blog post.", kind: "Article", input: "notes.design/how-to-export-for-web-in-figma" },
+  { word: "help page.", kind: "Docs", input: "docs.blender.org/manual/modeling/bevel.html" },
+];
+const TYPE_MS = 38;
+const HOLD_MS = 2200;
+
+/** Cycles through SOURCES, typing each input like someone pasting or asking. */
+function useSource() {
+  const reduced = useReducedMotion();
+  const [i, setI] = useState(0);
+  const [n, setN] = useState(0);
+  const full = SOURCES[i].input.length;
+  useEffect(() => {
+    if (reduced) {
+      const t = setTimeout(() => setI((i + 1) % SOURCES.length), HOLD_MS + 1200);
+      return () => clearTimeout(t);
+    }
+    if (n < full) {
+      const t = setTimeout(() => setN(n + 1), TYPE_MS);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => {
+      setN(0);
+      setI((i + 1) % SOURCES.length);
+    }, HOLD_MS);
+    return () => clearTimeout(t);
+  }, [i, n, full, reduced]);
+  return { src: SOURCES[i], i, typed: reduced ? SOURCES[i].input : SOURCES[i].input.slice(0, n) };
+}
+
+function HeroLine({ text, k }: { text: string; k: number }) {
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.span
+        key={k}
+        className="hero-swap"
+        initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        exit={{ opacity: 0, y: -18, filter: "blur(8px)" }}
+        transition={{ duration: 0.45, ease: EASE }}
+      >
+        {text}
+      </motion.span>
+    </AnimatePresence>
+  );
+}
+
 export function Hero() {
+  const { src, i, typed } = useSource();
   const up = (d: number) => ({
     initial: { opacity: 0, y: 40, filter: "blur(10px)" },
     animate: { opacity: 1, y: 0, filter: "blur(0px)" },
@@ -66,21 +164,26 @@ export function Hero() {
           transition={{ duration: 1.6, ease: EASE }}
         />
         <div className="hero-shade" />
-        <div className="tv-screen" aria-hidden />
         <div className="hero-content">
           <h1 className="h-hero">
             <motion.span className="hero-l1" {...up(0.2)}>
-              Learn any software.
+              <span className="sr-only">Paste a YouTube tutorial, a blog post or a help page.</span>
+              <span aria-hidden>Paste a <HeroLine text={src.word} k={i} /></span>
             </motion.span>
             <motion.span className="hero-l2" {...up(0.32)}>
-              Live, on your screen.
+              Do it with Rio.
             </motion.span>
           </h1>
           <motion.p className="p-16 hero-sub" {...up(0.44)}>
-            Rio watches your screen, breaks any task into steps and shows you exactly where to click. You do it, Rio checks it.
+            Rio turns it into steps, shows you where to click in your own app and checks each step. No link? Just type what you want to do.
           </motion.p>
+          <motion.div className="hero-link-demo" {...up(0.5)} aria-label="Illustration: paste a tutorial link or type a goal to start a lesson">
+            <span className="hero-demo-kind mono-12" aria-hidden>{src.kind}</span>
+            <span className="hero-demo-url" aria-hidden>{typed}<span className="hero-caret" /></span>
+            <span className="hero-demo-start" aria-hidden>Start ↗</span>
+          </motion.div>
           <motion.div {...up(0.56)}>
-            <Btn label="Try Rio" href="#contact" />
+            <Btn label="Try Rio" href={APP_URL} />
           </motion.div>
         </div>
         <motion.div className="hero-bottom" {...up(0.85)}>
@@ -88,13 +191,8 @@ export function Hero() {
             Works on top of the apps you already use, from 3D to spreadsheets.
           </p>
           <Marquee duration={28} className="hero-logos">
-            {APP_ICONS.map((a, i) => (
-              <span key={a.name} className="app-logo" style={{ animationDelay: `${-i * 0.9}s` }}>
-                <svg viewBox="0 0 24 24" aria-hidden>
-                  <path d={a.path} />
-                </svg>
-                {a.name}
-              </span>
+            {APPS.map((l) => (
+              <span key={l} className="app-logo">{l}</span>
             ))}
           </Marquee>
         </motion.div>
@@ -372,6 +470,51 @@ export function Vision() {
             <Btn label="See it in action" variant="ghost" href="#top" />
           </Reveal>
         </div>
+        <div className="features">
+          <Reveal className="feature" delay={0}>
+            <div className="feat-icon feat-search">
+              <svg viewBox="0 0 30.956 44.192" width={36} height={52}>
+                <path
+                  fill="#fff"
+                  d="M 5.587 1.427 C 10.875 -1.564 17.587 0.299 20.577 5.587 C 23.402 10.582 21.894 16.844 17.262 20.044 L 21.222 27.048 L 22.096 26.555 L 30.956 42.223 L 27.475 44.192 L 18.613 28.524 L 19.481 28.033 L 15.521 21.028 C 10.392 23.346 4.251 21.41 1.427 16.417 C -1.563 11.129 0.299 4.417 5.587 1.427 Z M 18.836 6.571 C 16.389 2.245 10.898 0.721 6.571 3.168 C 2.245 5.615 0.721 11.106 3.168 15.432 C 5.615 19.759 11.106 21.283 15.432 18.836 C 19.759 16.389 21.283 10.898 18.836 6.571 Z"
+                  transform="rotate(-30 15 22)"
+                />
+              </svg>
+              <span className="sparkle s1" />
+              <span className="sparkle s2" />
+            </div>
+            <p className="p-15 feat-text">A ghost cursor that points to your next click</p>
+          </Reveal>
+          <Reveal className="feature" delay={0.08}>
+            <div className="feat-icon feat-orbit">
+              <span className="orbit-ring" />
+              <span className="orbit-ring r2" />
+              <span className="orbit-dot" />
+            </div>
+            <p className="p-15 feat-text">Milestone graphs, not brittle click scripts.</p>
+          </Reveal>
+          <Reveal className="feature" delay={0.16}>
+            <div className="feat-icon feat-bars">
+              {[0, 1, 2, 3].map((k) => (
+                <span key={k} className="bar" style={{ animationDelay: `${k * 0.25}s` }}>
+                  <i />
+                </span>
+              ))}
+            </div>
+            <p className="p-15 feat-text">Ask “show me again” and Rio repeats the step</p>
+          </Reveal>
+          <Reveal className="feature" delay={0.24}>
+            <div className="feat-icon feat-langs">
+              <span className="lang-caret" />
+              <Marquee duration={8} className="lang-marquee">
+                {["ZH", "HI", "ES", "FR", "AR", "BN", "PT", "RU", "EN", "DE"].map((l) => (
+                  <span key={l}>{l}</span>
+                ))}
+              </Marquee>
+            </div>
+            <p className="p-15 feat-text">A multilingual voice that runs on your machine.</p>
+          </Reveal>
+        </div>
       </section>
     </>
   );
@@ -517,7 +660,7 @@ const STEPS = [
   { t: "Save it as a tutorial", tag: "Share", d: "At the end, the path you actually took is saved back to the library, so the next learner gets there faster." },
 ];
 
-export const TEAM = [
+const TEAM = [
   { name: "HOLO VISION", role: "Sees and locates", img: "OrsgMbvM0AZiEvhgHFZUJM2g.png", bio: "Holo by H Company looks at each screenshot and returns the exact spot to click, so Rio points instead of guessing." },
   { name: "MILESTONE PLANNER", role: "Plans and checks", img: "BbqpJjnldDFDulJFBarqs7wJpFk.png", bio: "Every goal becomes a graph of milestones with a visual success check. Rio moves on only when the result is on screen." },
   { name: "GLADIA LIVE", role: "Listens", img: "8k7FcfFSjgocOslFu94p0ih1UY.png", bio: "Ask out loud during a lesson. Gladia transcribes you live, and Rio answers, points, skips or repeats the step." },
@@ -599,6 +742,52 @@ export function Process() {
           </Reveal>
         </div>
 
+        <Reveal as="h2" className="h-collective">
+          We are building the coach that sits next to everyone who opens new software.
+        </Reveal>
+        <div className="story">
+          <Reveal as="p" className="p-16">
+            Born at the H Company hackathon, built on Holo computer-use models and real-time voice.
+          </Reveal>
+          <Reveal delay={0.1}>
+            <Btn label="How it works" variant="ghost" href="#services" />
+          </Reveal>
+        </div>
+        <div className="team">
+          {TEAM.map((m, i) => (
+            <Reveal className="member" key={m.name} delay={i * 0.08}>
+              <div className="member-photo">
+                <img src={asset(m.img)} alt={m.name} />
+                <PillLogo size="sm" light />
+              </div>
+              <div className="person on-dark">
+                <span className="person-bar" />
+                <div>
+                  <h5 className="plex-13">{m.name}</h5>
+                  <p className="p-12 muted-w5">{m.role}</p>
+                </div>
+              </div>
+              <div className="member-bio">
+                <div className="bio-social">
+                  <a href="https://x.com" aria-label="X">
+                    <Icon name="xFill" size={15} />
+                  </a>
+                  <a href="https://github.com" aria-label="GitHub">
+                    <Icon name="github" size={15} />
+                  </a>
+                </div>
+                <p className="bio-text">{m.bio}</p>
+                <div className="person">
+                  <span className="person-bar" />
+                  <div>
+                    <p className="plex-13">{m.name}</p>
+                    <p className="plex-11">{m.role}</p>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
       </section>
     </div>
   );
@@ -609,7 +798,7 @@ export function Process() {
 const PLANS = [
   { name: "Learner", price: 0, tagline: "One app at a time.", f: ["Tutorial library", "Typed goals", "Ghost cursor", "Community support"] },
   { name: "Pro", price: 12, tagline: "Unlimited live coaching.", f: ["Unlimited goals", "Voice questions", "Save as tutorial", "Priority support"] },
-  { name: "Team", price: 29, tagline: "Onboard a whole team.", f: ["Shared library", "Session journals", "Admin seats", "Slack support"], dark: true },
+  { name: "Team", price: 29, tagline: "Onboard a whole team.", f: ["Team library", "Internal docs search", "Invites & admin", "Usage insights"], dark: true },
   { name: "Enterprise", price: -1, tagline: "Your apps, your rules.", f: ["Custom tutorials", "SSO & admin", "Data controls", "Dedicated success"] },
 ];
 
@@ -654,7 +843,7 @@ export function Pricing() {
         </Reveal>
       </div>
       <Reveal className="plans">
-        {PLANS.slice(0, 3).map((p) => (
+        {PLANS.map((p) => (
           <div key={p.name} className={`plan ${p.dark ? "plan-dark" : ""}`}>
             <img className="plan-wave" src={asset("lu9xdgbj7zB5GkewV6UCW9Y68.jpg")} alt="" />
             <div className="plan-top">
@@ -670,7 +859,7 @@ export function Pricing() {
               <Btn label="Get started" size="sm" variant={p.dark ? "light" : "ghost"} href="#contact" />
             </div>
             <ul className="plan-feats">
-              {p.f.slice(0, 3).map((f) => (
+              {p.f.map((f) => (
                 <li key={f} className="p-14l">
                   {f}
                 </li>
@@ -687,8 +876,10 @@ export function Pricing() {
 /* ---------------- FAQ + Insights ---------------- */
 
 const FAQ = [
+  { q: "Can I use any YouTube tutorial?", a: "Paste a YouTube tutorial link and Rio turns it into a step-by-step lesson in your app. Blender is our starting point. A lesson needs to be checked against the app and version you use; not every video can become a verified lesson. You stay in control of the clicks." },
   { q: "Does Rio click for me?", a: "No. Rio points with a ghost cursor and you make every click. Learning sticks because you do it yourself." },
   { q: "Which apps does Rio work with?", a: "Any desktop app. Tutorials ship for Blender, LibreOffice Calc, Docker and Finder, and you can type a goal for anything else." },
+  { q: "Can Rio learn our internal tools?", a: "Yes, on a team workspace. Add the Markdown guides of your in-house apps in the console: Rio turns them into procedures and finds them when someone asks. Your notes stay in your workspace." },
   { q: "What does Rio see on my screen?", a: "A screenshot of your main display when it plans or checks a step. Rio's own windows are excluded from captures." },
   { q: "Can I ask questions out loud?", a: "Yes. Click the mic and ask “where is it?”, “I'm done” or “show me again”: Rio answers out loud, points, skips or repeats." },
   { q: "What if the menus have changed?", a: "Tutorials are graphs of milestones, not click scripts. Rio finds the current path on screen, so outdated hints don't break the lesson." },
@@ -696,16 +887,11 @@ const FAQ = [
   { q: "Which platforms are supported?", a: "macOS first: Rio lives in the menu bar and floats over full-screen apps. More platforms are on the roadmap." },
 ];
 
-export const ARTICLES = [
-  { cat: "Blender", title: "Your first donut in Blender, step by step", body: "From the default cube to a finished render, guided milestone by milestone.", author: "Rio library", img: "862JbA3xEJjbdSDVyKEwOZ0f2g.jpeg" },
-  { cat: "Docker", title: "Run your first container without memorising commands", body: "Pull an image, start it and check it is running, with every step verified on screen.", author: "Rio library", img: "YKAEpvQFebP2OETEJDVNip8UTg.jpeg", flip: true },
-  { cat: "Learning", title: "Why learning by doing beats watching tutorials", body: "Videos never match your screen. Guided practice on the real interface does.", author: "Rio team", img: "egDVD5dc2AvUIZKG0seuGXtH0.jpeg" },
-];
 
 export function FaqInsights() {
   const [open, setOpen] = useState(0);
   return (
-    <section className="faq-wrap" id="insights">
+    <section className="faq-wrap" id="faq">
       <div className="faq-card">
         <div className="faq">
           <div className="faq-left">
@@ -725,7 +911,7 @@ export function FaqInsights() {
             </div>
           </div>
           <div className="faq-list">
-            {FAQ.slice(0, 4).map((f, i) => {
+            {FAQ.map((f, i) => {
               const active = open === i;
               return (
                 <Reveal key={f.q} delay={i * 0.05} y={20}>
@@ -762,58 +948,13 @@ export function FaqInsights() {
   );
 }
 
-/* ---------------- Features ---------------- */
-
-const FEATURES = [
-  { k: "Ghost cursor", t: "See where to click", d: "An orange cursor points to the exact button, menu or field you need next." },
-  { k: "Verified steps", t: "Checked on screen", d: "After every action Rio looks at your screen and only moves on when the step is done." },
-  { k: "Voice", t: "Ask out loud", d: "Speak your question mid-task. Gladia transcribes it live, Rio answers in context." },
-  { k: "Local speech", t: "Answers in your language", d: "Gradium voice runs on your Mac and speaks the language you learn in." },
-  { k: "Menu bar", t: "One shortcut away", d: "Press ⌥⇧Space from any app. Rio opens on top of what you are doing." },
-  { k: "Journal", t: "Every lesson saved", d: "Sessions are journaled as milestone tutorials you can replay or share." },
-];
-
-export function Features() {
-  return (
-    <section className="rfeatures" id="features">
-      <div className="rfeatures-head">
-        <Label text="FEATURES" />
-        <Reveal as="h2" className="h2-54">A tutor that sees your screen.</Reveal>
-      </div>
-      <div className="rf-grid">
-        {FEATURES.map((f, i) => (
-          <motion.article
-            key={f.k}
-            className="rf"
-            initial={{ opacity: 0, y: 40, filter: "blur(8px)" }}
-            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            viewport={{ once: true, margin: "-10% 0px" }}
-            transition={{ duration: 0.8, ease: EASE, delay: (i % 3) * 0.08 }}
-          >
-            <span className="rf-k">{String(i + 1).padStart(2, "0")} / {f.k}</span>
-            <h3 className="rf-t">{f.t}</h3>
-            <p className="p-16 rf-d">{f.d}</p>
-            <span className="rf-arrow"><RioArrow size={22} /></span>
-          </motion.article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 /* ---------------- Footer ---------------- */
 
 export function Footer() {
   const cols = [
-    { h: "Product", l: ["Home", "How it works", "Library", "Pricing"] },
-    { h: "Company", l: ["About", "Contact", "H Company", "Careers"] },
-    { h: "Policies", l: ["Terms & Conditions", "Privacy Policy"] },
-  ];
-  const socials = [
-    { n: "xLogo" as const, href: "https://x.com" },
-    { n: "linkedin" as const, href: "https://www.linkedin.com" },
-    { n: "youtube" as const, href: "https://youtube.com" },
-    { n: "instagram" as const, href: "https://instagram.com" },
+    { h: "Product", l: [["Use cases", "#use-cases"], ["For teams", "#teams"], ["Pricing", "#pricing"], ["FAQ", "#faq"]] },
+    { h: "Get started", l: [["Go to app", APP_URL], ["Install the Mac app", INSTALL_URL]] },
+    { h: "Built with", l: [["H Company", "https://www.hcompany.ai"], ["Gladia", "https://www.gladia.io"], ["Gradium", "https://gradium.ai"]] },
   ];
   return (
     <footer className="footer" id="contact">
@@ -825,40 +966,16 @@ export function Footer() {
           <p className="p-15 footer-text">
             Rio is your live software coach. Tell it what you want to learn and it shows you the way, on your own screen.
           </p>
-          <form className="subscribe" onSubmit={(e) => e.preventDefault()}>
-            <input type="email" name="Email" placeholder="you@company.com" aria-label="Email" />
-            <button type="submit" className="btn btn-light btn-sm">
-              <span className="btn-box">
-                <svg viewBox="0 0 30 15" width={30} height={15} className="px-arrow" aria-hidden>
-                  {[1, 4].map((dx) =>
-                    [[0, 0], [1, 1], [2, 2], [1, 3], [0, 4]].map(([x, y]) => (
-                      <rect key={`${dx}${x}${y}`} x={(x + dx) * 3} y={y * 3} width={3} height={3} fill="currentColor" />
-                    )),
-                  )}
-                </svg>
-              </span>
-              <span className="btn-label">
-                <span className="btn-label-inner" data-label="Subscribe">
-                  Subscribe
-                </span>
-              </span>
-            </button>
-          </form>
-          <p className="mono-12">Follow Us:</p>
-          <div className="socials">
-            {socials.map((s) => (
-              <a key={s.n} href={s.href} aria-label={s.n}>
-                <Icon name={s.n} size={20} />
-              </a>
-            ))}
+          <div className="footer-ctas">
+            <Btn label="Go to app" variant="light" size="sm" href={APP_URL} />
           </div>
         </div>
         <div className="footer-cols">
           {cols.map((c) => (
             <div key={c.h} className="footer-col">
               <p className="mono-16w">{c.h}</p>
-              {c.l.map((l) => (
-                <a key={l} href="#top" className="p-14l footer-link">
+              {c.l.map(([l, href]) => (
+                <a key={l} href={href} className="p-14l footer-link" {...(href.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})}>
                   {l}
                 </a>
               ))}

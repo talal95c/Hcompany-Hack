@@ -40,7 +40,7 @@ class HoloDesktopAgent:
     def __init__(
         self,
         *,
-        model: str = "holo4-35b-a3b",
+        model: str = "holo4-27b",
         act_timeout_s: float = 45,
         min_interval_s: float = 2.1,
     ) -> None:
@@ -69,7 +69,7 @@ class HoloDesktopAgent:
         for attempt, delay in enumerate((30.0, 60.0, 0.0)):
             try:
                 return await call()
-            except (RateLimitError, QuotaExceeded) as exc:
+            except (RateLimitError, QuotaExceeded, TimeoutError) as exc:
                 if not delay or "402" in str(exc):
                     raise
                 self.metrics.append({"operation": f"{operation}_rate_limited", "attempt": attempt})
@@ -139,7 +139,7 @@ class HoloDesktopAgent:
                             },
                         },
                     ),
-                    45,
+                    12,
                 ),
             )
         finally:

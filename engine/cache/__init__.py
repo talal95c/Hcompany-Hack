@@ -46,10 +46,13 @@ class TargetContext:
     ui_revision: int
     visible: bool
     menu_context: str = ""
+    generation: int = 0
+    capture_revision: str = ""
 
     @property
     def key(self) -> tuple:
-        return self.app_id, self.app_version, self.region_size, self.ui_scale, self.target
+        return (self.app_id, self.app_version, self.region_size, self.ui_scale, self.target,
+                self.generation, self.ui_revision, self.capture_revision)
 
 
 @dataclass(frozen=True)
@@ -57,6 +60,7 @@ class TargetEntry:
     context: TargetContext
     result: LocalizeResult
     capture_id: str
+    verified: bool = False
 
 
 class TargetCache(LRU[TargetEntry]):
@@ -103,7 +107,7 @@ class Preloader:
     async def start(
         self, generation: int, context: TargetContext, capture_id: str,
         localize: Callable[[], Awaitable[LocalizeResult | None]], cache: TargetCache,
-        *, timeout_s: float = 5,
+        *, timeout_s: float = 5, verified: bool = False,
     ) -> None:
         await self.cancel()
         self.generation = generation
@@ -112,7 +116,7 @@ class Preloader:
             try:
                 result = await asyncio.wait_for(localize(), timeout_s)
                 if result is not None and self.generation == generation:
-                    cache.put_target(TargetEntry(context, result, capture_id))
+                    cache.put_target(TargetEntry(context, result, capture_id, verified))
             except Exception:
                 return
 

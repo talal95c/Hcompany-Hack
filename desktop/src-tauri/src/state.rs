@@ -22,6 +22,8 @@ pub enum Lifecycle {
 }
 
 pub struct Capture {
+    pub reference: image::RgbaImage,
+    pub encoded_size: (u32, u32),
     pub crop: Rect,
     pub monitor: Monitor,
     pub ui_revision: u64,
