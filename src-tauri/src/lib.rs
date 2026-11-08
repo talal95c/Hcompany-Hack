@@ -9,6 +9,7 @@ mod ax;
 mod cancel;
 mod capture;
 mod clicks;
+mod config;
 mod debug;
 mod devin;
 mod holo;
@@ -876,7 +877,7 @@ fn setup_windows(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let _ = dotenvy::dotenv();
+    config::load();
     if let Some(d) = debug::dir_path() {
         eprintln!("[debug] Holo calls are logged to {d}");
     }

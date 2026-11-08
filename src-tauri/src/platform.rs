@@ -31,8 +31,7 @@ static HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
 /// A setting from `.env`, read fresh each time (a new token works without
 /// restarting Rio), else from the environment.
 fn setting(key: &str) -> Option<String> {
-    let from_file = dotenvy::dotenv_iter().ok().and_then(|it| it.flatten().find(|(k, _)| k == key).map(|(_, v)| v));
-    from_file.or_else(|| std::env::var(key).ok()).filter(|v| !v.trim().is_empty())
+    crate::config::file_setting(key).or_else(|| std::env::var(key).ok()).filter(|v| !v.trim().is_empty())
 }
 
 fn config() -> Option<(String, String)> {

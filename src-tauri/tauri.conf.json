@@ -21,7 +21,10 @@
         "decorations": false,
         "transparent": true,
         "windowEffects": {
-          "effects": ["hudWindow", "acrylic"],
+          "effects": [
+            "hudWindow",
+            "acrylic"
+          ],
           "state": "active",
           "radius": 0
         },
@@ -46,6 +49,10 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "macOS": {
+      "signingIdentity": "-",
+      "minimumSystemVersion": "12.0"
+    }
   }
 }

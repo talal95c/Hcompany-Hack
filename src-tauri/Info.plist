@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Rio listens when you ask it a question out loud.</string>
+  <key>NSAppleEventsUsageDescription</key>
+  <string>Rio runs the scripts of a lesson in the app you are learning.</string>
+</dict>
+</plist>
