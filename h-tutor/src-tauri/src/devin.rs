@@ -31,18 +31,13 @@ pub struct Output {
 }
 
 pub fn parse_output(value: Value) -> Result<Output, String> {
-    let output: Output =
-        serde_json::from_value(value).map_err(|_| "Invalid Devin structured output")?;
+    let output: Output = serde_json::from_value(value).map_err(|_| "Invalid Devin structured output")?;
     if !matches!(output.language.as_str(), "bash" | "python" | "osascript")
         || output.script.trim().is_empty()
         || output.script.len() > 65536
-        || !matches!(
-            output.test_platform.as_str(),
-            "linux" | "macos" | "windows" | "unknown"
-        )
+        || !matches!(output.test_platform.as_str(), "linux" | "macos" | "windows" | "unknown")
         || output.params.len() > 32
-        || output.tested
-            && (output.test_evidence.trim().is_empty() || output.test_command.trim().is_empty())
+        || output.tested && (output.test_evidence.trim().is_empty() || output.test_command.trim().is_empty())
     {
         return Err("Invalid Devin script or test evidence".into());
     }
@@ -51,10 +46,7 @@ pub fn parse_output(value: Value) -> Result<Output, String> {
         if param.name.is_empty()
             || param.name.starts_with('-')
             || param.name.len() > 64
-            || !param
-                .name
-                .bytes()
-                .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-')
+            || !param.name.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-')
             || !names.insert(&param.name)
             || param.default.contains('\0')
             || param.default.len() > 4096
@@ -106,11 +98,7 @@ pub fn selected(skill: &Skill) -> Option<Compiled> {
 }
 
 pub fn mode(skill: &Skill) -> &'static str {
-    if selected(skill).is_some() {
-        "script"
-    } else {
-        "rio"
-    }
+    if selected(skill).is_some() { "script" } else { "rio" }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -129,16 +117,12 @@ pub struct Session {
 impl Session {
     pub fn terminal(&self) -> bool {
         matches!(self.status.as_str(), "exit" | "error" | "suspended")
-            || matches!(
-                self.status_detail.as_deref(),
-                Some("finished" | "waiting_for_user" | "waiting_for_approval")
-            )
+            || matches!(self.status_detail.as_deref(), Some("finished" | "waiting_for_user" | "waiting_for_approval"))
     }
     fn successful(&self) -> bool {
         self.status_detail.as_deref() == Some("finished")
             || self.status == "exit"
-            || (self.status_detail.as_deref() == Some("waiting_for_user")
-                && self.structured_output.is_some())
+            || (self.status_detail.as_deref() == Some("waiting_for_user") && self.structured_output.is_some())
     }
 }
 
@@ -156,9 +140,7 @@ impl Client {
             .ok_or("DEVIN_API_KEY absente du fichier .env")?;
         let org = std::env::var("DEVIN_ORG_ID")
             .ok()
-            .filter(|s| {
-                s.starts_with("org-") && s.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'-')
-            })
+            .filter(|s| s.starts_with("org-") && s.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'-'))
             .ok_or("DEVIN_ORG_ID absente ou invalide")?;
         let http = reqwest::Client::builder()
             .timeout(Duration::from_secs(60))
@@ -168,22 +150,10 @@ impl Client {
         Ok(Self { http, key, org })
     }
 
-    async fn request(
-        &self,
-        method: reqwest::Method,
-        id: Option<&str>,
-        body: Option<Value>,
-    ) -> Result<Session, String> {
-        let mut url = format!(
-            "https://api.devin.ai/v3/organizations/{}/sessions",
-            self.org
-        );
+    async fn request(&self, method: reqwest::Method, id: Option<&str>, body: Option<Value>) -> Result<Session, String> {
+        let mut url = format!("https://api.devin.ai/v3/organizations/{}/sessions", self.org);
         if let Some(id) = id {
-            if id.is_empty()
-                || !id
-                    .bytes()
-                    .all(|c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_')
-            {
+            if id.is_empty() || !id.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_') {
                 return Err("Identifiant de session Devin invalide".into());
             }
             url.push('/');
@@ -193,39 +163,24 @@ impl Client {
         if let Some(body) = body {
             request = request.json(&body);
         }
-        let response = request
-            .send()
-            .await
-            .map_err(|_| "Could not reach Devin, or it timed out")?;
+        let response = request.send().await.map_err(|_| "Could not reach Devin, or it timed out")?;
         let status = response.status();
         if !status.is_success() {
             return Err(match status.as_u16() {
-                401 | 403 => {
-                    "Devin refused access; check the v3 service user key and the organization".into()
-                }
+                401 | 403 => "Devin refused access; check the v3 service user key and the organization".into(),
                 429 => "Devin rate limit reached".into(),
-                400 => {
-                    "Devin platform or session configuration unavailable (HTTP 400)".into()
-                }
+                400 => "Devin platform or session configuration unavailable (HTTP 400)".into(),
                 _ => format!("The Devin API refused the request (HTTP {status})"),
             });
         }
-        response
-            .json()
-            .await
-            .map_err(|_| "Invalid Devin session response".into())
+        response.json().await.map_err(|_| "Invalid Devin session response".into())
     }
 
     pub async fn create(&self, skill: &Skill, os: &str) -> Result<Session, String> {
         let mut body = creation_body(skill, os);
-        match self
-            .request(reqwest::Method::POST, None, Some(body.clone()))
-            .await
-        {
+        match self.request(reqwest::Method::POST, None, Some(body.clone())).await {
             Err(e) if os == "macos" && e.contains("HTTP 400") => {
-                body.as_object_mut()
-                    .ok_or("Invalid Devin request")?
-                    .remove("platform");
+                body.as_object_mut().ok_or("Invalid Devin request")?.remove("platform");
                 self.request(reqwest::Method::POST, None, Some(body)).await
             }
             result => result,
@@ -278,16 +233,7 @@ pub fn creation_body(skill: &Skill, os: &str) -> Value {
 }
 
 fn target_os(skill: &Skill) -> &'static str {
-    if skill
-        .app
-        .bundle_id
-        .as_ref()
-        .is_some_and(|id| !id.trim().is_empty())
-    {
-        "macos"
-    } else {
-        std::env::consts::OS
-    }
+    if skill.app.bundle_id.as_ref().is_some_and(|id| !id.trim().is_empty()) { "macos" } else { std::env::consts::OS }
 }
 
 #[derive(Clone, Serialize)]
@@ -301,11 +247,7 @@ fn emit(app: Option<&AppHandle>, id: &str, status: &str, url: Option<&str>) {
     if let Some(app) = app {
         let _ = app.emit(
             "autopilot:compile",
-            Event {
-                skill_id: id.into(),
-                status: status.into(),
-                url: url.map(String::from),
-            },
+            Event { skill_id: id.into(), status: status.into(), url: url.map(String::from) },
         );
     }
 }
@@ -320,12 +262,7 @@ impl Drop for Lease {
 }
 
 fn acquire(id: &str) -> Result<Lease, String> {
-    if !IN_FLIGHT
-        .get_or_init(Default::default)
-        .lock()
-        .map_err(|_| "Compilation lock unavailable")?
-        .insert(id.into())
-    {
+    if !IN_FLIGHT.get_or_init(Default::default).lock().map_err(|_| "Compilation lock unavailable")?.insert(id.into()) {
         return Err("A compilation is already running for this skill".into());
     }
     Ok(Lease(id.into()))
@@ -342,10 +279,7 @@ async fn compile_inner(skill: Skill, app: Option<&AppHandle>) -> Result<Compiled
     let client = Client::from_env()?;
     emit(app, id, "creating", None);
     let os = target_os(&skill);
-    let mut session = client
-        .create(&skill, os)
-        .await
-        .inspect_err(|_| emit(app, id, "failed", None))?;
+    let mut session = client.create(&skill, os).await.inspect_err(|_| emit(app, id, "failed", None))?;
     let mut artifact = Compiled {
         graph_version: skill.graph.version,
         session_id: session.session_id.clone(),
@@ -384,12 +318,7 @@ async fn compile_inner(skill: Skill, app: Option<&AppHandle>) -> Result<Compiled
         if !session.successful() {
             return Err("The Devin session stopped before finishing the compilation".to_string());
         }
-        parse_output(
-            session
-                .structured_output
-                .clone()
-                .ok_or("Devin returned no structured output")?,
-        )
+        parse_output(session.structured_output.clone().ok_or("Devin returned no structured output")?)
     })
     .await;
     artifact.acus_consumed = session.acus_consumed;
@@ -442,10 +371,7 @@ pub async fn skill_compile(app: AppHandle, skill_id: String) -> Result<(), Strin
 pub fn auto_compile(skill: &Skill) {
     if std::env::var("RIO_AUTO_COMPILE").is_ok_and(|v| v == "0")
         || Client::from_env().is_err()
-        || skill
-            .compiled
-            .iter()
-            .any(|v| v["graph_version"] == skill.graph.version && v["status"] == "completed")
+        || skill.compiled.iter().any(|v| v["graph_version"] == skill.graph.version && v["status"] == "completed")
     {
         return;
     }
@@ -492,11 +418,7 @@ mod tests {
         invalid.test_evidence.clear();
         assert!(parse_output(serde_json::to_value(&invalid).unwrap()).is_err());
         invalid = output();
-        invalid.params.push(Param {
-            name: "--bad".into(),
-            description: String::new(),
-            default: String::new(),
-        });
+        invalid.params.push(Param { name: "--bad".into(), description: String::new(), default: String::new() });
         assert!(parse_output(serde_json::to_value(invalid).unwrap()).is_err());
     }
 

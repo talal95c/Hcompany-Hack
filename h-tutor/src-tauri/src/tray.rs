@@ -2,14 +2,14 @@
 //! toggled from a menu bar icon or a global shortcut. The menu bar title
 //! mirrors tutorial progress.
 
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use tauri::{
+    AppHandle, LogicalPosition, LogicalSize, Manager,
     image::Image,
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, LogicalPosition, LogicalSize, Manager,
 };
 
 const TRAY_ID: &str = "holo-tutor";
@@ -30,9 +30,7 @@ static LAST_BLUR_HIDE: Mutex<Option<Instant>> = Mutex::new(None);
 fn icon() -> Image<'static> {
     // Mark on its 96x84 grid (bowl + leg), scaled by 0.15 and centred in a 0..18 box.
     let fit = |pts: &[(f64, f64)]| -> Vec<(f64, f64)> {
-        pts.iter()
-            .map(|&(x, y)| (1.8 + x * 0.15, 2.7 + y * 0.15))
-            .collect()
+        pts.iter().map(|&(x, y)| (1.8 + x * 0.15, 2.7 + y * 0.15)).collect()
     };
     let bowl = fit(&[
         (24.0, 0.0),
@@ -98,12 +96,7 @@ pub fn setup(app: &tauri::App) -> tauri::Result<()> {
             }
         })
         .on_tray_icon_event(|tray, event| {
-            if let TrayIconEvent::Click {
-                button: MouseButton::Left,
-                button_state: MouseButtonState::Up,
-                ..
-            } = event
-            {
+            if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = event {
                 toggle_bar(tray.app_handle());
             }
         })
@@ -123,23 +116,18 @@ pub fn toggle_bar(app: &AppHandle) {
         let _ = bar.hide();
         return;
     }
-    let just_hid = LAST_BLUR_HIDE
-        .lock()
-        .unwrap()
-        .is_some_and(|t| t.elapsed() < Duration::from_millis(300));
+    let just_hid = LAST_BLUR_HIDE.lock().unwrap().is_some_and(|t| t.elapsed() < Duration::from_millis(300));
     if !just_hid {
         show_bar(app);
     }
 }
 
 pub fn show_bar(app: &AppHandle) {
-    if crate::autopilot::is_running() { return; }
+    if crate::autopilot::is_running() {
+        return;
+    }
     let Some(bar) = app.get_webview_window("main") else { return };
-    let height = bar
-        .inner_size()
-        .ok()
-        .zip(bar.scale_factor().ok())
-        .map_or(64.0, |(s, f)| s.height as f64 / f);
+    let height = bar.inner_size().ok().zip(bar.scale_factor().ok()).map_or(64.0, |(s, f)| s.height as f64 / f);
     place_bar(app, height, *WIDTH.lock().unwrap());
     crate::panel::show(&bar, true, crate::panel::LEVEL_BAR);
 }
@@ -156,10 +144,7 @@ fn place_bar(app: &AppHandle, height: f64, width: f64) {
     let (wx, wy) = (wa.position.x as f64 / f, wa.position.y as f64 / f);
     let ww = wa.size.width as f64 / f;
     let _ = bar.set_size(LogicalSize::new(width, height));
-    let _ = bar.set_position(LogicalPosition::new(
-        wx + (ww - width) / 2.0,
-        wy,
-    ));
+    let _ = bar.set_position(LogicalPosition::new(wx + (ww - width) / 2.0, wy));
 }
 
 #[tauri::command]
@@ -191,11 +176,7 @@ pub fn set_tray_status(app: AppHandle, text: Option<String>) {
     if let Some(tray) = app.tray_by_id(TRAY_ID) {
         let title = text.map(|t| {
             let t = t.trim().to_string();
-            if t.chars().count() > 42 {
-                format!("{}…", t.chars().take(41).collect::<String>().trim_end())
-            } else {
-                t
-            }
+            if t.chars().count() > 42 { format!("{}…", t.chars().take(41).collect::<String>().trim_end()) } else { t }
         });
         let _ = tray.set_title(title.filter(|t| !t.is_empty()));
     }
