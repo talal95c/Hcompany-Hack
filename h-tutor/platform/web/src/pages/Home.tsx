@@ -20,7 +20,7 @@ export function HomePage() {
   return (
     <MotionConfig reducedMotion="user" transition={{ type: "spring", stiffness: 300, damping: 28 }}>
     <div className="home">
-      <div className="home__atmosphere" aria-hidden="true"><span /><span /></div>
+      <div className="home__atmosphere" aria-hidden="true"><span /><span /><span /></div>
       <div className="hello">
         <h1 aria-label={`What should your team learn${name ? `, ${name}` : ""}?`}>
           {`What should your team learn${name ? `, ${name}` : ""}?`.split(" ").map((word, index) => (
@@ -40,8 +40,10 @@ export function HomePage() {
       {recent.length > 0 && (
         <div className="recent">
           <div className="recent__title">Recent</div>
-          {recent.map((t) => (
-            <a
+          {recent.map((t, index) => (
+            <motion.a
+              {...enter(0.5 + index * 0.1)}
+              whileHover={reduced ? undefined : { y: -3, backgroundColor: "rgba(255,255,255,0.7)" }}
               key={t.id}
               className="recent__row"
               href={`/t/${t.id}`}
@@ -54,7 +56,7 @@ export function HomePage() {
               <span className="recent__name">{t.tutorial?.title ?? t.title ?? t.input}</span>
               <StatusTag t={t} />
               <span className="recent__when">{ago(t.updatedAt)}</span>
-            </a>
+            </motion.a>
           ))}
         </div>
       )}
