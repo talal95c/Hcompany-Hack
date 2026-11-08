@@ -12,7 +12,7 @@ npm run build
 npx vite preview --port 4174 --host
 ```
 
-Build generates the QR SVG locally. Assets are self-contained; the Remotion compositions are copied from landing (including TutorialPlayer inside Blender), rendered in grayscale so orange belongs only to the deck's ghost cursor. No paid template assets.
+Build generates the QR SVG locally. Assets are self-contained; the Remotion compositions are copied from landing (including TutorialPlayer inside Blender), rendered in grayscale so orange belongs only to the deck's ghost cursor. Slide 11 uses a static, deck-styled console mock for a consistently finished presentation in browser and PDF. No paid template assets.
 
 Navigation: left/right, Space, PageUp/PageDown, Home/End. Click either half of the screen. N toggles notes, F fullscreen. Hashes are one-based: `#5`. Invalid hashes fall back to slide 1. The fixed 1920×1080 stage scales to fit any viewport.
 

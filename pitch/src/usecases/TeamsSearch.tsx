@@ -32,7 +32,6 @@ export function TeamsSearchScene({ frame = 85, width }: { frame?: number; width?
         </li>;
       })}
     </ul>
-    <p className="teams-demo-note mono-12">Illustrated example</p>
   </div>;
 }
 

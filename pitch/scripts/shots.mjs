@@ -10,6 +10,13 @@ for(let i=1;i<=17;i++){
   await page.goto('http://localhost:4174/#'+i);
   await page.evaluate(()=>document.fonts.ready);
   await page.waitForTimeout(1600);
+  const text=await page.locator('.slide').innerText();
+  if(/illustrative composition|illustrated example|composition fallback|Distribution roadmap|live billing status|Live inference still|broader context|Phonon requires setup/i.test(text))throw Error('Visible caveat on slide '+i);
+  if(i===9&&!text.includes('Did it once? Rio does it for you next time.'))throw Error('Incorrect delegation title');
+  if(i===11){
+    if(!await page.locator('.console-mock').isVisible())throw Error('Missing console mock');
+    if(!text.includes('Refund an order')||!text.includes('Create a promo code'))throw Error('Missing console results');
+  }
   await page.screenshot({path:new URL('../out/shots/slide-'+String(i).padStart(2,'0')+'.png',import.meta.url).pathname});
 }
 await page.goto('http://localhost:4174/#5');
@@ -19,6 +26,8 @@ await page.keyboard.press('Home');
 await page.waitForURL('**/#1');
 await page.keyboard.press('End');
 await page.waitForURL('**/#17');
+await page.locator('.slide-17').waitFor();
+await page.waitForTimeout(100);
 await page.keyboard.press('n');
 if(!await page.locator('.notes').isVisible())throw Error('Missing notes');
 await page.keyboard.press('n');

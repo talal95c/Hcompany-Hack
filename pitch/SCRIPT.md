@@ -44,7 +44,7 @@ Passons à Blender. L’objectif est un donut en cinq étapes : un résultat con
 
 ## 11
 
-Qui paie ? D’abord les personnes qui apprennent un logiciel. Ensuite, les équipes : chaque nouvelle recrue regarde les mêmes vidéos et repose les mêmes questions sur les outils internes. La console rassemble tutoriels, connaissances, membres et usage. Le passage de l’individu à l’équipe transforme une leçon utile une fois en un actif d’onboarding partagé.
+La console affichée est une maquette de présentation, pas une capture live. Qui paie ? D’abord les personnes qui apprennent un logiciel. Ensuite, les équipes : chaque nouvelle recrue regarde les mêmes vidéos et repose les mêmes questions sur les outils internes. La console rassemble tutoriels, connaissances, membres et usage. Le passage de l’individu à l’équipe transforme une leçon utile une fois en un actif d’onboarding partagé.
 
 ## 12
 
