@@ -43,11 +43,14 @@ function Search() {
     if (container.current) observer.observe(container.current);
     return () => { media.removeEventListener('change', change); observer.disconnect(); };
   }, []);
+  // Hidden on phones (display: none), the container measures 0x0, and Remotion throws on
+  // a zero composition size, which would unmount the whole page: render the player only once it has a size.
+  const width = Math.ceil(size.width), height = Math.ceil(size.height);
   return (
     <div ref={container} style={{ position: 'relative' }} aria-label="Illustration: Rio searching a team's tutorials and internal docs">
       <div style={{ opacity: reduced ? 1 : 0 }}><TeamsSearchScene /></div>
-      {!reduced && <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-        <Player component={TeamsSearch} inputProps={{ width: size.width }} compositionWidth={Math.ceil(size.width)} compositionHeight={Math.ceil(size.height)} durationInFrames={TEAMS_SEARCH_DURATION} fps={FPS} autoPlay loop initiallyMuted controls={false} clickToPlay={false} doubleClickToFullscreen={false} spaceKeyToPlayOrPause={false} acknowledgeRemotionLicense style={{ width: Math.ceil(size.width), height: Math.ceil(size.height) }} />
+      {!reduced && width > 0 && height > 0 && <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        <Player component={TeamsSearch} inputProps={{ width: size.width }} compositionWidth={width} compositionHeight={height} durationInFrames={TEAMS_SEARCH_DURATION} fps={FPS} autoPlay loop initiallyMuted controls={false} clickToPlay={false} doubleClickToFullscreen={false} spaceKeyToPlayOrPause={false} acknowledgeRemotionLicense style={{ width, height }} />
       </div>}
     </div>
   );
