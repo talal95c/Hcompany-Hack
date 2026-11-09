@@ -670,3 +670,12 @@ ul { list-style: none; }
 /* ---------- checkout notice ---------- */
 .notice { position: fixed; top: 24px; left: 50%; translate: -50% 0; z-index: 60; display: flex; align-items: center; gap: 16px; max-width: calc(100vw - 32px); padding: 14px 14px 14px 20px; border-radius: 14px; background: var(--ink); color: #fff; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18); }
 .notice-close { width: 28px; height: 28px; border-radius: 8px; background: var(--ink-2); color: #fff; font-size: 18px; line-height: 1; flex: none; }
+
+/* Phones: no nav; the hero card fills the screen (12px frame all around, rounded corners) with the image full height. */
+@media (max-width: 700px) {
+  .nav { display: none; }
+  .hero { height: 100svh; min-height: 600px; padding: 12px; }
+  .hero-card { height: 100%; }
+  .hero-bg { top: 0; bottom: auto; height: 100%; object-position: 50% 100%; }
+  .hero-content { padding-top: 56px; }
+}
