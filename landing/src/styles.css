@@ -188,6 +188,10 @@ ul { list-style: none; }
 
 /* ---------- page / sections ---------- */
 .page { position: relative; z-index: 2; background: var(--paper); margin-bottom: calc(100vh - 126px); border-radius: 0 0 20px 20px; }
+/* floating particles behind the content, in the white of the page only (sticky: never over the footer) */
+.particles { position: absolute; inset: 0; z-index: 0; pointer-events: none; border-radius: inherit; overflow: clip; }
+.particles canvas { position: sticky; top: 0; display: block; width: 100%; height: 100vh; }
+.page > :not(.particles) { position: relative; z-index: 1; }
 
 .hero { height: 100vh; min-height: 780px; padding: 12px 12px 0; }
 .hero-card { position: relative; height: 100%; border-radius: 20px; background: var(--mist); overflow: hidden; }
@@ -411,7 +415,7 @@ ul { list-style: none; }
 .member-bio .person-bar { background: rgba(0, 0, 0, 0.1); }
 .member-bio .plex-13 { color: rgba(0, 0, 0, 0.81); }
 
-.pricing { background: #fff; padding: 150px 0 20px; }
+.pricing { padding: 150px 0 20px; }
 .pricing-head { display: flex; align-items: flex-end; margin: 40px var(--pad) 0; }
 .toggle-row { width: calc(50% - 40px); display: flex; align-items: center; gap: 12px; }
 .toggle-label { color: var(--ink); }
