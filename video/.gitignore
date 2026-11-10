@@ -1,0 +1,4 @@
+node_modules/
+out/
+public/audio/loser.mp3
+public/audio/loser.*
